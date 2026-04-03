@@ -1,0 +1,110 @@
+import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
+import { sql } from "@/lib/db";
+
+const REFERRAL_REWARD = 0.15;
+const MIN_DEPOSIT_FOR_REFERRAL = 15;
+
+async function checkAndCreditReferrer(userId: string, depositAmount: number) {
+  try {
+    const user = await sql`
+      SELECT id, referred_by, total_deposits FROM users WHERE id = ${userId}
+    `;
+    
+    if (user.length === 0 || !user[0].referred_by) return;
+    
+    const referrerId = user[0].referred_by;
+    const currentTotalDeposits = parseFloat(user[0].total_deposits || "0");
+    const newTotalDeposits = currentTotalDeposits + depositAmount;
+    
+    if (currentTotalDeposits < MIN_DEPOSIT_FOR_REFERRAL && newTotalDeposits >= MIN_DEPOSIT_FOR_REFERRAL) {
+      await sql`
+        UPDATE users 
+        SET wallet_balance = wallet_balance + ${REFERRAL_REWARD},
+            referral_earnings = referral_earnings + ${REFERRAL_REWARD}
+        WHERE id = ${referrerId}
+      `;
+      
+      try {
+        await sql`
+          INSERT INTO referral_visits (referrer_id, referred_user_id, credited, amount_credited, deposit_qualified)
+          VALUES (${referrerId}, ${userId}, true, ${REFERRAL_REWARD}, true)
+        `;
+      } catch (err) {
+        console.error("Referral visit log error:", err);
+      }
+    }
+  } catch (error) {
+    console.error("Referral credit error:", error);
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const rawBody = await req.text();
+    const signature = req.headers.get("x-paystack-signature") ?? "";
+    const secret = process.env.PAYSTACK_SECRET_KEY ?? "";
+
+    const hash = crypto.createHmac("sha512", secret).update(rawBody).digest("hex");
+
+    if (hash !== signature) {
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    }
+
+    const event = JSON.parse(rawBody);
+    console.log("Paystack event:", event.event);
+
+    if (event.event === "charge.success") {
+      const data = event.data;
+      const reference = data.reference;
+      const paidAmount = data.amount / 100;
+      const userId = data.metadata?.user_id;
+
+      // Check if transaction already successful
+      const existingTx = await sql`
+        SELECT status FROM transactions WHERE reference = ${reference}
+      `;
+
+      if (existingTx.length > 0 && existingTx[0].status !== "success") {
+        // Update transaction and credit wallet
+        await sql`
+          WITH updated_tx AS (
+            UPDATE transactions
+            SET status = 'success',
+                metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+                  webhook_at: new Date().toISOString(),
+                  paystack_id: data.id,
+                  paid_at: data.paid_at,
+                  channel: data.channel,
+                  gateway_response: data.gateway_response,
+                  customer_email: data.customer.email,
+                })}::jsonb,
+                payment_channel = ${data.channel},
+                card_type = ${data.authorization?.card_type},
+                card_last4 = ${data.authorization?.last4},
+                bank_name = ${data.authorization?.bank},
+                paid_at = ${data.paid_at ? new Date(data.paid_at).toISOString() : null},
+                ip_address = ${data.ip_address},
+                updated_at = NOW()
+            WHERE reference = ${reference}
+              AND status != 'success'
+            RETURNING user_id, amount
+          )
+          UPDATE users
+          SET wallet_balance = wallet_balance + (SELECT amount FROM updated_tx),
+              total_deposits = total_deposits + (SELECT amount FROM updated_tx)
+          WHERE id::text = (SELECT user_id FROM updated_tx)
+        `;
+
+        if (userId) {
+          await checkAndCreditReferrer(userId, paidAmount);
+        }
+      }
+    }
+
+    return NextResponse.json({ received: true }, { status: 200 });
+  } catch (error) {
+    console.error("Webhook error:", error);
+    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
+  }
+}
