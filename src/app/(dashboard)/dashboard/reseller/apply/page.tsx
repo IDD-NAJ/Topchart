@@ -12,7 +12,7 @@ import { ErrorBoundary, useErrorHandler } from "@/components/error-boundary";
 import { secureFetch } from "@/lib/csrf";
 import { saveFormData, loadFormData, clearFormData, hasCachedData } from "@/lib/form-cache";
 import { useFormCache } from "@/hooks/use-form-cache";
-import { Store, ArrowLeft, Loader2, CreditCard, CheckCircle, AlertCircle, Circle, Check, WifiOff, RefreshCw, RotateCcw, CloudCheck } from "lucide-react";
+import { Store, ArrowLeft, Loader2, CreditCard, CheckCircle, AlertCircle, Circle, Check, WifiOff, RefreshCw, RotateCcw, CloudUpload } from "lucide-react";
 
 interface FormField {
   enabled: boolean;
@@ -514,7 +514,7 @@ function ResellerApplyContent() {
             )}
             {autoSaveStatus === "saved" && (
               <span className="text-xs text-green-600 flex items-center gap-1">
-                <CloudCheck className="h-3 w-3" aria-hidden="true" />
+                <CloudUpload className="h-3 w-3" aria-hidden="true" />
                 Draft saved
               </span>
             )}
