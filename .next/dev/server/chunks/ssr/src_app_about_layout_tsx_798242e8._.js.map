@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/DANE/Downloads/Topchart-master/Topchart-master/src/app/about/layout.tsx"],"sourcesContent":["import type { Metadata } from 'next'\r\n\r\nexport const metadata: Metadata = {\r\n  title: 'About Us',\r\n  description: 'Learn about Topchart Ghana — our mission to redefine digital infrastructure in Ghana with lightning-fast airtime and data top-ups for MTN, Telecel, and AirtelTigo.',\r\n  openGraph: {\r\n    title: 'About Topchart Ghana',\r\n    description: 'Our mission is to eliminate friction in purchasing digital services, providing enterprise-grade infrastructure for everyone.',\r\n    url: 'https://topchart.gh/about',\r\n  },\r\n  alternates: {\r\n    canonical: 'https://topchart.gh/about',\r\n  },\r\n}\r\n\r\nexport default function AboutLayout({ children }: { children: React.ReactNode }) {\r\n  return <>{children}</>\r\n}\r\n"],"names":[],"mappings":";;;;;;;;AAEO,MAAM,WAAqB;IAChC,OAAO;IACP,aAAa;IACb,WAAW;QACT,OAAO;QACP,aAAa;QACb,KAAK;IACP;IACA,YAAY;QACV,WAAW;IACb;AACF;AAEe,SAAS,YAAY,EAAE,QAAQ,EAAiC;IAC7E,qBAAO;kBAAG;;AACZ"}}]
+}

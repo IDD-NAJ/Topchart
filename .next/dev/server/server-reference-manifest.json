@@ -1,0 +1,28 @@
+{
+  "node": {
+    "40554866622f9ecb6ce1409dc5383a5aa38c3f0d75": {
+      "workers": {
+        "app/(auth)/login/page": {
+          "moduleId": "[project]/.next-internal/server/app/(auth)/login/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/auth.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "register",
+          "filename": "src/lib/actions/auth.ts"
+        },
+        "app/(dashboard)/dashboard/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/auth.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "register",
+          "filename": "src/lib/actions/auth.ts"
+        }
+      },
+      "layer": {
+        "app/(auth)/login/page": "action-browser",
+        "app/(dashboard)/dashboard/page": "action-browser"
+      },
+      "filename": "src/lib/actions/auth.ts",
+      "exportedName": "register"
+    }
+  },
+  "edge": {},
+  "encryptionKey": "Kx+eRuIklH0aWdFHEstDA1yF07bwM49LtZ2JD9WulwE="
+}

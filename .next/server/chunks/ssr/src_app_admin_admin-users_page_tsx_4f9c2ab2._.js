@@ -1,0 +1,3 @@
+module.exports=[149060,a=>{"use strict";var b=a.i(187924),c=a.i(528697),d=a.i(603314);function e(){return(0,b.jsx)(c.DataTable,{title:"Admin Users",tableName:"admin_users",icon:(0,b.jsx)(d.Shield,{className:"h-5 w-5"}),columns:[{key:"id",label:"ID"},{key:"email",label:"Email"},{key:"name",label:"Name"},{key:"status",label:"Status",type:"badge",badgeVariants:{ACTIVE:"default",INACTIVE:"secondary"}},{key:"mfaEnabled",label:"MFA",type:"boolean"},{key:"createdAt",label:"Created",type:"date"}],searchableColumns:["email","name"],defaultOrderBy:"createdAt"})}a.s(["default",()=>e])}];
+
+//# sourceMappingURL=src_app_admin_admin-users_page_tsx_4f9c2ab2._.js.map

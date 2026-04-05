@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/admin/layout,_N_T_/admin/kyc-documents/layout,_N_T_/admin/kyc-documents/page,_N_T_/admin/kyc-documents"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/admin/kyc-documents/__PAGE__",
+    "/admin/kyc-documents",
+    "/admin",
+    "/_index",
+    "/_head"
+  ]
+}

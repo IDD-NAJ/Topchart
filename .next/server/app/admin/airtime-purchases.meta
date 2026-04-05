@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/admin/layout,_N_T_/admin/airtime-purchases/layout,_N_T_/admin/airtime-purchases/page,_N_T_/admin/airtime-purchases"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/admin/airtime-purchases/__PAGE__",
+    "/admin/airtime-purchases",
+    "/admin",
+    "/_index",
+    "/_head"
+  ]
+}

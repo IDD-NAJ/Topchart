@@ -1,0 +1,3 @@
+module.exports=[763989,a=>{"use strict";var b=a.i(187924),c=a.i(528697),d=a.i(481402);function e(){return(0,b.jsx)(c.DataTable,{title:"Permissions",tableName:"permissions",icon:(0,b.jsx)(d.Key,{className:"h-5 w-5"}),columns:[{key:"id",label:"ID"},{key:"code",label:"Code"},{key:"description",label:"Description"},{key:"createdAt",label:"Created",type:"date"}],searchableColumns:["code","description"],defaultOrderBy:"createdAt"})}a.s(["default",()=>e])}];
+
+//# sourceMappingURL=src_app_admin_permissions_page_tsx_2eeac91a._.js.map
