@@ -74,21 +74,21 @@ export default function ProfilePage() {
       const result = await response.json()
       if (result.success) {
         toast({
-          title: "Registry Updated",
-          description: "Your local profile synchronization is complete.",
+          title: "Profile Updated",
+          description: "Your changes have been saved.",
         })
         await refreshUser()
       } else {
         toast({
           title: "Update Failed",
-          description: result.error || "Failed to synchronize profile changes.",
+          description: result.error || "Failed to save your changes. Please try again.",
           variant: "destructive",
         })
       }
     } catch (error) {
       toast({
         title: "System Error",
-        description: "An unexpected connectivity error occurred during sync.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -101,7 +101,7 @@ export default function ProfilePage() {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast({
         title: "Validation Error",
-        description: "New authentication keys do not match.",
+        description: "New passwords do not match.",
         variant: "destructive",
       })
       return
@@ -121,8 +121,8 @@ export default function ProfilePage() {
       const result = await response.json()
       if (result.success) {
         toast({
-          title: "Keys Rotated",
-          description: "Your authentication credentials have been successfully updated.",
+          title: "Password Updated",
+          description: "Your password has been changed successfully.",
         })
         setPasswordData({
           currentPassword: "",
@@ -132,14 +132,14 @@ export default function ProfilePage() {
       } else {
         toast({
           title: "Update Failed",
-          description: result.error || "The provider node rejected the key rotation.",
+          description: result.error || "Password change failed. Please try again.",
           variant: "destructive",
         })
       }
     } catch (error) {
       toast({
         title: "System Error",
-        description: "An unexpected error occurred during credential update.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -164,12 +164,12 @@ export default function ProfilePage() {
       {/* Professional Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <Link href="/dashboard" className="inline-flex items-center text-xs font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest mb-2 group">
+          <Link href="/dashboard" className="inline-flex items-center text-xs font-bold text-muted-foreground hover:text-[#006994] transition-colors uppercase tracking-widest mb-2 group">
             <ArrowLeft className="w-3 h-3 mr-1.5 group-hover:-translate-x-1 transition-transform" />
-            Back to Command Center
+            Back to Dashboard
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight">Account Configuration</h1>
-          <p className="text-muted-foreground">Securely manage your identity and network access protocols.</p>
+          <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
+          <p className="text-muted-foreground">Manage your personal details and account settings.</p>
         </div>
         <div className="flex items-center gap-3">
            <div className="px-4 py-2 rounded-lg bg-emerald-500/5 border border-emerald-500/10 flex items-center gap-2">
@@ -183,10 +183,10 @@ export default function ProfilePage() {
         
         {/* Left Column: Profile Summary */}
         <div className="lg:col-span-4 space-y-6">
-          <Card className="overflow-hidden border-primary/20">
-            <div className="h-28 bg-primary/10 relative">
+          <Card className="overflow-hidden border-[#006994]/20">
+            <div className="h-28 bg-[#006994]/10 relative">
                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
-                  <div className="h-24 w-24 rounded-2xl bg-background border-4 border-background shadow-2xl flex items-center justify-center text-primary font-bold text-3xl uppercase ring-1 ring-primary/10">
+                  <div className="h-24 w-24 rounded-2xl bg-background border-4 border-background shadow-2xl flex items-center justify-center text-[#006994] font-bold text-3xl uppercase ring-1 ring-[#006994]/10">
                     {user.firstName?.[0]}{user.lastName?.[0]}
                   </div>
                </div>
@@ -205,37 +205,37 @@ export default function ProfilePage() {
                   "px-3 py-1 uppercase text-[10px] font-bold tracking-tighter",
                   user.isVerified ? "bg-green-50 text-green-600 border-green-200" : "bg-amber-50 text-amber-600 border-amber-200"
                 )}>
-                  {user.isVerified ? "Node Verified" : "Awaiting Audit"}
+                  {user.isVerified ? "Verified" : "Not Verified"}
                 </Badge>
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-4 border-t border-dashed">
                 <div className="p-3 rounded-xl bg-muted/30 border border-border/50 text-left">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Liquidity</p>
-                  <p className="text-sm font-black text-primary">{formatCurrency(user.walletBalance || 0)}</p>
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Wallet Balance</p>
+                  <p className="text-sm font-black text-[#006994]">{formatCurrency(user.walletBalance || 0)}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-muted/30 border border-border/50 text-left">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Audit Score</p>
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Account Score</p>
                   <p className="text-sm font-black text-foreground">A+</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Growth Node (Referral) */}
-          <Card className="bg-primary/5 border-primary/20 overflow-hidden relative">
+          {/* Refer & Earn */}
+          <Card className="bg-[#006994]/5 border-[#006994]/20 overflow-hidden relative">
              <div className="absolute top-0 right-0 p-8 opacity-5 -mr-4 -mt-4 rotate-12">
-                <Gift className="w-32 h-32 text-primary" />
+                <Gift className="w-32 h-32 text-[#006994]" />
              </div>
              <CardHeader className="pb-2">
                <CardTitle className="text-base flex items-center gap-2">
-                 <Gift className="w-4 h-4 text-primary" />
-                 Growth Incentives
+                 <Gift className="w-4 h-4 text-[#006994]" />
+                 Refer & Earn
                </CardTitle>
-               <CardDescription>Scale your earnings by expanding our network.</CardDescription>
+               <CardDescription>Share your referral link and earn rewards for every friend you invite.</CardDescription>
              </CardHeader>
              <CardContent className="space-y-4 pt-4">
-               <div className="flex items-center justify-between p-3 rounded-lg bg-background border border-primary/20">
+               <div className="flex items-center justify-between p-3 rounded-lg bg-background border border-[#006994]/20">
                  <div className="flex items-center gap-2">
                     <LinkIcon className="w-3.5 h-3.5 text-muted-foreground" />
                     <span className="text-[10px] font-mono truncate max-w-[120px]">{user.id.slice(0, 8).toUpperCase()}</span>
@@ -251,7 +251,7 @@ export default function ProfilePage() {
                </div>
                <div className="flex gap-2">
                  <Button asChild size="sm" className="flex-1 h-8 text-[9px] uppercase font-bold tracking-widest">
-                    <Link href="/dashboard">View Earnings</Link>
+                    <Link href="/dashboard/history?type=referral">View Earnings</Link>
                  </Button>
                </div>
              </CardContent>
@@ -264,13 +264,13 @@ export default function ProfilePage() {
           {/* Identity Sync */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 px-1">
-               <Fingerprint className="w-4 h-4 text-primary" />
-               <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Identity Registry</h2>
+               <Fingerprint className="w-4 h-4 text-[#006994]" />
+               <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Personal Information</h2>
             </div>
             <Card>
               <CardHeader className="pb-4 border-b bg-muted/10">
-                <CardTitle className="text-base">Personal Parameters</CardTitle>
-                <CardDescription>Modify your core identity fields and communication endpoint.</CardDescription>
+                <CardTitle className="text-base">Your Details</CardTitle>
+                <CardDescription>Update your name, phone number, and email address.</CardDescription>
               </CardHeader>
               <CardContent className="pt-8">
                 <form onSubmit={handleUpdateProfile} className="space-y-8">
@@ -325,11 +325,11 @@ export default function ProfilePage() {
                       {isUpdatingProfile ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Synchronizing...
+                          Saving...
                         </>
                       ) : (
                         <>
-                          Authorize Updates
+                          Save Changes
                           <Zap className="w-3 h-3 ml-2 group-hover:scale-125 transition-transform" />
                         </>
                       )}
@@ -340,21 +340,21 @@ export default function ProfilePage() {
             </Card>
           </section>
 
-          {/* Key Rotation */}
+          {/* Change Password */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 px-1">
-               <ShieldAlert className="w-4 h-4 text-primary" />
-               <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Security Protocol</h2>
+               <ShieldAlert className="w-4 h-4 text-[#722F37]" />
+               <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Password & Security</h2>
             </div>
             <Card>
               <CardHeader className="pb-4 border-b bg-muted/10">
-                <CardTitle className="text-base">Credential Rotation</CardTitle>
-                <CardDescription>Cycle your authentication keys to maintain node security.</CardDescription>
+                <CardTitle className="text-base">Change Password</CardTitle>
+                <CardDescription>Keep your account safe by updating your password regularly.</CardDescription>
               </CardHeader>
               <CardContent className="pt-8">
                 <form onSubmit={handleUpdatePassword} className="space-y-8">
                   <div className="space-y-2.5 max-w-sm">
-                    <Label htmlFor="currentPassword" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Current Authentication Key</Label>
+                    <Label htmlFor="currentPassword" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Current Password</Label>
                     <Input
                       id="currentPassword"
                       type="password"
@@ -366,7 +366,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="grid sm:grid-cols-2 gap-8">
                     <div className="space-y-2.5">
-                      <Label htmlFor="newPassword" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">New Access Key</Label>
+                      <Label htmlFor="newPassword" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">New Password</Label>
                       <Input
                         id="newPassword"
                         type="password"
@@ -378,7 +378,7 @@ export default function ProfilePage() {
                       />
                     </div>
                     <div className="space-y-2.5">
-                      <Label htmlFor="confirmPassword" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Confirm New Access Key</Label>
+                      <Label htmlFor="confirmPassword" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Confirm New Password</Label>
                       <Input
                         id="confirmPassword"
                         type="password"
@@ -399,10 +399,10 @@ export default function ProfilePage() {
                       {isUpdatingPassword ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Rotating Keys...
+                          Updating...
                         </>
                       ) : (
-                        "Rotate Credentials"
+                        "Update Password"
                       )}
                     </Button>
                   </div>
@@ -411,7 +411,7 @@ export default function ProfilePage() {
             </Card>
           </section>
 
-          {/* System Audit Log Access */}
+          {/* Transaction History */}
           <section className="space-y-4">
             <Card className="bg-muted/30 border-dashed">
                <CardContent className="p-6 flex items-center justify-between gap-4">
@@ -420,14 +420,14 @@ export default function ProfilePage() {
                       <History className="w-5 h-5 text-muted-foreground" />
                    </div>
                    <div className="space-y-1">
-                      <h4 className="text-sm font-bold uppercase tracking-wider">Access Audit Logs</h4>
+                      <h4 className="text-sm font-bold uppercase tracking-wider">Transaction History</h4>
                       <p className="text-xs text-muted-foreground leading-relaxed max-w-md">
-                        Review all account activity, synchronization events, and security logs for your infrastructure nodes.
+                        See all your top-ups, purchases, and account activity in one place.
                       </p>
                    </div>
                  </div>
                  <Button asChild variant="outline" size="sm" className="h-9 px-6 font-bold uppercase tracking-tighter text-[10px]">
-                    <Link href="/dashboard/history">Audit Trail</Link>
+                    <Link href="/dashboard/history">View History</Link>
                  </Button>
                </CardContent>
             </Card>

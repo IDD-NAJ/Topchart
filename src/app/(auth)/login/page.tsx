@@ -99,10 +99,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:grid lg:grid-cols-[1.1fr,0.9fr] bg-background selection:bg-primary-accent/20 selection:text-foreground">
+    <div className="min-h-screen flex flex-col lg:grid lg:grid-cols-[1.1fr,0.9fr] bg-background selection:bg-[#006994]/15 selection:text-foreground">
       {/* Left Side: Form */}
       <main className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 lg:p-16 relative pt-28 lg:pt-24">
-        <div className="absolute inset-0 bg-[radial-gradient(50%_50%_at_50%_50%,rgba(var(--primary-rgb),0.03)_0%,transparent_100%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(50%_50%_at_50%_50%,rgba(0,105,148,0.03)_0%,transparent_100%)] pointer-events-none" />
         
         <motion.div 
           initial={{ opacity: 0 }}
@@ -116,7 +116,7 @@ export default function LoginPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4, delay: 0.1 }}
             >
-              <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary-accent transition-all duration-300 group" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
+              <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-[#006994] transition-all duration-300 group" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
                 <ChevronLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
                 Back to home
               </Link>
@@ -133,7 +133,7 @@ export default function LoginPage() {
                   <span className="font-heading text-3xl font-normal tracking-tight text-foreground">
                     Topchart
                   </span>
-                  <span className="ml-2 text-[11px] font-bold uppercase tracking-widest text-primary-accent bg-primary-accent/10 px-2.5 py-1 rounded-full">
+                  <span className="ml-2 text-[11px] font-bold uppercase tracking-widest text-[#006994] bg-[#006994]/10 px-2.5 py-1 rounded-full">
                     GH
                   </span>
                 </div>
@@ -181,7 +181,7 @@ export default function LoginPage() {
                   <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">Password</Label>
                   <Link 
                     href="/forgot-password" 
-                    className="text-xs font-medium text-primary-accent hover:text-primary-accent/80 transition-all duration-300"
+                    className="text-xs font-medium text-[#006994] hover:text-[#004D6E] transition-all duration-300"
                     style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
                   >
                     Forgot password?
@@ -209,7 +209,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full h-12 text-base font-medium bg-gradient-primary shadow-lg shadow-primary/20 rounded-xl transition-all duration-300" disabled={isLoading} style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
+              <Button type="submit" className="w-full h-12 text-base font-medium bg-gradient-to-r from-[#006994] to-[#1A85B8] text-white hover:from-[#00567A] hover:to-[#006994] shadow-lg shadow-[#006994]/20 rounded-xl transition-all duration-300" disabled={isLoading} style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
                 {isLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -285,10 +285,10 @@ export default function LoginPage() {
       </main>
 
       {/* Right Side: Visual Content */}
-      <aside className="hidden lg:flex flex-col relative bg-gradient-to-br from-primary to-primary/90 text-white p-16 overflow-hidden border-l border-white/5">
+      <aside className="hidden lg:flex flex-col relative text-white p-16 overflow-hidden border-l border-white/5" style={{ background: 'linear-gradient(135deg, #004D6E 0%, #006994 50%, #1A85B8 100%)' }}>
         {/* Abstract background elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-accent/30 rounded-full blur-[120px]" />
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#722F37]/25 rounded-full blur-[120px]" />
           <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-white/5 rounded-full blur-[120px]" />
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px]" />
         </div>
@@ -317,7 +317,7 @@ export default function LoginPage() {
               className="font-heading text-5xl xl:text-6xl font-normal tracking-tight mb-10 leading-[1.05]"
             >
               Ghana&apos;s #1 <br />
-              <span className="text-primary-accent">Digital Recharge</span><br />
+              <span className="text-[#FDF2F3]">Digital Recharge</span><br />
               Platform
             </motion.h2>
             

@@ -97,7 +97,7 @@ export default function TicketDetailPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#006994] mb-2" />
         <p className="text-sm text-muted-foreground">Loading ticket details...</p>
       </div>
     )
@@ -162,7 +162,7 @@ export default function TicketDetailPage() {
                       <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center ${
                           msg.senderType === "USER"
-                            ? "bg-primary text-primary-foreground"
+                            ? "bg-[#006994] text-white"
                             : "bg-muted text-muted-foreground"
                         }`}
                       >
@@ -192,7 +192,7 @@ export default function TicketDetailPage() {
                       <div
                         className={`rounded-2xl px-4 py-2 text-sm whitespace-pre-wrap ${
                           msg.senderType === "USER"
-                            ? "bg-primary text-primary-foreground rounded-tr-none"
+                            ? "bg-[#006994] text-white rounded-tr-none"
                             : "bg-muted text-foreground rounded-tl-none"
                         }`}
                       >
@@ -277,9 +277,9 @@ export default function TicketDetailPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-primary/5 border-primary/20">
+          <Card className="bg-[#006994]/5 border-[#006994]/20">
             <CardContent className="p-4 space-y-3">
-              <div className="flex items-center gap-2 text-primary">
+              <div className="flex items-center gap-2 text-[#006994]">
                 <Clock className="w-4 h-4" />
                 <span className="text-sm font-semibold">Support Hours</span>
               </div>

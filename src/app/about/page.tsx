@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { motion } from "framer-motion"
+import { PageTransition, ScrollReveal, StaggerReveal, StaggerRevealItem, HoverCard, FloatingOrb } from "@/components/animations"
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -33,7 +34,7 @@ const staggerContainer = {
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-background selection:bg-primary-accent/20 selection:text-foreground">
+    <PageTransition className="min-h-screen flex flex-col bg-background selection:bg-[#006994]/15 selection:text-foreground">
       <Header />
       
       <main className="flex-1">
@@ -44,21 +45,19 @@ export default function AboutPage() {
           transition={{ duration: 0.5 }}
           className="relative pt-32 pb-24 overflow-hidden bg-gradient-hero"
         >
-          {/* Background grid */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#8B735508_1px,transparent_1px),linear-gradient(to_bottom,#8B735508_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_80%_at_50%_0%,#000_70%,transparent_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(45%_50%_at_50%_20%,rgba(var(--primary-rgb),0.06)_0%,transparent_100%)]" />
-          {/* Ghana accent colours */}
-          <div className="absolute top-20 -left-20 w-72 h-72 rounded-full bg-[#FFC107]/5 blur-[100px]" />
-          <div className="absolute top-20 -right-20 w-72 h-72 rounded-full bg-[#E40046]/5 blur-[100px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#00699408_1px,transparent_1px),linear-gradient(to_bottom,#00699408_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_80%_at_50%_0%,#000_70%,transparent_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(45%_50%_at_50%_20%,rgba(0,105,148,0.06)_0%,transparent_100%)]" />
+          <FloatingOrb color="sea" size={400} top="-80px" left="-80px" opacity={0.08} />
+          <FloatingOrb color="wine" size={350} top="-60px" right="-60px" opacity={0.07} />
           <div className="container mx-auto px-4 relative">
             <div className="max-w-3xl mx-auto text-center">
               <motion.div 
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-accent/10 border border-primary-accent/20 text-primary-accent text-xs font-bold uppercase tracking-widest mb-6"
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#006994]/10 border border-[#006994]/25 text-[#006994] text-xs font-bold uppercase tracking-widest mb-6"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-primary-accent" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#722F37]" />
                 Est. 2023 · Accra, Ghana
               </motion.div>
               <motion.h1 
@@ -67,8 +66,8 @@ export default function AboutPage() {
                 transition={{ duration: 0.6, delay: 0.3 }}
                 className="font-heading text-4xl font-normal tracking-tight text-foreground sm:text-6xl mb-6"
               >
-                Redefining Digital <br />
-                <span className="text-primary-accent">Infrastructure in Ghana</span>
+                Making Digital Services <br />
+                <span className="bg-gradient-to-r from-[#722F37] to-[#9B4450] bg-clip-text text-transparent">Easy in Ghana</span>
               </motion.h1>
               <motion.p 
                 initial={{ opacity: 0, y: 20 }}
@@ -112,7 +111,7 @@ export default function AboutPage() {
         </motion.section>
 
         {/* Stats Banner */}
-        <section className="py-12 bg-primary text-primary-foreground relative overflow-hidden">
+        <section className="py-12 bg-gradient-to-br from-[#006994] to-[#004D6E] text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:32px_32px]" />
           <motion.div 
             initial={{ opacity: 0 }}
@@ -148,7 +147,7 @@ export default function AboutPage() {
         </section>
 
         {/* Our Mission */}
-        <section className="py-20 bg-muted/30">
+        <section className="py-20 bg-[#EFF6FA]/40">
           <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
               <motion.div
@@ -157,10 +156,10 @@ export default function AboutPage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               >
-                <h2 className="text-sm font-bold uppercase tracking-widest text-primary-accent mb-4 font-body">Our Mission</h2>
+                <h2 className="text-sm font-bold uppercase tracking-widest text-[#722F37] mb-4 font-body">Our Mission</h2>
                 <h3 className="font-heading text-3xl font-normal mb-6">Empowering every Ghanaian with seamless digital access.</h3>
                 <p className="text-lg text-muted-foreground mb-8 leading-relaxed font-body">
-                  We believe that digital connectivity should be effortless. Our mission is to eliminate the friction in purchasing digital services by providing a robust, enterprise-grade infrastructure that works for everyone—from individuals to large businesses.
+                  We believe that digital connectivity should be effortless. Our mission is to eliminate the friction in purchasing digital services by providing a reliable platform that works for everyone—from individuals to large businesses.
                 </p>
                 <ul className="space-y-4">
                   {[
@@ -177,7 +176,7 @@ export default function AboutPage() {
                       transition={{ delay: index * 0.1 }}
                       className="flex items-center gap-3"
                     >
-                      <CheckCircle2 className="h-5 w-5 text-primary-accent flex-shrink-0" />
+                      <CheckCircle2 className="h-5 w-5 text-[#006994] flex-shrink-0" />
                       <span className="font-medium font-body">{item}</span>
                     </motion.li>
                   ))}
@@ -190,11 +189,11 @@ export default function AboutPage() {
                 transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
                 className="relative"
               >
-                <div className="absolute -inset-4 bg-primary-accent/10 rounded-3xl blur-2xl" />
-                <Card className="relative border-primary-accent/20 bg-background overflow-hidden shadow-xl">
+                <div className="absolute -inset-4 bg-[#006994]/8 rounded-3xl blur-2xl" />
+                <Card className="relative border-[#006994]/20 bg-background overflow-hidden shadow-xl">
                   <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-[#FFC107] via-[#E40046] to-[#E60000]" />
                   <CardContent className="p-8">
-                    <p className="text-xs font-bold uppercase tracking-widest text-primary-accent mb-6 font-body">Platform Metrics</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#006994] mb-6 font-body">Platform Metrics</p>
                     <motion.div 
                       variants={staggerContainer}
                       initial="initial"
@@ -236,7 +235,7 @@ export default function AboutPage() {
               transition={{ duration: 0.5 }}
               className="text-center mb-16"
             >
-              <h2 className="text-sm font-bold uppercase tracking-widest text-primary-accent mb-4 font-body">Our Values</h2>
+              <h2 className="text-sm font-bold uppercase tracking-widest text-[#722F37] mb-4 font-body">Our Values</h2>
               <h3 className="font-heading text-3xl font-normal sm:text-4xl">The principles that guide us</h3>
             </motion.div>
             <motion.div 
@@ -251,25 +250,25 @@ export default function AboutPage() {
                   icon: Zap,
                   title: "Speed",
                   description: "We obsess over latency. Every millisecond matters when it comes to your transactions.",
-                  gradient: "from-amber-500/20 to-amber-500/5",
-                  iconColor: "text-amber-600 dark:text-amber-400",
-                  border: "hover:border-amber-500/30"
+                  gradient: "from-[#006994]/15 to-[#006994]/5",
+                  iconColor: "text-[#006994]",
+                  border: "hover:border-[#006994]/30"
                 },
                 {
                   icon: ShieldCheck,
                   title: "Security",
-                  description: "We employ bank-grade encryption and rigorous security protocols to protect your data.",
-                  gradient: "from-emerald-500/20 to-emerald-500/5",
-                  iconColor: "text-emerald-600 dark:text-emerald-400",
-                  border: "hover:border-emerald-500/30"
+                  description: "We use top-level encryption to keep your data safe.",
+                  gradient: "from-[#722F37]/15 to-[#722F37]/5",
+                  iconColor: "text-[#722F37]",
+                  border: "hover:border-[#722F37]/30"
                 },
                 {
                   icon: Target,
                   title: "Precision",
                   description: "Accuracy is non-negotiable. We ensure every cedi and every megabyte is accounted for.",
-                  gradient: "from-blue-500/20 to-blue-500/5",
-                  iconColor: "text-blue-600 dark:text-blue-400",
-                  border: "hover:border-blue-500/30"
+                  gradient: "from-[#6B7280]/15 to-[#6B7280]/5",
+                  iconColor: "text-[#6B7280]",
+                  border: "hover:border-[#6B7280]/30"
                 }
               ].map((value, index) => (
                 <motion.div
@@ -297,7 +296,7 @@ export default function AboutPage() {
         </section>
 
         {/* Team / Culture strip */}
-        <section className="py-20 bg-muted/30">
+        <section className="py-20 bg-[#EFF6FA]/40">
           <div className="container mx-auto px-4">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -306,7 +305,7 @@ export default function AboutPage() {
               transition={{ duration: 0.5 }}
               className="text-center mb-12"
             >
-              <h2 className="text-sm font-bold uppercase tracking-widest text-primary-accent mb-4 font-body">Our Team</h2>
+              <h2 className="text-sm font-bold uppercase tracking-widest text-[#722F37] mb-4 font-body">Our Team</h2>
               <h3 className="font-heading text-3xl font-normal sm:text-4xl">Built by Ghanaians, for Ghana</h3>
             </motion.div>
             <motion.div 
@@ -317,10 +316,10 @@ export default function AboutPage() {
               className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto"
             >
               {[
-                { role: 'Engineering', count: '6+', icon: '💻', color: 'from-violet-500/20 to-violet-500/5' },
-                { role: 'Design', count: '2+', icon: '🎨', color: 'from-pink-500/20 to-pink-500/5' },
-                { role: 'Operations', count: '3+', icon: '⚙️', color: 'from-orange-500/20 to-orange-500/5' },
-                { role: 'Support', count: '4+', icon: '🤝', color: 'from-teal-500/20 to-teal-500/5' },
+                { role: 'Engineering', count: '6+', icon: '💻', color: 'from-[#006994]/15 to-[#006994]/5' },
+                { role: 'Design', count: '2+', icon: '🎨', color: 'from-[#722F37]/15 to-[#722F37]/5' },
+                { role: 'Operations', count: '3+', icon: '⚙️', color: 'from-[#6B7280]/15 to-[#6B7280]/5' },
+                { role: 'Support', count: '4+', icon: '🤝', color: 'from-[#1A85B8]/15 to-[#1A85B8]/5' },
               ].map((dept, index) => (
                 <motion.div 
                   key={dept.role}
@@ -347,7 +346,7 @@ export default function AboutPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             >
-              <Card className="bg-gradient-primary text-primary-foreground border-none overflow-hidden relative">
+              <Card className="border-none overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #722F37 0%, #9B4450 40%, #006994 100%)' }}>
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.1),transparent)]" />
                 <CardContent className="p-12 md:p-20 text-center relative z-10">
                   <h3 className="font-heading text-3xl md:text-5xl font-normal mb-6">Join our growing community</h3>
@@ -370,6 +369,6 @@ export default function AboutPage() {
       </main>
 
       <Footer />
-    </div>
+    </PageTransition>
   )
 }

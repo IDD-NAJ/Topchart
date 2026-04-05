@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { motion } from "framer-motion"
 import { 
   LayoutDashboard, 
   Phone, 
@@ -17,14 +18,23 @@ import {
   HelpCircle,
   LogOut,
   MessageSquare,
-  ShieldAlert
+  ShieldAlert,
+  Store,
+  TrendingUp,
+  PhoneCall
 } from "lucide-react"
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/airtime", label: "Buy Airtime", icon: Phone },
   { href: "/dashboard/data", label: "Buy Data", icon: Wifi },
+  { href: "/dashboard/verification", label: "Number Verification", icon: PhoneCall },
   { href: "/dashboard/history", label: "Transaction History", icon: History },
+]
+
+const resellerItems = [
+  { href: "/dashboard/reseller", label: "Reseller Dashboard", icon: Store },
+  { href: "/dashboard/result-checkers", label: "Result Checkers", icon: CreditCard },
 ]
 
 const secondaryItems = [
@@ -39,7 +49,12 @@ export function DashboardSidebar() {
   const { user, logout } = useAuth()
 
   return (
-    <aside className="hidden lg:flex h-screen w-64 flex-col fixed left-0 top-0 border-r bg-background/50 backdrop-blur-xl z-40">
+    <motion.aside
+      initial={{ x: -20, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="hidden lg:flex h-screen w-64 flex-col fixed left-0 top-0 border-r border-[#006994]/15 bg-background/80 backdrop-blur-xl z-40"
+    >
       <div className="p-6">
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
             <Image 
@@ -68,11 +83,38 @@ export function DashboardSidebar() {
                   className={cn(
                     "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all group",
                     active
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      ? "bg-[#006994]/10 text-[#006994]"
+                      : "text-muted-foreground hover:text-[#006994] hover:bg-[#EFF6FA]"
                   )}
                 >
-                  <Icon className={cn("h-4 w-4", active ? "text-primary" : "group-hover:text-foreground")} />
+                  <Icon className={cn("h-4 w-4", active ? "text-[#006994]" : "group-hover:text-[#006994]")} />
+                  {item.label}
+                </Link>
+              )
+            })}
+          </nav>
+        </div>
+
+        <div>
+          <h3 className="px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-4 font-body">
+            Reseller
+          </h3>
+          <nav className="space-y-1">
+            {resellerItems.map((item) => {
+              const active = pathname === item.href
+              const Icon = item.icon
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all group",
+                    active
+                      ? "bg-[#722F37]/10 text-[#722F37]"
+                      : "text-muted-foreground hover:text-[#722F37] hover:bg-[#FDF2F3]"
+                  )}
+                >
+                  <Icon className={cn("h-4 w-4", active ? "text-[#722F37]" : "group-hover:text-[#722F37]")} />
                   {item.label}
                 </Link>
               )
@@ -95,11 +137,11 @@ export function DashboardSidebar() {
                   className={cn(
                     "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all group",
                     active
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      ? "bg-[#006994]/10 text-[#006994]"
+                      : "text-muted-foreground hover:text-[#006994] hover:bg-[#EFF6FA]"
                   )}
                 >
-                  <Icon className={cn("h-4 w-4", active ? "text-primary" : "group-hover:text-foreground")} />
+                  <Icon className={cn("h-4 w-4", active ? "text-[#006994]" : "group-hover:text-[#006994]")} />
                   {item.label}
                 </Link>
               )
@@ -108,9 +150,9 @@ export function DashboardSidebar() {
         </div>
       </div>
 
-      <div className="p-4 border-t bg-muted/20">
+      <div className="p-4 border-t border-[#006994]/10 bg-[#EFF6FA]/30">
         <div className="flex items-center gap-3 px-2 mb-4">
-          <div className="h-9 w-9 rounded-full bg-primary-accent/10 border border-primary-accent/20 flex items-center justify-center text-primary-accent font-bold text-xs uppercase">
+          <div className="h-9 w-9 rounded-full bg-[#006994]/10 border border-[#006994]/20 flex items-center justify-center text-[#006994] font-bold text-xs uppercase">
             {user?.firstName?.[0]}{user?.lastName?.[0]}
           </div>
           <div className="flex-1 min-w-0">
@@ -128,6 +170,6 @@ export function DashboardSidebar() {
           <span className="text-sm font-medium">Sign Out</span>
         </Button>
       </div>
-    </aside>
+    </motion.aside>
   )
 }

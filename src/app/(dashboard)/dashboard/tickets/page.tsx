@@ -237,7 +237,7 @@ export default function TicketsPage() {
         <CardContent>
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
+              <Loader2 className="w-8 h-8 animate-spin text-[#006994] mb-2" />
               <p className="text-sm text-muted-foreground">Loading tickets...</p>
             </div>
           ) : filteredTickets.length === 0 ? (
@@ -262,7 +262,7 @@ export default function TicketsPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-sm sm:text-base group-hover:text-primary transition-colors">
+                        <span className="font-semibold text-sm sm:text-base group-hover:text-[#006994] transition-colors">
                           {ticket.subject}
                         </span>
                         {getStatusBadge(ticket.status)}
@@ -282,7 +282,7 @@ export default function TicketsPage() {
                       </div>
                     </div>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-[#006994] transition-colors" />
                 </Link>
               ))}
             </div>

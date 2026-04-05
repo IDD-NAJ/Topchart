@@ -15,7 +15,7 @@
 # Redirect rules for Next.js SPA
 [[redirects]]
   from = "/*"
-  to = "/.netlify/functions/next"
+  to = "/.netlify/functions/___netlify-server-handler"
   status = 200
 
 # Headers for security and caching

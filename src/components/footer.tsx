@@ -1,5 +1,8 @@
+"use client"
 import Image from "next/image"
 import Link from "next/link"
+import { motion } from "framer-motion"
+import { ScrollReveal, StaggerReveal, StaggerRevealItem } from "@/components/animations"
 import { 
   Mail, 
   Phone, 
@@ -19,7 +22,7 @@ export function Footer() {
 
   const footerLinks = {
     platform: [
-      { href: "#features", label: "Features" },
+      { href: "/#features", label: "Features" },
       { href: "/dashboard", label: "Dashboard" },
       { href: "/dashboard/airtime", label: "Airtime" },
       { href: "/dashboard/data", label: "Data Bundles" },
@@ -42,9 +45,10 @@ export function Footer() {
   }
 
   return (
-    <footer className="relative border-t border-border/50 bg-background pt-24 pb-12 overflow-hidden">
-      {/* Background Decorative Element */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-px bg-gradient-to-r from-transparent via-primary-accent/30 to-transparent" />
+    <footer className="relative border-t border-[#006994]/20 bg-background pt-24 pb-12 overflow-hidden">
+      {/* Sea Blue gradient top accent */}
+      <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#722F37] via-[#006994] to-[#722F37]" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-px bg-gradient-to-r from-transparent via-[#006994]/20 to-transparent" />
       
       <div className="container mx-auto px-4 md:px-6 relative">
         <div className="grid gap-12 lg:grid-cols-12 mb-20">
@@ -60,7 +64,7 @@ export function Footer() {
                   />
                 </Link>
               <p className="text-muted-foreground leading-relaxed text-base max-w-sm mb-10 font-body">
-              The essential infrastructure for digital top-ups in Ghana. We enable lightning-fast transactions with bank-grade security and developer-friendly APIs.
+              The easiest way to buy airtime and data in Ghana. Fast, reliable, and always available.
             </p>
             <div className="flex items-center gap-5">
               {[
@@ -72,7 +76,7 @@ export function Footer() {
                 <Link 
                   key={social.label}
                   href={social.href} 
-                  className="h-10 w-10 flex items-center justify-center rounded-full border border-border/50 text-muted-foreground hover:text-primary-accent hover:border-primary-accent/30 hover:bg-primary-accent/5 transition-all duration-300"
+                  className="h-10 w-10 flex items-center justify-center rounded-full border border-[#006994]/20 text-muted-foreground hover:text-[#006994] hover:border-[#006994]/40 hover:bg-[#EFF6FA] transition-all duration-300"
                   style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
                 >
                   <span className="sr-only">{social.label}</span>
@@ -91,7 +95,7 @@ export function Footer() {
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-sm text-muted-foreground hover:text-primary-accent transition-all duration-300 flex items-center group"
+                      className="text-sm text-muted-foreground hover:text-[#006994] transition-all duration-300 flex items-center group"
                       style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
                     >
                       {link.label}
@@ -108,7 +112,7 @@ export function Footer() {
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-sm text-muted-foreground hover:text-primary-accent transition-all duration-300 flex items-center group"
+                      className="text-sm text-muted-foreground hover:text-[#006994] transition-all duration-300 flex items-center group"
                       style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
                     >
                       {link.label}
@@ -125,7 +129,7 @@ export function Footer() {
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-sm text-muted-foreground hover:text-primary-accent transition-all duration-300 flex items-center group"
+                      className="text-sm text-muted-foreground hover:text-[#006994] transition-all duration-300 flex items-center group"
                       style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
                     >
                       {link.label}
@@ -139,15 +143,15 @@ export function Footer() {
               <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-foreground mb-8">Contact</h3>
               <ul className="space-y-5">
                 <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                  <Mail className="h-4 w-4 mt-0.5 text-primary/70" />
-                  <span className="hover:text-primary transition-colors cursor-pointer">hello@topchart.gh</span>
+                  <Mail className="h-4 w-4 mt-0.5 text-[#006994]/70" />
+                  <span className="hover:text-[#006994] transition-colors cursor-pointer">hello@topchart.gh</span>
                 </li>
                 <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                  <Phone className="h-4 w-4 mt-0.5 text-primary/70" />
-                  <span className="hover:text-primary transition-colors cursor-pointer">+233 20 000 0000</span>
+                  <Phone className="h-4 w-4 mt-0.5 text-[#006994]/70" />
+                  <span className="hover:text-[#006994] transition-colors cursor-pointer">+233 20 000 0000</span>
                 </li>
                 <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4 mt-0.5 text-primary/70" />
+                  <MapPin className="h-4 w-4 mt-0.5 text-[#006994]/70" />
                   <span>East Legon, Accra</span>
                 </li>
               </ul>
@@ -156,7 +160,7 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar: Trust & Legal */}
-        <div className="pt-10 border-t border-border/50 flex flex-col lg:flex-row items-center justify-between gap-10">
+        <div className="pt-10 border-t border-[#006994]/15 flex flex-col lg:flex-row items-center justify-between gap-10">
           <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10">
             <p className="text-sm text-muted-foreground font-medium">
               &copy; {currentYear} Topchart Infrastructure Limited.
@@ -166,7 +170,7 @@ export function Footer() {
                 <Link 
                   key={link.label} 
                   href={link.href} 
-                  className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 hover:text-primary transition-colors"
+                  className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 hover:text-[#006994] transition-colors"
                 >
                   {link.label}
                 </Link>

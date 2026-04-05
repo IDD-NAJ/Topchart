@@ -51,13 +51,16 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({ success: true, user: result.user }, { status: 200 });
 
-    response.cookies.set("session_token", result.token, {
+    const cookieOpts = {
       httpOnly: true,
       secure: shouldUseSecureCookies(),
-      sameSite: "lax",
+      sameSite: "lax" as const,
       expires: new Date(result.expiresAt),
       path: "/",
-    });
+    };
+
+    response.cookies.set("session_token", result.token, cookieOpts);
+    response.cookies.set("admin_role", "ADMIN", cookieOpts);
 
     return response;
   } catch (error) {

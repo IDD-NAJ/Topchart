@@ -9,12 +9,16 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   register as serverRegister,
   type User as ServerUser,
 } from "@/lib/actions/auth";
 import { isAdmin as checkIsAdmin } from "@/lib/roles";
+import { InactivityWarningModal } from "@/components/inactivity-warning-modal";
+
+const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const WARNING_BEFORE_LOGOUT = 30 * 1000; // 30 seconds warning
 
 export interface User {
   id: string;
@@ -73,8 +77,15 @@ function mapServerUser(serverUser: ServerUser): User {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showWarning, setShowWarning] = useState(false);
+  const [secondsRemaining, setSecondsRemaining] = useState(30);
   const router = useRouter();
+  const pathname = usePathname();
   const logoutInFlightRef = useRef(false);
+  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const warningTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastActivityRef = useRef<number>(Date.now());
 
   const refreshUser = useCallback(async () => {
     try {
@@ -219,6 +230,93 @@ const register = async (
   //   return; // Early return to prevent auto-logout
   // }, [user]);
 
+  // Inactivity tracking - Auto logout after 5 minutes
+  const clearAllTimers = useCallback(() => {
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    }
+    if (warningTimerRef.current) {
+      clearTimeout(warningTimerRef.current);
+      warningTimerRef.current = null;
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    clearAllTimers();
+    setShowWarning(false);
+    await logout();
+    router.push('/login?reason=inactive');
+  }, [clearAllTimers, logout, router]);
+
+  const resetInactivityTimer = useCallback(() => {
+    if (!user) return;
+    
+    lastActivityRef.current = Date.now();
+    clearAllTimers();
+    setShowWarning(false);
+
+    // Set warning timer (show warning 30 seconds before logout)
+    warningTimerRef.current = setTimeout(() => {
+      setShowWarning(true);
+      setSecondsRemaining(30);
+      
+      // Start countdown
+      countdownIntervalRef.current = setInterval(() => {
+        setSecondsRemaining((prev) => {
+          if (prev <= 1) {
+            handleLogout();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }, INACTIVITY_TIMEOUT - WARNING_BEFORE_LOGOUT);
+
+    // Set logout timer
+    inactivityTimerRef.current = setTimeout(() => {
+      handleLogout();
+    }, INACTIVITY_TIMEOUT);
+  }, [user, clearAllTimers, handleLogout]);
+
+  // Setup activity listeners
+  useEffect(() => {
+    if (!user) {
+      clearAllTimers();
+      setShowWarning(false);
+      return;
+    }
+
+    const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click', 'mousemove'];
+    
+    const handleActivity = () => {
+      resetInactivityTimer();
+    };
+
+    // Add event listeners
+    activityEvents.forEach(event => {
+      window.addEventListener(event, handleActivity, { passive: true });
+    });
+
+    // Start initial timer
+    resetInactivityTimer();
+
+    return () => {
+      activityEvents.forEach(event => {
+        window.removeEventListener(event, handleActivity);
+      });
+      clearAllTimers();
+    };
+  }, [user, resetInactivityTimer, clearAllTimers]);
+
+  // Don't track inactivity on auth pages
+  const isAuthPage = pathname?.startsWith('/login') || pathname?.startsWith('/register');
+  const shouldShowWarning = showWarning && user && !isAuthPage;
+
   const updateBalance = (newBalance: number) => {
     if (!user) return;
     setUser({ ...user, walletBalance: newBalance });
@@ -242,6 +340,12 @@ const register = async (
       }}
     >
       {children}
+      <InactivityWarningModal 
+        isOpen={shouldShowWarning} 
+        secondsRemaining={secondsRemaining}
+        onStayActive={resetInactivityTimer}
+        onLogout={handleLogout}
+      />
     </AuthContext.Provider>
   );
 }

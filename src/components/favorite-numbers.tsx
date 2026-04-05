@@ -56,7 +56,7 @@ export function FavoriteNumbers({ userId, type, onSelect, className }: FavoriteN
   if (loading) {
     return (
       <div className="flex items-center justify-center p-4">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#006994]"></div>
       </div>
     )
   }
@@ -88,10 +88,10 @@ export function FavoriteNumbers({ userId, type, onSelect, className }: FavoriteN
           <div 
             key={fav.id}
             onClick={() => onSelect(fav.phone_number)}
-            className="group flex items-center justify-between p-3 rounded-lg border bg-card hover:border-primary hover:bg-primary/5 transition-all cursor-pointer"
+            className="group flex items-center justify-between p-3 rounded-lg border bg-card hover:border-[#006994] hover:bg-[#006994]/5 transition-all cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <div className="w-10 h-10 rounded-full bg-[#006994]/10 flex items-center justify-center text-[#006994]">
                 <User className="w-5 h-5" />
               </div>
               <div>

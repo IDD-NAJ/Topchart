@@ -47,12 +47,12 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md space-y-6">
         <div className="flex flex-col items-center space-y-2 text-center">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary text-primary-foreground">
+            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-[#006994] text-white">
               <Zap className="w-6 h-6" />
             </div>
           </Link>
           <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" />
+            <Shield className="h-5 w-5 text-[#006994]" />
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Admin Login</h1>
           </div>
           <p className="text-muted-foreground">Sign in with an admin account</p>

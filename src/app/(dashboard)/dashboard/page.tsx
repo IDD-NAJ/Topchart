@@ -16,6 +16,8 @@ import { motion } from "framer-motion"
 import {
   Phone,
   Wifi,
+  Shield,
+  PhoneCall,
   ArrowDownRight,
   Clock,
   Loader2,
@@ -36,6 +38,7 @@ import {
   RefreshCw,
   AlertCircle,
   Inbox,
+  GraduationCap,
 } from "lucide-react"
 import { Suspense } from "react"
 import Loading from "./loading"
@@ -61,16 +64,32 @@ const services = [
     label: "Buy Airtime",
     description: "Recharge any network instantly",
     icon: Phone,
-    color: "text-blue-600 bg-blue-50 dark:bg-blue-900/20",
-    hoverColor: "group-hover:border-blue-200 dark:group-hover:border-blue-800"
+    color: "text-[#006994] bg-[#EFF6FA]",
+    hoverColor: "group-hover:border-[#006994]/30"
   },
   {
     href: "/dashboard/data",
     label: "Buy Data",
     description: "Affordable bundles for all networks",
     icon: Wifi,
-    color: "text-purple-600 bg-purple-50 dark:bg-purple-900/20",
-    hoverColor: "group-hover:border-purple-200 dark:group-hover:border-purple-800"
+    color: "text-[#1A85B8] bg-[#EFF6FA]",
+    hoverColor: "group-hover:border-[#1A85B8]/30"
+  },
+  {
+    href: "/dashboard/verification",
+    label: "Number Verification",
+    description: "Get US numbers for SMS verification",
+    icon: PhoneCall,
+    color: "text-[#722F37] bg-[#FDF2F3]",
+    hoverColor: "group-hover:border-[#722F37]/30"
+  },
+  {
+    href: "/dashboard/result-checkers",
+    label: "Result Checker",
+    description: "Check WASSCE, BECE & other exam results",
+    icon: GraduationCap,
+    color: "text-[#6B7280] bg-[#F3F4F6]",
+    hoverColor: "group-hover:border-[#6B7280]/30"
   },
 ]
 
@@ -188,6 +207,11 @@ export default function DashboardPage() {
       }
       
       if (!refRes.ok) {
+        if (refRes.status === 401) {
+          // Redirect to login if unauthorized
+          window.location.href = "/login?redirect=/dashboard"
+          return
+        }
         setReferralError(`Referral API error: ${refRes.status}`)
       } else {
         const refJson = await refRes.json()
@@ -266,7 +290,7 @@ export default function DashboardPage() {
               </p>
             )}
             <p className="text-muted-foreground flex items-center gap-2">
-              <Target className="w-4 h-4 text-primary" />
+              <Target className="w-4 h-4 text-[#006994]" />
               Manage your services and track infrastructure spending.
             </p>
           </div>
@@ -337,7 +361,7 @@ export default function DashboardPage() {
                   <CardContent className="p-4 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Deposits</span>
-                      <TrendingUp className="w-4 h-4 text-green-500" />
+                      <TrendingUp className="w-4 h-4 text-[#006994]" />
                     </div>
                     <p className="text-xl font-bold">{formatCurrency(totalDeposits)}</p>
                     <p className="text-[10px] text-muted-foreground">Lifetime successful funding</p>
@@ -354,7 +378,7 @@ export default function DashboardPage() {
                   <CardContent className="p-4 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Usage</span>
-                      <PiggyBank className="w-4 h-4 text-blue-500" />
+                      <PiggyBank className="w-4 h-4 text-[#1A85B8]" />
                     </div>
                     <p className="text-xl font-bold">{formatCurrency(totalSpend)}</p>
                     <p className="text-[10px] text-muted-foreground">Airtime & Data consumption</p>
@@ -371,7 +395,7 @@ export default function DashboardPage() {
                   <CardContent className="p-4 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Stability</span>
-                      <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                      <ShieldCheck className="w-4 h-4 text-[#722F37]" />
                     </div>
                     <p className="text-xl font-bold">{successfulCount}/{totalCount}</p>
                     <p className="text-[10px] text-muted-foreground">Success rate of transactions</p>
@@ -419,10 +443,10 @@ export default function DashboardPage() {
                 ))}
               </CardContent>
               <div className="px-6 pb-6 pt-2">
-                <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
+                <div className="p-3 rounded-lg bg-[#006994]/5 border border-[#006994]/10">
                   <div className="flex items-center gap-2 mb-2">
-                     <Zap className="w-3 h-3 text-primary" />
-                     <span className="text-[10px] font-bold uppercase text-primary">Pro Tip</span>
+                     <Zap className="w-3 h-3 text-[#006994]" />
+                     <span className="text-[10px] font-bold uppercase text-[#006994]">Pro Tip</span>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     Bulk purchases are processed with priority. Fund your wallet for instant 24/7 access.
@@ -440,7 +464,7 @@ export default function DashboardPage() {
           <div className="space-y-8">
             <section className="space-y-4">
               <div className="flex items-center gap-2 px-1">
-                <Activity className="w-5 h-5 text-primary" />
+                <Activity className="w-5 h-5 text-[#006994]" />
                 <h2 className="text-lg font-bold">System Activity</h2>
               </div>
               
@@ -455,8 +479,8 @@ export default function DashboardPage() {
                 <CardContent className="p-0">
                   {processingPurchases.length === 0 ? (
                     <div className="p-8 text-center space-y-3">
-                      <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center mx-auto">
-                        <Clock className="w-6 h-6 text-green-500" />
+                      <div className="w-12 h-12 rounded-full bg-[#006994]/10 flex items-center justify-center mx-auto">
+                        <Clock className="w-6 h-6 text-[#006994]" />
                       </div>
                       <p className="text-sm font-medium">No Active Purchases</p>
                       <p className="text-xs text-muted-foreground">All transactions completed. Ready for your next purchase.</p>
@@ -505,7 +529,7 @@ export default function DashboardPage() {
 
             <section className="space-y-4">
               <div className="flex items-center gap-2 px-1">
-                <Target className="w-5 h-5 text-primary" />
+                <Target className="w-5 h-5 text-[#006994]" />
                 <h2 className="text-lg font-bold">Usage Metrics</h2>
               </div>
               <Card>
@@ -537,14 +561,14 @@ export default function DashboardPage() {
           <div className="space-y-8">
             <section className="space-y-4">
               <div className="flex items-center gap-2 px-1">
-                <History className="w-5 h-5 text-primary" />
+                <History className="w-5 h-5 text-[#006994]" />
                 <h2 className="text-lg font-bold">Activity Log</h2>
               </div>
               <Card className="overflow-hidden">
                 <CardContent className="p-0">
                   {loading ? (
                     <div className="p-12 flex flex-col items-center justify-center space-y-4">
-                      <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                      <Loader2 className="w-8 h-8 text-[#006994] animate-spin" />
                       <p className="text-sm text-muted-foreground animate-pulse">Fetching records...</p>
                     </div>
                   ) : recentTransactions.length === 0 ? (
@@ -578,7 +602,7 @@ export default function DashboardPage() {
                           <div className="flex items-center gap-3">
                             <div className={cn(
                               "w-10 h-10 rounded-full flex items-center justify-center",
-                              tx.type === "deposit" ? "bg-green-500/10 text-green-500" : "bg-primary/10 text-primary"
+                              tx.type === "deposit" ? "bg-[#006994]/10 text-[#006994]" : "bg-[#1A85B8]/10 text-[#1A85B8]"
                             )}>
                               {tx.type === "deposit" ? <ArrowDownRight className="w-5 h-5" /> : 
                                tx.type === "airtime" ? <Phone className="w-4 h-4" /> : <Wifi className="w-4 h-4" />}
@@ -592,12 +616,12 @@ export default function DashboardPage() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className={cn("text-sm font-bold", tx.type === "deposit" ? "text-green-500" : "text-foreground")}>
+                            <p className={cn("text-sm font-bold", tx.type === "deposit" ? "text-[#006994]" : "text-foreground")}>
                               {tx.type === "deposit" ? "+" : "-"}{formatCurrency(tx.amount)}
                             </p>
                             <Badge variant={tx.status === "success" ? "outline" : "secondary"} className={cn(
                               "text-[9px] uppercase font-bold h-4 px-1.5",
-                              tx.status === "success" ? "text-green-600 bg-green-50/50 border-green-200" : "text-amber-600 bg-amber-50/50"
+                              tx.status === "success" ? "text-[#006994] bg-[#EFF6FA]/80 border-[#006994]/20" : "text-amber-600 bg-amber-50/50"
                             )}>
                               {tx.status}
                             </Badge>
@@ -612,7 +636,7 @@ export default function DashboardPage() {
 
             <section className="space-y-4">
               <div className="flex items-center gap-2 px-1">
-                <Users className="w-5 h-5 text-primary" />
+                <Users className="w-5 h-5 text-[#006994]" />
                 <h2 className="text-lg font-bold">Network Recipients</h2>
               </div>
               <Card>
@@ -632,7 +656,7 @@ export default function DashboardPage() {
                       {beneficiaries.slice(0, 4).map((b) => (
                         <div key={b.phone_number} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-muted/5">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-primary/5 text-primary flex items-center justify-center text-xs font-bold">
+                            <div className="w-8 h-8 rounded-full bg-[#006994]/10 text-[#006994] flex items-center justify-center text-xs font-bold">
                                {b.phone_number.slice(-2)}
                             </div>
                             <div>
@@ -641,12 +665,12 @@ export default function DashboardPage() {
                             </div>
                           </div>
                           <div className="flex gap-1.5">
-                            <Button asChild size="icon" variant="ghost" className="h-7 w-7 rounded-full text-blue-500 hover:text-blue-600 hover:bg-blue-50">
+                            <Button asChild size="icon" variant="ghost" className="h-7 w-7 rounded-full text-[#006994] hover:text-[#004D6E] hover:bg-[#EFF6FA]">
                               <Link href={`/dashboard/airtime?phone=${encodeURIComponent(b.phone_number)}`}>
                                 <Phone className="w-3 h-3" />
                               </Link>
                             </Button>
-                            <Button asChild size="icon" variant="ghost" className="h-7 w-7 rounded-full text-purple-500 hover:text-purple-600 hover:bg-purple-50">
+                            <Button asChild size="icon" variant="ghost" className="h-7 w-7 rounded-full text-[#1A85B8] hover:text-[#006994] hover:bg-[#EFF6FA]">
                               <Link href={`/dashboard/data?phone=${encodeURIComponent(b.phone_number)}`}>
                                 <Wifi className="w-3 h-3" />
                               </Link>
@@ -664,19 +688,19 @@ export default function DashboardPage() {
 
         {/* Affiliate & Security - Footer Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           <Card className="bg-primary/5 border-primary/10 overflow-hidden relative">
+           <Card className="bg-[#006994]/5 border-[#006994]/10 overflow-hidden relative">
              <div className="absolute top-0 right-0 p-8 opacity-5 -mr-4 -mt-4 rotate-12">
-                <Gift className="w-32 h-32 text-primary" />
+                <Gift className="w-32 h-32 text-[#006994]" />
              </div>
              <CardHeader>
                <CardTitle className="text-base flex items-center gap-2">
-                 <Gift className="w-4 h-4 text-primary" />
+                 <Gift className="w-4 h-4 text-[#006994]" />
                  Growth Incentives
                </CardTitle>
                <CardDescription>Scale your earnings by expanding our infrastructure network.</CardDescription>
              </CardHeader>
              <CardContent className="space-y-4">
-               <div className="flex items-center justify-between p-3 rounded-lg bg-background border border-primary/20">
+               <div className="flex items-center justify-between p-3 rounded-lg bg-background border border-[#006994]/20">
                  <div className="flex items-center gap-2">
                     <LinkIcon className="w-3.5 h-3.5 text-muted-foreground" />
                     <span className="text-xs font-mono truncate max-w-[150px]">{referralLink}</span>
@@ -698,11 +722,11 @@ export default function DashboardPage() {
                <div className="grid grid-cols-2 gap-3">
                  <div className="p-3 rounded-lg bg-background border border-border">
                    <p className="text-[10px] uppercase text-muted-foreground font-bold">Commission</p>
-                   <p className="text-lg font-bold text-green-600">{formatCurrency(referralStats?.totalEarnings || 0)}</p>
+                   <p className="text-lg font-bold text-[#006994]">{formatCurrency(referralStats?.totalEarnings || 0)}</p>
                  </div>
                  <div className="p-3 rounded-lg bg-background border border-border">
                    <p className="text-[10px] uppercase text-muted-foreground font-bold">Qualified</p>
-                   <p className="text-lg font-bold text-primary">{referralStats?.qualifiedReferrals || 0}</p>
+                   <p className="text-lg font-bold text-[#722F37]">{referralStats?.qualifiedReferrals || 0}</p>
                  </div>
                </div>
              </CardContent>
@@ -711,7 +735,7 @@ export default function DashboardPage() {
            <Card>
              <CardHeader>
                <CardTitle className="text-base flex items-center gap-2">
-                 <ShieldCheck className="w-4 h-4 text-primary" />
+                 <ShieldCheck className="w-4 h-4 text-[#722F37]" />
                  System Security
                </CardTitle>
                <CardDescription>Audit-compliant protocols protect your financial data.</CardDescription>

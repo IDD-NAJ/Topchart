@@ -1,12 +1,9 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
 import { DM_Serif_Display, Inter } from 'next/font/google'
-import Script from 'next/script'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/lib/auth-context'
 import './globals.css'
-import ErrorReporter from "@/components/ErrorReporter";
-import { TawkChat } from "@/components/tawk-chat";
 
 const dmSerifDisplay = DM_Serif_Display({
   subsets: ["latin"],
@@ -31,8 +28,8 @@ export const metadata: Metadata = {
   applicationName: 'Topchart Ghana',
   keywords: ['airtime', 'data bundles', 'Ghana', 'MTN', 'Telecel', 'AirtelTigo', 'mobile top up', 'recharge', 'buy airtime online', 'buy data Ghana'],
   authors: [{ name: 'Topchart Ghana', url: 'https://topchart.gh' }],
-  creator: 'Topchart Infrastructure Limited',
-  publisher: 'Topchart Infrastructure Limited',
+  creator: 'Topchart Ghana',
+  publisher: 'Topchart Ghana',
   robots: {
     index: true,
     follow: true,
@@ -71,6 +68,36 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://topchart.gh',
   },
+  other: {
+    'script:ld+json': JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'Topchart Ghana',
+      alternateName: 'Topchart',
+      url: 'https://topchart.gh',
+      logo: 'https://topchart.gh/logo.svg',
+      description: 'Ghana\'s leading platform for instant airtime and data top-ups across MTN, Telecel, and AirtelTigo networks.',
+      contactPoint: [
+        {
+          '@type': 'ContactPoint',
+          telephone: '+233-20-000-0000',
+          contactType: 'customer service',
+          areaServed: 'GH',
+          availableLanguage: 'English',
+        },
+      ],
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Accra',
+        addressCountry: 'GH',
+        streetAddress: 'East Legon',
+      },
+      sameAs: [
+        'https://twitter.com/topchartgh',
+        'https://linkedin.com/company/topchartgh',
+      ],
+    }),
+  },
   icons: {
     icon: [
       {
@@ -91,71 +118,18 @@ export const viewport: Viewport = {
   themeColor: '#146EF5',
 }
 
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: 'Topchart Ghana',
-  alternateName: 'Topchart',
-  url: 'https://topchart.gh',
-  logo: 'https://topchart.gh/logo.svg',
-  description: 'Ghana\'s leading platform for instant airtime and data top-ups across MTN, Telecel, and AirtelTigo networks.',
-  contactPoint: [
-    {
-      '@type': 'ContactPoint',
-      telephone: '+233-20-000-0000',
-      contactType: 'customer service',
-      areaServed: 'GH',
-      availableLanguage: 'English',
-    },
-  ],
-  address: {
-    '@type': 'PostalAddress',
-    addressLocality: 'Accra',
-    addressCountry: 'GH',
-    streetAddress: 'East Legon',
-  },
-  sameAs: [
-    'https://twitter.com/topchartgh',
-    'https://linkedin.com/company/topchartgh',
-  ],
-}
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      </head>
+    <html lang="en" suppressHydrationWarning>
       <body className={`${dmSerifDisplay.variable} ${inter.variable} font-sans antialiased`}>
-        <Script
-          id="orchids-browser-logs"
-          src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/scripts/orchids-browser-logs.js"
-          strategy="afterInteractive"
-          data-orchids-project-id="f24335f4-a10f-4ea7-8625-1431e2922e91"
-        />
-        <ErrorReporter />
-        <Script
-          src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/scripts//route-messenger.js"
-          strategy="afterInteractive"
-          data-target-origin="*"
-          data-message-type="ROUTE_CHANGE"
-          data-include-search-params="true"
-          data-only-in-iframe="true"
-          data-debug="true"
-          data-custom-data='{"appName": "YourApp", "version": "1.0.0", "greeting": "hi"}'
-        />
         <AuthProvider>
           {children}
         </AuthProvider>
         <Analytics />
-        <TawkChat />
       </body>
     </html>
   )

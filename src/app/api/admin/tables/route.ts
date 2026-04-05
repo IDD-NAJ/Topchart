@@ -134,7 +134,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Invalid data" }, { status: 400 })
     }
 
-    const keys = Object.keys(data).filter(k => k !== "id")
+    const keys = Object.keys(data).filter(k => {
+      const val = data[k]
+      // For id, only include if it has a valid non-null value (let DB auto-generate otherwise)
+      if (k === "id") return val && val !== null && val !== undefined && val !== ""
+      // For other keys, filter out null/undefined
+      return val !== null && val !== undefined
+    })
+    
+    if (keys.length === 0) {
+      return NextResponse.json({ success: false, error: "No valid data provided" }, { status: 400 })
+    }
+    
     const values = keys.map(k => data[k])
     
     const columns = keys.map(k => `"${k.replace(/[^a-zA-Z0-9_]/g, "")}"`).join(", ")
@@ -181,7 +192,7 @@ export async function PUT(req: NextRequest) {
     if (ids && Array.isArray(ids) && ids.length > 0) {
       // Use ANY with array for batch update
       const batchValues = [...values, ids]
-      const query = `UPDATE "${table}" SET ${setClause} WHERE id = ANY($${values.length + 1}::uuid[]) RETURNING *`
+      const query = `UPDATE "${table}" SET ${setClause} WHERE id::text = ANY($${values.length + 1}::text[]) RETURNING *`
       const result = await sqlUnsafe(query, batchValues)
       return NextResponse.json({ success: true, data: result, updated: result.length })
     }
@@ -224,7 +235,7 @@ export async function DELETE(req: NextRequest) {
       if (ids.length === 0) {
         return NextResponse.json({ success: false, error: "IDs required" }, { status: 400 })
       }
-      const query = `DELETE FROM "${table}" WHERE id = ANY($1::uuid[]) RETURNING id`
+      const query = `DELETE FROM "${table}" WHERE id::text = ANY($1::text[]) RETURNING id`
       const result = await sqlUnsafe(query, [ids])
       return NextResponse.json({ success: true, deleted: result.length, ids: result.map((r: any) => r.id) })
     }
@@ -244,6 +255,27 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true, deleted: id })
   } catch (error) {
     console.error("Table delete error:", error)
-    return NextResponse.json({ success: false, error: "Database error" }, { status: 500 })
+    
+    // Check for foreign key constraint violations
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorCode = (error as any)?.code
+    
+    console.error("Error details:", { message: errorMessage, code: errorCode })
+    
+    const isForeignKeyError = 
+      errorMessage.includes("foreign key constraint") ||
+      errorMessage.includes("violates foreign key") ||
+      errorMessage.includes("is still referenced from table") ||
+      errorMessage.includes("update or delete on table") ||
+      errorCode === "23503" // PostgreSQL foreign_key_violation error code
+    
+    if (isForeignKeyError) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "Cannot delete: This record is referenced by other records (e.g., data bundles exist for this category). Please remove or reassign dependent records first." 
+      }, { status: 409 })
+    }
+    
+    return NextResponse.json({ success: false, error: `Database error: ${errorMessage.slice(0, 100)}` }, { status: 500 })
   }
 }

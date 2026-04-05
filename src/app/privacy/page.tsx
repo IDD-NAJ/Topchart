@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-background selection:bg-primary-accent/20 selection:text-foreground">
+    <div className="min-h-screen flex flex-col bg-background selection:bg-[#006994]/15 selection:text-foreground">
       <Header />
       
       <main className="flex-1 pt-32 pb-12 px-4">
@@ -30,10 +30,10 @@ export default function PrivacyPage() {
           </div>
 
         {/* Introduction */}
-        <Card className="animate-fade-in border-border/50 hover:border-primary-accent/20 transition-all duration-300" style={{ transitionTimingFunction: 'var(--ease-out-expo)', animationDelay: '200ms' }}>
+        <Card className="animate-fade-in border-border/50 hover:border-[#006994]/20 transition-all duration-300" style={{ transitionTimingFunction: 'var(--ease-out-expo)', animationDelay: '200ms' }}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-heading text-xl font-normal">
-              <Shield className="w-5 h-5 text-primary-accent" />
+              <Shield className="w-5 h-5 text-[#006994]" />
               Your Privacy Matters
             </CardTitle>
             <CardDescription className="font-body">
@@ -51,10 +51,10 @@ export default function PrivacyPage() {
         </Card>
 
         {/* Information We Collect */}
-        <Card className="border-border/50 hover:border-primary-accent/20 transition-all duration-300">
+        <Card className="border-border/50 hover:border-[#006994]/20 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-heading text-xl font-normal">
-              <Database className="w-5 h-5 text-primary-accent" />
+              <Database className="w-5 h-5 text-[#006994]" />
               Information We Collect
             </CardTitle>
           </CardHeader>

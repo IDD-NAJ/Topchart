@@ -58,14 +58,14 @@ export default function BlogPage() {
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col bg-background selection:bg-primary-accent/20 selection:text-foreground">
+    <div className="min-h-screen flex flex-col bg-background selection:bg-[#006994]/15 selection:text-foreground">
       <Header />
       <main className="flex-1 pt-32 pb-20">
         {/* Hero */}
         <div className="relative bg-gradient-hero border-b border-border/40 pb-16 mb-16">
-          <div className="absolute inset-0 bg-[radial-gradient(45%_60%_at_50%_0%,rgba(var(--primary-rgb),0.05)_0%,transparent_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(45%_60%_at_50%_0%,rgba(0,105,148,0.05)_0%,transparent_100%)]" />
           <div className="container mx-auto px-4 relative text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-accent/10 border border-primary-accent/20 text-primary-accent text-xs font-bold uppercase tracking-widest mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#006994]/10 border border-[#006994]/25 text-[#006994] text-xs font-bold uppercase tracking-widest mb-6">
               <Newspaper className="h-3.5 w-3.5" />
               Topchart Blog
             </div>
@@ -88,7 +88,7 @@ export default function BlogPage() {
           ) : (
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {posts.map((post) => (
-                <Card key={post.id} className="group border-border/50 hover:border-primary-accent/30 transition-all duration-300 overflow-hidden" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
+                <Card key={post.id} className="group border-border/50 hover:border-[#006994]/30 hover:shadow-lg hover:shadow-[#006994]/8 transition-all duration-300 overflow-hidden" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
                   <CardContent className="p-0">
                     {/* Colorful thumbnail */}
                     <div className={`aspect-video bg-gradient-to-br ${post.gradient} flex items-center justify-center relative overflow-hidden`}>
@@ -103,7 +103,7 @@ export default function BlogPage() {
                           {post.category_name ?? 'General'}
                         </span>
                       </div>
-                      <h3 className="font-heading text-xl font-normal mb-3 group-hover:text-primary-accent transition-colors duration-300 leading-snug">{post.title}</h3>
+                      <h3 className="font-heading text-xl font-normal mb-3 group-hover:text-[#006994] transition-colors duration-300 leading-snug">{post.title}</h3>
                       <p className="text-muted-foreground text-sm mb-6 leading-relaxed font-body">{post.excerpt}</p>
                       <div className="flex items-center justify-between mt-auto pt-4 border-t border-border/50">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium font-body">
@@ -111,7 +111,7 @@ export default function BlogPage() {
                           <span>{formatDate(post.published_at)}</span>
                         </div>
                         <Link href={`/blog/${post.slug}`}>
-                          <Button variant="ghost" size="sm" className="group/btn hover:text-primary-accent transition-colors duration-300 text-xs h-8">
+                          <Button variant="ghost" size="sm" className="group/btn hover:text-[#006994] transition-colors duration-300 text-xs h-8">
                             Read More
                             <ArrowRight className="ml-1.5 h-3.5 w-3.5 group-hover/btn:translate-x-1 transition-transform duration-300" />
                           </Button>

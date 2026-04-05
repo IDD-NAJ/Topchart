@@ -17,6 +17,7 @@ export async function POST() {
     );
 
     response.cookies.delete("session_token");
+    response.cookies.delete("admin_role");
     return response;
   } catch (error) {
     console.error("Logout API error:", error);

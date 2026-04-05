@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-background selection:bg-primary-accent/20 selection:text-foreground">
+    <div className="min-h-screen flex flex-col bg-background selection:bg-[#006994]/15 selection:text-foreground">
       <Header />
       
       <main className="flex-1 pt-32 pb-12 px-4">
@@ -30,10 +30,10 @@ export default function TermsPage() {
           </div>
 
         {/* Introduction */}
-        <Card className="animate-fade-in border-border/50 hover:border-primary-accent/20 transition-all duration-300" style={{ transitionTimingFunction: 'var(--ease-out-expo)', animationDelay: '200ms' }}>
+        <Card className="animate-fade-in border-border/50 hover:border-[#006994]/20 transition-all duration-300" style={{ transitionTimingFunction: 'var(--ease-out-expo)', animationDelay: '200ms' }}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-heading text-xl font-normal">
-              <Shield className="w-5 h-5 text-primary-accent" />
+              <Shield className="w-5 h-5 text-[#006994]" />
               Welcome to Topchart
             </CardTitle>
             <CardDescription className="font-body">
@@ -52,10 +52,10 @@ export default function TermsPage() {
 
         {/* Key Terms */}
         <div className="grid gap-6 md:grid-cols-2 animate-fade-in" style={{ animationDelay: '300ms' }}>
-          <Card className="animate-fade-in border-border/50 hover:border-primary-accent/20 transition-all duration-300" style={{ animationDelay: '400ms', transitionTimingFunction: 'var(--ease-out-expo)' }}>
+          <Card className="animate-fade-in border-border/50 hover:border-[#006994]/20 transition-all duration-300" style={{ animationDelay: '400ms', transitionTimingFunction: 'var(--ease-out-expo)' }}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-heading text-lg font-normal">
-                <Users className="w-5 h-5 text-primary-accent" />
+                <Users className="w-5 h-5 text-[#006994]" />
                 User Accounts
               </CardTitle>
             </CardHeader>

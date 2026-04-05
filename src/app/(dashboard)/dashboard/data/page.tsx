@@ -158,7 +158,7 @@ export default function DataPage() {
       case "failed":
         return <AlertCircle className="w-8 h-8 text-red-500" />
       default:
-        return <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        return <Loader2 className="w-8 h-8 animate-spin text-[#006994]" />
     }
   }
 
@@ -168,7 +168,7 @@ export default function DataPage() {
       {/* Infrastructure Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <Link href="/dashboard" className="inline-flex items-center text-xs font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest mb-2 group">
+          <Link href="/dashboard" className="inline-flex items-center text-xs font-bold text-muted-foreground hover:text-[#006994] transition-colors uppercase tracking-widest mb-2 group">
             <ArrowLeft className="w-3 h-3 mr-1.5 group-hover:-translate-x-1 transition-transform" />
             Back to Infrastructure
           </Link>
@@ -176,9 +176,9 @@ export default function DataPage() {
           <p className="text-muted-foreground">High-speed data synchronization across all regional nodes.</p>
         </div>
         <div className="flex items-center gap-3">
-           <div className="px-4 py-2 rounded-lg bg-primary/5 border border-primary/10 flex items-center gap-2">
+           <div className="px-4 py-2 rounded-lg bg-[#006994]/5 border border-[#006994]/10 flex items-center gap-2">
              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-             <span className="text-xs font-bold uppercase tracking-wider text-primary">System Online</span>
+             <span className="text-xs font-bold uppercase tracking-wider text-[#006994]">System Online</span>
            </div>
         </div>
       </div>
@@ -186,8 +186,8 @@ export default function DataPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {step === "confirm" ? (
           <div className="lg:col-span-12 animate-in slide-in-from-bottom-4 duration-500">
-            <Card className="border-primary/20 bg-primary/5 max-w-2xl mx-auto overflow-hidden">
-              <div className="bg-primary p-8 text-primary-foreground relative">
+            <Card className="border-[#006994]/20 bg-[#006994]/5 max-w-2xl mx-auto overflow-hidden">
+              <div className="bg-gradient-to-r from-[#006994] to-[#1A85B8] p-8 text-white relative">
                 <div className="absolute right-8 top-8 w-24 h-24 bg-white/5 rounded-full blur-3xl" />
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm border border-white/20">
@@ -230,7 +230,7 @@ export default function DataPage() {
                   </Button>
                   <Button 
                     onClick={handleConfirm} 
-                    className="flex-1 h-12 font-bold uppercase text-xs tracking-widest shadow-xl shadow-primary/20 group"
+                    className="flex-1 h-12 font-bold uppercase text-xs tracking-widest shadow-xl shadow-[#006994]/20 bg-gradient-to-r from-[#006994] to-[#1A85B8] text-white hover:from-[#00567A] hover:to-[#006994] group"
                   >
                     Confirm & Synchronize
                     <Zap className="w-4 h-4 ml-2 group-hover:scale-125 transition-transform" />
@@ -252,7 +252,7 @@ export default function DataPage() {
               
               <section className="space-y-4">
                 <div className="flex items-center gap-2 px-1">
-                   <Zap className="w-4 h-4 text-primary" />
+                   <Zap className="w-4 h-4 text-[#006994]" />
                    <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Node Configuration</h2>
                 </div>
                 
@@ -289,7 +289,7 @@ export default function DataPage() {
                               onClick={() => setSaveAsFavorite(!saveAsFavorite)}
                               className={cn(
                                 "absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all",
-                                saveAsFavorite ? "text-primary bg-primary/10 shadow-sm" : "text-muted-foreground hover:bg-muted"
+                                saveAsFavorite ? "text-[#006994] bg-[#006994]/10 shadow-sm" : "text-muted-foreground hover:bg-muted"
                               )}
                             >
                               <Star className={cn("w-5 h-5", saveAsFavorite && "fill-current")} />
@@ -298,8 +298,8 @@ export default function DataPage() {
                         </div>
 
                         {saveAsFavorite && (
-                          <div className="p-3 rounded-lg border border-dashed border-primary/30 bg-primary/5 space-y-2 animate-in slide-in-from-top-2 duration-300">
-                            <Label htmlFor="fav-name" className="text-[10px] uppercase font-bold text-primary">System Alias (Label)</Label>
+                          <div className="p-3 rounded-lg border border-dashed border-[#006994]/30 bg-[#006994]/5 space-y-2 animate-in slide-in-from-top-2 duration-300">
+                            <Label htmlFor="fav-name" className="text-[10px] uppercase font-bold text-[#006994]">System Alias (Label)</Label>
                             <div className="flex gap-2">
                               <Input
                                 id="fav-name"
@@ -356,7 +356,7 @@ export default function DataPage() {
               {/* Plan Selection Grid */}
               <section className="space-y-4">
                  <div className="flex items-center gap-2 px-1">
-                    <Target className="w-4 h-4 text-primary" />
+                    <Target className="w-4 h-4 text-[#006994]" />
                     <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Available Payloads</h2>
                  </div>
                  <Card className="overflow-hidden">
@@ -370,11 +370,11 @@ export default function DataPage() {
                               onClick={() => setSelectedPlan(plan)}
                               className={cn(
                                 "p-4 text-left transition-all hover:bg-muted/50 group flex items-center justify-between",
-                                selectedPlan?.id === plan.id ? "bg-primary/5 ring-1 ring-inset ring-primary/20" : ""
+                                selectedPlan?.id === plan.id ? "bg-[#006994]/5 ring-1 ring-inset ring-[#006994]/20" : ""
                               )}
                             >
                               <div className="space-y-1">
-                                <p className="text-sm font-bold group-hover:text-primary transition-colors">{plan.name}</p>
+                                <p className="text-sm font-bold group-hover:text-[#006994] transition-colors">{plan.name}</p>
                                 <p className="text-xs text-muted-foreground font-mono">{plan.size}</p>
                               </div>
                               <div className="text-right">
@@ -396,7 +396,7 @@ export default function DataPage() {
               {/* Registry Section */}
               <section className="space-y-4">
                  <div className="flex items-center gap-2 px-1">
-                    <Users className="w-4 h-4 text-primary" />
+                    <Users className="w-4 h-4 text-[#006994]" />
                     <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Local Registry</h2>
                  </div>
                  <Card>
@@ -413,47 +413,47 @@ export default function DataPage() {
 
             {/* Audit & Verification Sidebar */}
             <div className="lg:col-span-4 space-y-6">
-              <Card className="sticky top-24 border-primary/20 bg-primary/5">
-                <CardHeader className="pb-2 border-b border-primary/10">
+              <Card className="sticky top-24 border-[#006994]/20 bg-[#006994]/5">
+                <CardHeader className="pb-2 border-b border-[#006994]/10">
                   <CardTitle className="text-base flex items-center gap-2">
-                     <ShieldCheck className="w-4 h-4 text-primary" />
+                     <ShieldCheck className="w-4 h-4 text-[#006994]" />
                      Transaction Audit
                   </CardTitle>
                   <CardDescription>Pre-flight verification for your request.</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-6">
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-primary/20">
+                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#006994]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Infrastructure</span>
                       <span className="text-sm font-bold">{selectedNetwork?.name || "Pending..."}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-primary/20">
+                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#006994]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Destination</span>
                       <span className="text-sm font-mono font-bold tracking-tight">{phone || "No Endpoint"}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-primary/20">
+                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#006994]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Payload</span>
                       <span className="text-sm font-bold truncate max-w-[120px]">{selectedPlan?.name || "None"}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-primary/20">
+                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#006994]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Liquidity</span>
                       <span className="text-sm font-bold text-green-600">GH₵{user?.walletBalance?.toFixed(2) || '0.00'}</span>
                     </div>
                     
                     <div className="pt-4 flex justify-between items-end">
                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold uppercase text-primary">Total Magnitude</p>
+                          <p className="text-[10px] font-bold uppercase text-[#006994]">Total Magnitude</p>
                           <p className="text-3xl font-bold tracking-tighter">GH₵{selectedPlan?.price?.toFixed(2) || "0.00"}</p>
                        </div>
-                       <div className="p-2 rounded bg-primary/10 border border-primary/20">
-                          <CreditCard className="w-4 h-4 text-primary" />
+                       <div className="p-2 rounded bg-[#006994]/10 border border-[#006994]/20">
+                          <CreditCard className="w-4 h-4 text-[#006994]" />
                        </div>
                     </div>
                   </div>
 
                   <div className="space-y-3">
                       <Button 
-                        className="w-full h-12 text-xs font-bold uppercase tracking-widest shadow-lg shadow-primary/20 group"
+                        className="w-full h-12 text-xs font-bold uppercase tracking-widest shadow-lg shadow-[#006994]/20 bg-gradient-to-r from-[#006994] to-[#1A85B8] text-white hover:from-[#00567A] hover:to-[#006994] group"
                         onClick={handleProceed}
                         disabled={!selectedNetwork || !phone || !selectedPlan || !user}
                       >
@@ -487,25 +487,25 @@ export default function DataPage() {
             
             <div className="space-y-2">
               <DialogTitle className="text-xl font-bold">
-                {step === "processing" && "Synchronizing..."}
-                {step === "success" && "Sync Complete"}
-                {step === "failed" && "Sync Failed"}
+                {step === "processing" && "Processing..."}
+                {step === "success" && "Bundle Activated"}
+                {step === "failed" && "Purchase Failed"}
               </DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
-                {step === "processing" && "Broadcasting data payload to network nodes. Please remain active."}
-                {step === "success" && `Successfully synchronized ${selectedPlan?.name} to ${phone}. Node response verified.`}
-                {step === "failed" && (error || "The provider node declined the request. No funds were deducted.")}
+                {step === "processing" && "Activating your data bundle. Please wait a moment."}
+                {step === "success" && `${selectedPlan?.name} has been activated on ${phone} successfully.`}
+                {step === "failed" && (error || "The data bundle could not be activated. No funds were deducted.")}
               </DialogDescription>
             </div>
 
             {step === "success" && (
               <Button onClick={() => router.push("/dashboard")} className="w-full font-bold uppercase tracking-widest text-[10px]">
-                Return to Command Center
+                Back to Dashboard
               </Button>
             )}
             {step === "failed" && (
               <Button onClick={() => setStep("form")} variant="outline" className="w-full font-bold uppercase tracking-widest text-[10px]">
-                Review Configuration
+                Try Again
               </Button>
             )}
           </div>

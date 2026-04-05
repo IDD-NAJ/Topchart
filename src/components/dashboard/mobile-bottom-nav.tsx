@@ -60,7 +60,7 @@ export function MobileBottomNav() {
                 href={item.href}
                 className={cn(
                   "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors min-w-[64px]",
-                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  active ? "text-[#006994]" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <Icon className="h-5 w-5" />
@@ -76,7 +76,7 @@ export function MobileBottomNav() {
                 className={cn(
                   "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors min-w-[64px]",
                   moreNavItems.some(item => pathname === item.href)
-                    ? "text-primary"
+                    ? "text-[#006994]"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
@@ -100,8 +100,8 @@ export function MobileBottomNav() {
                       className={cn(
                         "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
                         active
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                          ? "bg-[#006994]/10 text-[#006994]"
+                          : "text-muted-foreground hover:text-[#006994] hover:bg-[#EFF6FA]"
                       )}
                     >
                       <Icon className="h-5 w-5" />
