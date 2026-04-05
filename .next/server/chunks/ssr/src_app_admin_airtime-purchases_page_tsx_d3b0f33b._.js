@@ -1,3 +1,0 @@
-module.exports=[70245,a=>{"use strict";var b=a.i(187924),c=a.i(528697),d=a.i(963519);function e(){return(0,b.jsx)(c.DataTable,{title:"Airtime Purchases",tableName:"airtime_purchases",icon:(0,b.jsx)(d.Phone,{className:"h-5 w-5"}),columns:[{key:"id",label:"ID"},{key:"userId",label:"User ID"},{key:"networkId",label:"Network"},{key:"recipientPhone",label:"Phone"},{key:"amount",label:"Amount",type:"number"},{key:"status",label:"Status",type:"badge",badgeVariants:{SUCCESS:"default",PENDING:"secondary",FAILED:"destructive"},bulkEditable:!0},{key:"createdAt",label:"Created",type:"date"}],searchableColumns:["userId","recipientPhone"],defaultOrderBy:"createdAt"})}a.s(["default",()=>e])}];
-
-//# sourceMappingURL=src_app_admin_airtime-purchases_page_tsx_d3b0f33b._.js.map

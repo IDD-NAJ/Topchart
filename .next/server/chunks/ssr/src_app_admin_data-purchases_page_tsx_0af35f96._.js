@@ -1,3 +1,0 @@
-module.exports=[26207,a=>{"use strict";var b=a.i(187924),c=a.i(528697),d=a.i(185264);function e(){return(0,b.jsx)(c.DataTable,{title:"Data Bundle Purchases",tableName:"data_bundle_purchases",icon:(0,b.jsx)(d.Wifi,{className:"h-5 w-5"}),columns:[{key:"id",label:"ID"},{key:"userId",label:"User ID"},{key:"bundleId",label:"Bundle ID"},{key:"recipientPhone",label:"Phone"},{key:"status",label:"Status",type:"badge",badgeVariants:{SUCCESS:"default",PENDING:"secondary",FAILED:"destructive"},bulkEditable:!0},{key:"createdAt",label:"Created",type:"date"}],searchableColumns:["userId","recipientPhone"],defaultOrderBy:"createdAt"})}a.s(["default",()=>e])}];
-
-//# sourceMappingURL=src_app_admin_data-purchases_page_tsx_0af35f96._.js.map

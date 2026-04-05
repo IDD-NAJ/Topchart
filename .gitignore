@@ -1,2 +1,17 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Build artifacts
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+# Environment variables
+.env.local
+.env.*.local
+
 # Local Netlify folder
 .netlify

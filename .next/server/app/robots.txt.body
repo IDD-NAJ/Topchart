@@ -1,8 +1,0 @@
-User-Agent: *
-Allow: /
-Disallow: /dashboard/
-Disallow: /admin/
-Disallow: /api/
-
-Host: https://topchart.gh
-Sitemap: https://topchart.gh/sitemap.xml

@@ -1,3 +1,0 @@
-module.exports=[442627,a=>{"use strict";var b=a.i(907997);function c({children:a}){return(0,b.jsx)(b.Fragment,{children:a})}a.s(["default",()=>c,"metadata",0,{title:"Terms of Service",description:"Read the Topchart Ghana Terms of Service. Understand the rules, regulations, and conditions for using our airtime and data top-up platform.",robots:{index:!0,follow:!0},openGraph:{title:"Terms of Service | Topchart Ghana",description:"Terms and conditions for using Topchart Ghana's airtime and data top-up services.",url:"https://topchart.gh/terms"},alternates:{canonical:"https://topchart.gh/terms"}}])}];
-
-//# sourceMappingURL=src_app_terms_layout_tsx_d2ae0ce8._.js.map
