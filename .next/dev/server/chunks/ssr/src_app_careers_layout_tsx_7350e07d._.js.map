@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/DANE/Downloads/Topchart-master/Topchart-master/src/app/careers/layout.tsx"],"sourcesContent":["import type { Metadata } from 'next'\r\n\r\nexport const metadata: Metadata = {\r\n  title: 'Careers',\r\n  description: 'Join the Topchart team in Accra, Ghana. We are building the financial infrastructure for the next generation of Ghanaian businesses. View open positions.',\r\n  openGraph: {\r\n    title: 'Careers at Topchart Ghana',\r\n    description: 'Help us build the financial infrastructure for the next generation of Ghanaian businesses. View open engineering, design and operations roles.',\r\n    url: 'https://topchart.gh/careers',\r\n  },\r\n  alternates: {\r\n    canonical: 'https://topchart.gh/careers',\r\n  },\r\n}\r\n\r\nexport default function CareersLayout({ children }: { children: React.ReactNode }) {\r\n  return <>{children}</>\r\n}\r\n"],"names":[],"mappings":";;;;;;;;AAEO,MAAM,WAAqB;IAChC,OAAO;IACP,aAAa;IACb,WAAW;QACT,OAAO;QACP,aAAa;QACb,KAAK;IACP;IACA,YAAY;QACV,WAAW;IACb;AACF;AAEe,SAAS,cAAc,EAAE,QAAQ,EAAiC;IAC/E,qBAAO;kBAAG;;AACZ"}}]
-}

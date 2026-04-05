@@ -1,3 +1,0 @@
-module.exports=[372175,a=>{"use strict";var b=a.i(187924),c=a.i(528697),d=a.i(856738);function e(){return(0,b.jsx)(c.DataTable,{title:"Wallets",tableName:"wallets",icon:(0,b.jsx)(d.Wallet,{className:"h-5 w-5"}),columns:[{key:"id",label:"ID"},{key:"userId",label:"User ID"},{key:"currency",label:"Currency"},{key:"status",label:"Status",type:"badge",badgeVariants:{ACTIVE:"default",FROZEN:"secondary",CLOSED:"destructive"},bulkEditable:!0},{key:"availableBalance",label:"Available",type:"number"},{key:"pendingBalance",label:"Pending",type:"number"},{key:"createdAt",label:"Created",type:"date"}],searchableColumns:["userId"],defaultOrderBy:"createdAt"})}a.s(["default",()=>e])}];
-
-//# sourceMappingURL=src_app_admin_wallets_page_tsx_c698da3b._.js.map

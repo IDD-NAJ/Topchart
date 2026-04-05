@@ -1,3 +1,0 @@
-module.exports=[474810,a=>{"use strict";var b=a.i(187924),c=a.i(528697),d=a.i(563588);function e(){return(0,b.jsx)(c.DataTable,{title:"Ticket Messages",tableName:"ticket_messages",icon:(0,b.jsx)(d.MessageSquare,{className:"h-5 w-5"}),columns:[{key:"id",label:"ID"},{key:"ticketId",label:"Ticket ID"},{key:"senderType",label:"Sender",type:"badge",badgeVariants:{USER:"outline",ADMIN:"default",SYSTEM:"secondary"}},{key:"body",label:"Message"},{key:"attachments",label:"Attachments",type:"json"},{key:"createdAt",label:"Created",type:"date"}],searchableColumns:["ticketId","body"],defaultOrderBy:"createdAt"})}a.s(["default",()=>e])}];
-
-//# sourceMappingURL=src_app_admin_ticket-messages_page_tsx_14f09e78._.js.map
