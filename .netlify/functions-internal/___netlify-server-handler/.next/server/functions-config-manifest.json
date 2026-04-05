@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "functions": {
+    "/admin/api/admin-management": {},
+    "/api/admin/db/[table]/meta": {},
+    "/api/admin/auth": {},
+    "/api/admin/db/tables": {},
+    "/api/admin/active-users": {},
+    "/api/admin/login": {},
+    "/api/admin/purchases": {},
+    "/api/admin/transactions": {},
+    "/api/admin/stats": {},
+    "/api/admin/users": {},
+    "/api/admin/users/[id]": {},
+    "/api/admin/db/[table]": {},
+    "/api/auth/me": {},
+    "/api/content/faqs": {},
+    "/api/auth/login": {},
+    "/api/content/jobs": {},
+    "/api/content/perks": {},
+    "/api/content/posts/[slug]": {},
+    "/api/content/posts": {},
+    "/api/content/press": {},
+    "/api/dashboard": {},
+    "/api/migrate-emails": {},
+    "/api/transactions": {}
+  }
+}
