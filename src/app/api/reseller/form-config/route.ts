@@ -38,9 +38,19 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Reseller form config GET error:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      success: true,
+      config: {
+        business_name: { enabled: true, required: true },
+        business_address: { enabled: true, required: false },
+        business_phone: { enabled: true, required: false },
+        business_email: { enabled: true, required: false },
+        business_type: { enabled: true, required: false },
+        application_fee: 100.00,
+        currency: "GHS",
+        require_payment_before_approval: true,
+      },
+      customFields: [],
+    });
   }
 }
