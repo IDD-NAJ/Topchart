@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "pnpm run build"
   publish = ".next"
 
 [[plugins]]
@@ -13,12 +13,6 @@
 
 [functions]
   node_bundler = "esbuild"
-
-# Redirect rules for Next.js SPA
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/___netlify-server-handler"
-  status = 200
 
 # Headers for security and caching
 [[headers]]
