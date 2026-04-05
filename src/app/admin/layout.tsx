@@ -35,7 +35,16 @@ import {
   Eye,
   Layers,
   Menu,
-  X
+  X,
+  Building2,
+  DollarSign,
+  BarChart3,
+  ShieldAlert,
+  Megaphone,
+  Trophy,
+  Sliders,
+  Smartphone,
+  LayoutGrid
 } from "lucide-react"
 
 interface NavItem {
@@ -93,6 +102,16 @@ const navItems: NavItem[] = [
       { title: "Networks", href: "/admin/networks", icon: Network },
       { title: "Data Bundles", href: "/admin/data-bundles", icon: Wifi },
       { title: "Bundle Categories", href: "/admin/bundle-categories", icon: Layers },
+      { title: "Result Checkers", href: "/admin/result-checkers", icon: CreditCard },
+    ]
+  },
+  {
+    title: "Reseller Management",
+    icon: Building2,
+    children: [
+      { title: "Resellers", href: "/admin/resellers", icon: Users },
+      { title: "Applications", href: "/admin/resellers?tab=applications", icon: FileText },
+      { title: "Commissions", href: "/admin/resellers?tab=commissions", icon: DollarSign },
     ]
   },
   {
@@ -125,14 +144,37 @@ const navItems: NavItem[] = [
       { title: "Permissions", href: "/admin/permissions", icon: Lock },
     ]
   },
+  {
+    title: "Reseller Config",
+    icon: Sliders,
+    children: [
+      { title: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+      { title: "Tiers", href: "/admin/tiers", icon: Trophy },
+      { title: "Fraud Alerts", href: "/admin/fraud-alerts", icon: ShieldAlert },
+      { title: "Marketing Assets", href: "/admin/marketing-assets", icon: Megaphone },
+      { title: "Form Config", href: "/admin/reseller-form-config", icon: Sliders },
+    ]
+  },
+  {
+    title: "Verification",
+    icon: Smartphone,
+    children: [
+      { title: "Overview", href: "/admin/verification", icon: Smartphone },
+      { title: "Numbers", href: "/admin/verification/numbers", icon: Phone },
+      { title: "Pricing", href: "/admin/verification/pricing", icon: DollarSign },
+      { title: "SMS Log", href: "/admin/verification/sms", icon: MessageSquare },
+    ]
+  },
+  { title: "Management", href: "/admin/management", icon: LayoutGrid },
   { title: "Raw Database", href: "/admin/db", icon: Database },
 ]
 
 function NavSection({ item, pathname, collapsed }: { item: NavItem; pathname: string; collapsed: boolean }) {
   const [open, setOpen] = useState(false)
   const Icon = item.icon
-  const isActive = item.href === pathname
-  const hasActiveChild = item.children?.some(c => c.href === pathname)
+  const hrefPath = item.href?.split("?")[0]
+  const isActive = hrefPath === pathname
+  const hasActiveChild = item.children?.some(c => c.href?.split("?")[0] === pathname)
 
   useEffect(() => {
     if (hasActiveChild) setOpen(true)
@@ -145,7 +187,7 @@ function NavSection({ item, pathname, collapsed }: { item: NavItem; pathname: st
           onClick={() => setOpen(!open)}
           className={cn(
             "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-            hasActiveChild ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            hasActiveChild ? "bg-[#006994]/10 text-[#006994]" : "text-muted-foreground hover:bg-[#EFF6FA] hover:text-[#006994]"
           )}
         >
           <Icon className="h-4 w-4 flex-shrink-0" />
@@ -172,7 +214,7 @@ function NavSection({ item, pathname, collapsed }: { item: NavItem; pathname: st
       href={item.href!}
       className={cn(
         "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-        isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+        isActive ? "bg-[#006994] text-white" : "text-muted-foreground hover:bg-[#EFF6FA] hover:text-[#006994]"
       )}
     >
       <Icon className="h-4 w-4 flex-shrink-0" />
@@ -227,7 +269,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#006994] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -236,14 +278,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-background flex">
       {/* Desktop Sidebar */}
       <aside className={cn(
-        "hidden md:flex flex-col border-r bg-card transition-all duration-300",
+        "hidden md:flex flex-col border-r border-[#006994]/15 bg-background/90 backdrop-blur-xl transition-all duration-300",
         sidebarOpen ? "w-64" : "w-16"
       )}>
-        <div className="p-4 border-b flex items-center justify-between">
+        <div className="p-4 border-b border-[#006994]/10 flex items-center justify-between">
           {sidebarOpen && (
             <div className="flex items-center gap-2">
-              <Shield className="h-6 w-6 text-primary" />
-              <span className="font-bold">Admin</span>
+              <Shield className="h-6 w-6 text-[#722F37]" />
+              <span className="font-bold text-[#006994]">Admin</span>
             </div>
           )}
           <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(!sidebarOpen)}>
@@ -274,11 +316,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="fixed inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <aside className="fixed left-0 top-0 bottom-0 w-64 bg-card border-r z-50 flex flex-col">
-            <div className="p-4 border-b flex items-center justify-between">
+          <aside className="fixed left-0 top-0 bottom-0 w-64 bg-background border-r border-[#006994]/15 z-50 flex flex-col">
+            <div className="p-4 border-b border-[#006994]/10 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Shield className="h-6 w-6 text-primary" />
-                <span className="font-bold">Admin</span>
+                <Shield className="h-6 w-6 text-[#722F37]" />
+                <span className="font-bold text-[#006994]">Admin</span>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setMobileOpen(false)}>
                 <X className="h-4 w-4" />
@@ -309,13 +351,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Mobile Header */}
-        <header className="md:hidden border-b bg-card p-4 flex items-center justify-between">
+        <header className="md:hidden border-b border-[#006994]/10 bg-background/90 backdrop-blur-sm p-4 flex items-center justify-between">
           <Button variant="ghost" size="sm" onClick={() => setMobileOpen(true)}>
             <Menu className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" />
-            <span className="font-bold">Admin</span>
+            <Shield className="h-5 w-5 text-[#722F37]" />
+            <span className="font-bold text-[#006994]">Admin</span>
           </div>
           <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard")}>
             <Users className="h-5 w-5" />
@@ -323,7 +365,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Desktop Header */}
-        <header className="hidden md:flex border-b bg-card p-4 items-center justify-between">
+        <header className="hidden md:flex border-b border-[#006994]/10 bg-background/90 backdrop-blur-sm p-4 items-center justify-between">
           <h1 className="text-lg font-semibold">Admin Dashboard</h1>
           <Button variant="outline" size="sm" onClick={() => router.push("/dashboard")}>
             <Users className="w-4 h-4 mr-2" />
@@ -335,18 +377,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {children}
         </main>
 
-        <footer className="border-t bg-card p-4 text-center text-sm text-muted-foreground hidden md:block">
+        <footer className="border-t border-[#006994]/10 bg-background/50 p-4 text-center text-sm text-muted-foreground hidden md:block">
           <p>© {new Date().getFullYear()} Topchart Admin. All rights reserved.</p>
         </footer>
 
         {/* Mobile Bottom Navigation */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t z-40">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-[#006994]/10 z-40">
           <div className="flex items-center justify-around p-2">
             <Link
               href="/admin"
               className={cn(
                 "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors",
-                pathname === "/admin" ? "text-primary" : "text-muted-foreground"
+                pathname === "/admin" ? "text-[#006994]" : "text-muted-foreground"
               )}
             >
               <LayoutDashboard className="h-5 w-5" />
@@ -356,7 +398,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               href="/admin/users"
               className={cn(
                 "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors",
-                pathname.startsWith("/admin/users") ? "text-primary" : "text-muted-foreground"
+                pathname.startsWith("/admin/users") ? "text-[#006994]" : "text-muted-foreground"
               )}
             >
               <Users className="h-5 w-5" />
@@ -366,7 +408,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               href="/admin/transactions"
               className={cn(
                 "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors",
-                pathname.startsWith("/admin/transactions") ? "text-primary" : "text-muted-foreground"
+                pathname.startsWith("/admin/transactions") ? "text-[#006994]" : "text-muted-foreground"
               )}
             >
               <CreditCard className="h-5 w-5" />
@@ -376,7 +418,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               href="/admin/tickets"
               className={cn(
                 "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors",
-                pathname.startsWith("/admin/tickets") ? "text-primary" : "text-muted-foreground"
+                pathname.startsWith("/admin/tickets") ? "text-[#722F37]" : "text-muted-foreground"
               )}
             >
               <MessageSquare className="h-5 w-5" />

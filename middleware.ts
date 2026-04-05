@@ -16,9 +16,13 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Protect admin routes (except /admin/login): require session; role check in layout/API
+  // Protect admin routes (except /admin/login): require session AND admin_role cookie
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
     if (!sessionToken) {
+      return NextResponse.redirect(new URL(ADMIN_LOGIN, request.url));
+    }
+    const adminRole = request.cookies.get("admin_role")?.value;
+    if (adminRole !== "ADMIN") {
       return NextResponse.redirect(new URL(ADMIN_LOGIN, request.url));
     }
   }

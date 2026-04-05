@@ -14,6 +14,7 @@ import { HelpCircle, MessageSquare, Search, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { motion } from "framer-motion"
+import { PageTransition, ScrollReveal } from "@/components/animations"
 
 interface FAQ {
   id: string
@@ -70,7 +71,7 @@ export default function FAQPage() {
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col bg-background selection:bg-primary-accent/20 selection:text-foreground">
+    <PageTransition className="min-h-screen flex flex-col bg-background selection:bg-[#006994]/15 selection:text-foreground">
       <Header />
       
       <main className="flex-1 pt-32 pb-24">
@@ -84,7 +85,7 @@ export default function FAQPage() {
               className="text-center mb-16"
             >
               <h1 className="font-heading text-4xl font-normal tracking-tight text-foreground sm:text-5xl mb-4">
-                Frequently Asked <span className="text-primary-accent">Questions</span>
+                Frequently Asked <span className="bg-gradient-to-r from-[#722F37] to-[#9B4450] bg-clip-text text-transparent">Questions</span>
               </h1>
               <p className="text-xl text-muted-foreground font-body leading-relaxed">
                 Everything you need to know about Topchart&apos;s services and features.
@@ -98,10 +99,10 @@ export default function FAQPage() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="mb-12"
             >
-              <Card className="border-primary-accent/20 bg-primary/5 overflow-hidden">
+              <Card className="border-[#006994]/20 bg-[#EFF6FA]/50 overflow-hidden">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
-                    <div className="h-10 w-10 rounded-xl bg-primary-accent/10 text-primary-accent flex items-center justify-center flex-shrink-0">
+                    <div className="h-10 w-10 rounded-xl bg-[#006994]/10 text-[#006994] flex items-center justify-center flex-shrink-0">
                       <Search className="h-5 w-5" />
                     </div>
                     <div>
@@ -111,7 +112,7 @@ export default function FAQPage() {
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {['Delivery', 'Payments', 'Security', 'Refunds'].map((tag) => (
-                          <span key={tag} className="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-primary-accent/10 text-primary-accent">
+                          <span key={tag} className="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[#006994]/10 text-[#006994]">
                             {tag}
                           </span>
                         ))}
@@ -146,12 +147,12 @@ export default function FAQPage() {
                     <motion.div key={faq.id} variants={fadeInUp}>
                       <AccordionItem 
                         value={`item-${index}`}
-                        className="group border border-border/50 bg-background/50 backdrop-blur-sm rounded-2xl px-6 transition-all duration-300 hover:border-primary-accent/30 hover:bg-background/80 data-[state=open]:border-primary-accent/50 data-[state=open]:bg-background/90"
+                        className="group border border-[#006994]/15 bg-background/50 backdrop-blur-sm rounded-2xl px-6 transition-all duration-300 hover:border-[#006994]/30 hover:bg-[#EFF6FA]/50 data-[state=open]:border-[#722F37]/40 data-[state=open]:bg-[#FDF2F3]/30"
                         style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
                       >
                         <AccordionTrigger className="hover:no-underline py-6">
                           <div className="flex items-center gap-4 text-left">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-accent/10 text-primary-accent group-data-[state=open]:bg-primary-accent group-data-[state=open]:text-primary-accent-foreground transition-colors duration-300">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#006994]/10 text-[#006994] group-data-[state=open]:bg-[#722F37] group-data-[state=open]:text-white transition-colors duration-300">
                               <HelpCircle className="h-5 w-5" />
                             </div>
                             <span className="font-heading text-lg font-normal text-foreground">{faq.question}</span>
@@ -176,12 +177,12 @@ export default function FAQPage() {
               className="mt-16 text-center"
             >
               <div className="p-8 rounded-2xl bg-muted/30 border border-border/50">
-                <MessageSquare className="h-10 w-10 text-primary-accent mx-auto mb-4" />
+                <MessageSquare className="h-10 w-10 text-[#006994] mx-auto mb-4" />
                 <h3 className="font-heading text-xl font-normal mb-2">Still have questions?</h3>
                 <p className="text-muted-foreground mb-6 font-body">
                   Can&apos;t find the answer you&apos;re looking for? Our support team is here to help.
                 </p>
-                <Button asChild className="bg-gradient-primary rounded-xl transition-all duration-300" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
+                <Button asChild className="bg-gradient-to-r from-[#006994] to-[#1A85B8] text-white hover:from-[#00567A] hover:to-[#006994] rounded-xl transition-all duration-300" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
                   <Link href="/dashboard/tickets">
                     Contact Support
                   </Link>
@@ -193,6 +194,6 @@ export default function FAQPage() {
       </main>
 
       <Footer />
-    </div>
+    </PageTransition>
   )
 }

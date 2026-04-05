@@ -8,10 +8,8 @@ export const revalidate = 0;
 export async function GET() {
   try {
     const faqs = await sql`
-      SELECT id, question, answer, category, sort_order
+      SELECT id, question, answer, category
       FROM faqs
-      WHERE is_active = TRUE
-      ORDER BY sort_order ASC, created_at ASC
     `;
 
     return NextResponse.json(

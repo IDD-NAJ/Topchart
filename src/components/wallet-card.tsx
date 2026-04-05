@@ -17,7 +17,7 @@ export function WalletCard() {
 
   return (
     <>
-      <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground overflow-hidden relative animate-in fade-in slide-in-from-left-4 duration-700 hover:shadow-xl transition-all">
+      <Card className="bg-gradient-to-br from-[#006994] to-[#1A85B8] text-white overflow-hidden relative animate-in fade-in slide-in-from-left-4 duration-700 hover:shadow-xl transition-all">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
         <CardContent className="p-6 relative z-10">

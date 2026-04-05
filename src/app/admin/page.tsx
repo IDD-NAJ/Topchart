@@ -525,7 +525,7 @@ export default function AdminDashboard() {
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xs font-medium text-muted-foreground">Active Users</CardTitle>
-                <Activity className="h-4 w-4 text-green-500" />
+                <Activity className="h-4 w-4 text-[#006994]" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.activeUsers}</div>
@@ -551,7 +551,7 @@ export default function AdminDashboard() {
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xs font-medium text-muted-foreground">Revenue</CardTitle>
-                <DollarSign className="h-4 w-4 text-green-500" />
+                <DollarSign className="h-4 w-4 text-[#006994]" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">GH₵{stats.totalRevenue.toFixed(0)}</div>
@@ -564,7 +564,7 @@ export default function AdminDashboard() {
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xs font-medium text-muted-foreground">Wallet Balance</CardTitle>
-                <Wallet className="h-4 w-4 text-blue-500" />
+                <Wallet className="h-4 w-4 text-[#1A85B8]" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">GH₵{stats.totalWalletBalance.toFixed(0)}</div>
@@ -577,7 +577,7 @@ export default function AdminDashboard() {
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xs font-medium text-muted-foreground">Referrals</CardTitle>
-                <Gift className="h-4 w-4 text-purple-500" />
+                <Gift className="h-4 w-4 text-[#722F37]" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.totalReferrals}</div>
@@ -672,9 +672,9 @@ export default function AdminDashboard() {
                 <div key={item.type} className="p-4 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2 mb-2">
                     {item.type?.toLowerCase() === 'deposit' ? (
-                      <ArrowDownRight className="w-4 h-4 text-green-500" />
+                      <ArrowDownRight className="w-4 h-4 text-[#3498db]" />
                     ) : (
-                      <ArrowUpRight className="w-4 h-4 text-red-500" />
+                      <ArrowUpRight className="w-4 h-4 text-[#e74c3c]" />
                     )}
                     <span className="text-sm font-medium capitalize">{item.type}</span>
                   </div>
@@ -707,11 +707,11 @@ export default function AdminDashboard() {
                 {stats.recentTransactions.slice(0, 5).map((tx: any) => (
                   <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${tx.type === 'deposit' ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                      <div className={`p-2 rounded-full ${tx.type === 'deposit' ? 'bg-[#006994]/10' : 'bg-[#722F37]/10'}`}>
                         {tx.type === 'deposit' ? (
-                          <ArrowDownRight className="w-4 h-4 text-green-500" />
+                          <ArrowDownRight className="w-4 h-4 text-[#006994]" />
                         ) : (
-                          <ArrowUpRight className="w-4 h-4 text-red-500" />
+                          <ArrowUpRight className="w-4 h-4 text-[#722F37]" />
                         )}
                       </div>
                       <div>
@@ -749,8 +749,8 @@ export default function AdminDashboard() {
                 {stats.recentTickets.map((ticket: any) => (
                   <div key={ticket.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-full bg-blue-500/10">
-                        <MessageSquare className="w-4 h-4 text-blue-500" />
+                      <div className="p-2 rounded-full bg-[#006994]/10">
+                        <MessageSquare className="w-4 h-4 text-[#006994]" />
                       </div>
                       <div>
                         <div className="font-medium text-sm truncate max-w-[180px]">{ticket.subject}</div>
@@ -787,7 +787,7 @@ export default function AdminDashboard() {
                   <div key={idx} className="flex-1 flex flex-col items-center gap-1">
                     <div className="text-xs font-medium">{day.count || 0}</div>
                     <div 
-                      className="w-full bg-primary/80 rounded-t transition-all" 
+                      className="w-full bg-[#006994]/80 rounded-t transition-all" 
                       style={{ height: `${Math.max(height, 4)}%` }}
                     />
                     <div className="text-[10px] text-muted-foreground">

@@ -17,6 +17,7 @@ export interface User {
   wallet_balance: number;
   is_verified: boolean;
   role?: string;
+  referral_code?: string;
   created_at: string;
 }
 

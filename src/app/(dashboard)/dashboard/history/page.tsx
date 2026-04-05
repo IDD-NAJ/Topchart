@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
+import { useSearchParams } from "next/navigation"
+import type { jsPDF as JsPDFType } from "jspdf"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -35,6 +37,7 @@ import {
   RefreshCw,
   Inbox,
 } from "lucide-react"
+import { FundWalletModal } from "@/components/fund-wallet-modal"
 import { copyToClipboard } from "@/lib/clipboard"
 import { useToast } from "@/hooks/use-toast"
 import { Textarea } from "@/components/ui/textarea"
@@ -44,7 +47,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
-type TransactionType = "deposit" | "airtime" | "data"
+type TransactionType = "deposit" | "airtime" | "data" | "referral" | "bonus" | "withdrawal" | "refund"
 type FilterType = "all" | TransactionType
 
 interface Transaction {
@@ -54,12 +57,27 @@ interface Transaction {
   status: string
   description: string
   reference: string
-  metadata: Record<string, string> | null
+  network: string | null
+  phone_number: string | null
+  data_plan: string | null
+  payment_method: string | null
+  paystack_reference: string | null
+  paystack_access_code: string | null
+  payment_channel: string | null
+  currency: string | null
+  fees: number | null
+  paid_at: string | null
+  metadata: Record<string, unknown> | null
   created_at: string
 }
 
 export default function HistoryPage() {
-  const [filter, setFilter] = useState<FilterType>("all")
+  const searchParams = useSearchParams()
+  const validFilters: FilterType[] = ["all", "deposit", "airtime", "data", "referral", "bonus", "withdrawal", "refund"]
+  const initialType = searchParams?.get("type") ?? "all"
+  const [filter, setFilter] = useState<FilterType>(
+    validFilters.includes(initialType as FilterType) ? (initialType as FilterType) : "all"
+  )
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null)
   const [copied, setCopied] = useState(false)
@@ -70,6 +88,7 @@ export default function HistoryPage() {
   const [isDisputeDialogOpen, setIsDisputeDialogOpen] = useState(false)
   const [disputeReason, setDisputeReason] = useState("")
   const [isSubmittingDispute, setIsSubmittingDispute] = useState(false)
+  const [showFundModal, setShowFundModal] = useState(false)
   const { toast } = useToast()
 
   const loadTransactions = async (userId: string) => {
@@ -235,6 +254,157 @@ export default function HistoryPage() {
     }
   }
 
+  const handleExportCSV = () => {
+    const rows = filteredTransactions
+    if (rows.length === 0) {
+      toast({ title: "No transactions to export", description: "Apply a different filter and try again." })
+      return
+    }
+    const headers = ["ID", "Type", "Amount (GHS)", "Status", "Description", "Reference", "Network", "Phone", "Date"]
+    const csvRows = rows.map(tx => [
+      tx.id,
+      tx.type,
+      tx.amount.toFixed(2),
+      tx.status,
+      `"${(tx.description || "").replace(/"/g, "'")}"`,
+      tx.reference,
+      tx.network ?? "",
+      tx.phone_number ?? "",
+      new Date(tx.created_at).toLocaleString("en-GH"),
+    ].join(","))
+    const csv = [headers.join(","), ...csvRows].join("\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `topchart-transactions-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast({ title: "Exported", description: `${rows.length} transactions saved as CSV.` })
+  }
+
+  const handleDownloadReceipt = async (tx: Transaction) => {
+    const { jsPDF } = await import("jspdf")
+    const doc: JsPDFType = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
+
+    const pageW = doc.internal.pageSize.getWidth()
+    const margin = 20
+    const contentW = pageW - margin * 2
+    let y = 0
+
+    const hex = (h: string) => {
+      const r = parseInt(h.slice(1, 3), 16)
+      const g = parseInt(h.slice(3, 5), 16)
+      const b = parseInt(h.slice(5, 7), 16)
+      return [r, g, b] as [number, number, number]
+    }
+
+    const primary = "#1a56db"
+    const success = "#16a34a"
+    const muted = "#6b7280"
+    const border = "#e5e7eb"
+
+    doc.setFillColor(...hex(primary))
+    doc.rect(0, 0, pageW, 30, "F")
+
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(18)
+    doc.setFont("helvetica", "bold")
+    doc.text("TOPCHART", margin, 14)
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "normal")
+    doc.text("Transaction Receipt", margin, 21)
+    doc.text(`Generated: ${new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`, pageW - margin, 21, { align: "right" })
+
+    y = 48
+    const amtColor = tx.type === "deposit" ? hex(success) : hex("#111827")
+    doc.setTextColor(...amtColor)
+    doc.setFontSize(28)
+    doc.setFont("helvetica", "bold")
+    const amtStr = `${tx.type === "deposit" ? "+" : "-"}GH₵${tx.amount.toFixed(2)}`
+    doc.text(amtStr, pageW / 2, y, { align: "center" })
+
+    y += 7
+    doc.setFontSize(10)
+    doc.setFont("helvetica", "normal")
+    doc.setTextColor(...hex(muted))
+    doc.text(tx.description, pageW / 2, y, { align: "center" })
+
+    y += 6
+    const statusColors: Record<string, [number, number, number]> = {
+      success: hex("#16a34a"),
+      pending: hex("#d97706"),
+      failed: hex("#dc2626"),
+    }
+    const sc = statusColors[tx.status.toLowerCase()] ?? hex(muted)
+    doc.setTextColor(...sc)
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "bold")
+    doc.text(tx.status.toUpperCase(), pageW / 2, y, { align: "center" })
+
+    y += 10
+    doc.setDrawColor(...hex(border))
+    doc.setLineWidth(0.3)
+    doc.line(margin, y, pageW - margin, y)
+
+    y += 8
+    const rows: [string, string][] = [
+      ["Transaction ID", tx.id],
+      ["Reference", tx.reference],
+      ["Type", tx.type.charAt(0).toUpperCase() + tx.type.slice(1)],
+      ["Date & Time", new Date(tx.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })],
+    ]
+
+    if (tx.network) rows.push(["Network", tx.network])
+    if (tx.phone_number) rows.push(["Phone Number", tx.phone_number])
+    if (tx.data_plan) rows.push(["Data Plan", tx.data_plan])
+    if (tx.fees != null) rows.push(["Surcharge", `GH₵${tx.fees.toFixed(2)}`])
+    if (tx.fees != null) rows.push(["Base Amount", `GH₵${(tx.amount - tx.fees).toFixed(2)}`])
+    if (tx.fees != null) rows.push(["Charge Amount", `GH₵${tx.amount.toFixed(2)}`])
+    if (tx.paid_at) rows.push(["Initiated At", tx.paid_at])
+    if (tx.payment_method) rows.push(["Payment Method", tx.payment_method])
+    if (tx.payment_channel) rows.push(["Payment Channel", tx.payment_channel])
+    if (tx.paystack_access_code) rows.push(["Paystack Access Code", tx.paystack_access_code])
+    if (tx.currency) rows.push(["Currency", tx.currency])
+
+    rows.forEach(([label, value], i) => {
+      const rowY = y + i * 9
+      if (i % 2 === 0) {
+        doc.setFillColor(248, 250, 252)
+        doc.rect(margin, rowY - 5, contentW, 9, "F")
+      }
+      doc.setFontSize(9)
+      doc.setFont("helvetica", "normal")
+      doc.setTextColor(...hex(muted))
+      doc.text(label, margin + 3, rowY)
+      doc.setTextColor(17, 24, 39)
+      doc.setFont("helvetica", "bold")
+      const displayVal = value.length > 42 ? value.slice(0, 42) + "..." : value
+      doc.text(displayVal, pageW - margin - 3, rowY, { align: "right" })
+    })
+
+    y += rows.length * 9 + 6
+    doc.setDrawColor(...hex(border))
+    doc.line(margin, y, pageW - margin, y)
+
+    y += 14
+    doc.setFillColor(...hex("#f0f9ff"))
+    doc.roundedRect(margin, y, contentW, 18, 3, 3, "F")
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "normal")
+    doc.setTextColor(...hex(primary))
+    doc.text("Thank you for using Topchart!", pageW / 2, y + 7, { align: "center" })
+    doc.setTextColor(...hex(muted))
+    doc.text("For support, visit topchart.app or contact support@topchart.app", pageW / 2, y + 13, { align: "center" })
+
+    doc.save(`topchart-receipt-${tx.reference}.pdf`)
+
+    toast({
+      title: "Receipt Downloaded",
+      description: `PDF saved as topchart-receipt-${tx.reference}.pdf`,
+    })
+  }
+
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case "deposit":
@@ -275,11 +445,11 @@ export default function HistoryPage() {
             <p className="text-muted-foreground">Monitor and manage your spending history</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-2" onClick={handleExportCSV}>
               <Download className="w-4 h-4" />
               Export
             </Button>
-            <Button size="sm" className="gap-2">
+            <Button size="sm" className="gap-2" onClick={() => setShowFundModal(true)}>
               <Plus className="w-4 h-4" />
               Add Funds
             </Button>
@@ -288,11 +458,11 @@ export default function HistoryPage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card className="bg-card/50 backdrop-blur-sm border-primary/5">
+          <Card className="bg-card/50 backdrop-blur-sm border-[#006994]/5">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-muted-foreground">Total Spent</p>
-                <TrendingUp className="w-4 h-4 text-primary" />
+                <TrendingUp className="w-4 h-4 text-[#006994]" />
               </div>
               <div className="flex items-baseline gap-1">
                 <h3 className="text-2xl font-bold">GH₵{stats.totalSpent.toFixed(2)}</h3>
@@ -300,7 +470,7 @@ export default function HistoryPage() {
               <p className="text-xs text-muted-foreground mt-1">Lifetime spending on Topchart</p>
             </CardContent>
           </Card>
-          <Card className="bg-card/50 backdrop-blur-sm border-primary/5">
+          <Card className="bg-card/50 backdrop-blur-sm border-[#006994]/5">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-muted-foreground">Total Funded</p>
@@ -312,7 +482,7 @@ export default function HistoryPage() {
               <p className="text-xs text-muted-foreground mt-1">Total wallet top-ups</p>
             </CardContent>
           </Card>
-          <Card className="bg-card/50 backdrop-blur-sm border-primary/5">
+          <Card className="bg-card/50 backdrop-blur-sm border-[#006994]/5">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-muted-foreground">Success Rate</p>
@@ -353,17 +523,18 @@ export default function HistoryPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
               placeholder="Search by description or reference..." 
-              className="pl-10 bg-card border-primary/5"
+              className="pl-10 bg-card border-[#006994]/5"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <Tabs value={filter} onValueChange={(value: string) => setFilter(value as FilterType)} className="w-full md:w-auto">
-            <TabsList className="bg-card border border-primary/5 h-10">
+            <TabsList className="bg-card border border-[#006994]/5 h-10">
               <TabsTrigger value="all" className="px-4">All</TabsTrigger>
               <TabsTrigger value="deposit" className="px-4">Deposits</TabsTrigger>
               <TabsTrigger value="airtime" className="px-4">Airtime</TabsTrigger>
               <TabsTrigger value="data" className="px-4">Data</TabsTrigger>
+              <TabsTrigger value="referral" className="px-4">Referrals</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -372,7 +543,7 @@ export default function HistoryPage() {
         <div className="space-y-8">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <Loader2 className="w-10 h-10 animate-spin text-primary" />
+              <Loader2 className="w-10 h-10 animate-spin text-[#006994]" />
               <p className="text-muted-foreground animate-pulse">Fetching your records...</p>
             </div>
           ) : filteredTransactions.length === 0 ? (
@@ -410,12 +581,12 @@ export default function HistoryPage() {
                     <div
                       key={tx.id}
                       onClick={() => setSelectedTx(tx)}
-                      className="group flex items-center justify-between p-4 bg-card hover:bg-accent/50 rounded-xl border border-primary/5 transition-all cursor-pointer active:scale-[0.98]"
+                      className="group flex items-center justify-between p-4 bg-card hover:bg-accent/50 rounded-xl border border-[#006994]/5 transition-all cursor-pointer active:scale-[0.98]"
                     >
                       <div className="flex items-center gap-4">
                         {getTransactionIcon(tx.type)}
                         <div>
-                          <p className="font-semibold text-sm group-hover:text-primary transition-colors">{tx.description}</p>
+                          <p className="font-semibold text-sm group-hover:text-[#006994] transition-colors">{tx.description}</p>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                             <span>{new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             <span>•</span>
@@ -452,7 +623,7 @@ export default function HistoryPage() {
             </DialogHeader>
             {selectedTx && (
               <div className="space-y-6">
-                <div className="flex flex-col items-center justify-center py-6 bg-muted/30 rounded-2xl border border-primary/5">
+                <div className="flex flex-col items-center justify-center py-6 bg-muted/30 rounded-2xl border border-[#006994]/5">
                   <div className="mb-2">{getTransactionIcon(selectedTx.type)}</div>
                   <h2 className={cn(
                     "text-3xl font-bold",
@@ -465,17 +636,20 @@ export default function HistoryPage() {
                 </div>
 
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-y-4 text-sm">
+                  <div className="grid grid-cols-2 gap-y-3 text-sm">
                     <div className="text-muted-foreground">Transaction ID</div>
-                    <div className="font-mono text-right flex items-center justify-end gap-2">
+                    <div className="font-mono text-right text-xs truncate flex items-center justify-end gap-1">
                       {selectedTx.id.slice(0, 12)}...
-                    </div>
-                    
-                    <div className="text-muted-foreground">Reference</div>
-                    <div className="font-mono text-right flex items-center justify-end gap-1">
-                      {selectedTx.reference}
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleCopyReference(selectedTx.reference)}>
+                      <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0" onClick={() => handleCopyReference(selectedTx.id)}>
                         <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+
+                    <div className="text-muted-foreground">Reference</div>
+                    <div className="font-mono text-right text-xs flex items-center justify-end gap-1">
+                      <span className="truncate">{selectedTx.reference}</span>
+                      <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0" onClick={() => handleCopyReference(selectedTx.reference)}>
+                        {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
                       </Button>
                     </div>
 
@@ -493,20 +667,73 @@ export default function HistoryPage() {
                       })}
                     </div>
 
-                      {selectedTx.metadata && Object.entries(selectedTx.metadata).map(([key, value]) => (
-                        <div key={key} className="contents">
-                          <div className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</div>
-                          <div className="text-right font-medium">
-                            {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                          </div>
-                        </div>
-                      ))}
+                    {selectedTx.network && (
+                      <>
+                        <div className="text-muted-foreground">Network</div>
+                        <div className="text-right font-medium uppercase">{selectedTx.network}</div>
+                      </>
+                    )}
+
+                    {selectedTx.phone_number && (
+                      <>
+                        <div className="text-muted-foreground">Phone Number</div>
+                        <div className="text-right font-medium">{selectedTx.phone_number}</div>
+                      </>
+                    )}
+
+                    {selectedTx.data_plan && (
+                      <>
+                        <div className="text-muted-foreground">Data Plan</div>
+                        <div className="text-right font-medium">{selectedTx.data_plan}</div>
+                      </>
+                    )}
+
+                    {selectedTx.fees != null && (
+                      <>
+                        <div className="text-muted-foreground">Surcharge</div>
+                        <div className="text-right font-medium">GH₵{selectedTx.fees.toFixed(2)}</div>
+
+                        <div className="text-muted-foreground">Base Amount</div>
+                        <div className="text-right font-medium">GH₵{(selectedTx.amount - selectedTx.fees).toFixed(2)}</div>
+
+                        <div className="text-muted-foreground">Charge Amount</div>
+                        <div className="text-right font-medium">GH₵{selectedTx.amount.toFixed(2)}</div>
+                      </>
+                    )}
+
+                    {selectedTx.paid_at && (
+                      <>
+                        <div className="text-muted-foreground">Initiated At</div>
+                        <div className="text-right font-medium text-xs">{selectedTx.paid_at}</div>
+                      </>
+                    )}
+
+                    {selectedTx.payment_method && (
+                      <>
+                        <div className="text-muted-foreground">Payment Method</div>
+                        <div className="text-right font-medium capitalize">{selectedTx.payment_method}</div>
+                      </>
+                    )}
+
+                    {selectedTx.payment_channel && (
+                      <>
+                        <div className="text-muted-foreground">Payment Channel</div>
+                        <div className="text-right font-medium capitalize">{selectedTx.payment_channel}</div>
+                      </>
+                    )}
+
+                    {selectedTx.paystack_access_code && (
+                      <>
+                        <div className="text-muted-foreground">Paystack Access Code</div>
+                        <div className="text-right font-mono text-xs">{selectedTx.paystack_access_code}</div>
+                      </>
+                    )}
                   </div>
 
                   <Separator />
 
                   <div className="flex flex-col gap-2">
-                    <Button variant="outline" className="w-full gap-2">
+                    <Button variant="outline" className="w-full gap-2" onClick={() => selectedTx && handleDownloadReceipt(selectedTx)}>
                       <Download className="w-4 h-4" />
                       Download Receipt
                     </Button>
@@ -537,7 +764,7 @@ export default function HistoryPage() {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="p-4 bg-muted/50 rounded-xl text-sm border border-primary/5">
+              <div className="p-4 bg-muted/50 rounded-xl text-sm border border-[#006994]/5">
                 <p className="font-semibold">{selectedTx?.description}</p>
                 <div className="flex justify-between items-center mt-1">
                   <p className="text-muted-foreground">Amount: GH₵{selectedTx?.amount.toFixed(2)}</p>
@@ -577,6 +804,14 @@ export default function HistoryPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        <FundWalletModal
+          open={showFundModal}
+          onOpenChange={(v) => {
+            setShowFundModal(v)
+            if (!v && user?.id) loadTransactions(user.id)
+          }}
+        />
       </div>
     </div>
   )

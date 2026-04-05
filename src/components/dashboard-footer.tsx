@@ -10,8 +10,8 @@ export function DashboardFooter() {
         <div className="grid gap-8 md:grid-cols-3">
           <div>
             <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary animate-in zoom-in duration-500 delay-100">
-                <Zap className="h-5 w-5 text-primary-foreground" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#006994] animate-in zoom-in duration-500 delay-100">
+                <Zap className="h-5 w-5 text-white" />
               </div>
               <span className="text-lg font-bold text-foreground">Topchart</span>
             </Link>

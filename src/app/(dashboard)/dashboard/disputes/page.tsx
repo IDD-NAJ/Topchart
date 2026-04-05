@@ -91,12 +91,12 @@ export default function DisputesPage() {
       {/* Infrastructure Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <Link href="/dashboard" className="inline-flex items-center text-xs font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest mb-2 group">
+          <Link href="/dashboard" className="inline-flex items-center text-xs font-bold text-muted-foreground hover:text-[#006994] transition-colors uppercase tracking-widest mb-2 group">
             <ArrowLeft className="w-3 h-3 mr-1.5 group-hover:-translate-x-1 transition-transform" />
-            Back to Command Center
+            Back to Dashboard
           </Link>
           <h1 className="text-3xl font-bold tracking-tight">Dispute Resolution</h1>
-          <p className="text-muted-foreground">Audit and track discrepancies in network synchronization.</p>
+          <p className="text-muted-foreground">Report and track issues with your transactions.</p>
         </div>
         <div className="flex items-center gap-3">
            <Button asChild variant="outline" size="sm" className="h-9 font-bold uppercase tracking-tighter text-[10px]">
@@ -109,12 +109,12 @@ export default function DisputesPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-8">
-        <Card className="border-primary/10 overflow-hidden">
-          <CardHeader className="pb-4 border-b bg-muted/10">
+        <Card className="border-[#006994]/10 overflow-hidden">
+          <CardHeader className="pb-4 border-b bg-[#722F37]/10">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                <div>
-                 <CardTitle className="text-base">Audit Inventory</CardTitle>
-                 <CardDescription>Comprehensive log of all infrastructure disputes.</CardDescription>
+                 <CardTitle className="text-base">My Disputes</CardTitle>
+                 <CardDescription>A list of all your reported transaction issues.</CardDescription>
                </div>
                <div className="flex items-center gap-2">
                  <div className="relative">
@@ -135,8 +135,8 @@ export default function DisputesPage() {
           <CardContent className="p-0">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
-                <Loader2 className="w-10 h-10 animate-spin text-primary opacity-50" />
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground animate-pulse">Scanning Registry...</p>
+                <Loader2 className="w-10 h-10 animate-spin text-[#006994] opacity-50" />
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground animate-pulse">Loading...</p>
               </div>
             ) : filteredDisputes.length === 0 ? (
               <div className="text-center py-20 space-y-4">
@@ -144,9 +144,9 @@ export default function DisputesPage() {
                    <ShieldAlert className="w-10 h-10" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="font-bold text-lg">No Discrepancies Found</h3>
+                  <h3 className="font-bold text-lg">No Disputes Yet</h3>
                   <p className="text-muted-foreground text-sm max-w-[320px] mx-auto leading-relaxed">
-                    All network operations appear synchronized. You can raise disputes directly from the <Link href="/dashboard/history" className="text-primary hover:underline font-bold">Audit Log</Link>.
+                    Everything looks good! You can raise a dispute from your <Link href="/dashboard/history" className="text-[#006994] hover:underline font-bold">Transaction History</Link>.
                   </p>
                 </div>
               </div>
@@ -180,7 +180,7 @@ export default function DisputesPage() {
                           </span>
                         </div>
                         <div className="flex items-center gap-2 pt-1">
-                           <Badge variant="secondary" className="text-[10px] font-mono h-5 px-2">GH₵{dispute.transactionAmount.toFixed(2)}</Badge>
+                           <Badge variant="secondary" className="text-[10px] font-mono h-5 px-2">GH₵{Number(dispute.transactionAmount).toFixed(2)}</Badge>
                            <span className="text-[10px] text-muted-foreground">{new Date(dispute.createdAt).toLocaleDateString("en-GH", { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                         </div>
                       </div>
@@ -204,17 +204,17 @@ export default function DisputesPage() {
           </CardContent>
         </Card>
 
-        {/* Support Integration */}
+        {/* Support Options */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           <Card className="bg-primary/5 border-primary/10">
+           <Card className="bg-[#006994]/5 border-[#006994]/10">
               <CardContent className="p-6 flex items-start gap-4">
                  <div className="w-12 h-12 rounded-2xl bg-background border flex items-center justify-center shrink-0 shadow-sm">
-                    <Target className="w-6 h-6 text-primary" />
+                    <Target className="w-6 h-6 text-[#006994]" />
                  </div>
                  <div className="space-y-2">
-                    <h4 className="text-sm font-bold uppercase tracking-widest">Resolution Protocols</h4>
+                    <h4 className="text-sm font-bold uppercase tracking-widest">How Disputes Work</h4>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      Most disputes are resolved within 24-48 business hours. Our nodes communicate directly with network providers to verify payload delivery.
+                      Most disputes are resolved within 24–48 business hours. We work directly with network providers to confirm and fix any failed transactions.
                     </p>
                  </div>
               </CardContent>
@@ -225,9 +225,9 @@ export default function DisputesPage() {
                     <ShieldAlert className="w-6 h-6 text-muted-foreground" />
                  </div>
                  <div className="space-y-2">
-                    <h4 className="text-sm font-bold uppercase tracking-widest">Urgent Audits</h4>
+                    <h4 className="text-sm font-bold uppercase tracking-widest">Need Urgent Help?</h4>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      If a critical synchronization failure has occurred, please raise an <Link href="/dashboard/tickets" className="text-primary font-bold hover:underline">Urgent Support Ticket</Link> for immediate review.
+                      If you have an urgent issue that needs immediate attention, please open an <Link href="/dashboard/tickets" className="text-[#722F37] font-bold hover:underline">Urgent Support Ticket</Link>.
                     </p>
                  </div>
               </CardContent>

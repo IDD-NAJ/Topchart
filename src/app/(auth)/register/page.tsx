@@ -168,10 +168,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:grid lg:grid-cols-[1.1fr,0.9fr] bg-background selection:bg-primary-accent/20 selection:text-foreground">
+    <div className="min-h-screen flex flex-col lg:grid lg:grid-cols-[1.1fr,0.9fr] bg-background selection:bg-[#006994]/15 selection:text-foreground">
       {/* Left Side: Form */}
       <main className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 lg:p-16 relative overflow-y-auto pt-28 lg:pt-24">
-        <div className="absolute inset-0 bg-[radial-gradient(50%_50%_at_50%_50%,rgba(var(--primary-rgb),0.03)_0%,transparent_100%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(50%_50%_at_50%_50%,rgba(0,105,148,0.03)_0%,transparent_100%)] pointer-events-none" />
         
         <motion.div 
           initial={{ opacity: 0 }}
@@ -185,7 +185,7 @@ export default function RegisterPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4, delay: 0.1 }}
             >
-              <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary-accent transition-all duration-300 group" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
+              <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-[#006994] transition-all duration-300 group" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
                 <ChevronLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
                 Back to home
               </Link>
@@ -339,7 +339,7 @@ export default function RegisterPage() {
                       <div
                         key={i}
                         className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors ${
-                          req.met ? "bg-primary-accent/10 text-primary-accent" : "bg-muted text-muted-foreground"
+                          req.met ? "bg-[#006994]/10 text-[#006994]" : "bg-muted text-muted-foreground"
                         }`}
                       >
                         <Check className={`w-3 h-3 ${req.met ? "opacity-100" : "opacity-30"}`} />
@@ -395,9 +395,9 @@ export default function RegisterPage() {
                 />
                 <Label htmlFor="agreeToTerms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none">
                   I agree to the{" "}
-                  <Link href="/terms" className="text-primary-accent hover:text-primary-accent/80 font-bold transition-all duration-300">Terms of Service</Link>
+                  <Link href="/terms" className="text-[#006994] hover:text-[#004D6E] font-bold transition-all duration-300">Terms of Service</Link>
                   {" "}and{" "}
-                  <Link href="/privacy" className="text-primary-accent hover:text-primary-accent/80 font-bold transition-all duration-300">Privacy Policy</Link>
+                  <Link href="/privacy" className="text-[#006994] hover:text-[#004D6E] font-bold transition-all duration-300">Privacy Policy</Link>
                 </Label>
               </div>
 
@@ -417,7 +417,7 @@ export default function RegisterPage() {
 
             <Button 
               type="submit" 
-              className="w-full h-12 text-base font-medium bg-gradient-primary shadow-lg shadow-primary/20 rounded-xl transition-all duration-300" 
+              className="w-full h-12 text-base font-medium bg-gradient-to-r from-[#006994] to-[#1A85B8] text-white hover:from-[#00567A] hover:to-[#006994] shadow-lg shadow-[#006994]/20 rounded-xl transition-all duration-300" 
               disabled={isLoading || !allRequirementsMet || !formData.agreeToTerms}
               style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
             >
@@ -459,12 +459,13 @@ export default function RegisterPage() {
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6, delay: 0.2 }}
-        className="hidden lg:flex flex-col relative bg-primary text-white p-16 overflow-hidden border-l border-white/5"
+        className="hidden lg:flex flex-col relative text-white p-16 overflow-hidden border-l border-white/5"
+        style={{ background: 'linear-gradient(135deg, #004D6E 0%, #006994 50%, #1A85B8 100%)' }}
       >
         {/* Abstract background elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-[20%] right-[-10%] w-[50%] h-[50%] bg-primary-accent/20 rounded-full blur-[120px]" />
-          <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-accent/10 rounded-full blur-[120px]" />
+          <div className="absolute top-[20%] right-[-10%] w-[50%] h-[50%] bg-[#722F37]/20 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#722F37]/10 rounded-full blur-[120px]" />
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px]" />
         </div>
         
@@ -474,7 +475,7 @@ export default function RegisterPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="inline-flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-primary-accent uppercase tracking-widest mb-8 w-fit"
+              className="inline-flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-[#FDF2F3] uppercase tracking-widest mb-8 w-fit"
             >
               Future-Ready Payments
             </motion.div>
@@ -486,7 +487,7 @@ export default function RegisterPage() {
               className="font-heading text-5xl xl:text-6xl font-normal tracking-tight mb-8 leading-[1.05]"
             >
               Join the standard <br />
-              for <span className="text-primary-accent">digital recharges</span>.
+              for <span className="text-[#FDF2F3]">digital recharges</span>.
             </motion.h2>
             
             <motion.p 
@@ -506,7 +507,7 @@ export default function RegisterPage() {
                 whileHover={{ scale: 1.02 }}
                 className="p-6 rounded-2xl bg-white/[0.03] border border-white/5 backdrop-blur-sm"
               >
-                <BadgePercent className="h-8 w-8 text-primary-accent mb-4" />
+                <BadgePercent className="h-8 w-8 text-[#FDF2F3] mb-4" />
                 <h3 className="font-heading text-xl font-normal mb-2">Exclusive Rewards</h3>
                 <p className="text-white/60 text-sm leading-relaxed font-body">
                   Get instant cashback and loyalty points on every single recharge you make.
@@ -519,7 +520,7 @@ export default function RegisterPage() {
                 whileHover={{ scale: 1.02 }}
                 className="p-6 rounded-2xl bg-white/[0.03] border border-white/5 backdrop-blur-sm"
               >
-                <ShieldCheck className="h-8 w-8 text-primary-accent mb-4" />
+                <ShieldCheck className="h-8 w-8 text-[#FDF2F3] mb-4" />
                 <h3 className="font-heading text-xl font-normal mb-2">Secure by Design</h3>
                 <p className="text-white/60 text-sm leading-relaxed font-body">
                   Your security is our priority. Every transaction is protected by bank-level encryption.

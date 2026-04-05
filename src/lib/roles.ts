@@ -6,12 +6,13 @@
 export const ROLES = {
   USER: "USER",
   ADMIN: "ADMIN",
+  RESELLER: "RESELLER",
 } as const;
 
 export type Role = (typeof ROLES)[keyof typeof ROLES];
 
 /** All allowed role values for validation */
-export const ALLOWED_ROLES: Role[] = [ROLES.USER, ROLES.ADMIN];
+export const ALLOWED_ROLES: Role[] = [ROLES.USER, ROLES.ADMIN, ROLES.RESELLER];
 
 /**
  * Normalizes a raw role string to a canonical Role or null.
@@ -55,8 +56,23 @@ export function hasRole(
 }
 
 /**
+ * Returns true if the role is RESELLER.
+ */
+export function isReseller(role: string | null | undefined): boolean {
+  return normalizeRole(role) === ROLES.RESELLER;
+}
+
+/**
  * Validates that a string is an allowed role. Used for role assignment/updates.
  */
 export function isValidRole(value: string): value is Role {
   return ALLOWED_ROLES.includes(value as Role);
+}
+
+/**
+ * Checks if user can access reseller features.
+ */
+export function canAccessReseller(role: string | null | undefined): boolean {
+  const r = normalizeRole(role);
+  return r === ROLES.RESELLER || r === ROLES.ADMIN;
 }

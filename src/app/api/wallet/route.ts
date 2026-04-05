@@ -1,95 +1,87 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
+import { sql } from "@/lib/db"
+
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
 
 export async function GET() {
   try {
-    // Get auth token from cookies
+    // Get session token from cookies
     const cookieStore = await cookies()
-    const token = cookieStore.get("auth_token")?.value
+    const sessionToken = cookieStore.get("session_token")?.value
 
-    if (!token) {
+    if (!sessionToken) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized" },
+        { success: false, error: "Unauthorized - Please log in" },
         { status: 401 }
       )
     }
 
-    // Verify token and get user
-    const authResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/auth/me`, {
-      headers: {
-        Cookie: `auth_token=${token}`,
-      },
-    })
+    // Verify session and get user
+    const sessions = await sql`
+      SELECT s.user_id, u.wallet_balance
+      FROM auth_sessions s
+      JOIN users u ON s.user_id::text = u.id::text
+      WHERE s.token = ${sessionToken}
+        AND s.expires_at > NOW()
+      LIMIT 1
+    `
 
-    if (!authResponse.ok) {
+    if (sessions.length === 0) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized" },
+        { success: false, error: "Session expired - Please log in again" },
         { status: 401 }
       )
     }
 
-    const authData = await authResponse.json()
-    
-    if (!authData.success || !authData.user) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      )
-    }
+    const userId = sessions[0].user_id
+    const walletBalance = parseFloat(sessions[0].wallet_balance) || 0
 
-    const userId = authData.user.id
-
-    // Fetch wallet data from transactions API
-    const transactionsResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL || ''}/api/transactions?userId=${userId}`,
-      {
-        headers: {
-          Cookie: `auth_token=${token}`,
-        },
-      }
-    )
-
-    let transactions: any[] = []
-    if (transactionsResponse.ok) {
-      const txData = await transactionsResponse.json()
-      if (txData.success && txData.transactions) {
-        transactions = txData.transactions
-      }
-    }
+    // Fetch transactions from database
+    const transactions = await sql`
+      SELECT 
+        id,
+        type,
+        amount,
+        status,
+        description,
+        created_at
+      FROM transactions
+      WHERE user_id = ${userId}
+      ORDER BY created_at DESC
+      LIMIT 50
+    `
 
     // Calculate wallet statistics
     const totalDeposited = transactions
       .filter((tx: any) => tx.type === 'deposit' && tx.status === 'success')
-      .reduce((acc: number, tx: any) => acc + (tx.amount || 0), 0)
+      .reduce((acc: number, tx: any) => acc + (parseFloat(tx.amount) || 0), 0)
 
     const totalSpent = transactions
       .filter((tx: any) => tx.type !== 'deposit' && tx.status === 'success')
-      .reduce((acc: number, tx: any) => acc + (tx.amount || 0), 0)
-
-    const balance = totalDeposited - totalSpent
+      .reduce((acc: number, tx: any) => acc + (parseFloat(tx.amount) || 0), 0)
 
     const pendingDeposits = transactions
       .filter((tx: any) => tx.type === 'deposit' && tx.status === 'pending')
-      .reduce((acc: number, tx: any) => acc + (tx.amount || 0), 0)
+      .reduce((acc: number, tx: any) => acc + (parseFloat(tx.amount) || 0), 0)
 
-    // Get recent wallet transactions
+    // Get recent transactions (last 10)
     const recentTransactions = transactions
-      .filter((tx: any) => ['deposit', 'withdrawal', 'airtime', 'data'].includes(tx.type))
-      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 10)
       .map((tx: any) => ({
         id: tx.id,
         type: tx.type,
-        amount: tx.amount,
+        amount: parseFloat(tx.amount) || 0,
         status: tx.status,
-        description: tx.description,
+        description: tx.description || tx.type,
         created_at: tx.created_at,
       }))
 
     return NextResponse.json({
       success: true,
       data: {
-        balance: Math.max(0, balance),
+        balance: walletBalance,
         totalDeposited,
         totalSpent,
         pendingBalance: pendingDeposits,

@@ -26,10 +26,10 @@ interface PressAsset {
 }
 
 const brandColors = [
-  { name: 'Primary Blue', hex: '#146EF5', label: 'Primary' },
-  { name: 'Dark Navy', hex: '#0A0F1E', label: 'Background' },
-  { name: 'Accent Gold', hex: '#FFC107', label: 'MTN Gold' },
-  { name: 'Accent Red', hex: '#E40046', label: 'Telecel Red' },
+  { name: 'Sea Blue', hex: '#006994', label: 'Primary' },
+  { name: 'Wine', hex: '#722F37', label: 'Accent' },
+  { name: 'Mid Blue', hex: '#1A85B8', label: 'Secondary' },
+  { name: 'Grey', hex: '#6B7280', label: 'Neutral' },
 ]
 
 const fadeInUp = {
@@ -76,7 +76,7 @@ export default function PressPage() {
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col bg-background selection:bg-primary-accent/20 selection:text-foreground">
+    <div className="min-h-screen flex flex-col bg-background selection:bg-[#006994]/15 selection:text-foreground">
       <Header />
       <main className="flex-1 pt-32 pb-20">
         {/* Hero */}
@@ -86,13 +86,13 @@ export default function PressPage() {
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           className="relative bg-gradient-hero border-b border-border/40 pb-16 mb-16 overflow-hidden"
         >
-          <div className="absolute inset-0 bg-[radial-gradient(45%_60%_at_50%_0%,rgba(var(--primary-rgb),0.06)_0%,transparent_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(45%_60%_at_50%_0%,rgba(0,105,148,0.06)_0%,transparent_100%)]" />
           <div className="container mx-auto px-4 relative text-center">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-accent/10 border border-primary-accent/20 text-primary-accent text-xs font-bold uppercase tracking-widest mb-6"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#006994]/10 border border-[#006994]/25 text-[#006994] text-xs font-bold uppercase tracking-widest mb-6"
             >
               <Newspaper className="h-3.5 w-3.5" />
               Press Room
@@ -191,13 +191,13 @@ export default function PressPage() {
                     variants={fadeInUp}
                     transition={{ delay: index * 0.15 }}
                   >
-                    <Card className="border-border/50 hover:border-primary-accent/30 transition-all duration-300 group overflow-hidden" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
-                      <div className={`h-2 bg-gradient-to-r ${asset.asset_type === 'logo_pack' ? 'from-primary-accent to-primary-accent/50' : 'from-emerald-500 to-emerald-500/50'}`} />
+                    <Card className="border-[#006994]/15 hover:border-[#006994]/35 transition-all duration-300 group overflow-hidden" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
+                      <div className={`h-2 bg-gradient-to-r ${asset.asset_type === 'logo_pack' ? 'from-[#006994] to-[#1A85B8]' : 'from-[#722F37] to-[#9B4450]'}`} />
                       <CardContent className="p-8">
                         <motion.div 
                           whileHover={{ scale: 1.1 }}
                           transition={{ duration: 0.3 }}
-                          className={`h-12 w-12 rounded-xl ${asset.asset_type === 'logo_pack' ? 'bg-primary-accent/10 text-primary-accent' : 'bg-emerald-500/10 text-emerald-600'} flex items-center justify-center mb-6`}
+                          className={`h-12 w-12 rounded-xl ${asset.asset_type === 'logo_pack' ? 'bg-[#006994]/10 text-[#006994]' : 'bg-[#722F37]/10 text-[#722F37]'} flex items-center justify-center mb-6`}
                         >
                           {asset.asset_type === 'logo_pack' ? <ImageIcon className="h-6 w-6" /> : <TrendingUp className="h-6 w-6" />}
                         </motion.div>
@@ -205,7 +205,7 @@ export default function PressPage() {
                         <p className="text-muted-foreground text-sm mb-6 leading-relaxed font-body">{asset.description}</p>
                         <Button 
                           variant="outline" 
-                          className="rounded-xl hover:border-primary-accent hover:text-primary-accent transition-all"
+                          className="rounded-xl hover:border-[#006994] hover:text-[#006994] transition-all"
                           disabled={!asset.download_url}
                           asChild={!!asset.download_url}
                         >
@@ -240,15 +240,15 @@ export default function PressPage() {
             transition={{ duration: 0.7, delay: 0.6 }}
             className="mt-16 max-w-4xl mx-auto"
           >
-            <Card className="border-primary-accent/20 bg-primary/5 overflow-hidden">
-              <div className="absolute inset-0 bg-[radial-gradient(50%_80%_at_50%_100%,rgba(var(--primary-rgb),0.04)_0%,transparent_100%)]" />
+            <Card className="border-[#006994]/20 bg-[#EFF6FA]/40 overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(50%_80%_at_50%_100%,rgba(0,105,148,0.04)_0%,transparent_100%)]" />
               <CardContent className="p-8">
                 <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
                   <motion.div 
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.5, delay: 0.7 }}
-                    className="h-14 w-14 rounded-2xl bg-primary-accent/10 text-primary-accent flex items-center justify-center flex-shrink-0"
+                    className="h-14 w-14 rounded-2xl bg-[#006994]/10 text-[#006994] flex items-center justify-center flex-shrink-0"
                   >
                     <Mail className="h-7 w-7" />
                   </motion.div>
@@ -258,7 +258,7 @@ export default function PressPage() {
                   </div>
                   <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
                     <Link href="mailto:press@topchart.gh">
-                      <Button className="rounded-xl bg-gradient-primary shadow-lg shadow-primary/20 shrink-0">press@topchart.gh</Button>
+                      <Button className="rounded-xl bg-gradient-to-r from-[#006994] to-[#1A85B8] text-white hover:from-[#00567A] hover:to-[#006994] shadow-lg shrink-0">press@topchart.gh</Button>
                     </Link>
                   </motion.div>
                 </div>

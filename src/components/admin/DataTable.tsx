@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +16,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -48,10 +50,12 @@ import {
 interface Column {
   key: string
   label: string
-  type?: "text" | "number" | "date" | "boolean" | "json" | "badge"
+  type?: "text" | "number" | "date" | "boolean" | "json" | "badge" | "select"
   badgeVariants?: Record<string, "default" | "secondary" | "destructive" | "outline">
   editable?: boolean
   bulkEditable?: boolean
+  options?: { value: string; label: string }[]
+  optionsFetcher?: () => Promise<{ value: string; label: string }[]>
 }
 
 interface DataTableProps {
@@ -102,6 +106,9 @@ export function DataTable({
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
   const [bulkEditOpen, setBulkEditOpen] = useState(false)
   const [bulkFormData, setBulkFormData] = useState<Record<string, any>>({})
+  
+  // Select options state for dropdown columns
+  const [selectOptions, setSelectOptions] = useState<Record<string, { value: string; label: string }[]>>({})
 
   const fetchData = async () => {
     setLoading(true)
@@ -152,6 +159,32 @@ export function DataTable({
     }, 300)
     return () => clearTimeout(timer)
   }, [search])
+
+  // Fetch select options for dropdown columns
+  useEffect(() => {
+    const fetchSelectOptions = async () => {
+      const optionsMap: Record<string, { value: string; label: string }[]> = {}
+      
+      for (const col of columns) {
+        if (col.type === "select") {
+          if (col.options) {
+            optionsMap[col.key] = col.options
+          } else if (col.optionsFetcher) {
+            try {
+              const options = await col.optionsFetcher()
+              optionsMap[col.key] = options
+            } catch (err) {
+              console.error(`Failed to fetch options for ${col.key}:`, err)
+            }
+          }
+        }
+      }
+      
+      setSelectOptions(optionsMap)
+    }
+    
+    fetchSelectOptions()
+  }, [columns])
 
   const formatValue = (value: any, column: Column) => {
     if (value === null || value === undefined) return "-"
@@ -228,14 +261,15 @@ export function DataTable({
       })
       const json = await res.json()
       if (json.success) {
+        toast.success(isNew ? "Record created successfully" : "Record updated successfully")
         setEditRow(null)
         setFormData({})
         fetchData()
       } else {
-        alert(json.error || "Failed to save")
+        toast.error(json.error || "Failed to save")
       }
     } catch (err) {
-      alert("Network error")
+      toast.error("Network error")
     } finally {
       setSaving(false)
     }
@@ -251,13 +285,21 @@ export function DataTable({
       })
       const json = await res.json()
       if (json.success) {
+        toast.success("Record deleted successfully")
         setDeleteRow(null)
         fetchData()
       } else {
-        alert(json.error || "Failed to delete")
+        // Handle specific database errors
+        if (json.code === "FOREIGN_KEY_VIOLATION" || json.error?.includes("foreign key")) {
+          toast.error("Cannot delete: This record is linked to other data. Delete related records first.")
+        } else if (json.code === "UNIQUE_VIOLATION") {
+          toast.error("A record with this information already exists.")
+        } else {
+          toast.error(json.error || "Failed to delete")
+        }
       }
     } catch (err) {
-      alert("Network error")
+      toast.error("Network error")
     } finally {
       setSaving(false)
     }
@@ -301,14 +343,19 @@ export function DataTable({
       })
       const json = await res.json()
       if (json.success) {
+        toast.success(`${selectedRows.size} records deleted successfully`)
         setBulkDeleteOpen(false)
         setSelectedRows(new Set())
         fetchData()
       } else {
-        alert(json.error || "Failed to delete records")
+        if (json.code === "FOREIGN_KEY_VIOLATION") {
+          toast.error("Some records could not be deleted because they are linked to other data.")
+        } else {
+          toast.error(json.error || "Failed to delete records")
+        }
       }
     } catch (err) {
-      alert("Network error")
+      toast.error("Network error")
     } finally {
       setSaving(false)
     }
@@ -330,15 +377,16 @@ export function DataTable({
       })
       const json = await res.json()
       if (json.success) {
+        toast.success(`${selectedRows.size} records updated successfully`)
         setBulkEditOpen(false)
         setSelectedRows(new Set())
         setBulkFormData({})
         fetchData()
       } else {
-        alert(json.error || "Failed to update records")
+        toast.error(json.error || "Failed to update records")
       }
     } catch (err) {
-      alert("Network error")
+      toast.error("Network error")
     } finally {
       setSaving(false)
     }
@@ -561,6 +609,9 @@ export function DataTable({
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Record Details</DialogTitle>
+            <DialogDescription>
+              View the complete details of this record.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {selectedRow && Object.entries(selectedRow).map(([key, value]) => (
@@ -589,6 +640,9 @@ export function DataTable({
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editRow?.isNew ? "Create New Record" : "Edit Record"}</DialogTitle>
+            <DialogDescription>
+              {editRow?.isNew ? "Fill in the details to create a new record." : "Make changes to the record below."}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {columns.filter(col => col.key !== "id" && col.key !== "createdAt" && col.key !== "updatedAt").map((col) => (
@@ -603,6 +657,20 @@ export function DataTable({
                   >
                     <option value="false">No</option>
                     <option value="true">Yes</option>
+                  </select>
+                ) : col.type === "select" ? (
+                  <select
+                    id={col.key}
+                    value={formData[col.key] || ""}
+                    onChange={(e) => setFormData({ ...formData, [col.key]: e.target.value })}
+                    className="w-full border rounded-md p-2"
+                  >
+                    <option value="">-- Select {col.label} --</option>
+                    {(selectOptions[col.key] || []).map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                 ) : col.type === "json" ? (
                   <textarea
@@ -678,6 +746,9 @@ export function DataTable({
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Bulk Edit {selectedRows.size} Records</DialogTitle>
+            <DialogDescription>
+              Update multiple records at once. Only changed fields will be applied.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">

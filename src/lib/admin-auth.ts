@@ -25,8 +25,6 @@ export async function requireAdmin(): Promise<AdminAuthResult> {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
 
-    console.log("[requireAdmin] Session token:", sessionToken ? sessionToken.substring(0, 8) + "..." : "NONE");
-
     if (!sessionToken) {
       return { ok: false, status: 401, error: "Unauthorized" };
     }
