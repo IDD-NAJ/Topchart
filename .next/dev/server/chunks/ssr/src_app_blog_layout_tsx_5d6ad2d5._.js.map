@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/DANE/Downloads/Topchart-master/Topchart-master/src/app/blog/layout.tsx"],"sourcesContent":["import type { Metadata } from 'next'\r\n\r\nexport const metadata: Metadata = {\r\n  title: 'Blog & Updates',\r\n  description: 'Read the latest news, product updates, security guides, and company announcements from the Topchart Ghana team.',\r\n  openGraph: {\r\n    title: 'Topchart Blog & Updates',\r\n    description: 'Stay up to date with the latest from Topchart — new data bundles, security tips, and company milestones.',\r\n    url: 'https://topchart.gh/blog',\r\n  },\r\n  alternates: {\r\n    canonical: 'https://topchart.gh/blog',\r\n  },\r\n}\r\n\r\nexport default function BlogLayout({ children }: { children: React.ReactNode }) {\r\n  return <>{children}</>\r\n}\r\n"],"names":[],"mappings":";;;;;;;;AAEO,MAAM,WAAqB;IAChC,OAAO;IACP,aAAa;IACb,WAAW;QACT,OAAO;QACP,aAAa;QACb,KAAK;IACP;IACA,YAAY;QACV,WAAW;IACb;AACF;AAEe,SAAS,WAAW,EAAE,QAAQ,EAAiC;IAC5E,qBAAO;kBAAG;;AACZ"}}]
+}

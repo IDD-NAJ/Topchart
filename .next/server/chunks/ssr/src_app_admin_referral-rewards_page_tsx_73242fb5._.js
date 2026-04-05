@@ -1,0 +1,3 @@
+module.exports=[392236,a=>{"use strict";var b=a.i(187924),c=a.i(528697),d=a.i(93518);function e(){return(0,b.jsx)(c.DataTable,{title:"Referral Rewards",tableName:"referral_rewards",icon:(0,b.jsx)(d.Award,{className:"h-5 w-5"}),columns:[{key:"id",label:"ID"},{key:"referralId",label:"Referral ID"},{key:"transactionId",label:"Transaction ID"},{key:"amount",label:"Amount",type:"number"},{key:"status",label:"Status",type:"badge",badgeVariants:{PENDING:"secondary",CREDITED:"default"}},{key:"createdAt",label:"Created",type:"date"}],searchableColumns:["referralId"],defaultOrderBy:"createdAt"})}a.s(["default",()=>e])}];
+
+//# sourceMappingURL=src_app_admin_referral-rewards_page_tsx_73242fb5._.js.map

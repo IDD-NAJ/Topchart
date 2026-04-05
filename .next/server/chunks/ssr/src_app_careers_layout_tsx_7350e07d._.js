@@ -1,0 +1,3 @@
+module.exports=[713747,a=>{"use strict";var b=a.i(907997);function c({children:a}){return(0,b.jsx)(b.Fragment,{children:a})}a.s(["default",()=>c,"metadata",0,{title:"Careers",description:"Join the Topchart team in Accra, Ghana. We are building the financial infrastructure for the next generation of Ghanaian businesses. View open positions.",openGraph:{title:"Careers at Topchart Ghana",description:"Help us build the financial infrastructure for the next generation of Ghanaian businesses. View open engineering, design and operations roles.",url:"https://topchart.gh/careers"},alternates:{canonical:"https://topchart.gh/careers"}}])}];
+
+//# sourceMappingURL=src_app_careers_layout_tsx_7350e07d._.js.map

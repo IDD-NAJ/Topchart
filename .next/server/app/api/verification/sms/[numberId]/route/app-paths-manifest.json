@@ -1,0 +1,3 @@
+{
+  "/api/verification/sms/[numberId]/route": "app/api/verification/sms/[numberId]/route.js"
+}

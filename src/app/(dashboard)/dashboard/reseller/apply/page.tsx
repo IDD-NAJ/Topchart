@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { ErrorBoundary, useErrorHandler } from "@/components/error-boundary";
 import { secureFetch } from "@/lib/csrf";
 import { saveFormData, loadFormData, clearFormData, hasCachedData } from "@/lib/form-cache";
 import { useFormCache } from "@/hooks/use-form-cache";
-import { Store, ArrowLeft, Loader2, CreditCard, CheckCircle, AlertCircle, Circle, Check, WifiOff, RefreshCw, RotateCcw } from "lucide-react";
+import { Store, ArrowLeft, Loader2, CreditCard, CheckCircle, AlertCircle, Circle, Check, WifiOff, RefreshCw, RotateCcw, CloudCheck } from "lucide-react";
 
 interface FormField {
   enabled: boolean;
@@ -55,6 +55,8 @@ function ResellerApplyContent() {
   const [currentStep, setCurrentStep] = useState(1);
   const [networkError, setNetworkError] = useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [config, setConfig] = useState<FormConfig>({
     business_name: { enabled: true, required: true },
     business_address: { enabled: true, required: false },
@@ -75,6 +77,16 @@ function ResellerApplyContent() {
   });
 
   const { save: saveToCache, load: loadFromCache, clear: clearCache, hasCache } = useFormCache(formData);
+
+  const autoSave = useCallback((data: Record<string, string>) => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    setAutoSaveStatus("saving");
+    autoSaveTimer.current = setTimeout(() => {
+      saveToCache(data);
+      setAutoSaveStatus("saved");
+      setTimeout(() => setAutoSaveStatus("idle"), 2000);
+    }, 1200);
+  }, [saveToCache]);
 
   useEffect(() => {
     loadFormConfig();
@@ -285,12 +297,14 @@ function ResellerApplyContent() {
   const renderField = (fieldName: string, label: string, type: string = "text", placeholder?: string) => {
     const fieldConfig = config[fieldName as keyof FormConfig] as FormField | undefined;
     if (!fieldConfig?.enabled) return null;
+    const errorId = `${fieldName}-error`;
+    const hasError = !!errors[fieldName];
 
     return (
       <div className="space-y-2">
         <Label htmlFor={fieldName}>
           {label}
-          {fieldConfig.required && <span className="text-red-500 ml-1">*</span>}
+          {fieldConfig.required && <span className="text-red-500 ml-1" aria-hidden="true">*</span>}
         </Label>
         <Input
           id={fieldName}
@@ -299,20 +313,19 @@ function ResellerApplyContent() {
           onChange={(e) => {
             const newData = { ...formData, [fieldName]: e.target.value };
             setFormData(newData);
-            // Save to cache
-            saveToCache(newData);
-            // Clear error when user types
-            if (errors[fieldName]) {
-              setErrors({ ...errors, [fieldName]: "" });
-            }
+            autoSave(newData);
+            if (errors[fieldName]) setErrors({ ...errors, [fieldName]: "" });
           }}
           placeholder={placeholder}
           required={fieldConfig.required}
-          className={errors[fieldName] ? "border-red-500" : ""}
+          aria-required={fieldConfig.required}
+          aria-invalid={hasError}
+          aria-describedby={hasError ? errorId : undefined}
+          className={hasError ? "border-red-500" : ""}
         />
-        {errors[fieldName] && (
-          <p className="text-sm text-red-500 flex items-center gap-1">
-            <AlertCircle className="h-3 w-3" />
+        {hasError && (
+          <p id={errorId} role="alert" className="text-sm text-red-500 flex items-center gap-1">
+            <AlertCircle className="h-3 w-3" aria-hidden="true" />
             {errors[fieldName]}
           </p>
         )}
@@ -321,11 +334,15 @@ function ResellerApplyContent() {
   };
 
   const renderCustomField = (field: CustomField) => {
+    const helpId = `${field.field_name}-help`;
+    const errorId = `${field.field_name}-error`;
+    const hasError = !!errors[field.field_name];
+    const describedBy = [hasError ? errorId : "", field.help_text ? helpId : ""].filter(Boolean).join(" ") || undefined;
     return (
       <div className="space-y-2" key={field.id}>
         <Label htmlFor={field.field_name}>
           {field.field_label}
-          {field.is_required && <span className="text-red-500 ml-1">*</span>}
+          {field.is_required && <span className="text-red-500 ml-1" aria-hidden="true">*</span>}
         </Label>
         {field.field_type === "textarea" ? (
           <textarea
@@ -334,10 +351,13 @@ function ResellerApplyContent() {
             onChange={(e) => {
               const newData = { ...formData, [field.field_name]: e.target.value };
               setFormData(newData);
-              saveToCache(newData);
+              autoSave(newData);
             }}
             placeholder={field.placeholder}
             required={field.is_required}
+            aria-required={field.is_required}
+            aria-invalid={hasError}
+            aria-describedby={describedBy}
             className="w-full border rounded-md p-2 min-h-[100px]"
           />
         ) : field.field_type === "select" ? (
@@ -347,9 +367,12 @@ function ResellerApplyContent() {
             onChange={(e) => {
               const newData = { ...formData, [field.field_name]: e.target.value };
               setFormData(newData);
-              saveToCache(newData);
+              autoSave(newData);
             }}
             required={field.is_required}
+            aria-required={field.is_required}
+            aria-invalid={hasError}
+            aria-describedby={describedBy}
             className="w-full border rounded-md p-2"
           >
             <option value="">Select...</option>
@@ -365,14 +388,23 @@ function ResellerApplyContent() {
             onChange={(e) => {
               const newData = { ...formData, [field.field_name]: e.target.value };
               setFormData(newData);
-              saveToCache(newData);
+              autoSave(newData);
             }}
             placeholder={field.placeholder}
             required={field.is_required}
+            aria-required={field.is_required}
+            aria-invalid={hasError}
+            aria-describedby={describedBy}
           />
         )}
+        {hasError && (
+          <p id={errorId} role="alert" className="text-sm text-red-500 flex items-center gap-1">
+            <AlertCircle className="h-3 w-3" aria-hidden="true" />
+            {errors[field.field_name]}
+          </p>
+        )}
         {field.help_text && (
-          <p className="text-xs text-muted-foreground">{field.help_text}</p>
+          <p id={helpId} className="text-xs text-muted-foreground">{field.help_text}</p>
         )}
       </div>
     );
@@ -472,8 +504,28 @@ function ResellerApplyContent() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
+          {/* Auto-save status */}
+          <div aria-live="polite" aria-atomic="true" className="flex justify-end mb-2 h-5">
+            {autoSaveStatus === "saving" && (
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                Saving draft...
+              </span>
+            )}
+            {autoSaveStatus === "saved" && (
+              <span className="text-xs text-green-600 flex items-center gap-1">
+                <CloudCheck className="h-3 w-3" aria-hidden="true" />
+                Draft saved
+              </span>
+            )}
+          </div>
+
           {/* Progress Indicator */}
-          <div className="mb-6 sm:mb-8">
+          <div
+            className="mb-6 sm:mb-8"
+            role="group"
+            aria-label="Application progress"
+          >
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 {currentStep >= 1 ? (
@@ -506,7 +558,14 @@ function ResellerApplyContent() {
                 </span>
               </div>
             </div>
-            <div className="w-full bg-muted rounded-full h-2">
+            <div
+              className="w-full bg-muted rounded-full h-2"
+              role="progressbar"
+              aria-valuenow={currentStep}
+              aria-valuemin={1}
+              aria-valuemax={3}
+              aria-label={`Step ${currentStep} of 3`}
+            >
               <div 
                 className="bg-gradient-to-r from-[#006994] to-[#722F37] h-2 rounded-full transition-all duration-300"
                 style={{ width: `${(currentStep / 3) * 100}%` }}
@@ -514,7 +573,12 @@ function ResellerApplyContent() {
             </div>
           </div>
           
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-4 sm:space-y-6"
+            aria-label="Reseller application form"
+            noValidate
+          >
             {/* Step 1: Business Details */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-foreground">Business Information</h3>
@@ -535,20 +599,24 @@ function ResellerApplyContent() {
                     </Label>
                     <Input
                       id="business_phone"
+                      type="tel"
                       value={formData.business_phone || ""}
                       onChange={(e) => {
-                        setFormData({ ...formData, business_phone: e.target.value });
-                        if (errors.business_phone) {
-                          setErrors({ ...errors, business_phone: "" });
-                        }
+                        const newData = { ...formData, business_phone: e.target.value };
+                        setFormData(newData);
+                        autoSave(newData);
+                        if (errors.business_phone) setErrors({ ...errors, business_phone: "" });
                       }}
                       placeholder="024XXXXXXX"
                       required={config.business_phone.required}
+                      aria-required={config.business_phone.required}
+                      aria-invalid={!!errors.business_phone}
+                      aria-describedby={errors.business_phone ? "business_phone-error" : undefined}
                       className={errors.business_phone ? "border-red-500" : ""}
                     />
                     {errors.business_phone && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
+                      <p id="business_phone-error" role="alert" className="text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" aria-hidden="true" />
                         {errors.business_phone}
                       </p>
                     )}
@@ -565,18 +633,21 @@ function ResellerApplyContent() {
                       type="email"
                       value={formData.business_email || ""}
                       onChange={(e) => {
-                        setFormData({ ...formData, business_email: e.target.value });
-                        if (errors.business_email) {
-                          setErrors({ ...errors, business_email: "" });
-                        }
+                        const newData = { ...formData, business_email: e.target.value };
+                        setFormData(newData);
+                        autoSave(newData);
+                        if (errors.business_email) setErrors({ ...errors, business_email: "" });
                       }}
                       placeholder="business@example.com"
                       required={config.business_email.required}
+                      aria-required={config.business_email.required}
+                      aria-invalid={!!errors.business_email}
+                      aria-describedby={errors.business_email ? "business_email-error" : undefined}
                       className={errors.business_email ? "border-red-500" : ""}
                     />
                     {errors.business_email && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
+                      <p id="business_email-error" role="alert" className="text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" aria-hidden="true" />
                         {errors.business_email}
                       </p>
                     )}
@@ -592,8 +663,13 @@ function ResellerApplyContent() {
                     <select
                       id="business_type"
                       value={formData.business_type || "individual"}
-                      onChange={(e) => setFormData({ ...formData, business_type: e.target.value })}
+                      onChange={(e) => {
+                        const newData = { ...formData, business_type: e.target.value };
+                        setFormData(newData);
+                        autoSave(newData);
+                      }}
                       required={config.business_type.required}
+                      aria-required={config.business_type.required}
                       className="w-full border rounded-md p-2"
                     >
                       <option value="individual">Individual</option>
@@ -617,6 +693,8 @@ function ResellerApplyContent() {
               type="submit" 
               className="w-full h-12 sm:h-11 text-sm sm:text-xs"
               disabled={loading}
+              aria-disabled={loading}
+              aria-busy={loading}
             >
               {loading ? (
                 <>

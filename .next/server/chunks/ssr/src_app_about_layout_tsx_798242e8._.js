@@ -1,0 +1,3 @@
+module.exports=[965955,a=>{"use strict";var b=a.i(907997);function c({children:a}){return(0,b.jsx)(b.Fragment,{children:a})}a.s(["default",()=>c,"metadata",0,{title:"About Us",description:"Learn about Topchart Ghana — our mission to redefine digital infrastructure in Ghana with lightning-fast airtime and data top-ups for MTN, Telecel, and AirtelTigo.",openGraph:{title:"About Topchart Ghana",description:"Our mission is to eliminate friction in purchasing digital services, providing enterprise-grade infrastructure for everyone.",url:"https://topchart.gh/about"},alternates:{canonical:"https://topchart.gh/about"}}])}];
+
+//# sourceMappingURL=src_app_about_layout_tsx_798242e8._.js.map

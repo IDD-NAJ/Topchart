@@ -1,0 +1,3 @@
+module.exports=[666680,(a,b,c)=>{b.exports=a.x("node:crypto",()=>require("node:crypto"))},254799,(a,b,c)=>{b.exports=a.x("crypto",()=>require("crypto"))},397594,a=>{"use strict";var b=a.i(764874),c=a.i(122390);a.s([],842159),a.i(842159),a.s(["401e0df08ef25caa40bb10507c29bbb4bd7866e17e",()=>c.removeFavorite,"40d163ea458584dfc93297d1666fe2976a41ace538",()=>c.addFavorite,"40fa3db78b6dd0c500af801b2f47a7f2483e80b913",()=>b.register,"6049d4dc38325971a83d7e11d310bc0b75d1c4f1c5",()=>c.getFavorites],397594)}];
+
+//# sourceMappingURL=%5Broot-of-the-server%5D__b5f08ac6._.js.map

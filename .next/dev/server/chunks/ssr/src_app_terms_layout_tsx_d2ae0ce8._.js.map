@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/DANE/Downloads/Topchart-master/Topchart-master/src/app/terms/layout.tsx"],"sourcesContent":["import type { Metadata } from 'next'\r\n\r\nexport const metadata: Metadata = {\r\n  title: 'Terms of Service',\r\n  description: 'Read the Topchart Ghana Terms of Service. Understand the rules, regulations, and conditions for using our airtime and data top-up platform.',\r\n  robots: {\r\n    index: true,\r\n    follow: true,\r\n  },\r\n  openGraph: {\r\n    title: 'Terms of Service | Topchart Ghana',\r\n    description: 'Terms and conditions for using Topchart Ghana\\'s airtime and data top-up services.',\r\n    url: 'https://topchart.gh/terms',\r\n  },\r\n  alternates: {\r\n    canonical: 'https://topchart.gh/terms',\r\n  },\r\n}\r\n\r\nexport default function TermsLayout({ children }: { children: React.ReactNode }) {\r\n  return <>{children}</>\r\n}\r\n"],"names":[],"mappings":";;;;;;;;AAEO,MAAM,WAAqB;IAChC,OAAO;IACP,aAAa;IACb,QAAQ;QACN,OAAO;QACP,QAAQ;IACV;IACA,WAAW;QACT,OAAO;QACP,aAAa;QACb,KAAK;IACP;IACA,YAAY;QACV,WAAW;IACb;AACF;AAEe,SAAS,YAAY,EAAE,QAAQ,EAAiC;IAC7E,qBAAO;kBAAG;;AACZ"}}]
+}

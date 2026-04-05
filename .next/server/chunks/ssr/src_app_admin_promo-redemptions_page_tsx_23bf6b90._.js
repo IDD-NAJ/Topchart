@@ -1,0 +1,3 @@
+module.exports=[224271,a=>{"use strict";var b=a.i(187924),c=a.i(528697),d=a.i(578138);function e(){return(0,b.jsx)(c.DataTable,{title:"Promo Redemptions",tableName:"promo_redemptions",icon:(0,b.jsx)(d.Gift,{className:"h-5 w-5"}),columns:[{key:"id",label:"ID"},{key:"promoCodeId",label:"Promo Code ID"},{key:"userId",label:"User ID"},{key:"transactionId",label:"Transaction ID"},{key:"appliedAmount",label:"Amount Applied",type:"number"},{key:"createdAt",label:"Created",type:"date"}],searchableColumns:["userId","promoCodeId"],defaultOrderBy:"createdAt"})}a.s(["default",()=>e])}];
+
+//# sourceMappingURL=src_app_admin_promo-redemptions_page_tsx_23bf6b90._.js.map

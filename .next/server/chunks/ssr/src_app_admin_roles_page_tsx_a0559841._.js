@@ -1,0 +1,3 @@
+module.exports=[742408,a=>{"use strict";var b=a.i(187924),c=a.i(528697),d=a.i(28379);function e(){return(0,b.jsx)(c.DataTable,{title:"Roles",tableName:"roles",icon:(0,b.jsx)(d.UserCog,{className:"h-5 w-5"}),columns:[{key:"id",label:"ID"},{key:"name",label:"Name"},{key:"description",label:"Description"},{key:"createdAt",label:"Created",type:"date"}],searchableColumns:["name"],defaultOrderBy:"createdAt"})}a.s(["default",()=>e])}];
+
+//# sourceMappingURL=src_app_admin_roles_page_tsx_a0559841._.js.map
