@@ -1,5 +1,5 @@
 [build]
-  command = "pnpm run build"
+  command = "rm -rf .netlify && pnpm run build"
   publish = ".next"
 
 [[plugins]]
