@@ -12,7 +12,7 @@ import { ErrorBoundary, useErrorHandler } from "@/components/error-boundary";
 import { secureFetch } from "@/lib/csrf";
 import { saveFormData, loadFormData, clearFormData, hasCachedData } from "@/lib/form-cache";
 import { useFormCache } from "@/hooks/use-form-cache";
-import { Store, ArrowLeft, Loader2, CreditCard, CheckCircle, AlertCircle, Circle, Check, WifiOff, RefreshCw, RotateCcw, CloudUpload } from "lucide-react";
+import { Store, ArrowLeft, ArrowRight, Loader2, CreditCard, CheckCircle, AlertCircle, Circle, Check, RotateCcw, CloudUpload } from "lucide-react";
 
 interface FormField {
   enabled: boolean;
@@ -53,7 +53,6 @@ function ResellerApplyContent() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [currentStep, setCurrentStep] = useState(1);
-  const [networkError, setNetworkError] = useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -102,113 +101,74 @@ function ResellerApplyContent() {
 
   const loadFormConfig = async () => {
     try {
-      setNetworkError(false);
-      const res = await secureFetch("/api/reseller/form-config", {
-        headers: {
-          'Cache-Control': 'no-cache',
-        },
+      const res = await fetch("/api/reseller/form-config", {
+        headers: { 'Cache-Control': 'no-cache' },
       });
-      
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      }
-      
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       const data = await res.json();
-
       if (data.success) {
         setConfig(data.config);
         setCustomFields(data.customFields || []);
-        
         const customInitialData: Record<string, string> = {};
         data.customFields?.forEach((field: CustomField) => {
           customInitialData[field.field_name] = "";
         });
         setFormData(prev => ({ ...prev, ...customInitialData }));
-      } else {
-        throw new Error(data.error || "Failed to load form configuration");
       }
     } catch (error) {
       console.error("Failed to load form config:", error);
-      setNetworkError(true);
-      if (error instanceof Error) {
-        if (error.message.includes('fetch')) {
-          toast.error("Network error. Please check your connection and try again.");
-        } else {
-          toast.error(error.message || "Failed to load form configuration");
-        }
-      } else {
-        toast.error("An unexpected error occurred");
-      }
+      toast.warning("Using default form configuration.");
     } finally {
       setConfigLoading(false);
     }
   };
 
-  const validateForm = (): boolean => {
+  const validateStep1 = (): boolean => {
     const newErrors: ValidationErrors = {};
-    let step = 1;
-    
-    // Check which step has errors to determine current step
-    if (config.business_name.enabled && config.business_name.required && !formData.business_name.trim()) {
-      step = Math.max(step, 1);
-    }
-    
-    if (config.business_phone.enabled && formData.business_phone) {
-      const phoneRegex = /^0[2-9]\d{8}$/;
-      if (!phoneRegex.test(formData.business_phone.replace(/\s/g, ""))) {
-        step = Math.max(step, 2);
-      }
-    }
-    
-    if (config.business_email.enabled && formData.business_email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.business_email)) {
-        step = Math.max(step, 2);
-      }
-    }
-    
-    setCurrentStep(step);
-
-    // Validate business name
     if (config.business_name.enabled && config.business_name.required && !formData.business_name.trim()) {
       newErrors.business_name = "Business name is required";
     }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    // Validate business email format
-    if (config.business_email.enabled && formData.business_email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.business_email)) {
-        newErrors.business_email = "Please enter a valid email address";
-      }
-    }
-
-    // Validate business phone format (Ghana)
+  const validateStep2 = (): boolean => {
+    const newErrors: ValidationErrors = {};
     if (config.business_phone.enabled && formData.business_phone) {
       const phoneRegex = /^0[2-9]\d{8}$/;
       if (!phoneRegex.test(formData.business_phone.replace(/\s/g, ""))) {
         newErrors.business_phone = "Please enter a valid Ghana phone number (e.g., 024XXXXXXX)";
       }
     }
-
-    // Validate custom fields
+    if (config.business_email.enabled && formData.business_email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.business_email)) {
+        newErrors.business_email = "Please enter a valid email address";
+      }
+    }
     customFields.forEach((field) => {
       if (field.is_required && !formData[field.field_name]?.trim()) {
         newErrors[field.field_name] = `${field.field_label} is required`;
       }
     });
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleNext = () => {
+    if (currentStep === 1) {
+      if (validateStep1()) { setCurrentStep(2); setErrors({}); }
+    } else if (currentStep === 2) {
+      if (validateStep2()) { setCurrentStep(3); setErrors({}); }
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) { setCurrentStep(currentStep - 1); setErrors({}); }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      toast.error("Please fix the errors in the form");
-      return;
-    }
-
     setShowConfirmDialog(true);
   };
 
@@ -220,7 +180,6 @@ function ResellerApplyContent() {
 
     setShowConfirmDialog(false);
     setLoading(true);
-    setNetworkError(false);
 
     try {
       // Step 1: Create the application
@@ -279,8 +238,6 @@ function ResellerApplyContent() {
       }
     } catch (error) {
       console.error("Application submission error:", error);
-      setNetworkError(true);
-      
       if (error instanceof Error) {
         if (error.message.includes('fetch') || error.message.includes('network')) {
           toast.error("Network error. Please check your connection and try again.");
@@ -450,37 +407,6 @@ function ResellerApplyContent() {
     );
   }
 
-  if (networkError) {
-    return (
-      <div className="container mx-auto py-6 px-4 sm:py-8 sm:px-6 max-w-2xl">
-        <Button 
-          variant="ghost" 
-          className="mb-4 sm:mb-6"
-          onClick={() => window.location.href = "/dashboard"}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
-        </Button>
-        
-        <Card>
-          <CardContent className="p-8 text-center">
-            <div className="mx-auto w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-4">
-              <WifiOff className="h-6 w-6 text-amber-600" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">Connection Error</h3>
-            <p className="text-muted-foreground mb-6">
-              We're having trouble connecting to our servers. Please check your internet connection and try again.
-            </p>
-            <Button onClick={() => window.location.reload()} className="w-full">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto py-6 px-4 sm:py-8 sm:px-6 max-w-2xl">
       <Button 
@@ -527,36 +453,28 @@ function ResellerApplyContent() {
             aria-label="Application progress"
           >
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                {currentStep >= 1 ? (
-                  <Check className="h-5 w-5 text-green-600" />
-                ) : (
-                  <Circle className="h-5 w-5 text-muted-foreground" />
-                )}
-                <span className={`text-sm font-medium ${currentStep >= 1 ? "text-green-600" : "text-muted-foreground"}`}>
-                  Business Details
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                {currentStep >= 2 ? (
-                  <Check className="h-5 w-5 text-green-600" />
-                ) : (
-                  <Circle className="h-5 w-5 text-muted-foreground" />
-                )}
-                <span className={`text-sm font-medium ${currentStep >= 2 ? "text-green-600" : "text-muted-foreground"}`}>
-                  Contact Info
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                {currentStep >= 3 ? (
-                  <Check className="h-5 w-5 text-green-600" />
-                ) : (
-                  <Circle className="h-5 w-5 text-muted-foreground" />
-                )}
-                <span className={`text-sm font-medium ${currentStep >= 3 ? "text-green-600" : "text-muted-foreground"}`}>
-                  Review & Submit
-                </span>
-              </div>
+              {(["Business Details", "Contact Info", "Review & Submit"] as const).map((label, index) => {
+                const isCompleted = index < currentStep - 1;
+                const isCurrent = index === currentStep - 1;
+                return (
+                  <div key={label} className="flex items-center space-x-2">
+                    {isCompleted ? (
+                      <Check className="h-5 w-5 text-green-600" />
+                    ) : isCurrent ? (
+                      <div className="h-5 w-5 rounded-full border-2 border-[#006994] flex items-center justify-center shrink-0">
+                        <div className="h-2 w-2 rounded-full bg-[#006994]" />
+                      </div>
+                    ) : (
+                      <Circle className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    <span className={`text-sm font-medium ${
+                      isCompleted ? "text-green-600" : isCurrent ? "text-[#006994]" : "text-muted-foreground"
+                    }`}>
+                      {label}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
             <div
               className="w-full bg-muted rounded-full h-2"
@@ -567,7 +485,7 @@ function ResellerApplyContent() {
               aria-label={`Step ${currentStep} of 3`}
             >
               <div 
-                className="bg-gradient-to-r from-[#006994] to-[#722F37] h-2 rounded-full transition-all duration-300"
+                className="bg-[#006994] h-2 rounded-full transition-all duration-300"
                 style={{ width: `${(currentStep / 3) * 100}%` }}
               />
             </div>
@@ -580,79 +498,81 @@ function ResellerApplyContent() {
             noValidate
           >
             {/* Step 1: Business Details */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">Business Information</h3>
-              {renderField("business_name", "Business Name", "text", "Your business name")}
-              {renderField("business_address", "Business Address", "text", "Your business address")}
-            </div>
+            {currentStep === 1 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">Business Information</h3>
+                {renderField("business_name", "Business Name", "text", "Your business name")}
+                {renderField("business_address", "Business Address", "text", "Your business address")}
+              </div>
+            )}
 
             {/* Step 2: Contact Information */}
-            {(config.business_phone?.enabled || config.business_email?.enabled || config.business_type?.enabled) && (
+            {currentStep === 2 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-foreground">Contact Details</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {config.business_phone?.enabled && (
-                  <div className="space-y-2">
-                    <Label htmlFor="business_phone">
-                      Business Phone
-                      {config.business_phone.required && <span className="text-red-500 ml-1">*</span>}
-                    </Label>
-                    <Input
-                      id="business_phone"
-                      type="tel"
-                      value={formData.business_phone || ""}
-                      onChange={(e) => {
-                        const newData = { ...formData, business_phone: e.target.value };
-                        setFormData(newData);
-                        autoSave(newData);
-                        if (errors.business_phone) setErrors({ ...errors, business_phone: "" });
-                      }}
-                      placeholder="024XXXXXXX"
-                      required={config.business_phone.required}
-                      aria-required={config.business_phone.required}
-                      aria-invalid={!!errors.business_phone}
-                      aria-describedby={errors.business_phone ? "business_phone-error" : undefined}
-                      className={errors.business_phone ? "border-red-500" : ""}
-                    />
-                    {errors.business_phone && (
-                      <p id="business_phone-error" role="alert" className="text-sm text-red-500 flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" aria-hidden="true" />
-                        {errors.business_phone}
-                      </p>
-                    )}
-                  </div>
-                )}
-                {config.business_email?.enabled && (
-                  <div className="space-y-2">
-                    <Label htmlFor="business_email">
-                      Business Email
-                      {config.business_email.required && <span className="text-red-500 ml-1">*</span>}
-                    </Label>
-                    <Input
-                      id="business_email"
-                      type="email"
-                      value={formData.business_email || ""}
-                      onChange={(e) => {
-                        const newData = { ...formData, business_email: e.target.value };
-                        setFormData(newData);
-                        autoSave(newData);
-                        if (errors.business_email) setErrors({ ...errors, business_email: "" });
-                      }}
-                      placeholder="business@example.com"
-                      required={config.business_email.required}
-                      aria-required={config.business_email.required}
-                      aria-invalid={!!errors.business_email}
-                      aria-describedby={errors.business_email ? "business_email-error" : undefined}
-                      className={errors.business_email ? "border-red-500" : ""}
-                    />
-                    {errors.business_email && (
-                      <p id="business_email-error" role="alert" className="text-sm text-red-500 flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" aria-hidden="true" />
-                        {errors.business_email}
-                      </p>
-                    )}
-                  </div>
-                )}
+                  {config.business_phone?.enabled && (
+                    <div className="space-y-2">
+                      <Label htmlFor="business_phone">
+                        Business Phone
+                        {config.business_phone.required && <span className="text-red-500 ml-1">*</span>}
+                      </Label>
+                      <Input
+                        id="business_phone"
+                        type="tel"
+                        value={formData.business_phone || ""}
+                        onChange={(e) => {
+                          const newData = { ...formData, business_phone: e.target.value };
+                          setFormData(newData);
+                          autoSave(newData);
+                          if (errors.business_phone) setErrors({ ...errors, business_phone: "" });
+                        }}
+                        placeholder="024XXXXXXX"
+                        required={config.business_phone.required}
+                        aria-required={config.business_phone.required}
+                        aria-invalid={!!errors.business_phone}
+                        aria-describedby={errors.business_phone ? "business_phone-error" : undefined}
+                        className={errors.business_phone ? "border-red-500" : ""}
+                      />
+                      {errors.business_phone && (
+                        <p id="business_phone-error" role="alert" className="text-sm text-red-500 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" aria-hidden="true" />
+                          {errors.business_phone}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {config.business_email?.enabled && (
+                    <div className="space-y-2">
+                      <Label htmlFor="business_email">
+                        Business Email
+                        {config.business_email.required && <span className="text-red-500 ml-1">*</span>}
+                      </Label>
+                      <Input
+                        id="business_email"
+                        type="email"
+                        value={formData.business_email || ""}
+                        onChange={(e) => {
+                          const newData = { ...formData, business_email: e.target.value };
+                          setFormData(newData);
+                          autoSave(newData);
+                          if (errors.business_email) setErrors({ ...errors, business_email: "" });
+                        }}
+                        placeholder="business@example.com"
+                        required={config.business_email.required}
+                        aria-required={config.business_email.required}
+                        aria-invalid={!!errors.business_email}
+                        aria-describedby={errors.business_email ? "business_email-error" : undefined}
+                        className={errors.business_email ? "border-red-500" : ""}
+                      />
+                      {errors.business_email && (
+                        <p id="business_email-error" role="alert" className="text-sm text-red-500 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" aria-hidden="true" />
+                          {errors.business_email}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
                 {config.business_type?.enabled && (
                   <div className="space-y-2">
@@ -678,36 +598,102 @@ function ResellerApplyContent() {
                     </select>
                   </div>
                 )}
+                {customFields.length > 0 && (
+                  <div className="space-y-4 pt-2">
+                    <h3 className="text-lg font-semibold text-foreground">Additional Information</h3>
+                    {customFields.map(renderCustomField)}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Additional Information */}
-            {customFields.length > 0 && (
+            {/* Step 3: Review & Submit */}
+            {currentStep === 3 && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground">Additional Information</h3>
-                {customFields.map(renderCustomField)}
+                <h3 className="text-lg font-semibold text-foreground">Review Your Application</h3>
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-1">
+                  <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
+                    <span className="text-sm text-muted-foreground">Business Name</span>
+                    <span className="text-sm font-semibold text-slate-900">{formData.business_name || "—"}</span>
+                  </div>
+                  {config.business_address?.enabled && (
+                    <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
+                      <span className="text-sm text-muted-foreground">Business Address</span>
+                      <span className="text-sm font-semibold text-slate-900">{formData.business_address || "—"}</span>
+                    </div>
+                  )}
+                  {config.business_phone?.enabled && (
+                    <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
+                      <span className="text-sm text-muted-foreground">Business Phone</span>
+                      <span className="text-sm font-semibold text-slate-900">{formData.business_phone || "—"}</span>
+                    </div>
+                  )}
+                  {config.business_email?.enabled && (
+                    <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
+                      <span className="text-sm text-muted-foreground">Business Email</span>
+                      <span className="text-sm font-semibold text-slate-900">{formData.business_email || "—"}</span>
+                    </div>
+                  )}
+                  {config.business_type?.enabled && (
+                    <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
+                      <span className="text-sm text-muted-foreground">Business Type</span>
+                      <span className="text-sm font-semibold text-slate-900 capitalize">{formData.business_type || "—"}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center pt-3">
+                    <span className="text-sm font-bold text-slate-800">Application Fee</span>
+                    <span className="text-sm font-bold text-[#006994]">{config.currency} {config.application_fee?.toFixed(2)}</span>
+                  </div>
+                </div>
               </div>
             )}
 
-            <Button 
-              type="submit" 
-              className="w-full h-12 sm:h-11 text-sm sm:text-xs"
-              disabled={loading}
-              aria-disabled={loading}
-              aria-busy={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Submitting...
-                </>
+            {/* Step Navigation */}
+            <div className="flex items-center justify-between pt-2">
+              {currentStep > 1 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleBack}
+                  className="flex items-center gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </Button>
               ) : (
-                <>
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Submit Application ({config.currency} {config.application_fee?.toFixed(2)})
-                </>
+                <div />
               )}
-            </Button>
+              {currentStep < 3 ? (
+                <Button
+                  type="button"
+                  onClick={handleNext}
+                  className="bg-[#006994] text-white hover:bg-[#00567A] flex items-center gap-2"
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  className="bg-[#006994] text-white hover:bg-[#00567A] h-11"
+                  disabled={loading}
+                  aria-disabled={loading}
+                  aria-busy={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Submit Application ({config.currency} {config.application_fee?.toFixed(2)})
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </form>
         </CardContent>
       </Card>
