@@ -51,56 +51,56 @@ const LTR_OPTIONS = [
 ]
 
 const US_STATES = [
-  { name: "Alabama", code: "205" },
-  { name: "Alaska", code: "907" },
-  { name: "Arizona", code: "480" },
-  { name: "Arkansas", code: "501" },
-  { name: "California", code: "213" },
-  { name: "Colorado", code: "303" },
-  { name: "Connecticut", code: "203" },
-  { name: "Delaware", code: "302" },
-  { name: "Florida", code: "305" },
-  { name: "Georgia", code: "404" },
-  { name: "Hawaii", code: "808" },
-  { name: "Idaho", code: "208" },
-  { name: "Illinois", code: "312" },
-  { name: "Indiana", code: "317" },
-  { name: "Iowa", code: "319" },
-  { name: "Kansas", code: "316" },
-  { name: "Kentucky", code: "502" },
-  { name: "Louisiana", code: "504" },
-  { name: "Maine", code: "207" },
-  { name: "Maryland", code: "301" },
-  { name: "Massachusetts", code: "617" },
-  { name: "Michigan", code: "313" },
-  { name: "Minnesota", code: "612" },
-  { name: "Mississippi", code: "601" },
-  { name: "Missouri", code: "314" },
-  { name: "Montana", code: "406" },
-  { name: "Nebraska", code: "402" },
-  { name: "Nevada", code: "702" },
-  { name: "New Hampshire", code: "603" },
-  { name: "New Jersey", code: "201" },
-  { name: "New Mexico", code: "505" },
-  { name: "New York", code: "212" },
-  { name: "North Carolina", code: "704" },
-  { name: "North Dakota", code: "701" },
-  { name: "Ohio", code: "216" },
-  { name: "Oklahoma", code: "405" },
-  { name: "Oregon", code: "503" },
-  { name: "Pennsylvania", code: "215" },
-  { name: "Rhode Island", code: "401" },
-  { name: "South Carolina", code: "803" },
-  { name: "South Dakota", code: "605" },
-  { name: "Tennessee", code: "615" },
-  { name: "Texas", code: "214" },
-  { name: "Utah", code: "801" },
-  { name: "Vermont", code: "802" },
-  { name: "Virginia", code: "703" },
-  { name: "Washington", code: "206" },
-  { name: "West Virginia", code: "304" },
-  { name: "Wisconsin", code: "414" },
-  { name: "Wyoming", code: "307" },
+  { state: "Alabama", code: "205" },
+  { state: "Alaska", code: "907" },
+  { state: "Arizona", code: "480" },
+  { state: "Arkansas", code: "501" },
+  { state: "California", code: "213" },
+  { state: "Colorado", code: "303" },
+  { state: "Connecticut", code: "203" },
+  { state: "Delaware", code: "302" },
+  { state: "Florida", code: "305" },
+  { state: "Georgia", code: "404" },
+  { state: "Hawaii", code: "808" },
+  { state: "Idaho", code: "208" },
+  { state: "Illinois", code: "312" },
+  { state: "Indiana", code: "317" },
+  { state: "Iowa", code: "319" },
+  { state: "Kansas", code: "316" },
+  { state: "Kentucky", code: "502" },
+  { state: "Louisiana", code: "504" },
+  { state: "Maine", code: "207" },
+  { state: "Maryland", code: "301" },
+  { state: "Massachusetts", code: "617" },
+  { state: "Michigan", code: "313" },
+  { state: "Minnesota", code: "612" },
+  { state: "Mississippi", code: "601" },
+  { state: "Missouri", code: "314" },
+  { state: "Montana", code: "406" },
+  { state: "Nebraska", code: "402" },
+  { state: "Nevada", code: "702" },
+  { state: "New Hampshire", code: "603" },
+  { state: "New Jersey", code: "201" },
+  { state: "New Mexico", code: "505" },
+  { state: "New York", code: "212" },
+  { state: "North Carolina", code: "704" },
+  { state: "North Dakota", code: "701" },
+  { state: "Ohio", code: "216" },
+  { state: "Oklahoma", code: "405" },
+  { state: "Oregon", code: "503" },
+  { state: "Pennsylvania", code: "215" },
+  { state: "Rhode Island", code: "401" },
+  { state: "South Carolina", code: "803" },
+  { state: "South Dakota", code: "605" },
+  { state: "Tennessee", code: "615" },
+  { state: "Texas", code: "214" },
+  { state: "Utah", code: "801" },
+  { state: "Vermont", code: "802" },
+  { state: "Virginia", code: "703" },
+  { state: "Washington", code: "206" },
+  { state: "West Virginia", code: "304" },
+  { state: "Wisconsin", code: "414" },
+  { state: "Wyoming", code: "307" },
 ]
 
 interface Service {
@@ -115,6 +115,7 @@ interface Service {
   ltr7_price: number
   ltr14_price: number
   ltr30_price: number
+  markup_percentage?: number
 }
 
 interface ActiveNumber {
@@ -191,7 +192,7 @@ export default function VerificationPage() {
     const fetchAreaCodes = async () => {
       setAreaCodesLoading(true)
       try {
-        const res = await fetch(`/api/verification/area-codes/${modal.service.pvadeals_service_id}`)
+        const res = await fetch(`/api/verification/area-codes/${modal.service?.pvadeals_service_id}`)
         const data = await res.json()
         
         if (data.success && data.data?.areaCodes?.length > 0) {
@@ -482,7 +483,7 @@ export default function VerificationPage() {
                           const isActive = adminEdits[svc.id]?.is_active ?? svc.is_active
                           const isDirty = !!adminEdits[svc.id]
                           const isSaving = adminSaving === svc.id
-                          const strGhs = svc.str_price ? (svc.str_price * 15.5 * (1 + markup / 100)).toFixed(2) : '—'
+                          const strGhs = svc.str_price ? (svc.str_price * 15.5 * (1 + (markup || 0) / 100)).toFixed(2) : '---'
                           return (
                             <tr key={svc.id} className={isDirty ? "bg-amber-50/60 dark:bg-amber-950/20" : "bg-background"}>
                               <td className="px-3 py-2">
