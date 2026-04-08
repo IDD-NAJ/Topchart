@@ -1,5 +1,0 @@
-# Handle Next.js routing
-/*    /_next/static/*    200
-/*    /_next/image*      200
-/*    /api/*             200
-/*    /.netlify/functions/server    200
