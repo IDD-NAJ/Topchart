@@ -28,6 +28,11 @@ export default function AdminLoginPage() {
         credentials: "include",
         body: JSON.stringify({ email: email.toLowerCase(), password }),
       })
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`)
+      }
+      
       const data = await res.json()
       if (data.success) {
         await new Promise(resolve => setTimeout(resolve, 100))

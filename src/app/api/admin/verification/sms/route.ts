@@ -28,14 +28,14 @@ export async function GET(request: NextRequest) {
           vsms.message,
           vsms.received_at,
           vsms.is_read,
-          vsms.textverified_sms_id,
+          vsms.pvadeals_sms_id,
           vn.number as phone_number,
           vs.name as service_name,
           u.email as user_email
         FROM verification_sms vsms
         JOIN verification_numbers vn ON vsms.number_id = vn.id
-        JOIN verification_services vs ON vn.service_id = vs.id
-        JOIN users u ON vn.user_id = u.id
+        LEFT JOIN verification_services vs ON vn.service_id = vs.id
+        LEFT JOIN users u ON vn.user_id = u.id
         WHERE vn.id = ${numberId}
         ORDER BY vsms.received_at DESC
         LIMIT ${limit} OFFSET ${offset}
@@ -54,8 +54,8 @@ export async function GET(request: NextRequest) {
           u.email as user_email
         FROM verification_sms vsms
         JOIN verification_numbers vn ON vsms.number_id = vn.id
-        JOIN verification_services vs ON vn.service_id = vs.id
-        JOIN users u ON vn.user_id = u.id
+        LEFT JOIN verification_services vs ON vn.service_id = vs.id
+        LEFT JOIN users u ON vn.user_id = u.id
         ORDER BY vsms.received_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `;

@@ -55,6 +55,11 @@ export default function TicketsPage() {
     setLoading(true)
     try {
       const res = await fetch("/api/dashboard/tickets")
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`)
+      }
+      
       const data = await res.json()
       if (data.success) {
         setTickets(data.tickets)
@@ -81,6 +86,11 @@ export default function TicketsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newTicket),
       })
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`)
+      }
+      
       const data = await res.json()
       if (data.success) {
         toast({

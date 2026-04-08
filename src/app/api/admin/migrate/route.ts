@@ -146,6 +146,268 @@ export async function POST(request: NextRequest) {
     await sql`CREATE INDEX IF NOT EXISTS idx_system_config_key ON system_config(config_key)`;
     steps.push("indexes created");
 
+    await sql`
+      CREATE TABLE IF NOT EXISTS reseller_tiers (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name VARCHAR(50) NOT NULL UNIQUE,
+        display_name VARCHAR(100) NOT NULL,
+        min_sales_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+        min_referrals INTEGER NOT NULL DEFAULT 0,
+        commission_rate DECIMAL(5,2) NOT NULL DEFAULT 5.00,
+        discount_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00,
+        bonus_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+        perks JSONB DEFAULT '[]'::jsonb,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    await sql`
+      INSERT INTO reseller_tiers (name, display_name, min_sales_amount, min_referrals, commission_rate, discount_rate, bonus_amount, perks) VALUES
+        ('BRONZE',   'Bronze',   0,      0,  5.00,  10.00, 0,   '["Priority support","Basic marketing kit"]'::jsonb),
+        ('SILVER',   'Silver',   5000,   5,  7.00,  12.00, 50,  '["Priority support","Extended marketing kit","Monthly bonus"]'::jsonb),
+        ('GOLD',     'Gold',     20000,  20, 10.00, 15.00, 200, '["24/7 support","Full marketing kit","Quarterly bonus","Dedicated account manager"]'::jsonb),
+        ('PLATINUM', 'Platinum', 100000, 50, 15.00, 20.00, 500, '["24/7 VIP support","Premium marketing kit","Monthly bonus","Dedicated account manager","Custom pricing"]'::jsonb)
+      ON CONFLICT (name) DO NOTHING
+    `;
+    steps.push("reseller_tiers table seeded");
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS marketing_assets (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'image',
+        category TEXT NOT NULL DEFAULT 'banner',
+        file_url TEXT NOT NULL DEFAULT '',
+        thumbnail_url TEXT,
+        dimensions TEXT,
+        file_size INTEGER NOT NULL DEFAULT 0,
+        download_count INTEGER NOT NULL DEFAULT 0,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    steps.push("marketing_assets table ensured");
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS fraud_alerts (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        reseller_id UUID,
+        user_id TEXT,
+        alert_type TEXT NOT NULL,
+        severity TEXT NOT NULL DEFAULT 'low',
+        description TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'open',
+        created_at TIMESTAMP DEFAULT NOW(),
+        resolved_at TIMESTAMP
+      )
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS rate_limit_violations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        reseller_id UUID,
+        user_id TEXT,
+        endpoint TEXT NOT NULL,
+        ip_address TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS suspicious_transactions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        reseller_id UUID,
+        transaction_id TEXT,
+        reason TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'open',
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    steps.push("fraud / security tables ensured");
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS reseller_daily_stats (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        reseller_id UUID NOT NULL,
+        date DATE NOT NULL,
+        sales_count INTEGER NOT NULL DEFAULT 0,
+        sales_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+        commission_earned DECIMAL(12,2) NOT NULL DEFAULT 0,
+        new_referrals INTEGER NOT NULL DEFAULT 0,
+        UNIQUE (reseller_id, date)
+      )
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS reseller_geographic_stats (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        reseller_id UUID NOT NULL,
+        region TEXT NOT NULL DEFAULT '',
+        city TEXT NOT NULL DEFAULT '',
+        sales_count INTEGER NOT NULL DEFAULT 0,
+        sales_amount DECIMAL(12,2) NOT NULL DEFAULT 0
+      )
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS reseller_referral_links (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        reseller_id UUID NOT NULL,
+        referral_code TEXT NOT NULL UNIQUE,
+        landing_page TEXT NOT NULL DEFAULT '/register',
+        utm_source TEXT,
+        utm_medium TEXT,
+        clicks INTEGER NOT NULL DEFAULT 0,
+        conversions INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS reseller_audit_logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        reseller_id UUID NOT NULL,
+        action TEXT NOT NULL,
+        details JSONB DEFAULT '{}'::jsonb,
+        ip_address TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS reseller_inventory (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        reseller_id UUID NOT NULL,
+        product_id TEXT NOT NULL,
+        product_type TEXT NOT NULL DEFAULT 'airtime',
+        quantity INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'available',
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    steps.push("reseller analytics/inventory tables ensured");
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS result_checker_cards (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        exam_type TEXT NOT NULL,
+        card_pin TEXT NOT NULL,
+        serial_number TEXT NOT NULL,
+        selling_price DECIMAL(10,2) NOT NULL,
+        wholesale_price DECIMAL(10,2) NOT NULL,
+        status TEXT NOT NULL DEFAULT 'available',
+        purchased_by TEXT,
+        purchased_at TIMESTAMP,
+        expiry_date DATE,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS result_checker_purchases (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id TEXT NOT NULL,
+        card_id UUID NOT NULL,
+        exam_type TEXT NOT NULL,
+        card_pin TEXT,
+        serial_number TEXT,
+        amount_paid DECIMAL(10,2) NOT NULL,
+        payment_reference TEXT,
+        status TEXT NOT NULL DEFAULT 'completed',
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    steps.push("result checker tables ensured");
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS verification_services (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        pvadeals_service_id VARCHAR(100) UNIQUE NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        category VARCHAR(50) NOT NULL,
+        picture_url VARCHAR(500),
+        country VARCHAR(10) DEFAULT 'US',
+        is_active BOOLEAN DEFAULT TRUE,
+        markup_percentage DECIMAL(5,2) DEFAULT 40.00,
+        str_price DECIMAL(10,4) DEFAULT 0,
+        ltr3_price DECIMAL(10,4) DEFAULT 0,
+        ltr7_price DECIMAL(10,4) DEFAULT 0,
+        ltr14_price DECIMAL(10,4) DEFAULT 0,
+        ltr30_price DECIMAL(10,4) DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+    await sql`ALTER TABLE verification_services ADD COLUMN IF NOT EXISTS pvadeals_service_id VARCHAR(100)`;
+    await sql`ALTER TABLE verification_services ADD COLUMN IF NOT EXISTS picture_url VARCHAR(500)`;
+    await sql`ALTER TABLE verification_services ADD COLUMN IF NOT EXISTS country VARCHAR(10) DEFAULT 'US'`;
+    await sql`ALTER TABLE verification_services ADD COLUMN IF NOT EXISTS markup_percentage DECIMAL(5,2) DEFAULT 40.00`;
+    await sql`ALTER TABLE verification_services ADD COLUMN IF NOT EXISTS str_price DECIMAL(10,4) DEFAULT 0`;
+    await sql`ALTER TABLE verification_services ADD COLUMN IF NOT EXISTS ltr3_price DECIMAL(10,4) DEFAULT 0`;
+    await sql`ALTER TABLE verification_services ADD COLUMN IF NOT EXISTS ltr7_price DECIMAL(10,4) DEFAULT 0`;
+    await sql`ALTER TABLE verification_services ADD COLUMN IF NOT EXISTS ltr14_price DECIMAL(10,4) DEFAULT 0`;
+    await sql`ALTER TABLE verification_services ADD COLUMN IF NOT EXISTS ltr30_price DECIMAL(10,4) DEFAULT 0`;
+    await sql`ALTER TABLE verification_services ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()`;
+    steps.push("verification_services table ensured");
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS verification_numbers (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL,
+        service_id UUID,
+        number VARCHAR(20) NOT NULL,
+        type VARCHAR(20) NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'active',
+        pvadeals_request_id VARCHAR(100) UNIQUE,
+        ltr_duration_days INTEGER,
+        allow_flag BOOLEAN DEFAULT TRUE,
+        allow_reuse BOOLEAN DEFAULT FALSE,
+        auto_renew BOOLEAN DEFAULT FALSE,
+        purchase_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+        rental_duration_hours INTEGER DEFAULT 0,
+        expires_at TIMESTAMP WITH TIME ZONE,
+        completed_at TIMESTAMP WITH TIME ZONE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+    await sql`ALTER TABLE verification_numbers ADD COLUMN IF NOT EXISTS pvadeals_request_id VARCHAR(100)`;
+    await sql`ALTER TABLE verification_numbers ADD COLUMN IF NOT EXISTS purchase_price DECIMAL(10,2) DEFAULT 0`;
+    await sql`ALTER TABLE verification_numbers ADD COLUMN IF NOT EXISTS ltr_duration_days INTEGER`;
+    await sql`ALTER TABLE verification_numbers ADD COLUMN IF NOT EXISTS rental_duration_hours INTEGER DEFAULT 0`;
+    await sql`ALTER TABLE verification_numbers ADD COLUMN IF NOT EXISTS allow_flag BOOLEAN DEFAULT TRUE`;
+    await sql`ALTER TABLE verification_numbers ADD COLUMN IF NOT EXISTS allow_reuse BOOLEAN DEFAULT FALSE`;
+    await sql`ALTER TABLE verification_numbers ADD COLUMN IF NOT EXISTS auto_renew BOOLEAN DEFAULT FALSE`;
+    await sql`ALTER TABLE verification_numbers ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITH TIME ZONE`;
+    await sql`ALTER TABLE verification_numbers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()`;
+    steps.push("verification_numbers table ensured");
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS verification_sms (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        number_id UUID NOT NULL,
+        from_number VARCHAR(20),
+        message TEXT NOT NULL,
+        pvadeals_sms_id VARCHAR(100) UNIQUE,
+        received_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        is_read BOOLEAN DEFAULT FALSE
+      )
+    `;
+    await sql`ALTER TABLE verification_sms ADD COLUMN IF NOT EXISTS from_number VARCHAR(20)`;
+    await sql`ALTER TABLE verification_sms ADD COLUMN IF NOT EXISTS pvadeals_sms_id VARCHAR(100)`;
+    await sql`ALTER TABLE verification_sms ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE`;
+    steps.push("verification_sms table ensured");
+
+    await sql`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS verification_number_id UUID`;
+    await sql`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()`;
+    await sql`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT 'GHS'`;
+    await sql`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS fees DECIMAL(12,2) DEFAULT 0`;
+    await sql`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS metadata JSONB`;
+    await sql`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50)`;
+    await sql`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS paystack_access_code VARCHAR(100)`;
+    await sql`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS paystack_authorization_url TEXT`;
+    await sql`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS payment_channel VARCHAR(50)`;
+    await sql`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS paid_at TIMESTAMP WITH TIME ZONE`;
+    await sql`
+      DO $$ BEGIN
+        ALTER TABLE transactions DROP CONSTRAINT IF EXISTS transactions_type_check;
+      EXCEPTION WHEN others THEN NULL; END $$
+    `;
+    steps.push("transactions table patched for verification types");
+
     return NextResponse.json({ success: true, steps });
   } catch (error) {
     console.error("Migration error:", error);

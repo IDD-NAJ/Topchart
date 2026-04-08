@@ -1,32 +1,20 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
-import { DM_Serif_Display, Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/lib/auth-context'
+import '@fontsource-variable/inter'
+import '@fontsource/dm-serif-display'
 import './globals.css'
-
-const dmSerifDisplay = DM_Serif_Display({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-serif",
-  display: "swap",
-})
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  display: "swap",
-})
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://topchart.gh'),
   title: {
-    default: 'Topchart Ghana — Buy Airtime & Data Instantly',
+    default: 'Topchart Ghana — Digital Services Platform',
     template: '%s | Topchart Ghana',
   },
-  description: 'The fastest, most secure way to buy airtime and data bundles for MTN, Telecel, and AirtelTigo in Ghana. Instant delivery, 24/7 available.',
+  description: 'Ghana\'s complete digital services platform. Buy airtime, data bundles, verification numbers, check exam results, and join our reseller programme — instantly and securely.',
   applicationName: 'Topchart Ghana',
-  keywords: ['airtime', 'data bundles', 'Ghana', 'MTN', 'Telecel', 'AirtelTigo', 'mobile top up', 'recharge', 'buy airtime online', 'buy data Ghana'],
+  keywords: ['airtime Ghana', 'data bundles Ghana', 'verification numbers Ghana', 'WAEC result checker', 'BECE result checker', 'reseller programme Ghana', 'MTN', 'Telecel', 'AirtelTigo', 'mobile top up', 'buy airtime online Ghana', 'OTP verification number Ghana'],
   authors: [{ name: 'Topchart Ghana', url: 'https://topchart.gh' }],
   creator: 'Topchart Ghana',
   publisher: 'Topchart Ghana',
@@ -46,8 +34,8 @@ export const metadata: Metadata = {
     locale: 'en_GH',
     url: 'https://topchart.gh',
     siteName: 'Topchart Ghana',
-    title: 'Topchart Ghana — Buy Airtime & Data Instantly',
-    description: 'The fastest, most secure way to buy airtime and data bundles for MTN, Telecel, and AirtelTigo in Ghana.',
+    title: 'Topchart Ghana — Digital Services Platform',
+    description: 'Ghana\'s complete digital services platform — airtime, data, verification numbers, exam results, and reseller programme.',
     images: [
       {
         url: '/og-image.png',
@@ -61,8 +49,8 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     site: '@topchartgh',
     creator: '@topchartgh',
-    title: 'Topchart Ghana — Buy Airtime & Data Instantly',
-    description: 'The fastest, most secure way to buy airtime and data bundles for MTN, Telecel, and AirtelTigo in Ghana.',
+    title: 'Topchart Ghana — Digital Services Platform',
+    description: 'Ghana\'s complete digital services platform — airtime, data, verification numbers, exam results, and reseller programme.',
     images: ['/og-image.png'],
   },
   alternates: {
@@ -76,7 +64,7 @@ export const metadata: Metadata = {
       alternateName: 'Topchart',
       url: 'https://topchart.gh',
       logo: 'https://topchart.gh/logo.svg',
-      description: 'Ghana\'s leading platform for instant airtime and data top-ups across MTN, Telecel, and AirtelTigo networks.',
+      description: 'Ghana\'s complete digital services platform for airtime, data bundles, verification numbers, result checkers, and reseller services.',
       contactPoint: [
         {
           '@type': 'ContactPoint',
@@ -125,7 +113,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${dmSerifDisplay.variable} ${inter.variable} font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <AuthProvider>
           {children}
         </AuthProvider>

@@ -1,8 +1,9 @@
 "use client"
 
 import React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter, usePathname } from "next/navigation"
+import { InactivityWarningModal } from "@/components/inactivity-warning-modal"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -169,6 +170,9 @@ const navItems: NavItem[] = [
   { title: "Raw Database", href: "/admin/db", icon: Database },
 ]
 
+const INACTIVITY_TIMEOUT = 5 * 60 * 1000
+const WARNING_BEFORE_LOGOUT = 30 * 1000
+
 function NavSection({ item, pathname, collapsed }: { item: NavItem; pathname: string; collapsed: boolean }) {
   const [open, setOpen] = useState(false)
   const Icon = item.icon
@@ -229,6 +233,59 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [showWarning, setShowWarning] = useState(false)
+  const [secondsRemaining, setSecondsRemaining] = useState(30)
+  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const warningTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  const clearAllTimers = useCallback(() => {
+    if (inactivityTimerRef.current) { clearTimeout(inactivityTimerRef.current); inactivityTimerRef.current = null }
+    if (warningTimerRef.current) { clearTimeout(warningTimerRef.current); warningTimerRef.current = null }
+    if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null }
+  }, [])
+
+  const handleLogout = useCallback(async () => {
+    clearAllTimers()
+    setShowWarning(false)
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" })
+    router.replace("/admin/login?reason=inactive")
+  }, [clearAllTimers, router])
+
+  const resetInactivityTimer = useCallback(() => {
+    clearAllTimers()
+    setShowWarning(false)
+
+    warningTimerRef.current = setTimeout(() => {
+      setShowWarning(true)
+      setSecondsRemaining(30)
+      countdownIntervalRef.current = setInterval(() => {
+        setSecondsRemaining((prev) => {
+          if (prev <= 1) { handleLogout(); return 0 }
+          return prev - 1
+        })
+      }, 1000)
+    }, INACTIVITY_TIMEOUT - WARNING_BEFORE_LOGOUT)
+
+    inactivityTimerRef.current = setTimeout(() => {
+      handleLogout()
+    }, INACTIVITY_TIMEOUT)
+  }, [clearAllTimers, handleLogout])
+
+  useEffect(() => {
+    if (pathname === "/admin/login") { clearAllTimers(); return }
+
+    const events = ["mousedown", "keydown", "scroll", "touchstart", "click", "mousemove"]
+    const onActivity = () => resetInactivityTimer()
+
+    events.forEach(e => window.addEventListener(e, onActivity, { passive: true }))
+    resetInactivityTimer()
+
+    return () => {
+      events.forEach(e => window.removeEventListener(e, onActivity))
+      clearAllTimers()
+    }
+  }, [pathname, resetInactivityTimer, clearAllTimers])
 
   useEffect(() => {
     if (pathname === "/admin/login") {
@@ -376,6 +433,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <main className="flex-1 p-6 overflow-auto">
           {children}
         </main>
+
+        <InactivityWarningModal
+          isOpen={showWarning}
+          secondsRemaining={secondsRemaining}
+          onStayActive={resetInactivityTimer}
+          onLogout={handleLogout}
+        />
 
         <footer className="border-t border-[#006994]/10 bg-background/50 p-4 text-center text-sm text-muted-foreground hidden md:block">
           <p>© {new Date().getFullYear()} Topchart Admin. All rights reserved.</p>

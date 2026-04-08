@@ -37,6 +37,11 @@ export default function AdminFraudAlertsPage() {
       const res = await fetch("/api/admin/fraud-alerts", {
         credentials: "include"
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`);
+      }
+      
       const data = await res.json();
 
       if (data.success) {
@@ -57,6 +62,10 @@ export default function AdminFraudAlertsPage() {
         method: "POST",
         credentials: "include"
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`);
+      }
 
       const data = await res.json();
 
@@ -79,6 +88,10 @@ export default function AdminFraudAlertsPage() {
         method: "POST",
         credentials: "include"
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`);
+      }
 
       const data = await res.json();
 

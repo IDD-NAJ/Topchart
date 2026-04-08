@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
-import { Menu, LayoutDashboard, Phone, Wifi, History, LogOut, ArrowRight, User, Store, CreditCard, ChevronDown, Shield, Trophy, Megaphone, BarChart3, PhoneCall } from "lucide-react"
+import { Menu, LayoutDashboard, Phone, Wifi, History, LogOut, ArrowRight, User, Store, CreditCard, ChevronDown, Shield, Trophy, Megaphone, BarChart3, PhoneCall, ClipboardList } from "lucide-react"
 
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
@@ -16,6 +16,7 @@ const mainNavItems = [
   { href: "/dashboard/airtime", label: "Airtime", icon: Phone },
   { href: "/dashboard/data", label: "Data", icon: Wifi },
   { href: "/dashboard/verification", label: "Verification", icon: PhoneCall },
+  { href: "/dashboard/verification/history", label: "Verif. History", icon: ClipboardList, indent: true },
   { href: "/dashboard/history", label: "History", icon: History },
   { href: "/dashboard/result-checkers", label: "Result Checkers", icon: CreditCard },
 ]

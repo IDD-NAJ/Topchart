@@ -29,46 +29,7 @@ export interface AuthResult {
   expiresAt?: Date;
 }
 
-let _usersRoleColumnCache: boolean | null = null;
-async function usersHasRoleColumn(): Promise<boolean> {
-  if (_usersRoleColumnCache !== null) return _usersRoleColumnCache;
-  try {
-    const rows = await sql`
-      SELECT 1
-      FROM information_schema.columns
-      WHERE table_schema = 'public'
-        AND table_name = 'users'
-        AND column_name = 'role'
-      LIMIT 1
-    `;
-    _usersRoleColumnCache = rows.length > 0;
-  } catch {
-    _usersRoleColumnCache = false;
-  }
-  return _usersRoleColumnCache;
-}
-
-let _usersUpdatedAtColumnCache: boolean | null = null;
-async function usersHasUpdatedAtColumn(): Promise<boolean> {
-  if (_usersUpdatedAtColumnCache !== null) return _usersUpdatedAtColumnCache;
-  try {
-    const rows = await sql`
-      SELECT 1
-      FROM information_schema.columns
-      WHERE table_schema = 'public'
-        AND table_name = 'users'
-        AND column_name = 'updated_at'
-      LIMIT 1
-    `;
-    _usersUpdatedAtColumnCache = rows.length > 0;
-  } catch {
-    _usersUpdatedAtColumnCache = false;
-  }
-  return _usersUpdatedAtColumnCache;
-}
-
 export async function register(formData: {
-
   email: string;
   phone: string;
   password: string;
@@ -127,36 +88,14 @@ export async function register(formData: {
       }
     }
 
-// Create user with explicit UUID and referral code
-      const userId = uuidv4();
-      const newReferralCode = userId.slice(0, 8).toUpperCase();
-      const now = new Date().toISOString();
-      const hasRole = await usersHasRoleColumn();
-      const hasUpdatedAt = await usersHasUpdatedAtColumn();
-      const result =
-        hasRole && hasUpdatedAt
-          ? await sql`
-              INSERT INTO users (id, email, phone, password_hash, first_name, last_name, wallet_balance, is_verified, role, referral_code, referral_earnings, referred_by, total_deposits, created_at, updated_at)
-              VALUES (${userId}, ${normalizedEmail}, ${phone}, ${passwordHash}, ${firstName}, ${lastName}, 0.00, false, ${ROLES.USER}, ${newReferralCode}, 0.00, ${referredBy}, 0.00, ${now}, ${now})
-              RETURNING id, email, phone, first_name, last_name, wallet_balance, is_verified, role, referral_code, created_at
-            `
-          : hasRole && !hasUpdatedAt
-            ? await sql`
-                INSERT INTO users (id, email, phone, password_hash, first_name, last_name, wallet_balance, is_verified, role, referral_code, referral_earnings, referred_by, total_deposits, created_at)
-                VALUES (${userId}, ${normalizedEmail}, ${phone}, ${passwordHash}, ${firstName}, ${lastName}, 0.00, false, ${ROLES.USER}, ${newReferralCode}, 0.00, ${referredBy}, 0.00, ${now})
-                RETURNING id, email, phone, first_name, last_name, wallet_balance, is_verified, role, referral_code, created_at
-              `
-            : !hasRole && hasUpdatedAt
-              ? await sql`
-                  INSERT INTO users (id, email, phone, password_hash, first_name, last_name, wallet_balance, is_verified, referral_code, referral_earnings, referred_by, total_deposits, created_at, updated_at)
-                  VALUES (${userId}, ${normalizedEmail}, ${phone}, ${passwordHash}, ${firstName}, ${lastName}, 0.00, false, ${newReferralCode}, 0.00, ${referredBy}, 0.00, ${now}, ${now})
-                  RETURNING id, email, phone, first_name, last_name, wallet_balance, is_verified, referral_code, created_at
-                `
-              : await sql`
-                  INSERT INTO users (id, email, phone, password_hash, first_name, last_name, wallet_balance, is_verified, referral_code, referral_earnings, referred_by, total_deposits, created_at)
-                  VALUES (${userId}, ${normalizedEmail}, ${phone}, ${passwordHash}, ${firstName}, ${lastName}, 0.00, false, ${newReferralCode}, 0.00, ${referredBy}, 0.00, ${now})
-                  RETURNING id, email, phone, first_name, last_name, wallet_balance, is_verified, referral_code, created_at
-                `;
+    const userId = uuidv4();
+    const newReferralCode = userId.slice(0, 8).toUpperCase();
+    const now = new Date().toISOString();
+    const result = await sql`
+      INSERT INTO users (id, email, phone, password_hash, first_name, last_name, wallet_balance, is_verified, role, referral_code, referral_earnings, referred_by, total_deposits, created_at, updated_at)
+      VALUES (${userId}, ${normalizedEmail}, ${phone}, ${passwordHash}, ${firstName}, ${lastName}, 0.00, false, ${ROLES.USER}, ${newReferralCode}, 0.00, ${referredBy}, 0.00, ${now}, ${now})
+      RETURNING id, email, phone, first_name, last_name, wallet_balance, is_verified, role, referral_code, created_at
+    `;
 
     const user = result[0] as User;
 
@@ -208,21 +147,10 @@ export async function login(formData: {
     // Normalize email to lowercase
     const normalizedEmail = email.toLowerCase();
     
-    // Find user by email
-    // Prefer selecting role directly. If the column doesn't exist, fall back.
-    // This avoids false negatives when information_schema access is restricted.
-    let result: any[];
-    try {
-      result = await sql`
-        SELECT id, email, phone, password_hash, first_name, last_name, wallet_balance, is_verified, role, created_at
-        FROM users WHERE email = ${normalizedEmail}
-      `;
-    } catch {
-      result = await sql`
-        SELECT id, email, phone, password_hash, first_name, last_name, wallet_balance, is_verified, created_at
-        FROM users WHERE email = ${normalizedEmail}
-      `;
-    }
+    const result = await sql`
+      SELECT id, email, phone, password_hash, first_name, last_name, wallet_balance, is_verified, role, created_at
+      FROM users WHERE email = ${normalizedEmail}
+    `;
 
     if (result.length === 0) {
       return { success: false, error: "Invalid email or password" };
@@ -295,35 +223,16 @@ export async function getCurrentUser(): Promise<User | null> {
       return null;
     }
 
-    // Get session with user data
-    // Prefer selecting role directly. If the column doesn't exist, fall back.
-    // This avoids false negatives when information_schema access is restricted.
-    let result: any[];
-    try {
-      result = await sql`
-        SELECT 
-          u.id, u.email, u.phone, u.first_name, u.last_name, 
-          u.wallet_balance, u.is_verified, u.role, u.created_at,
-          s.expires_at
-        FROM auth_sessions s
-        JOIN users u ON s.user_id::text = u.id::text
-        WHERE s.token::text = ${token} AND s.expires_at > NOW()
-      `;
-    } catch {
-      result = await sql`
-        SELECT 
-          u.id, u.email, u.phone, u.first_name, u.last_name, 
-          u.wallet_balance, u.is_verified, u.created_at,
-          s.expires_at
-        FROM auth_sessions s
-        JOIN users u ON s.user_id::text = u.id::text
-        WHERE s.token::text = ${token} AND s.expires_at > NOW()
-      `;
-    }
+    const result = await sql`
+      SELECT 
+        u.id, u.email, u.phone, u.first_name, u.last_name, 
+        u.wallet_balance, u.is_verified, u.role, u.created_at
+      FROM auth_sessions s
+      JOIN users u ON s.user_id::text = u.id::text
+      WHERE s.token::text = ${token} AND s.expires_at > NOW()
+    `;
 
     if (result.length === 0) {
-      // Session expired or invalid, delete it
-      await sql`DELETE FROM auth_sessions WHERE token::text = ${token}`;
       return null;
     }
 

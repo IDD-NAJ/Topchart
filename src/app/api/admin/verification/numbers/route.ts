@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { sql } from "@/lib/db";
+import { sql, sqlUnsafe } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 
 export async function GET(request: NextRequest) {
@@ -31,20 +31,30 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    let whereClause = sql`WHERE 1=1`;
-    
+    const conditions: string[] = ["1=1"];
+    const filterParams: unknown[] = [];
+
     if (status) {
-      whereClause = sql`${whereClause} AND vn.status = ${status}`;
+      filterParams.push(status);
+      conditions.push(`vn.status = $${filterParams.length}`);
     }
     if (serviceId) {
-      whereClause = sql`${whereClause} AND vn.service_id = ${serviceId}`;
+      filterParams.push(serviceId);
+      conditions.push(`vn.service_id = $${filterParams.length}`);
     }
     if (userId) {
-      whereClause = sql`${whereClause} AND vn.user_id = ${userId}`;
+      filterParams.push(userId);
+      conditions.push(`vn.user_id = $${filterParams.length}`);
     }
 
+    const WHERE = `WHERE ${conditions.join(" AND ")}`;
+
+    const pageParams = [...filterParams, limit, offset];
+    const limitIdx = pageParams.length - 1;
+    const offsetIdx = pageParams.length;
+
     // Get numbers with user and service info
-    const numbers = await sql`
+    const numbers = await sqlUnsafe(`
       SELECT 
         vn.id,
         vn.number,
@@ -56,7 +66,11 @@ export async function GET(request: NextRequest) {
         vn.completed_at,
         vn.created_at,
         vn.updated_at,
-        vn.textverified_order_id,
+        vn.pvadeals_request_id,
+        vn.ltr_duration_days,
+        vn.allow_flag,
+        vn.allow_reuse,
+        vn.auto_renew,
         u.id as user_id,
         u.email as user_email,
         u.first_name as user_first_name,
@@ -66,21 +80,21 @@ export async function GET(request: NextRequest) {
         vs.category as service_category,
         COUNT(vsms.id) as sms_count
       FROM verification_numbers vn
-      JOIN users u ON vn.user_id = u.id
-      JOIN verification_services vs ON vn.service_id = vs.id
+      LEFT JOIN users u ON vn.user_id = u.id
+      LEFT JOIN verification_services vs ON vn.service_id = vs.id
       LEFT JOIN verification_sms vsms ON vn.id = vsms.number_id
-      ${whereClause}
+      ${WHERE}
       GROUP BY vn.id, u.id, u.email, u.first_name, u.last_name, vs.id, vs.name, vs.category
       ORDER BY vn.created_at DESC
-      LIMIT ${limit} OFFSET ${offset}
-    `;
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
+    `, pageParams);
 
     // Get total count for pagination
-    const countResult = await sql`
+    const countResult = await sqlUnsafe(`
       SELECT COUNT(*) as total
       FROM verification_numbers vn
-      ${whereClause}
-    `;
+      ${WHERE}
+    `, filterParams);
 
     // Get summary stats
     const stats = await sql`
@@ -100,7 +114,7 @@ export async function GET(request: NextRequest) {
       data: {
         numbers,
         pagination: {
-          total: parseInt(countResult[0]?.total || "0"),
+          total: parseInt((countResult[0] as any)?.total || "0"),
           limit,
           offset,
         },

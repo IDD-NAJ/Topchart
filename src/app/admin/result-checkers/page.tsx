@@ -49,6 +49,11 @@ export default function AdminResultCheckersPage() {
       const res = await fetch("/api/admin/result-checkers", {
         credentials: "include"
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`);
+      }
+      
       const data = await res.json();
 
       if (data.success) {
@@ -91,6 +96,10 @@ export default function AdminResultCheckersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cards })
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`);
+      }
 
       const data = await res.json();
 
@@ -116,6 +125,10 @@ export default function AdminResultCheckersPage() {
         method: "DELETE",
         credentials: "include"
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`);
+      }
 
       const data = await res.json();
 

@@ -14,19 +14,31 @@ export async function GET(request: NextRequest) {
 
     const services = await sql`
       SELECT 
-        id,
-        textverified_service_id,
-        name,
-        category,
-        description,
-        is_active,
-        base_cost,
-        markup_percentage,
-        rental_multiplier,
-        created_at,
-        updated_at
-      FROM verification_services
-      ORDER BY category, name
+        vs.id,
+        vs.pvadeals_service_id,
+        vs.name,
+        vs.category,
+        vs.picture_url,
+        vs.country,
+        vs.is_active,
+        vs.markup_percentage,
+        vs.str_price,
+        vs.ltr3_price,
+        vs.ltr7_price,
+        vs.ltr14_price,
+        vs.ltr30_price,
+        vs.created_at,
+        vs.updated_at,
+        COALESCE(vn_stats.purchase_count, 0) as purchase_count,
+        COALESCE(vn_stats.total_revenue, 0) as total_revenue
+      FROM verification_services vs
+      LEFT JOIN (
+        SELECT service_id, COUNT(*) as purchase_count, SUM(purchase_price) as total_revenue
+        FROM verification_numbers
+        WHERE created_at > NOW() - INTERVAL '30 days'
+        GROUP BY service_id
+      ) vn_stats ON vs.id = vn_stats.service_id
+      ORDER BY vs.category, vs.name
     `;
 
     return NextResponse.json({
@@ -53,7 +65,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { serviceId, baseCost, markupPercentage, rentalMultiplier, isActive } = body;
+    const { serviceId, markupPercentage, isActive, category } = body;
 
     if (!serviceId) {
       return NextResponse.json(
@@ -65,10 +77,9 @@ export async function PUT(request: NextRequest) {
     await sql`
       UPDATE verification_services
       SET 
-        base_cost = COALESCE(${baseCost}, base_cost),
-        markup_percentage = COALESCE(${markupPercentage}, markup_percentage),
-        rental_multiplier = COALESCE(${rentalMultiplier}, rental_multiplier),
-        is_active = COALESCE(${isActive}, is_active),
+        markup_percentage = COALESCE(${markupPercentage ?? null}, markup_percentage),
+        is_active = COALESCE(${isActive ?? null}, is_active),
+        category = COALESCE(${category ?? null}, category),
         updated_at = NOW()
       WHERE id = ${serviceId}
     `;

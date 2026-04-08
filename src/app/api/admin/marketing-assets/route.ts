@@ -16,10 +16,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const assets = await sql`
-      SELECT * FROM marketing_assets
-      ORDER BY created_at DESC
-    `;
+    let assets: any[] = [];
+    try {
+      assets = await sql`
+        SELECT * FROM marketing_assets
+        ORDER BY created_at DESC
+      `;
+    } catch (dbError: any) {
+      const msg = String(dbError?.message || "");
+      if (msg.includes("does not exist") || msg.includes("relation") || msg.includes("undefined_table")) {
+        return NextResponse.json({ success: true, assets: [] });
+      }
+      throw dbError;
+    }
 
     return NextResponse.json({
       success: true,

@@ -159,13 +159,13 @@ export async function GET(request: NextRequest) {
       ? safeRowsQuery("recent_transactions", () => sql`
           SELECT t.*, u.email, u.first_name, u.last_name
           FROM transactions t
-          LEFT JOIN users u ON u.id::text = t."userId"
-          ORDER BY t."createdAt" DESC
+          LEFT JOIN users u ON u.id::text = t.user_id::text
+          ORDER BY t.created_at DESC
           LIMIT 10
         `)
       : transactionsExists
         ? safeRowsQuery("recent_transactions_no_join", () => sql`
-            SELECT * FROM transactions ORDER BY "createdAt" DESC LIMIT 10
+            SELECT * FROM transactions ORDER BY created_at DESC LIMIT 10
           `)
         : Promise.resolve([]);
 
@@ -194,10 +194,10 @@ export async function GET(request: NextRequest) {
 
     const transactionsByDayPromise = transactionsExists
       ? safeRowsQuery("transactions_by_day", () => sql`
-          SELECT DATE("createdAt") as date, COUNT(*)::int as count, SUM(amount)::numeric as total
+          SELECT DATE(created_at) as date, COUNT(*)::int as count, SUM(amount)::numeric as total
           FROM transactions
-          WHERE "createdAt" >= NOW() - INTERVAL '7 days'
-          GROUP BY DATE("createdAt")
+          WHERE created_at >= NOW() - INTERVAL '7 days'
+          GROUP BY DATE(created_at)
           ORDER BY date DESC
         `)
       : Promise.resolve([]);

@@ -6,11 +6,12 @@ import { requireAdmin } from "@/lib/admin-auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// GET - List result checker cards (available only for regular users, all for admin)
+// GET - List result checker cards (available only for regular users, all for admin) or purchase history
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const examType = searchParams.get("examType");
+    const history = searchParams.get("history");
     
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
@@ -33,25 +34,66 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    let query = `
-      SELECT 
-        id,
-        exam_type,
-        selling_price,
-        wholesale_price,
-        status,
-        expiry_date
-      FROM result_checker_cards
-      WHERE status = 'available'
-    `;
-    
-    if (examType) {
-      query += ` AND exam_type = '${examType}'`;
+    // Return purchase history if requested
+    if (history === "true" && userId) {
+      const purchases = await sql`
+        SELECT 
+          rcp.id,
+          rcp.exam_type,
+          rcp.amount_paid,
+          rcp.created_at,
+          rcc.card_pin,
+          rcc.serial_number
+        FROM result_checker_purchases rcp
+        JOIN result_checker_cards rcc ON rcp.card_id = rcc.id
+        WHERE rcp.user_id = ${userId}
+        ORDER BY rcp.created_at DESC
+      `;
+      
+      return NextResponse.json({
+        success: true,
+        purchases: purchases.map((p: any) => ({
+          id: p.id,
+          exam_type: p.exam_type,
+          card_pin: p.card_pin,
+          serial_number: p.serial_number,
+          amount_paid: p.amount_paid,
+          created_at: p.created_at
+        }))
+      });
     }
     
-    query += ` ORDER BY exam_type, selling_price`;
+    // Return available cards
+    let cards;
     
-    const cards = await sqlUnsafe(query);
+    if (examType) {
+      cards = await sql`
+        SELECT 
+          id,
+          exam_type,
+          selling_price,
+          wholesale_price,
+          status,
+          expiry_date
+        FROM result_checker_cards
+        WHERE status = 'available'
+        AND exam_type = ${examType}
+        ORDER BY exam_type, selling_price
+      `;
+    } else {
+      cards = await sql`
+        SELECT 
+          id,
+          exam_type,
+          selling_price,
+          wholesale_price,
+          status,
+          expiry_date
+        FROM result_checker_cards
+        WHERE status = 'available'
+        ORDER BY exam_type, selling_price
+      `;
+    }
     
     return NextResponse.json({
       success: true,

@@ -39,6 +39,11 @@ export default function BlogPage() {
     const loadPosts = async () => {
       try {
         const res = await fetch("/api/content/posts", { cache: "no-store" })
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error ${res.status}`)
+        }
+        
         const data = await res.json()
 
         if (data.success) {

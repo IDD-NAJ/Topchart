@@ -42,6 +42,11 @@ export default function AdminMarketingAssetsPage() {
       const res = await fetch("/api/admin/marketing-assets", {
         credentials: "include"
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`);
+      }
+      
       const data = await res.json();
 
       if (data.success) {
@@ -62,6 +67,10 @@ export default function AdminMarketingAssetsPage() {
         method: "DELETE",
         credentials: "include"
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`);
+      }
 
       const data = await res.json();
 
@@ -82,6 +91,10 @@ export default function AdminMarketingAssetsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ is_active: !asset.is_active })
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`);
+      }
 
       const data = await res.json();
 

@@ -36,7 +36,16 @@ export async function GET(request: NextRequest) {
 
     query += ` ORDER BY fa.created_at DESC`;
 
-    const alerts = await sqlUnsafe(query);
+    let alerts: any[] = [];
+    try {
+      alerts = await sqlUnsafe(query);
+    } catch (dbError: any) {
+      const msg = String(dbError?.message || "");
+      if (msg.includes("does not exist") || msg.includes("relation") || msg.includes("undefined_table")) {
+        return NextResponse.json({ success: true, alerts: [] });
+      }
+      throw dbError;
+    }
 
     return NextResponse.json({
       success: true,

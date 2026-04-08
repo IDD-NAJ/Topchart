@@ -17,17 +17,22 @@ export async function GET(request: NextRequest) {
     }
 
     // Get form config
-    const configResult = await sql`
-      SELECT config_value FROM system_config
-      WHERE config_key = 'reseller_form_config'
-    `;
-
-    // Get custom fields
-    const fieldsResult = await sql`
-      SELECT * FROM custom_form_fields
-      WHERE is_enabled = true
-      ORDER BY sort_order ASC
-    `;
+    let configResult: any[] = [];
+    let fieldsResult: any[] = [];
+    try {
+      configResult = await sql`
+        SELECT config_value FROM system_config
+        WHERE config_key = 'reseller_form_config'
+      `;
+    } catch { configResult = []; }
+    try {
+      fieldsResult = await sql`
+        SELECT * FROM custom_form_fields
+        WHERE is_enabled = true
+        ORDER BY sort_order ASC
+      `;
+    } catch { fieldsResult = []; }
+    console.log("🔍 API DEBUG: Raw config from database:", configResult);
 
     const config = configResult[0]?.config_value || {
       business_name: { enabled: true, required: true },
@@ -39,6 +44,8 @@ export async function GET(request: NextRequest) {
       currency: "GHS",
       require_payment_before_approval: true
     };
+    
+    console.log("🔍 API DEBUG: Final config being returned:", config);
 
     return NextResponse.json({
       success: true,
@@ -46,7 +53,7 @@ export async function GET(request: NextRequest) {
       customFields: fieldsResult
     });
   } catch (error) {
-    console.error("Reseller form config GET error:", error);
+    console.error("🔍 API DEBUG: Reseller form config GET error:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }
@@ -67,6 +74,7 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
     const { config } = body;
+    console.log("🔍 API DEBUG: Received config to save:", config);
 
     if (!config) {
       return NextResponse.json(
@@ -75,23 +83,51 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Check current config before update
+    let currentConfigResult: any[] = [];
+    try {
+      currentConfigResult = await sql`
+        SELECT config_value FROM system_config
+        WHERE config_key = 'reseller_form_config'
+      `;
+    } catch { currentConfigResult = []; }
+    console.log("🔍 API DEBUG: Current config in database:", currentConfigResult[0]?.config_value);
+
     // Update config
-    await sql`
-      INSERT INTO system_config (config_key, config_value, updated_by, updated_at)
-      VALUES ('reseller_form_config', ${JSON.stringify(config)}::jsonb, ${admin.userId}, NOW())
-      ON CONFLICT (config_key)
-      DO UPDATE SET 
-        config_value = ${JSON.stringify(config)}::jsonb,
-        updated_by = ${admin.userId},
-        updated_at = NOW()
-    `;
+    try {
+      await sql`
+        INSERT INTO system_config (config_key, config_value, updated_by, updated_at)
+        VALUES ('reseller_form_config', ${JSON.stringify(config)}::jsonb, ${admin.userId}, NOW())
+        ON CONFLICT (config_key)
+        DO UPDATE SET 
+          config_value = ${JSON.stringify(config)}::jsonb,
+          updated_by = ${admin.userId},
+          updated_at = NOW()
+      `;
+    } catch (dbErr: any) {
+      const msg = String(dbErr?.message || "");
+      if (msg.includes("does not exist") || msg.includes("relation") || msg.includes("undefined_table")) {
+        return NextResponse.json({ success: false, error: "system_config table does not exist" }, { status: 500 });
+      }
+      throw dbErr;
+    }
+
+    // Verify the update
+    let verifyResult: any[] = [];
+    try {
+      verifyResult = await sql`
+        SELECT config_value FROM system_config
+        WHERE config_key = 'reseller_form_config'
+      `;
+    } catch { verifyResult = []; }
+    console.log("🔍 API DEBUG: Config after save:", verifyResult[0]?.config_value);
 
     return NextResponse.json({
       success: true,
       message: "Configuration updated successfully"
     });
   } catch (error) {
-    console.error("Reseller form config PUT error:", error);
+    console.error("🔍 API DEBUG: Reseller form config PUT error:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }

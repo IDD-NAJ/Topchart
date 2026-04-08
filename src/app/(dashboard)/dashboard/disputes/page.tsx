@@ -35,6 +35,11 @@ export default function DisputesPage() {
     setLoading(true)
     try {
       const res = await fetch("/api/dashboard/disputes")
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`)
+      }
+      
       const data = await res.json()
       if (data.success) {
         setDisputes(data.disputes)

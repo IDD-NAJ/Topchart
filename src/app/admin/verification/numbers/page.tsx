@@ -13,10 +13,13 @@ import { Loader2, ArrowLeft, Phone, Search, RefreshCw } from "lucide-react"
 interface VerificationNumber {
   id: string
   number: string
-  type: "onetime" | "rental"
+  type: "STR" | "LTR"
   status: "active" | "completed" | "expired" | "cancelled"
   purchase_price: number
-  rental_duration_hours: number
+  ltr_duration_days: number | null
+  pvadeals_request_id: string | null
+  allow_flag: boolean
+  auto_renew: boolean
   expires_at: string
   completed_at: string
   created_at: string
@@ -145,6 +148,7 @@ export default function AdminVerificationNumbersPage() {
                     <th className="px-4 py-3 text-left text-sm font-medium">Price</th>
                     <th className="px-4 py-3 text-left text-sm font-medium">Expires</th>
                     <th className="px-4 py-3 text-left text-sm font-medium">SMS</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">Flags</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -164,8 +168,8 @@ export default function AdminVerificationNumbersPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant={num.type === "rental" ? "default" : "secondary"}>
-                          {num.type}
+                        <Badge variant={num.type === "LTR" ? "default" : "secondary"}>
+                          {num.type === "LTR" ? `LTR ${num.ltr_duration_days ?? ""}d` : "STR"}
                         </Badge>
                       </td>
                       <td className="px-4 py-3">{getStatusBadge(num.status)}</td>
@@ -179,6 +183,12 @@ export default function AdminVerificationNumbersPage() {
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant="outline">{num.sms_count}</Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1">
+                          {num.allow_flag && <Badge variant="outline" className="text-xs">Flag</Badge>}
+                          {num.auto_renew && <Badge variant="outline" className="text-xs text-green-600 border-green-200">Auto</Badge>}
+                        </div>
                       </td>
                     </tr>
                   ))}

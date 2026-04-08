@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
-import { cancelOrder } from "@/lib/textverified";
+import { flagNumber } from "@/lib/pvadeals";
+import { createPaystackRefund } from "@/lib/paystack";
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,9 +52,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get number details
+    // Get number details including purchase_price for refund
     const numbers = await sql`
-      SELECT id, textverified_order_id, status, type, expires_at
+      SELECT id, pvadeals_request_id, status, type, expires_at, allow_flag, purchase_price
       FROM verification_numbers
       WHERE id = ${numberId} AND user_id = ${userId}
     `;
@@ -74,6 +75,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!number.allow_flag) {
+      return NextResponse.json(
+        { success: false, error: "This number cannot be flagged/cancelled" },
+        { status: 400 }
+      );
+    }
+
     // Check if already expired
     if (new Date(number.expires_at) < new Date()) {
       await sql`
@@ -88,9 +96,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Cancel with Textverified
-    if (number.textverified_order_id) {
-      await cancelOrder(number.textverified_order_id);
+    // Flag/cancel with PVADeals
+    if (number.pvadeals_request_id) {
+      await flagNumber(number.pvadeals_request_id);
     }
 
     // Update status
@@ -100,11 +108,105 @@ export async function POST(request: NextRequest) {
       WHERE id = ${numberId}
     `;
 
+    // ── Refund logic ──────────────────────────────────────────────────────────
+    const purchasePrice = Number(number.purchase_price) || 0;
+    let refundMethod: "wallet" | "paystack" | "none" = "none";
+    let refundIssued = false;
+
+    if (purchasePrice > 0) {
+      // Find the linked transaction (wallet → verification_number_id; Paystack → metadata->>'number_id')
+      const txRows = await sql`
+        SELECT id, reference, payment_method, payment_channel, amount, status
+        FROM transactions
+        WHERE user_id = ${userId}
+          AND (
+            verification_number_id::text = ${numberId}
+            OR (metadata->>'number_id') = ${numberId}
+          )
+          AND status IN ('success', 'pending')
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+
+      const tx = txRows.length > 0 ? (txRows[0] as any) : null;
+      const isPaystack = tx?.payment_method === "paystack" || (tx?.payment_channel && tx.payment_channel !== "wallet");
+
+      if (isPaystack && tx) {
+        // Attempt Paystack refund (amount in pesewas = GHS * 100)
+        const refundResult = await createPaystackRefund(tx.reference, Math.round(purchasePrice * 100));
+
+        if (refundResult.success) {
+          refundMethod = "paystack";
+          refundIssued = true;
+          await sql`
+            UPDATE transactions
+            SET status = 'refunded',
+                metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+                  refunded_at: new Date().toISOString(),
+                  refund_reason: "User cancelled verification number",
+                  refund_method: "paystack",
+                  refund_amount: purchasePrice,
+                  paystack_refund_id: refundResult.data?.id,
+                })}::jsonb,
+                updated_at = NOW()
+            WHERE id = ${tx.id}
+          `;
+        } else {
+          // Paystack refund failed — fall back to wallet credit
+          console.warn("Paystack refund failed, falling back to wallet credit:", refundResult.error);
+          await sql`
+            UPDATE users SET wallet_balance = wallet_balance + ${purchasePrice} WHERE id = ${userId}
+          `;
+          refundMethod = "wallet";
+          refundIssued = true;
+          if (tx) {
+            await sql`
+              UPDATE transactions
+              SET status = 'refunded',
+                  metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+                    refunded_at: new Date().toISOString(),
+                    refund_reason: "User cancelled verification number",
+                    refund_method: "wallet_fallback",
+                    refund_amount: purchasePrice,
+                    paystack_refund_error: refundResult.error,
+                  })}::jsonb,
+                  updated_at = NOW()
+              WHERE id = ${tx.id}
+            `;
+          }
+        }
+      } else {
+        // Wallet purchase — credit back
+        await sql`
+          UPDATE users SET wallet_balance = wallet_balance + ${purchasePrice} WHERE id = ${userId}
+        `;
+        refundMethod = "wallet";
+        refundIssued = true;
+        if (tx) {
+          await sql`
+            UPDATE transactions
+            SET status = 'refunded',
+                metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+                  refunded_at: new Date().toISOString(),
+                  refund_reason: "User cancelled verification number",
+                  refund_method: "wallet",
+                  refund_amount: purchasePrice,
+                })}::jsonb,
+                updated_at = NOW()
+            WHERE id = ${tx.id}
+          `;
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: {
         number_id: numberId,
         status: "cancelled",
+        refunded: refundIssued,
+        refund_method: refundMethod,
+        refund_amount: refundIssued ? purchasePrice : 0,
       },
     });
   } catch (error) {

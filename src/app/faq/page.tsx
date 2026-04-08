@@ -10,11 +10,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { HelpCircle, MessageSquare, Search, Loader2 } from "lucide-react"
+import { MessageSquare, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { motion } from "framer-motion"
-import { PageTransition, ScrollReveal } from "@/components/animations"
+import { PageTransition } from "@/components/animations"
 
 interface FAQ {
   id: string
@@ -22,25 +21,6 @@ interface FAQ {
   answer: string
   category: string
   sort_order: number
-}
-
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, amount: 0.3 },
-  transition: { duration: 0.5, ease: "easeOut" as const }
-}
-
-const staggerContainer = {
-  initial: { opacity: 0 },
-  whileInView: { 
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2
-    }
-  },
-  viewport: { once: true, amount: 0.2 }
 }
 
 export default function FAQPage() {
@@ -52,6 +32,11 @@ export default function FAQPage() {
     const loadFAQs = async () => {
       try {
         const res = await fetch("/api/content/faqs", { cache: "no-store" })
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error ${res.status}`)
+        }
+        
         const data = await res.json()
 
         if (data.success) {
@@ -71,125 +56,92 @@ export default function FAQPage() {
   }, [])
 
   return (
-    <PageTransition className="min-h-screen flex flex-col bg-background selection:bg-[#006994]/15 selection:text-foreground">
+    <PageTransition className="min-h-screen flex flex-col bg-[#F5F4F1]">
       <Header />
-      
-      <main className="flex-1 pt-32 pb-24">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto">
-            {/* Header */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="text-center mb-16"
-            >
-              <h1 className="font-heading text-4xl font-normal tracking-tight text-foreground sm:text-5xl mb-4">
-                Frequently Asked <span className="bg-gradient-to-r from-[#722F37] to-[#9B4450] bg-clip-text text-transparent">Questions</span>
-              </h1>
-              <p className="text-xl text-muted-foreground font-body leading-relaxed">
-                Everything you need to know about Topchart&apos;s services and features.
-              </p>
-            </motion.div>
 
-            {/* Search Hint */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="mb-12"
-            >
-              <Card className="border-[#006994]/20 bg-[#EFF6FA]/50 overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="h-10 w-10 rounded-xl bg-[#006994]/10 text-[#006994] flex items-center justify-center flex-shrink-0">
-                      <Search className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-heading text-base font-normal mb-2">Can&apos;t find what you&apos;re looking for?</h3>
-                      <p className="text-sm text-muted-foreground font-body mb-4">
-                        Browse through our FAQ categories below or reach out to our support team for personalized assistance.
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {['Delivery', 'Payments', 'Security', 'Refunds'].map((tag) => (
-                          <span key={tag} className="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[#006994]/10 text-[#006994]">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-            
-            {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : error ? (
-              <div className="text-center py-20 text-muted-foreground">{error}</div>
-            ) : faqs.length === 0 ? (
-              <div className="text-center py-20 text-muted-foreground">
-                No FAQs available at the moment.
-              </div>
-            ) : (
-              /* FAQ Accordion */
-              <motion.div 
-                variants={staggerContainer}
-                initial="initial"
-                whileInView="whileInView"
-                viewport={{ once: true, amount: 0.1 }}
-                className="space-y-4"
-              >
-                <Accordion type="single" collapsible className="w-full space-y-4">
-                  {faqs.map((faq, index) => (
-                    <motion.div key={faq.id} variants={fadeInUp}>
-                      <AccordionItem 
-                        value={`item-${index}`}
-                        className="group border border-[#006994]/15 bg-background/50 backdrop-blur-sm rounded-2xl px-6 transition-all duration-300 hover:border-[#006994]/30 hover:bg-[#EFF6FA]/50 data-[state=open]:border-[#722F37]/40 data-[state=open]:bg-[#FDF2F3]/30"
-                        style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
-                      >
-                        <AccordionTrigger className="hover:no-underline py-6">
-                          <div className="flex items-center gap-4 text-left">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#006994]/10 text-[#006994] group-data-[state=open]:bg-[#722F37] group-data-[state=open]:text-white transition-colors duration-300">
-                              <HelpCircle className="h-5 w-5" />
-                            </div>
-                            <span className="font-heading text-lg font-normal text-foreground">{faq.question}</span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="text-muted-foreground leading-relaxed text-sm pb-6 pl-14 font-body">
-                          {faq.answer}
-                        </AccordionContent>
-                      </AccordionItem>
-                    </motion.div>
-                  ))}
-                </Accordion>
-              </motion.div>
-            )}
+      {/* ── PAGE HERO ── */}
+      <section className="pt-40 pb-20 bg-[#0B1F3A] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:56px_56px]" />
+        <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-[#F5F4F1] to-transparent" />
+        <div className="relative z-10 container mx-auto px-4 text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/15 bg-white/8 text-white/60 text-xs font-semibold uppercase tracking-widest mb-8"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-[#7EB8D4]" /> Help Centre
+          </motion.div>
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            className="font-heading text-5xl sm:text-6xl font-normal text-white leading-tight tracking-tight"
+          >
+            Frequently asked questions
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-5 text-base text-white/45 max-w-xl mx-auto font-body"
+          >
+            Everything you need to know about Topchart&apos;s services.
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mt-8 flex flex-wrap justify-center gap-2"
+          >
+            {['Airtime & Data', 'Verification', 'Result Checkers', 'Reseller', 'Payments', 'Security'].map((tag) => (
+              <span key={tag} className="px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider border border-white/15 text-white/50">
+                {tag}
+              </span>
+            ))}
+          </motion.div>
+        </div>
+      </section>
 
-            {/* Contact CTA */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="mt-16 text-center"
-            >
-              <div className="p-8 rounded-2xl bg-muted/30 border border-border/50">
-                <MessageSquare className="h-10 w-10 text-[#006994] mx-auto mb-4" />
-                <h3 className="font-heading text-xl font-normal mb-2">Still have questions?</h3>
-                <p className="text-muted-foreground mb-6 font-body">
-                  Can&apos;t find the answer you&apos;re looking for? Our support team is here to help.
-                </p>
-                <Button asChild className="bg-gradient-to-r from-[#006994] to-[#1A85B8] text-white hover:from-[#00567A] hover:to-[#006994] rounded-xl transition-all duration-300" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
-                  <Link href="/dashboard/tickets">
-                    Contact Support
-                  </Link>
-                </Button>
-              </div>
-            </motion.div>
-          </div>
+      <main className="flex-1 py-20">
+        <div className="container mx-auto px-4 max-w-3xl">
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-7 w-7 animate-spin text-[#006994]" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-20 text-[#6B7280] text-sm">{error}</div>
+          ) : faqs.length === 0 ? (
+            <div className="text-center py-20 text-[#6B7280] text-sm">No FAQs available at the moment.</div>
+          ) : (
+            <Accordion type="single" collapsible className="space-y-3">
+              {faqs.map((faq, index) => (
+                <AccordionItem
+                  key={faq.id}
+                  value={`item-${index}`}
+                  className="border border-[#E2E1DC] rounded-2xl px-6 bg-white data-[state=open]:border-[#006994]/25 data-[state=open]:bg-white transition-all duration-300"
+                >
+                  <AccordionTrigger className="hover:no-underline py-5 text-left">
+                    <span className="font-heading text-base font-normal text-[#0B1F3A] pr-4">{faq.question}</span>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm text-[#6B7280] leading-relaxed pb-5 font-body">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
+
+          {/* Contact CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="mt-12 p-8 rounded-2xl bg-[#0B1F3A] text-center"
+          >
+            <MessageSquare className="h-8 w-8 text-[#7EB8D4] mx-auto mb-4" />
+            <h3 className="font-heading text-xl font-normal text-white mb-2">Still have questions?</h3>
+            <p className="text-sm text-white/45 mb-6 font-body">
+              Our support team is available 24/7 to help with anything.
+            </p>
+            <Button asChild className="h-10 px-6 rounded-xl bg-white text-[#0B1F3A] hover:bg-[#EFF6FA] font-semibold transition-all duration-200">
+              <Link href="/dashboard/tickets">Open a support ticket</Link>
+            </Button>
+          </motion.div>
         </div>
       </main>
 
