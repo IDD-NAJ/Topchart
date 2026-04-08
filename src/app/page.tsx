@@ -254,12 +254,12 @@ export default function HomePage() {
         <section className="py-24 bg-[#0B1F3A] relative overflow-hidden">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:48px_48px]" />
           <div className="container mx-auto px-4 relative z-10">
-            <StaggerReveal className="grid grid-cols-2 md:grid-cols-4 gap-12">
+            <StaggerReveal className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 md:gap-12">
               {STATS.map((s) => (
                 <StaggerRevealItem key={s.label}>
-                  <div className="text-center">
-                    <p className="font-heading text-5xl font-normal text-white mb-2 tracking-tight">{s.value}</p>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-white/40">{s.label}</p>
+                  <div className="text-center px-1">
+                    <p className="font-heading text-3xl sm:text-4xl md:text-5xl font-normal text-white mb-2 tracking-tight">{s.value}</p>
+                    <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider md:tracking-widest text-white/40 leading-snug">{s.label}</p>
                   </div>
                 </StaggerRevealItem>
               ))}

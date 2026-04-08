@@ -18,34 +18,32 @@ export default function DashboardLayout({
   const { user, isLoading, refreshUser } = useAuth()
   const router = useRouter()
   const [retryCount, setRetryCount] = useState(0)
-  const maxRetries = 2
+  const [stabilized, setStabilized] = useState(false)
+  const maxRetries = 4
 
   useEffect(() => {
-    // On mount, if not loading and no user, try refreshing
-    // This handles the case where cookie might not be immediately available after redirect
-    if (!isLoading && !user && retryCount < maxRetries) {
-      const attemptRefresh = async () => {
-        setRetryCount(prev => prev + 1)
-        // Wait a bit for cookie to be available after redirect
-        await new Promise(resolve => setTimeout(resolve, 300 * (retryCount + 1)))
-        await refreshUser()
-      }
-      attemptRefresh()
-    }
-  }, [isLoading, user, retryCount, refreshUser])
+    const t = setTimeout(() => setStabilized(true), 400)
+    return () => clearTimeout(t)
+  }, [])
 
   useEffect(() => {
-    // Only redirect if we've exhausted retries and still no user
-    if (!isLoading && !user && retryCount >= maxRetries) {
-      const timer = setTimeout(() => {
-        router.replace("/login")
-      }, 100)
-      return () => clearTimeout(timer)
+    if (!stabilized || isLoading || user || retryCount >= maxRetries) return
+    const delays = [500, 1000, 2000, 3000]
+    const attemptRefresh = async () => {
+      await new Promise(resolve => setTimeout(resolve, delays[retryCount] ?? 1000))
+      await refreshUser()
+      setRetryCount(prev => prev + 1)
     }
-  }, [user, isLoading, retryCount, router])
+    attemptRefresh()
+  }, [stabilized, isLoading, user, retryCount, refreshUser])
 
-  // Show loading while checking auth or retrying
-  if (isLoading || (!user && retryCount < maxRetries)) {
+  useEffect(() => {
+    if (!stabilized || isLoading || user || retryCount < maxRetries) return
+    const timer = setTimeout(() => router.replace("/login"), 200)
+    return () => clearTimeout(timer)
+  }, [stabilized, user, isLoading, retryCount, router])
+
+  if (isLoading || !stabilized || (!user && retryCount < maxRetries)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-4 border-[#006994] border-t-transparent rounded-full animate-spin" />
@@ -53,7 +51,6 @@ export default function DashboardLayout({
     )
   }
 
-  // Show loading briefly while redirecting if no user
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
