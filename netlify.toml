@@ -4,6 +4,8 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+  [plugins.inputs]
+    dist_dir = ".next"
 
 [build.environment]
   NODE_VERSION = "20"
