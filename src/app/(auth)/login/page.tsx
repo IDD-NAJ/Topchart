@@ -87,7 +87,8 @@ export default function LoginPage() {
 
       if (result.success) {
         const destination = result.user && isAdmin(result.user.role) ? "/admin" : "/dashboard"
-        router.replace(destination)
+        router.push(destination)
+        router.refresh()
       } else {
         setError(result.error || "Invalid email or password")
         setIsLoading(false)
