@@ -2,7 +2,7 @@
 
 import React from "react"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Header } from "@/components/header"
@@ -15,10 +15,12 @@ export default function AuthLayout({
 }) {
   const { user, isLoading, isAdmin } = useAuth()
   const router = useRouter()
+  const mountedWithUser = useRef(false)
 
   useEffect(() => {
     if (!isLoading && user) {
-      router.push(isAdmin ? "/admin" : "/dashboard")
+      mountedWithUser.current = true
+      router.replace(isAdmin ? "/admin" : "/dashboard")
     }
   }, [user, isLoading, isAdmin, router])
 
@@ -31,7 +33,11 @@ export default function AuthLayout({
   }
 
   if (user) {
-    return null
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-[#006994] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (
