@@ -68,17 +68,23 @@ export default function AdminResellerFormConfigPage() {
   }, []);
 
   const loadConfig = async () => {
+    console.log("🔍 DEBUG: Loading configuration...");
     try {
       const res = await fetch("/api/admin/reseller-form-config", {
         credentials: "include"
       });
       const data = await res.json();
+      console.log("🔍 DEBUG: Load response data:", data);
 
       if (data.success) {
+        console.log("🔍 DEBUG: Setting config from API:", data.config);
         setConfig(data.config);
         setCustomFields(data.customFields || []);
+      } else {
+        console.error("🔍 DEBUG: Load failed:", data.error);
       }
     } catch (error) {
+      console.error("🔍 DEBUG: Load error:", error);
       toast.error("Failed to load configuration");
     } finally {
       setLoading(false);
@@ -87,6 +93,7 @@ export default function AdminResellerFormConfigPage() {
 
   const saveConfig = async () => {
     setSaving(true);
+    console.log("🔍 DEBUG: Starting saveConfig with current config:", config);
     try {
       const res = await fetch("/api/admin/reseller-form-config", {
         method: "PUT",
@@ -94,16 +101,27 @@ export default function AdminResellerFormConfigPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ config })
       });
+      console.log("🔍 DEBUG: Save response status:", res.status);
 
       const data = await res.json();
+      console.log("🔍 DEBUG: Save response data:", data);
 
-      if (data.success) {
-        toast.success("Configuration saved");
-      } else {
-        toast.error(data.error || "Failed to save");
+      if (!res.ok || !data.success) {
+        console.error("🔍 DEBUG: Save failed:", data.error);
+        toast.error(data.error || `Save failed (HTTP ${res.status})`);
+        return;
       }
+      console.log("🔍 DEBUG: Save successful, reloading config");
+      toast.success("Configuration saved");
+      // Reload config to verify it was saved correctly
+      await loadConfig();
+      // Add small delay to ensure React state update is complete
+      setTimeout(() => {
+        console.log("🔍 DEBUG: Config reload completed, current state:", config);
+      }, 100);
     } catch (error) {
-      toast.error("Network error");
+      console.error("🔍 DEBUG: Network error during save:", error);
+      toast.error("Network error — check your database connection");
     } finally {
       setSaving(false);
     }
@@ -230,7 +248,7 @@ export default function AdminResellerFormConfigPage() {
                   type="number"
                   step="0.01"
                   value={config.application_fee}
-                  onChange={(e) => setConfig({ ...config, application_fee: parseFloat(e.target.value) })}
+                  onChange={(e) => setConfig({ ...config, application_fee: parseFloat(e.target.value) || 0 })}
                 />
                 <span className="text-muted-foreground whitespace-nowrap">{config.currency}</span>
               </div>

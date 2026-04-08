@@ -43,7 +43,9 @@ function getCleanConnectionString(): string {
     connectionString = postgresMatch[0];
   }
 
+  // Remove problematic parameters that cause connection issues
   connectionString = connectionString.replace(/[&?]channel_binding=[^&]*/g, '');
+  connectionString = connectionString.replace(/[&?]pooler_timeout=[^&]*/g, '');
   connectionString = connectionString.replace(/&&/g, '&').replace(/\?&/g, '?').replace(/[?&]$/, '');
 
   return connectionString.trim();

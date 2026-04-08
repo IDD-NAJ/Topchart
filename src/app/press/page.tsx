@@ -56,6 +56,11 @@ export default function PressPage() {
     const loadData = async () => {
       try {
         const res = await fetch("/api/content/press", { cache: "no-store" })
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error ${res.status}`)
+        }
+        
         const data = await res.json()
 
         if (data.success) {

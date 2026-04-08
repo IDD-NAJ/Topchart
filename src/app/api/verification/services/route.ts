@@ -1,7 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
-import { calculatePrice } from "@/lib/textverified";
+import {
+  getAllServices,
+  calculateUserPrice,
+  mapCategoryByName,
+  USD_TO_GHS_RATE,
+  DEFAULT_MARKUP_PERCENT,
+  type PVAService,
+} from "@/lib/pvadeals";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const CATEGORIES = [
+  { id: "social_media", name: "Social Media", icon: "MessageCircle" },
+  { id: "ecommerce_financial", name: "E-Commerce & Financial", icon: "CreditCard" },
+  { id: "professional_tools", name: "Professional Tools", icon: "Briefcase" },
+  { id: "streaming_entertainment", name: "Streaming & Entertainment", icon: "Play" },
+];
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,85 +26,90 @@ export async function GET(request: NextRequest) {
     const sessionToken = cookieStore.get("session_token")?.value;
 
     if (!sessionToken) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify session
     const sessions = await sql`
-      SELECT s.user_id
-      FROM auth_sessions s
-      WHERE s.token = ${sessionToken}
-        AND s.expires_at > NOW()
+      SELECT s.user_id FROM auth_sessions s
+      WHERE s.token = ${sessionToken} AND s.expires_at > NOW()
     `;
 
     if (sessions.length === 0) {
-      return NextResponse.json(
-        { success: false, error: "Session expired" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Session expired" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
-    const category = searchParams.get("category");
+    const categoryFilter = searchParams.get("category");
 
-    // Build query
-    let query = sql`
-      SELECT 
-        id,
-        textverified_service_id,
-        name,
-        category,
-        description,
-        icon_url,
-        is_active,
-        base_cost,
-        markup_percentage,
-        rental_multiplier
-      FROM verification_services
-      WHERE is_active = true
-    `;
+    // Fetch live services from PVADeals
+    const pvaResult = await getAllServices();
 
-    if (category) {
-      query = sql`
-        SELECT 
-          id,
-          textverified_service_id,
-          name,
-          category,
-          description,
-          icon_url,
-          is_active,
-          base_cost,
-          markup_percentage,
-          rental_multiplier
-        FROM verification_services
-        WHERE is_active = true AND category = ${category}
-      `;
+    if (!pvaResult.success || !pvaResult.data) {
+      return NextResponse.json(
+        { success: false, error: pvaResult.error || "Failed to fetch services from provider" },
+        { status: 502 }
+      );
     }
 
-    const services = await query;
+    const pvaServices: PVAService[] = pvaResult.data.services;
 
-    // Calculate final prices
-    const servicesWithPrices = services.map((service: any) => ({
-      ...service,
-      onetime_price: calculatePrice(
-        Number(service.base_cost),
-        Number(service.markup_percentage)
-      ),
-      rental_price_per_day: calculatePrice(
-        Number(service.base_cost) * Number(service.rental_multiplier),
-        Number(service.markup_percentage)
-      ),
-    }));
-
-    // Group by category
-    const grouped = servicesWithPrices.reduce((acc: Record<string, any[]>, svc: any) => {
-      if (!acc[svc.category]) {
-        acc[svc.category] = [];
+    // Load our DB overrides for category assignment and markup
+    let dbOverrides: Record<string, { category: string; markup_percentage: number; is_active: boolean }> = {};
+    try {
+      const rows = await sql`
+        SELECT pvadeals_service_id, category, markup_percentage, is_active
+        FROM verification_services
+      `;
+      for (const row of rows as any[]) {
+        dbOverrides[row.pvadeals_service_id] = {
+          category: row.category,
+          markup_percentage: Number(row.markup_percentage),
+          is_active: row.is_active,
+        };
       }
+    } catch {
+      // Table might not exist yet — proceed with defaults
+    }
+
+    // Build enriched services
+    const services = pvaServices
+      .map((svc) => {
+        const override = dbOverrides[svc._id];
+        if (override && !override.is_active) return null;
+
+        const markup = override?.markup_percentage ?? DEFAULT_MARKUP_PERCENT;
+        const category = override?.category ?? mapCategoryByName(svc.name);
+
+        return {
+          id: svc._id,
+          pvadeals_service_id: svc._id,
+          name: svc.name,
+          picture_url: svc.picture,
+          country: svc.country,
+          category,
+          // USD prices from PVADeals
+          str_price_usd: svc.STRprice,
+          ltr3_price_usd: svc.LTR3price,
+          ltr7_price_usd: svc.LTR7price,
+          ltr14_price_usd: svc.LTR14price,
+          ltr30_price_usd: svc.LTR30price,
+          // GHS prices with markup for display
+          str_price: calculateUserPrice(svc.STRprice, USD_TO_GHS_RATE, markup),
+          ltr3_price: calculateUserPrice(svc.LTR3price, USD_TO_GHS_RATE, markup),
+          ltr7_price: calculateUserPrice(svc.LTR7price, USD_TO_GHS_RATE, markup),
+          ltr14_price: calculateUserPrice(svc.LTR14price, USD_TO_GHS_RATE, markup),
+          ltr30_price: calculateUserPrice(svc.LTR30price, USD_TO_GHS_RATE, markup),
+          markup_percentage: markup,
+        };
+      })
+      .filter(Boolean);
+
+    const filtered = categoryFilter
+      ? services.filter((s: any) => s.category === categoryFilter)
+      : services;
+
+    const grouped = filtered.reduce((acc: Record<string, any[]>, svc: any) => {
+      if (!acc[svc.category]) acc[svc.category] = [];
       acc[svc.category].push(svc);
       return acc;
     }, {});
@@ -95,14 +117,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        services: servicesWithPrices,
+        services: filtered,
         grouped,
-        categories: [
-          { id: "social_media", name: "Social Media & Messaging", icon: "MessageCircle" },
-          { id: "ecommerce_financial", name: "E-commerce & Financial", icon: "CreditCard" },
-          { id: "professional_tools", name: "Professional Tools", icon: "Briefcase" },
-          { id: "streaming_entertainment", name: "Streaming & Entertainment", icon: "Play" },
-        ],
+        categories: CATEGORIES,
+        exchange_rate: USD_TO_GHS_RATE,
       },
     });
   } catch (error) {

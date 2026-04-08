@@ -21,20 +21,23 @@ import {
   ShieldAlert,
   Store,
   TrendingUp,
-  PhoneCall
+  PhoneCall,
+  ClipboardList,
+  GraduationCap,
 } from "lucide-react"
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/airtime", label: "Buy Airtime", icon: Phone },
   { href: "/dashboard/data", label: "Buy Data", icon: Wifi },
-  { href: "/dashboard/verification", label: "Number Verification", icon: PhoneCall },
+  { href: "/dashboard/verification", label: "Verification Numbers", icon: PhoneCall },
+  { href: "/dashboard/verification/history", label: "Verification History", icon: ClipboardList, indent: true },
+  { href: "/dashboard/result-checkers", label: "Result Checkers", icon: GraduationCap },
   { href: "/dashboard/history", label: "Transaction History", icon: History },
 ]
 
 const resellerItems = [
-  { href: "/dashboard/reseller", label: "Reseller Dashboard", icon: Store },
-  { href: "/dashboard/result-checkers", label: "Result Checkers", icon: CreditCard },
+  { href: "/dashboard/reseller", label: "Reseller Programme", icon: Store },
 ]
 
 const secondaryItems = [
@@ -81,13 +84,17 @@ export function DashboardSidebar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all group",
+                    "flex items-center gap-3 rounded-lg text-sm font-medium transition-all group",
+                    (item as any).indent ? "px-4 py-2 ml-4 text-xs" : "px-4 py-2.5",
                     active
                       ? "bg-[#006994]/10 text-[#006994]"
                       : "text-muted-foreground hover:text-[#006994] hover:bg-[#EFF6FA]"
                   )}
                 >
-                  <Icon className={cn("h-4 w-4", active ? "text-[#006994]" : "group-hover:text-[#006994]")} />
+                  <Icon className={cn(
+                    (item as any).indent ? "h-3.5 w-3.5" : "h-4 w-4",
+                    active ? "text-[#006994]" : "group-hover:text-[#006994]"
+                  )} />
                   {item.label}
                 </Link>
               )
@@ -97,7 +104,7 @@ export function DashboardSidebar() {
 
         <div>
           <h3 className="px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-4 font-body">
-            Reseller
+            Business
           </h3>
           <nav className="space-y-1">
             {resellerItems.map((item) => {

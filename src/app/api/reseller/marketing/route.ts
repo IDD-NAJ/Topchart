@@ -29,10 +29,13 @@ export async function GET(request: NextRequest) {
     const userId = (sessions[0] as { id: string }).id;
     
     // Get reseller profile
-    const profile = await sql`
-      SELECT * FROM reseller_profiles
-      WHERE user_id = ${userId}
-    `;
+    let profile: any[] = [];
+    try {
+      profile = await sql`
+        SELECT * FROM reseller_profiles
+        WHERE user_id = ${userId}
+      `;
+    } catch { profile = []; }
     
     if (profile.length === 0) {
       return NextResponse.json({ success: false, error: "Not a reseller" }, { status: 403 });
@@ -41,18 +44,24 @@ export async function GET(request: NextRequest) {
     const reseller = profile[0] as any;
     
     // Get referral links
-    const referralLinks = await sql`
-      SELECT * FROM reseller_referral_links
-      WHERE reseller_id = ${reseller.id}
-      ORDER BY created_at DESC
-    `;
+    let referralLinks: any[] = [];
+    try {
+      referralLinks = await sql`
+        SELECT * FROM reseller_referral_links
+        WHERE reseller_id = ${reseller.id}
+        ORDER BY created_at DESC
+      `;
+    } catch { referralLinks = []; }
     
     // Get marketing assets
-    const assets = await sql`
-      SELECT * FROM marketing_assets
-      WHERE is_active = true
-      ORDER BY category, name
-    `;
+    let assets: any[] = [];
+    try {
+      assets = await sql`
+        SELECT * FROM marketing_assets
+        WHERE is_active = true
+        ORDER BY category, name
+      `;
+    } catch { assets = []; }
     
     return NextResponse.json({
       success: true,
@@ -99,16 +108,19 @@ export async function POST(request: NextRequest) {
     const userId = (sessions[0] as { id: string }).id;
     
     // Get reseller profile
-    const profile = await sql`
-      SELECT * FROM reseller_profiles
-      WHERE user_id = ${userId}
-    `;
+    let profilePost: any[] = [];
+    try {
+      profilePost = await sql`
+        SELECT * FROM reseller_profiles
+        WHERE user_id = ${userId}
+      `;
+    } catch { profilePost = []; }
     
-    if (profile.length === 0) {
+    if (profilePost.length === 0) {
       return NextResponse.json({ success: false, error: "Not a reseller" }, { status: 403 });
     }
     
-    const reseller = profile[0] as any;
+    const reseller = profilePost[0] as any;
     const body = await request.json();
     const { landing_page, utm_source, utm_medium } = body;
     

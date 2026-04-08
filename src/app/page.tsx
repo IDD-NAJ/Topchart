@@ -1,273 +1,248 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { 
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { 
-  Zap, 
-  Shield, 
-  Clock, 
-  CreditCard, 
+import {
   ArrowRight,
-  Star,
-  HelpCircle,
+  CheckCircle2,
+  Phone,
+  Wifi,
+  PhoneCall,
+  Store,
+  GraduationCap,
+  ChevronRight,
 } from "lucide-react"
 import { motion } from "framer-motion"
-import { FloatingOrb, ScrollReveal, StaggerReveal, StaggerRevealItem, HoverCard, PageTransition } from "@/components/animations"
+import { ScrollReveal, StaggerReveal, StaggerRevealItem, PageTransition } from "@/components/animations"
 
-const features = [
+const SERVICES = [
   {
-    icon: Zap,
-    title: "Instant Delivery",
-    description: "Get your airtime and data credited within seconds of payment confirmation.",
+    icon: Phone,
+    title: "Airtime Top-Up",
+    description: "Instant airtime for MTN, Telecel, and AirtelTigo. Credits within seconds.",
+    href: "/dashboard/airtime",
+    label: "Top up now",
   },
   {
-    icon: Shield,
-    title: "100% Secure",
-    description: "Your transactions and personal data are fully protected.",
+    icon: Wifi,
+    title: "Data Bundles",
+    description: "Affordable daily, weekly and monthly data packages for every network.",
+    href: "/dashboard/data",
+    label: "Browse bundles",
   },
   {
-    icon: Clock,
-    title: "24/7 Available",
-    description: "Buy airtime and data anytime, anywhere. We never close.",
+    icon: PhoneCall,
+    title: "Verification Numbers",
+    description: "Temporary virtual phone numbers for OTP verification on any platform.",
+    href: "/dashboard/verification",
+    label: "Get a number",
   },
   {
-    icon: CreditCard,
-    title: "Multiple Payment Options",
-    description: "Pay with Mobile Money, cards, or your wallet balance.",
+    icon: GraduationCap,
+    title: "Result Checkers",
+    description: "Access WAEC, BECE, and NOVDEC results instantly with your index number.",
+    href: "/dashboard/result-checkers",
+    label: "Check results",
+  },
+  {
+    icon: Store,
+    title: "Reseller Program",
+    description: "Earn recurring commissions reselling our services under your own brand.",
+    href: "/dashboard/reseller",
+    label: "Become a reseller",
   },
 ]
 
-const stats = [
-  { value: "2M+", label: "Transactions" },
-  { value: "500K+", label: "Happy Users" },
-  { value: "99.9%", label: "Uptime" },
-  { value: "4.9", label: "App Rating", icon: Star },
+const STATS = [
+  { value: "2M+", label: "Transactions Processed" },
+  { value: "500K+", label: "Registered Users" },
+  { value: "99.9%", label: "Platform Uptime" },
+  { value: "5", label: "Core Services" },
 ]
 
-const faqs = [
-  {
-    question: "How fast is the delivery?",
-    answer: "Most transactions are completed within 5 seconds. In rare cases of network delays, it may take up to 5 minutes.",
-  },
-  {
-    question: "What payment methods do you accept?",
-    answer: "We accept Mobile Money (MTN MoMo, Vodafone Cash, AirtelTigo Money), debit cards (Mastercard, Visa), and wallet balance.",
-  },
-  {
-    question: "Is my payment information secure?",
-    answer: "Yes! We use bank-grade encryption and are PCI DSS compliant. We never store your card details.",
-  },
-  {
-    question: "Can I get a refund?",
-    answer: "If a transaction fails, your money is automatically refunded to your wallet within minutes.",
-  },
+const STEPS = [
+  { step: "01", title: "Create Account", body: "Sign up free in under 60 seconds with your email and phone number." },
+  { step: "02", title: "Fund Your Wallet", body: "Add funds via Mobile Money, Visa, or Mastercard securely through Paystack." },
+  { step: "03", title: "Use Any Service", body: "Buy airtime, data, verification numbers, result checkers, or join the reseller programme." },
 ]
 
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, amount: 0.3 },
-  transition: { duration: 0.5, ease: "easeOut" as any }
-}
-
-const staggerContainer = {
-  initial: { opacity: 0 },
-  whileInView: { 
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2
-    }
+const FAQS = [
+  {
+    q: "How fast is airtime and data delivery?",
+    a: "Most orders complete within 5 seconds. In rare cases of network congestion it may take up to 2 minutes.",
   },
-  viewport: { once: true, amount: 0.2 }
-}
+  {
+    q: "What payment methods are supported?",
+    a: "MTN MoMo, Telecel Cash, AirtelTigo Money, Visa, Mastercard, and wallet balance.",
+  },
+  {
+    q: "How do verification numbers work?",
+    a: "You rent a temporary Ghanaian or international number. Any OTP SMS sent to it appears in your dashboard in real time.",
+  },
+  {
+    q: "Can I resell Topchart services?",
+    a: "Yes. Our Reseller Programme gives you a branded storefront, commission on every transaction, and dedicated support.",
+  },
+  {
+    q: "What happens if a transaction fails?",
+    a: "Your wallet is refunded automatically within seconds. You can also raise a dispute from the dashboard.",
+  },
+  {
+    q: "Which exam results can I check?",
+    a: "WAEC WASSCE, BECE, NOVDEC, and selected university admission results.",
+  },
+]
 
 export default function HomePage() {
   return (
-    <PageTransition className="min-h-screen flex flex-col bg-background selection:bg-[#006994]/15 selection:text-foreground">
+    <PageTransition className="min-h-screen flex flex-col bg-[#F5F4F1]">
       <Header />
-      
+
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden pt-24 pb-16 md:pt-40 md:pb-28 bg-gradient-hero">
-          {/* Background Effects */}
-          <div className="absolute inset-0 z-0">
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#00699408_1px,transparent_1px),linear-gradient(to_bottom,#00699408_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(0,105,148,0.07)_0%,transparent_50%)]" />
-          </div>
-          <FloatingOrb color="sea" size={500} top="-100px" left="-100px" opacity={0.07} />
-          <FloatingOrb color="wine" size={400} top="-80px" right="-80px" opacity={0.06} />
 
-          <div className="container mx-auto px-4 relative z-10">
-              <div className="mx-auto max-w-5xl text-center">
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#006994]/10 border border-[#006994]/25 text-[#006994] text-xs font-semibold uppercase tracking-wider mb-8 backdrop-blur-sm"
-                >
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
-                  </span>
-                  System Status: Nominal • 99.9% Uptime
-                </motion.div>
+        {/* ── HERO ── */}
+        <section className="relative min-h-[92vh] flex items-center overflow-hidden bg-[#0B1F3A]">
+          {/* Pexels background */}
+          <Image
+            src="https://images.pexels.com/photos/8370752/pexels-photo-8370752.jpeg?auto=compress&cs=tinysrgb&w=1600"
+            alt=""
+            fill
+            priority
+            className="object-cover opacity-20"
+            sizes="100vw"
+          />
+          {/* grid overlay */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:56px_56px]" />
+          {/* bottom fade */}
+          <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#F5F4F1] to-transparent" />
 
-                <motion.h1 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className="font-heading text-5xl font-normal tracking-tight text-foreground sm:text-7xl lg:text-8xl text-balance leading-[0.95] lg:tracking-[-0.04em]"
-                >
-                The Fastest Way to <br className="hidden md:block" />
-                <span className="bg-gradient-to-r from-[#722F37] to-[#9B4450] bg-clip-text text-transparent">Top Up in Ghana</span>
+          <div className="relative z-10 container mx-auto px-4 pt-32 pb-24">
+            <div className="max-w-4xl mx-auto text-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/15 bg-white/8 text-white/70 text-xs font-semibold uppercase tracking-widest mb-8"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                All systems operational · 99.9% uptime
+              </motion.div>
+
+              <motion.h1
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                className="font-heading text-5xl sm:text-6xl lg:text-7xl font-normal text-white leading-[1.02] tracking-tight text-balance"
+              >
+                Ghana&apos;s Complete<br className="hidden md:block" />{" "}
+                <span className="text-[#7EB8D4]">Digital Services</span> Platform
               </motion.h1>
-              
-              <motion.p 
-                initial={{ opacity: 0, y: 20 }}
+
+              <motion.p
+                initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-8 text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto text-balance font-body"
+                transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                className="mt-7 text-lg text-white/55 leading-relaxed max-w-2xl mx-auto font-body"
               >
-                Buy airtime, data bundles, and pay utilities across Ghana — instantly and securely.
+                Airtime, data bundles, verification numbers, exam results, and a full reseller programme — all in one secure platform.
               </motion.p>
-              
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
+
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
+                transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
               >
-                <Button
-                  size="lg"
-                  asChild
-                  className="w-full sm:w-auto h-14 px-10 text-lg bg-gradient-to-r from-[#006994] to-[#1A85B8] text-white hover:from-[#00567A] hover:to-[#006994] shadow-lg hover:shadow-xl hover:shadow-[#006994]/30 transition-all duration-300 active:scale-[0.98] rounded-xl font-medium"
-                >
-                  <Link href="/register">
-                    Deploy Instant Credit
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
+                <Button asChild size="lg"
+                  className="h-13 px-9 text-base rounded-xl bg-white text-[#0B1F3A] hover:bg-[#EFF6FA] font-semibold shadow-lg transition-all duration-200 active:scale-[0.98]">
+                  <Link href="/register">Get started free <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
-                <Button size="lg" variant="outline" asChild className="w-full sm:w-auto h-14 px-10 text-lg bg-background/50 backdrop-blur-sm transition-all duration-300 active:scale-[0.98] rounded-xl border-[#006994]/20 hover:bg-[#EFF6FA] hover:border-[#006994]/40 font-medium">
-                  <Link href="/login">View Console</Link>
+                <Button asChild size="lg" variant="ghost"
+                  className="h-13 px-9 text-base rounded-xl border border-white/20 text-white hover:bg-white/8 font-medium transition-all duration-200">
+                  <Link href="/login">Sign in to dashboard</Link>
                 </Button>
               </motion.div>
             </div>
 
-            {/* Trusted Networks - Redesigned */}
-            <motion.div 
-              id="networks"
-              initial={{ opacity: 0, y: 40 }}
+            {/* Network badges */}
+            <motion.div
+              initial={{ opacity: 0, y: 32 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="mt-20 max-w-4xl mx-auto scroll-mt-28"
+              transition={{ duration: 0.7, delay: 0.5 }}
+              className="mt-20 flex flex-wrap items-center justify-center gap-6"
             >
-              <div className="relative group">
-                <div className="absolute -inset-4 bg-gradient-to-r from-transparent via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000 blur-2xl" />
-                <div className="relative flex flex-col items-center p-8 rounded-[2.5rem] border border-border/40 bg-background/40 backdrop-blur-[2px]">
-                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 mb-10">
-                    Network Connectivity Matrix
-                  </p>
-                  <div className="flex flex-wrap justify-center items-center gap-12 md:gap-24">
-                    {[
-                      { name: "MTN", bgColor: "#FFC107", textColor: "#000", status: "Live" },
-                      { name: "Telecel", bgColor: "#E40046", textColor: "#fff", status: "Live" },
-                      { name: "AirtelTigo", bgColor: "#E60000", textColor: "#fff", status: "Live" }
-                    ].map((network) => (
-                      <div key={network.name} className="flex flex-col items-center gap-3 group/item">
-                        <div className="relative">
-                          <div 
-                            className="h-16 w-16 rounded-full shadow-xl transition-all duration-500 group-hover/item:scale-110 flex items-center justify-center border-2 border-white/20"
-                            style={{ 
-                              backgroundColor: network.bgColor,
-                              boxShadow: `0 12px 40px -8px ${network.bgColor}60`
-                            }}
-                          >
-                            <span className="font-bold text-xs uppercase tracking-tight" style={{ color: network.textColor }}>
-                              {network.name === "MTN" ? "MTN" : network.name === "Telecel" ? "t" : "AT"}
-                            </span>
-                          </div>
-                          <div className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-background shadow-sm animate-pulse" />
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <span className="font-bold text-foreground tracking-tight text-sm">{network.name}</span>
-                          <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest leading-none mt-1 flex items-center gap-1">
-                            <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
-                            {network.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+              {[
+                { label: "MTN", color: "#FFCC00", text: "#000" },
+                { label: "Telecel", color: "#E40046", text: "#fff" },
+                { label: "AirtelTigo", color: "#E60000", text: "#fff" },
+              ].map((n) => (
+                <div key={n.label} className="flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-white/8 border border-white/12 backdrop-blur-sm">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: n.color }} />
+                  <span className="text-xs font-bold text-white/80 tracking-wider">{n.label}</span>
+                  <span className="text-[10px] text-emerald-400 font-semibold uppercase tracking-widest">Live</span>
                 </div>
-              </div>
+              ))}
             </motion.div>
           </div>
         </section>
 
-        {/* Features Grid */}
-        <section id="features" className="py-24 bg-[#EFF6FA]/50 overflow-hidden">
+        {/* ── SERVICES GRID ── */}
+        <section id="services" className="py-28 bg-[#F5F4F1]">
           <div className="container mx-auto px-4">
-            <ScrollReveal className="flex flex-col md:flex-row justify-between items-end gap-6 mb-16">
-              <div className="max-w-2xl">
-                <h2 className="text-sm font-bold uppercase tracking-widest text-[#722F37] mb-3 font-body">Core Platform</h2>
-                <h3 className="font-heading text-3xl font-normal text-foreground sm:text-4xl lg:text-5xl tracking-tight">
-                  Built for speed. <br />
-                  Designed for reliability.
-                </h3>
-              </div>
-              <p className="text-muted-foreground max-w-sm">
-                We've built the ultimate top-up experience so you can focus on what matters most.
-              </p>
+            <ScrollReveal className="text-center mb-16">
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#006994] mb-4">What we offer</p>
+              <h2 className="font-heading text-4xl lg:text-5xl font-normal text-[#0B1F3A] tracking-tight text-balance">
+                Five services, one platform
+              </h2>
             </ScrollReveal>
-            
-            <StaggerReveal className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-              {features.map((feature) => (
-                <StaggerRevealItem key={feature.title}>
-                  <HoverCard className="group relative flex flex-col h-full p-8 rounded-2xl border border-[#006994]/15 bg-background hover:border-[#006994]/30 transition-all duration-500">
-                    <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-[#006994]/10 text-[#006994] group-hover:bg-[#006994] group-hover:text-white transition-all duration-300">
-                      <feature.icon className="h-6 w-6" />
+
+            <StaggerReveal className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {SERVICES.map((s) => (
+                <StaggerRevealItem key={s.title}>
+                  <Link href={s.href}
+                    className="group flex flex-col h-full p-8 rounded-2xl bg-white border border-[#E2E1DC] hover:border-[#006994]/30 hover:shadow-lg hover:shadow-[#006994]/6 transition-all duration-300">
+                    <div className="mb-5 w-11 h-11 rounded-xl bg-[#EFF6FA] flex items-center justify-center text-[#006994] group-hover:bg-[#006994] group-hover:text-white transition-all duration-300">
+                      <s.icon className="h-5 w-5" />
                     </div>
-                    <div className="w-8 h-1 bg-gradient-to-r from-[#722F37] to-[#9B4450] rounded-full mb-4" />
-                    <h4 className="font-heading text-xl font-normal text-foreground mb-3">{feature.title}</h4>
-                    <p className="text-muted-foreground leading-relaxed text-sm font-body">{feature.description}</p>
-                  </HoverCard>
+                    <h3 className="font-heading text-xl font-normal text-[#0B1F3A] mb-2">{s.title}</h3>
+                    <p className="text-sm text-[#6B7280] leading-relaxed mb-6 flex-1">{s.description}</p>
+                    <span className="inline-flex items-center text-xs font-semibold text-[#006994] group-hover:gap-2 gap-1.5 transition-all duration-200">
+                      {s.label} <ChevronRight className="h-3.5 w-3.5" />
+                    </span>
+                  </Link>
                 </StaggerRevealItem>
               ))}
             </StaggerReveal>
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className="py-24 relative overflow-hidden bg-gradient-to-br from-[#006994] to-[#004D6E] text-white">
-          <FloatingOrb color="wine" size={350} top="-60px" right="60px" opacity={0.12} />
-          <FloatingOrb color="grey" size={250} bottom="-40px" left="40px" opacity={0.08} />
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff12_1px,transparent_1px),linear-gradient(to_bottom,#ffffff12_1px,transparent_1px)] bg-[size:24px_24px]" />
-          </div>
-          <div className="container mx-auto px-4 relative z-10">
-            <StaggerReveal className="grid grid-cols-2 gap-12 md:grid-cols-4">
-              {stats.map((stat) => (
-                <StaggerRevealItem key={stat.label}>
-                  <div className="flex flex-col items-center text-center">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-heading text-4xl md:text-5xl font-normal tracking-tighter text-white">
-                        {stat.value}
-                      </span>
-                      {stat.icon && <stat.icon className="h-6 w-6 text-[#FDF2F3] fill-[#FDF2F3]" />}
-                    </div>
-                    <p className="text-sm font-medium uppercase tracking-widest text-white/60 font-body">
-                      {stat.label}
-                    </p>
+        {/* ── HOW IT WORKS ── */}
+        <section className="py-28 bg-white border-y border-[#E2E1DC]">
+          <div className="container mx-auto px-4">
+            <ScrollReveal className="text-center mb-16">
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#722F37] mb-4">Simple by design</p>
+              <h2 className="font-heading text-4xl lg:text-5xl font-normal text-[#0B1F3A] tracking-tight">
+                Up and running in 3 steps
+              </h2>
+            </ScrollReveal>
+
+            <StaggerReveal className="grid gap-8 md:grid-cols-3 max-w-4xl mx-auto">
+              {STEPS.map((s, i) => (
+                <StaggerRevealItem key={s.step}>
+                  <div className="flex flex-col items-start">
+                    <span className="font-heading text-6xl font-normal text-[#0B1F3A]/8 mb-4 leading-none">{s.step}</span>
+                    <div className="w-8 h-0.5 bg-[#006994] mb-5" />
+                    <h3 className="font-heading text-xl font-normal text-[#0B1F3A] mb-3">{s.title}</h3>
+                    <p className="text-sm text-[#6B7280] leading-relaxed">{s.body}</p>
                   </div>
                 </StaggerRevealItem>
               ))}
@@ -275,85 +250,145 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* FAQ Section */}
-        <section id="faq" className="py-24">
+        {/* ── STATS ── */}
+        <section className="py-24 bg-[#0B1F3A] relative overflow-hidden">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:48px_48px]" />
+          <div className="container mx-auto px-4 relative z-10">
+            <StaggerReveal className="grid grid-cols-2 md:grid-cols-4 gap-12">
+              {STATS.map((s) => (
+                <StaggerRevealItem key={s.label}>
+                  <div className="text-center">
+                    <p className="font-heading text-5xl font-normal text-white mb-2 tracking-tight">{s.value}</p>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-white/40">{s.label}</p>
+                  </div>
+                </StaggerRevealItem>
+              ))}
+            </StaggerReveal>
+          </div>
+        </section>
+
+        {/* ── PEXELS FEATURE IMAGE ── */}
+        <section className="py-28 bg-[#F5F4F1]">
           <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto">
-              <ScrollReveal className="text-center mb-16">
-                <h2 className="text-sm font-bold uppercase tracking-widest text-[#722F37] mb-3 font-body">FAQ</h2>
-                <h3 className="font-heading text-3xl font-normal text-foreground sm:text-4xl tracking-tight">
-                  Everything you need to know
-                </h3>
-              </ScrollReveal>
-              
-              <StaggerReveal className="space-y-4">
-                <Accordion type="single" collapsible className="w-full space-y-4">
-                  {faqs.map((faq, index) => (
-                    <StaggerRevealItem key={faq.question}>
-                      <AccordionItem 
-                        value={`item-${index}`}
-                        className="group border border-[#006994]/15 bg-background/50 backdrop-blur-sm rounded-2xl px-6 transition-all duration-300 hover:border-[#006994]/30 hover:bg-[#EFF6FA]/50 data-[state=open]:border-[#722F37]/40 data-[state=open]:bg-[#FDF2F3]/30"
-                        style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
-                      >
-                        <AccordionTrigger className="hover:no-underline py-6">
-                          <div className="flex items-center gap-4 text-left">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#006994]/10 text-[#006994] group-data-[state=open]:bg-[#722F37] group-data-[state=open]:text-white transition-colors duration-300">
-                              <HelpCircle className="h-5 w-5" />
-                            </div>
-                            <span className="font-heading text-lg font-normal text-foreground">{faq.question}</span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="text-muted-foreground leading-relaxed text-sm pb-6 pl-14 font-body">
-                          {faq.answer}
-                        </AccordionContent>
-                      </AccordionItem>
-                    </StaggerRevealItem>
+            <div className="grid lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
+              <ScrollReveal>
+                <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#006994] mb-4">Why Topchart</p>
+                <h2 className="font-heading text-4xl lg:text-5xl font-normal text-[#0B1F3A] tracking-tight mb-8 text-balance">
+                  Built for Ghana. <br />Trusted by thousands.
+                </h2>
+                <ul className="space-y-5">
+                  {[
+                    "Bank-grade encryption on every transaction",
+                    "PCI DSS Level 1 compliant payment processing",
+                    "Instant delivery — average 3 seconds",
+                    "24 / 7 support via live chat and tickets",
+                    "Wallet, Mobile Money, and card payments accepted",
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-3 text-sm text-[#374151]">
+                      <CheckCircle2 className="h-4 w-4 text-[#006994] shrink-0 mt-0.5" />
+                      {item}
+                    </li>
                   ))}
-                </Accordion>
-              </StaggerReveal>
+                </ul>
+                <div className="mt-10">
+                  <Button asChild size="lg"
+                    className="h-12 px-8 rounded-xl bg-[#0B1F3A] text-white hover:bg-[#1C3558] font-semibold transition-all duration-200">
+                    <Link href="/register">Create free account <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                  </Button>
+                </div>
+              </ScrollReveal>
+
+              <ScrollReveal className="relative">
+                <div className="rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl shadow-[#0B1F3A]/15">
+                  <Image
+                    src="https://images.pexels.com/photos/5926393/pexels-photo-5926393.jpeg?auto=compress&cs=tinysrgb&w=900"
+                    alt="Mobile fintech in Ghana"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                  />
+                </div>
+                <div className="absolute -bottom-5 -left-5 bg-white rounded-2xl border border-[#E2E1DC] shadow-lg px-5 py-4">
+                  <p className="text-2xl font-heading text-[#0B1F3A] mb-0.5">99.9%</p>
+                  <p className="text-xs text-[#6B7280] font-semibold uppercase tracking-wider">Platform Uptime</p>
+                </div>
+              </ScrollReveal>
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="py-24 bg-[#EFF6FA]/40">
+        {/* ── FAQ ── */}
+        <section id="faq" className="py-28 bg-white border-t border-[#E2E1DC]">
+          <div className="container mx-auto px-4 max-w-3xl">
+            <ScrollReveal className="text-center mb-16">
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#722F37] mb-4">FAQ</p>
+              <h2 className="font-heading text-4xl lg:text-5xl font-normal text-[#0B1F3A] tracking-tight">
+                Common questions
+              </h2>
+            </ScrollReveal>
+
+            <StaggerReveal>
+              <Accordion type="single" collapsible className="space-y-3">
+                {FAQS.map((faq, i) => (
+                  <StaggerRevealItem key={i}>
+                    <AccordionItem
+                      value={`faq-${i}`}
+                      className="border border-[#E2E1DC] rounded-2xl px-6 bg-[#F5F4F1]/60 data-[state=open]:bg-white data-[state=open]:border-[#006994]/25 transition-all duration-300"
+                    >
+                      <AccordionTrigger className="hover:no-underline py-5 text-left">
+                        <span className="font-heading text-base font-normal text-[#0B1F3A] pr-4">{faq.q}</span>
+                      </AccordionTrigger>
+                      <AccordionContent className="text-sm text-[#6B7280] leading-relaxed pb-5 font-body">
+                        {faq.a}
+                      </AccordionContent>
+                    </AccordionItem>
+                  </StaggerRevealItem>
+                ))}
+              </Accordion>
+            </StaggerReveal>
+          </div>
+        </section>
+
+        {/* ── CTA ── */}
+        <section className="py-28 bg-[#F5F4F1]">
           <div className="container mx-auto px-4">
             <ScrollReveal>
-              <div className="relative rounded-3xl overflow-hidden px-8 py-20 text-center text-white md:px-16" style={{ background: 'linear-gradient(135deg, #722F37 0%, #9B4450 40%, #006994 100%)' }}>
-                <FloatingOrb color="sea" size={300} top="-50px" right="-50px" opacity={0.15} />
-                <FloatingOrb color="wine" size={200} bottom="-30px" left="-30px" opacity={0.12} />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.08),transparent)] pointer-events-none" />
+              <div className="relative rounded-3xl overflow-hidden bg-[#0B1F3A] px-8 py-20 text-center md:px-20">
+                <Image
+                  src="https://images.pexels.com/photos/3760067/pexels-photo-3760067.jpeg?auto=compress&cs=tinysrgb&w=1600"
+                  alt=""
+                  fill
+                  className="object-cover opacity-10"
+                  sizes="100vw"
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:48px_48px]" />
                 <div className="relative z-10 max-w-2xl mx-auto">
                   <motion.h2
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
+                    initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                    className="font-heading text-3xl font-normal sm:text-5xl mb-6 tracking-tight"
+                    className="font-heading text-4xl sm:text-5xl font-normal text-white tracking-tight mb-6 text-balance"
                   >
-                    Ready to experience the future of top-ups?
+                    Start using Topchart today — it&apos;s free
                   </motion.h2>
                   <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                    className="text-white/80 text-lg mb-10 leading-relaxed font-body"
+                    initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: 0.1 }}
+                    className="text-white/50 text-base mb-10 leading-relaxed font-body"
                   >
-                    Join 500k+ Ghanaians already using Topchart. Fast, secure, and reliable infrastructure for your digital life.
+                    Join 500,000+ Ghanaians already using our platform. No subscription fees — pay only for what you use.
                   </motion.p>
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
                     className="flex flex-col sm:flex-row items-center justify-center gap-4"
                   >
-                    <Button size="lg" variant="secondary" asChild className="h-12 px-8 text-base w-full sm:w-auto bg-white text-[#006994] hover:bg-[#EFF6FA] active:scale-[0.98] transition-all duration-300 rounded-xl font-semibold">
-                      <Link href="/register">Create Free Account</Link>
+                    <Button asChild size="lg"
+                      className="h-12 px-8 w-full sm:w-auto rounded-xl bg-white text-[#0B1F3A] hover:bg-[#EFF6FA] font-semibold transition-all duration-200 active:scale-[0.98]">
+                      <Link href="/register">Create free account</Link>
                     </Button>
-                    <Button size="lg" variant="outline" asChild className="h-12 px-8 text-base w-full sm:w-auto border-white/30 hover:bg-white/10 text-white active:scale-[0.98] transition-all duration-300 rounded-xl font-medium">
-                      <Link href="/login">Sign In</Link>
+                    <Button asChild size="lg" variant="ghost"
+                      className="h-12 px-8 w-full sm:w-auto rounded-xl border border-white/20 text-white hover:bg-white/8 font-medium transition-all duration-200">
+                      <Link href="/login">Sign in</Link>
                     </Button>
                   </motion.div>
                 </div>
@@ -361,6 +396,7 @@ export default function HomePage() {
             </ScrollReveal>
           </div>
         </section>
+
       </main>
 
       <Footer />

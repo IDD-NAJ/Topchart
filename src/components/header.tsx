@@ -61,10 +61,10 @@ const navConfig: NavItem[] = [
 const servicesConfig: NavItem[] = [
   { href: "/dashboard/airtime", label: "Airtime", icon: Phone, color: "bg-yellow-500/10 text-yellow-600", description: "Instant top-up for all networks", showOn: ['mobile'], auth: 'all' },
   { href: "/dashboard/data", label: "Data Bundles", icon: Wifi, color: "bg-blue-500/10 text-blue-600", description: "Affordable data packages", showOn: ['mobile'], auth: 'all' },
-  { href: "/dashboard/verification", label: "Verification", icon: PhoneCall, color: "bg-green-500/10 text-green-600", description: "SIM and number verification", showOn: ['mobile'], auth: 'all' },
-  { href: "/dashboard/result-checkers", label: "Result Checkers", icon: CreditCard, color: "bg-purple-500/10 text-purple-600", description: "Exam result checking", showOn: ['mobile'], auth: 'all' },
-  { href: "/#features", label: "Features", icon: Sparkles, color: "bg-pink-500/10 text-pink-600", description: "Explore all capabilities", showOn: ['mobile'], auth: 'all' },
-  { href: "/#networks", label: "Networks", icon: Signal, color: "bg-orange-500/10 text-orange-600", description: "MTN, Vodafone, AirtelTigo", showOn: ['mobile'], auth: 'all' },
+  { href: "/dashboard/verification", label: "Verification Numbers", icon: PhoneCall, color: "bg-green-500/10 text-green-600", description: "Temporary phone numbers for OTPs", showOn: ['mobile'], auth: 'all' },
+  { href: "/dashboard/result-checkers", label: "Result Checkers", icon: CreditCard, color: "bg-purple-500/10 text-purple-600", description: "WAEC, BECE, NOVDEC results", showOn: ['mobile'], auth: 'all' },
+  { href: "/dashboard/reseller", label: "Reseller Program", icon: Store, color: "bg-amber-500/10 text-amber-600", description: "Earn commissions as a reseller", showOn: ['mobile'], auth: 'all' },
+  { href: "/#networks", label: "Networks", icon: Signal, color: "bg-orange-500/10 text-orange-600", description: "MTN, Telecel, AirtelTigo", showOn: ['mobile'], auth: 'all' },
 ]
 
 // Company submenu configuration
@@ -108,10 +108,27 @@ export function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
+  const [servicesOpen, setServicesOpen] = useState(false)
   const [servicesExpanded, setServicesExpanded] = useState(false)
   const [companyExpanded, setCompanyExpanded] = useState(false)
   const [supportExpanded, setSupportExpanded] = useState(false)
   const moreDropdownRef = useRef<HTMLDivElement>(null)
+  const servicesDropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (moreDropdownRef.current && !moreDropdownRef.current.contains(e.target as Node)) setMoreOpen(false)
+      if (servicesDropdownRef.current && !servicesDropdownRef.current.contains(e.target as Node)) setServicesOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   return (
     <motion.header
@@ -148,46 +165,37 @@ export function Header() {
               )}
             </Link>
 
-            {/* Desktop Navigation - Compact */}
+            {/* Desktop Navigation */}
             <nav className="hidden xl:flex items-center">
-              {filterNavItems(navConfig, 'desktop', isAuthenticated).map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#006994] transition-all duration-200 rounded-lg hover:bg-[#EFF6FA] flex items-center gap-1.5"
-                >
-                  <link.icon className="h-3.5 w-3.5" />
-                  {link.label}
-                </Link>
-              ))}
+              <Link href="/" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#006994] transition-all duration-200 rounded-lg hover:bg-[#EFF6FA]">
+                Home
+              </Link>
 
-              {/* More Dropdown - Compact */}
-              <div ref={moreDropdownRef} className="relative z-50">
-                <button 
-                  onClick={() => setMoreOpen(!moreOpen)}
+              {/* Services Dropdown */}
+              <div ref={servicesDropdownRef} className="relative z-50">
+                <button
+                  onClick={() => { setServicesOpen(!servicesOpen); setMoreOpen(false) }}
                   className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#006994] transition-all duration-200 rounded-lg hover:bg-[#EFF6FA] flex items-center gap-1.5"
-                  aria-expanded={moreOpen}
                 >
-                  <Layers className="h-3.5 w-3.5" />
-                  More
-                  <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", moreOpen && "rotate-180")} />
+                  Services
+                  <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", servicesOpen && "rotate-180")} />
                 </button>
-                {moreOpen && (
-                  <div className="absolute top-full left-0 mt-1.5 w-[280px] bg-white rounded-xl shadow-2xl shadow-slate-200/60 border border-slate-100 p-3 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200 z-50">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 px-2">Dashboard</p>
-                    <div className="grid grid-cols-2 gap-0.5">
-                      {filterNavItems(dashboardConfig, 'desktop', isAuthenticated).map((item, idx) => {
+                {servicesOpen && (
+                  <div className="absolute top-full left-0 mt-2 w-[320px] bg-white rounded-2xl shadow-2xl shadow-slate-200/60 border border-slate-100/80 p-3 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200 z-50">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 px-2">Our Services</p>
+                    <div className="grid gap-0.5">
+                      {servicesConfig.slice(0, 5).map((item, idx) => {
                         const Icon = item.icon
                         return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setMoreOpen(false)}
-                            className="flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-[#EFF6FA] transition-all duration-200 text-sm font-medium text-slate-600 hover:text-[#006994] animate-in slide-in-from-left-2 fill-mode-backwards"
+                          <Link key={item.href} href={item.href} onClick={() => setServicesOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#EFF6FA] transition-all duration-200 group"
                             style={{ animationDelay: `${idx * 25}ms` }}
                           >
-                            <Icon className="h-3.5 w-3.5 shrink-0" />
-                            <span className="truncate">{item.label}</span>
+                            <div className={cn("p-2 rounded-lg shrink-0", item.color)}><Icon className="h-4 w-4" /></div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-700 group-hover:text-[#006994]">{item.label}</p>
+                              <p className="text-xs text-slate-400">{item.description}</p>
+                            </div>
                           </Link>
                         )
                       })}
@@ -195,6 +203,9 @@ export function Header() {
                   </div>
                 )}
               </div>
+
+              <Link href="/about" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#006994] transition-all duration-200 rounded-lg hover:bg-[#EFF6FA]">Company</Link>
+              <Link href="/faq" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#006994] transition-all duration-200 rounded-lg hover:bg-[#EFF6FA]">Support</Link>
             </nav>
           </div>
 

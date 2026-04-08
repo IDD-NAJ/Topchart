@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            background-color: #006994;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .debug-output {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Authentication Test</h1>
+    <p>This page tests authentication and then loads the admin config.</p>
+    
+    <button onclick="login()">Login as Admin</button>
+    <button onclick="testAdminEndpoint()">Test Admin Endpoint</button>
+    <button onclick="testTestEndpoint()">Test Test Endpoint</button>
+    <button onclick="clearDebug()">Clear Debug</button>
+    
+    <div id="debug-output" class="debug-output"></div>
+
+    <script>
+        function debug(message, type = 'info') {
+            const output = document.getElementById('debug-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+            output.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearDebug() {
+            document.getElementById('debug-output').innerHTML = '';
+        }
+
+        async function login() {
+            debug('🔐 Attempting to login as admin...');
+            try {
+                const res = await fetch("/api/admin/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ 
+                        email: "najeebiddrisu79@gmail.com", 
+                        password: "Gold4me.471@1761" 
+                    }),
+                });
+                
+                debug('📡 Login response status: ' + res.status);
+                
+                const data = await res.json();
+                debug('📡 Login response data: ' + JSON.stringify(data, null, 2));
+                
+                if (data.success) {
+                    debug('✅ Login successful!', 'success');
+                    // Wait a moment for session to be established
+                    setTimeout(() => {
+                        testAdminEndpoint();
+                    }, 500);
+                } else {
+                    debug('❌ Login failed: ' + data.error, 'error');
+                }
+            } catch (error) {
+                debug('❌ Login error: ' + error.message, 'error');
+            }
+        }
+
+        async function testAdminEndpoint() {
+            debug('🔍 Testing admin endpoint...');
+            try {
+                const res = await fetch("/api/admin/reseller-form-config", {
+                    credentials: "include"
+                });
+                
+                debug('📡 Admin endpoint response status: ' + res.status);
+                
+                const data = await res.json();
+                debug('📡 Admin endpoint response data: ' + JSON.stringify(data, null, 2));
+                
+                if (data.success) {
+                    debug('✅ Admin endpoint successful!', 'success');
+                    debug('💰 Application fee: ' + data.config.application_fee);
+                } else {
+                    debug('❌ Admin endpoint failed: ' + data.error, 'error');
+                }
+            } catch (error) {
+                debug('❌ Admin endpoint error: ' + error.message, 'error');
+            }
+        }
+
+        async function testTestEndpoint() {
+            debug('🔍 Testing test endpoint (no auth required)...');
+            try {
+                const res = await fetch("/api/test-reseller-config", {
+                    credentials: "include"
+                });
+                
+                debug('📡 Test endpoint response status: ' + res.status);
+                
+                const data = await res.json();
+                debug('📡 Test endpoint response data: ' + JSON.stringify(data, null, 2));
+                
+                if (data.success) {
+                    debug('✅ Test endpoint successful!', 'success');
+                    debug('💰 Application fee: ' + data.config.application_fee);
+                } else {
+                    debug('❌ Test endpoint failed: ' + data.error, 'error');
+                }
+            } catch (error) {
+                debug('❌ Test endpoint error: ' + error.message, 'error');
+            }
+        }
+
+        // Test the test endpoint on page load
+        window.onload = function() {
+            debug('🚀 Page loaded');
+            testTestEndpoint();
+        };
+    </script>
+</body>
+</html>

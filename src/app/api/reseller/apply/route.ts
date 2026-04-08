@@ -63,12 +63,15 @@ export async function GET(request: NextRequest) {
     
     const userId = (sessions[0] as { id: string }).id;
     
-    const application = await sql`
-      SELECT * FROM reseller_applications
-      WHERE user_id = ${userId}
-      ORDER BY created_at DESC
-      LIMIT 1
-    `;
+    let application: any[] = [];
+    try {
+      application = await sql`
+        SELECT * FROM reseller_applications
+        WHERE user_id = ${userId}
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+    } catch { application = []; }
     
     return NextResponse.json({ 
       success: true, 
@@ -126,13 +129,16 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
     }
     
     // Check if user already has a pending or approved application
-    const existingApp = await sql`
-      SELECT * FROM reseller_applications
-      WHERE user_id = ${user.id}
-      AND application_status IN ('pending', 'approved')
-      ORDER BY created_at DESC
-      LIMIT 1
-    `;
+    let existingApp: any[] = [];
+    try {
+      existingApp = await sql`
+        SELECT * FROM reseller_applications
+        WHERE user_id = ${user.id}
+        AND application_status IN ('pending', 'approved')
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+    } catch { existingApp = []; }
     
     if (existingApp.length > 0) {
       const app = existingApp[0] as any;
@@ -151,10 +157,13 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
     }
     
     // Get application fee from config
-    const configResult = await sql`
-      SELECT config_value->>'application_fee' as fee, config_value->>'currency' as currency
-      FROM system_config WHERE config_key = 'reseller_form_config'
-    `;
+    let configResult: any[] = [];
+    try {
+      configResult = await sql`
+        SELECT config_value->>'application_fee' as fee, config_value->>'currency' as currency
+        FROM system_config WHERE config_key = 'reseller_form_config'
+      `;
+    } catch { configResult = []; }
     const applicationFee = configResult[0]?.fee ? parseFloat(configResult[0].fee) : 100.00;
     
     // Create new application with custom fields

@@ -228,3 +228,45 @@ export async function getPaystackTransaction(
     return { success: false, error: "Failed to get transaction" };
   }
 }
+
+// Issue a refund for a Paystack transaction
+export async function createPaystackRefund(
+  transactionReference: string,
+  amountInPesewas: number
+): Promise<{ success: boolean; data?: { id: number; status: string; refund_amount: number }; error?: string }> {
+  try {
+    if (!PAYSTACK_SECRET_KEY) {
+      return { success: false, error: "Paystack configuration error - secret key not set" };
+    }
+
+    const response = await fetch(`${PAYSTACK_BASE_URL}/refund`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        transaction: transactionReference,
+        amount: amountInPesewas,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!result.status) {
+      return { success: false, error: result.message || "Refund request rejected by Paystack" };
+    }
+
+    return {
+      success: true,
+      data: {
+        id: result.data?.id,
+        status: result.data?.status,
+        refund_amount: result.data?.refund_amount ?? amountInPesewas,
+      },
+    };
+  } catch (error) {
+    console.error("Paystack refund error:", error);
+    return { success: false, error: "Failed to issue Paystack refund" };
+  }
+}

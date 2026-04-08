@@ -137,10 +137,10 @@ export default function WalletPage() {
                     formatCurrency(walletData?.balance || 0)
                   )}
                 </h2>
-                {walletData?.pendingBalance > 0 && (
+                {walletData && (walletData.pendingBalance ?? 0) > 0 && (
                   <p className="text-sm text-yellow-500 mt-2 flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
-                    Pending: {formatCurrency(walletData.pendingBalance)}
+                    Pending: {formatCurrency(walletData?.pendingBalance ?? 0)}
                   </p>
                 )}
               </div>
@@ -270,9 +270,9 @@ export default function WalletPage() {
       {/* Fund Wallet Modal */}
       <FundWalletModal 
         open={showFundModal} 
-        onClose={() => {
-          setShowFundModal(false)
-          loadWalletData()
+        onOpenChange={(open) => {
+          setShowFundModal(open)
+          if (!open) loadWalletData()
         }} 
       />
     </div>

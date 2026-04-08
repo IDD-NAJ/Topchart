@@ -1,4 +1,5 @@
-[build]
+7815e4ed2eabcba2.js:2 Application submission error: Error: HTTP 500: 
+    at en (7815e4ed2eabcba2.js:2:28599)[build]
   command = "rm -rf .netlify && pnpm run build"
   publish = ".next"
 

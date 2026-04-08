@@ -95,7 +95,7 @@ export async function DELETE(
     }
 
     try { await sql`DELETE FROM transactions WHERE user_id::text = ${id}`; } catch {}
-    try { await sql`DELETE FROM wallets WHERE user_id::text = ${id}`; } catch {}
+    try { await sql`DELETE FROM wallets WHERE "userId"::text = ${id}`; } catch {}
     try { await sql`DELETE FROM auth_sessions WHERE user_id::text = ${id}`; } catch {}
     try { await sql`DELETE FROM sessions WHERE user_id::text = ${id}`; } catch {}
 

@@ -1,0 +1,1008 @@
+{
+  "info": {
+    "_postman_id": "ee95ddd0-fd7a-43de-a253-95233f8aef75",
+    "name": "PVADeals Developer API",
+    "description": "Complete API collection for PVADeals Developer API v3",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "51389449"
+  },
+  "item": [
+    {
+      "name": "Account",
+      "item": [
+        {
+          "name": "Get Balance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "description": "API key in format 'Bearer API-xxxxx...'",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v3/api/balance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v3",
+                "api",
+                "balance"
+              ]
+            },
+            "description": "Get account balance and credit information. Requires API key authentication."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{api_key}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/v3/api/balance",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v3",
+                    "api",
+                    "balance"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"credits\": 100.00\n  },\n  \"message\": \"Balance retrieved successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Services",
+      "item": [
+        {
+          "name": "Get All Services",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v3/api/services/all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v3",
+                "api",
+                "services",
+                "all"
+              ]
+            },
+            "description": "Get all services at once without pagination. Returns only relevant fields: _id, name, picture, country, price."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{api_key}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/v3/api/services/all",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v3",
+                    "api",
+                    "services",
+                    "all"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"services\": [\n      {\n        \"_id\": \"697139f7fe5460ddc2f27214\",\n        \"name\": \"Airbnb\",\n        \"picture\": \"https://pvadeals-mobile-builds.s3.us-east-1.amazonaws.com/assets/websiteservicesimage/651e77c62b58043c6fe31a77.png\",\n        \"country\": \"USA\",\n        \"STRprice\": 0.09,\n        \"LTR3price\": 0.7,\n        \"LTR7price\": 1.25,\n        \"LTR14price\": 1.75,\n        \"LTR30price\": 2.25\n      }\n    ]\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "STR (Short-Term Rental)",
+      "item": [
+        {
+          "name": "Purchase Number",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"services\": [\n    {\n      \"serviceId\": \"697139f7fe5460ddc2f27214\",\n      \"areaCode\": \"\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v3/api/purchase",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v3",
+                "api",
+                "purchase"
+              ]
+            },
+            "description": "Purchase one or more phone numbers for receiving SMS/OTP codes. Numbers are available for 20 minutes.\n\n**Request Body:**\n- `services` (required): Array of service objects\n  - `serviceId` (required): Service ID from Get All Services endpoint\n  - `areaCode` (optional): US area code for specific region (e.g., \"215\" for Philadelphia)\n\n**Note:** If the requested area code is not available, the API returns a 422 error.\n\n**Webhooks:**\nA `number_purchased` webhook event will be dispatched to your configured webhook URL after successful purchase."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{api_key}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"services\": [\n    {\n      \"serviceId\": \"697139f7fe5460ddc2f27214\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v3/api/purchase",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v3",
+                    "api",
+                    "purchase"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"requests\": [\n      {\n        \"_id\": \"697a90d25ef1873ef44f48bc\",\n        \"serviceName\": \"Airbnb\",\n        \"serviceId\": \"697139f7fe5460ddc2f27214\",\n        \"number\": \"+13130001234\",\n        \"status\": \"RESERVED\",\n        \"country\": \"US\",\n        \"amount\": 0.2,\n        \"numberType\": \"STR\",\n        \"allowFlag\": true,\n        \"allowReuse\": false,\n        \"reuseCounter\": 0,\n        \"endTime\": \"2026-01-28T23:02:26.292Z\",\n        \"createdAt\": \"2026-01-28T22:42:26.452Z\"\n      }\n    ]\n  },\n  \"message\": \"Numbers purchased successfully\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Flag Number",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v3/api/flag/:id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v3",
+                "api",
+                "flag",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "697a90d25ef1873ef44f48bc",
+                  "description": "Request ID to flag"
+                }
+              ]
+            },
+            "description": "Flag a number to cancel it and get a refund (if eligible). Only available when allowFlag is true.\n\n**Webhooks:**\nA `number_flagged` webhook event will be dispatched to your configured webhook URL."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{api_key}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/v3/api/flag/:id",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v3",
+                    "api",
+                    "flag",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "697a90d25ef1873ef44f48bc"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": true,\n  \"message\": \"Number flagged successfully\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Reuse Number",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v3/api/reuse/:id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v3",
+                "api",
+                "reuse",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "697a90d25ef1873ef44f48bc",
+                  "description": "Request ID to reuse"
+                }
+              ]
+            },
+            "description": "Reuse a previously purchased number to receive new SMS codes. Only available when allowReuse is true.\n\n**Note:** Reuse is time-limited and not guaranteed for all numbers. In some cases, additional charges may apply.\n\n**Webhooks:**\nA `number_reused` webhook event will be dispatched to your configured webhook URL."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{api_key}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/v3/api/reuse/:id",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v3",
+                    "api",
+                    "reuse",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "697a90d25ef1873ef44f48bc"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"697a90d25ef1873ef44f48bc\",\n    \"serviceName\": \"Airbnb\",\n    \"serviceId\": \"697139f7fe5460ddc2f27214\",\n    \"number\": \"+13130001234\",\n    \"status\": \"RESERVED\",\n    \"country\": \"US\",\n    \"amount\": 0,\n    \"numberType\": \"STR\",\n    \"allowFlag\": false,\n    \"allowReuse\": true,\n    \"reuseCounter\": 2,\n    \"endTime\": \"2026-01-28T23:07:17.000Z\"\n  },\n  \"message\": \"Number reused successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "LTR (Long-Term Rental)",
+      "item": [
+        {
+          "name": "Purchase Number",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"duration\": 30,\n  \"serviceId\": \"697139f4fe5460ddc2f271db\",\n  \"areaCode\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v3/api/purchase-ltr",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v3",
+                "api",
+                "purchase-ltr"
+              ]
+            },
+            "description": "Purchase a long-term rental phone number.\n\n**Request Body:**\n- `duration` (required): Rental duration in days (3, 7, 14, or 30)\n- `serviceId` (required): Service ID from Get All Services endpoint\n- `areaCode` (optional): US area code for specific region (e.g., \"619\" for San Diego)\n\n**Webhooks:**\nA `number_purchased` webhook event will be dispatched to your configured webhook URL after successful purchase."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{api_key}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"duration\": 30,\n  \"serviceId\": \"697139f4fe5460ddc2f271db\",\n  \"areaCode\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v3/api/purchase-ltr",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v3",
+                    "api",
+                    "purchase-ltr"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"6985cc7b9ecd8f1260b47a39\",\n    \"serviceName\": \"2RedBeans\",\n    \"serviceId\": \"697139f4fe5460ddc2f271db\",\n    \"number\": \"+13130001234\",\n    \"status\": \"RESERVED\",\n    \"country\": \"US\",\n    \"amount\": 0.7,\n    \"endTime\": \"2026-02-09T11:11:55.324Z\",\n    \"allowFlag\": true,\n    \"autoRenewEnable\": false,\n    \"numberType\": \"LTR\",\n    \"createdAt\": \"2026-02-06T11:11:55.354Z\",\n    \"updatedAt\": \"2026-02-06T11:11:55.384Z\"\n  },\n  \"message\": \"LTR number purchased successfully\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Flag Number",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v3/api/flag/:id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v3",
+                "api",
+                "flag",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6985cc7b9ecd8f1260b47a39",
+                  "description": "Request ID to flag"
+                }
+              ]
+            },
+            "description": "Flag a LTR number to cancel it and get a refund (if eligible). Only available when allowFlag is true.\n\n**Webhooks:**\nA `number_flagged` webhook event will be dispatched to your configured webhook URL."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{api_key}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/v3/api/flag/:id",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v3",
+                    "api",
+                    "flag",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "6985cc7b9ecd8f1260b47a39"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": true,\n  \"message\": \"Number flagged successfully\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Renew Number",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v3/api/renew-ltr/:id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v3",
+                "api",
+                "renew-ltr",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6985ce2e9ecd8f1260b47a7e",
+                  "description": "Request ID to toggle auto-renew"
+                }
+              ]
+            },
+            "description": "Toggle auto-renew for a LTR number. Same endpoint enables or disables auto-renewal.\n\n**Note:** When auto-renew is enabled, the number will automatically renew at the end of the rental period if you have sufficient balance."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{api_key}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/v3/api/renew-ltr/:id",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v3",
+                    "api",
+                    "renew-ltr",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "6985ce2e9ecd8f1260b47a7e"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"6985ce2e9ecd8f1260b47a7e\",\n    \"serviceName\": \"2RedBeans\",\n    \"serviceId\": \"697139f4fe5460ddc2f271db\",\n    \"number\": \"+13130001234\",\n    \"status\": \"RESERVED\",\n    \"country\": \"US\",\n    \"amount\": 0.7,\n    \"endTime\": \"2026-02-09T11:19:10.769Z\",\n    \"allowFlag\": true,\n    \"autoRenewEnable\": true,\n    \"numberType\": \"LTR\",\n    \"createdAt\": \"2026-02-06T11:19:10.795Z\",\n    \"updatedAt\": \"2026-02-06T11:19:16.699Z\"\n  },\n  \"message\": \"Auto-renew enabled successfully\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Reuse Number",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v3/api/reuse/:id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v3",
+                "api",
+                "reuse",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6985cc7b9ecd8f1260b47a39",
+                  "description": "LTR Request ID to reuse"
+                }
+              ]
+            },
+            "description": "Reuse a previously purchased LTR number to receive new SMS codes. Only available when allowReuse is true.\n\n**Note:** Reuse is time-limited and not guaranteed for all numbers. In some cases, additional charges may apply."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{api_key}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/v3/api/reuse/:id",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v3",
+                    "api",
+                    "reuse",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "6985cc7b9ecd8f1260b47a39"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"6985cc7b9ecd8f1260b47a39\",\n    \"serviceName\": \"2RedBeans\",\n    \"serviceId\": \"697139f4fe5460ddc2f271db\",\n    \"number\": \"+13130001234\",\n    \"status\": \"RESERVED\",\n    \"country\": \"US\",\n    \"amount\": 0,\n    \"numberType\": \"LTR\",\n    \"allowFlag\": false,\n    \"allowReuse\": true,\n    \"reuseCounter\": 2,\n    \"endTime\": \"2026-02-09T11:11:55.324Z\"\n  },\n  \"message\": \"Number reused successfully\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Purchase All Service Number",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"duration\": 28,\n  \"serviceId\": \"ALL_SERVICES\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v3/api/purchase-ltr",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v3",
+                "api",
+                "purchase-ltr"
+              ]
+            },
+            "description": "Purchase a 28-day LTR number that can receive SMS from any service - not restricted to a single website.\n\n**Request Body:**\n- `duration`: 28 (fixed for all service)\n- `serviceId`: ALL_SERVICES\n\n**Webhooks:**\nA `number_purchased` webhook event will be dispatched to your configured webhook URL after successful purchase."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{api_key}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"duration\": 28,\n  \"serviceId\": \"ALL_SERVICES\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/v3/api/purchase-ltr",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v3",
+                    "api",
+                    "purchase-ltr"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"6985d496e49f9312f4cc934e\",\n    \"serviceName\": \"ALL_SERVICES\",\n    \"serviceId\": \"ALL_SERVICES\",\n    \"number\": \"+13130001234\",\n    \"status\": \"RESERVED\",\n    \"country\": \"US\",\n    \"amount\": 12.99,\n    \"endTime\": \"2026-03-06T11:11:55.324Z\",\n    \"allowFlag\": false,\n    \"autoRenewEnable\": false,\n    \"numberType\": \"LTR\",\n    \"createdAt\": \"2026-02-06T11:11:55.354Z\",\n    \"updatedAt\": \"2026-02-06T11:11:55.384Z\"\n  },\n  \"message\": \"LTR number purchased successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Requests",
+      "item": [
+        {
+          "name": "List Service Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v3/api/requests?first=20&orderField=_id&orderBy=desc",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v3",
+                "api",
+                "requests"
+              ],
+              "query": [
+                {
+                  "key": "first",
+                  "value": "20",
+                  "description": "Number of items to fetch (default: 20)"
+                },
+                {
+                  "key": "after",
+                  "value": "",
+                  "description": "Cursor for pagination (from pageInfo.endCursor)",
+                  "disabled": true
+                },
+                {
+                  "key": "last",
+                  "value": "",
+                  "description": "Number of items from end",
+                  "disabled": true
+                },
+                {
+                  "key": "before",
+                  "value": "",
+                  "description": "Cursor for backward pagination",
+                  "disabled": true
+                },
+                {
+                  "key": "orderField",
+                  "value": "_id",
+                  "description": "Field to sort by (default: _id)"
+                },
+                {
+                  "key": "orderBy",
+                  "value": "desc",
+                  "description": "Sort order: asc or desc (default: desc)"
+                }
+              ]
+            },
+            "description": "Get paginated list of service requests (purchased numbers) using cursor-based pagination. Returns both STR and LTR requests."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{api_key}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/v3/api/requests?first=20&orderField=_id&orderBy=desc",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v3",
+                    "api",
+                    "requests"
+                  ],
+                  "query": [
+                    {
+                      "key": "first",
+                      "value": "20"
+                    },
+                    {
+                      "key": "orderField",
+                      "value": "_id"
+                    },
+                    {
+                      "key": "orderBy",
+                      "value": "desc"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"data\": {\n      \"edges\": [\n        {\n          \"cursor\": \"Njk3YTkwZDI1ZWYxODczZWY0NGY0OGJj\",\n          \"node\": {\n            \"_id\": \"697a90d25ef1873ef44f48bc\",\n            \"serviceName\": \"Airbnb\",\n            \"serviceId\": \"697139f7fe5460ddc2f27214\",\n            \"number\": \"+13130001234\",\n            \"status\": \"COMPLETED\",\n            \"country\": \"US\",\n            \"amount\": 0.2,\n            \"numberType\": \"STR\",\n            \"allowFlag\": false,\n            \"allowReuse\": true,\n            \"reuseCounter\": 0,\n            \"endTime\": \"2026-01-28T23:02:26.292Z\",\n            \"createdAt\": \"2026-01-28T22:42:26.452Z\"\n          }\n        }\n      ]\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Service Request by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v3/api/request/:id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v3",
+                "api",
+                "request",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "697a90d25ef1873ef44f48bc",
+                  "description": "Request ID to retrieve"
+                }
+              ]
+            },
+            "description": "Get detailed information about a specific service request (purchased number). Works for both STR and LTR requests."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{api_key}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/v3/api/request/:id",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "v3",
+                    "api",
+                    "request",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "697a90d25ef1873ef44f48bc"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"697a90d25ef1873ef44f48bc\",\n    \"serviceName\": \"Airbnb\",\n    \"serviceId\": \"697139f7fe5460ddc2f27214\",\n    \"number\": \"+13130001234\",\n    \"status\": \"COMPLETED\",\n    \"country\": \"US\",\n    \"amount\": 0.2,\n    \"numberType\": \"STR\",\n    \"allowFlag\": false,\n    \"allowReuse\": true,\n    \"reuseCounter\": 0,\n    \"messageCounter\": 15,\n    \"endTime\": \"2026-01-28T23:02:26.292Z\",\n    \"createdAt\": \"2026-01-28T22:42:26.452Z\",\n    \"updatedAt\": \"2026-01-28T22:57:35.016Z\"\n  },\n  \"message\": \"Service request retrieved successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://prod-v3.pvadeals.com",
+      "type": "string",
+      "description": "Base URL for API."
+    },
+    {
+      "key": "api_key",
+      "value": "API-xxxxx",
+      "type": "string",
+      "description": "Your API key from Developer Settings. Used for all protected endpoints in format 'Bearer API-xxxxx...'"
+    }
+  ]
+}

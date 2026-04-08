@@ -21,6 +21,11 @@ export default function ReferralPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ referralCode: code }),
         })
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error ${res.status}`)
+        }
+        
         const data = await res.json()
         if (data.success && data.referralCode) {
           localStorage.setItem("referral_code", data.referralCode)
