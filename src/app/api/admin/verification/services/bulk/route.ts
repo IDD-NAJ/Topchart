@@ -62,7 +62,7 @@ export async function PATCH(request: NextRequest) {
       WHERE id IN (${placeholders})
     `;
 
-    await sql.query(query, values);
+    await sql`${query.replace(/\$\d+/g, (match) => values[parseInt(match.slice(1)) - 1])}`;
 
     return NextResponse.json({
       success: true,
@@ -128,12 +128,12 @@ export async function PUT(request: NextRequest) {
       WHERE category = $1
     `;
 
-    const result = await sql.query(query, values);
+    const result = await sql`${query.replace(/\$\d+/g, (match) => values[parseInt(match.slice(1)) - 1])}`;
 
     return NextResponse.json({
       success: true,
       message: `Updated all services in ${category}`,
-      affected: result.rowCount,
+      affected: result.length,
     });
   } catch (error) {
     console.error("Category update error:", error);
