@@ -1,31 +1,15 @@
 [build]
   command = "npm run build"
-  publish = ".next/standalone"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
   NEXT_TELEMETRY_DISABLED = "1"
   NEXT_SKIP_TYPE_CHECK = "true"
-
-[functions]
-  node_bundler = "esbuild"
-  included_files = [
-    ".next/server/**",
-    "package.json",
-    "package-lock.json"
-  ]
-
-# Handle Next.js routing manually
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 404
 
 # Headers for security and caching
 [[headers]]
