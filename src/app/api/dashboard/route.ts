@@ -12,7 +12,7 @@ export async function GET() {
       { success: true, data },
       {
         headers: {
-          "Cache-Control": "no-store, max-age=0",
+          "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
         },
       }
     );
@@ -23,7 +23,7 @@ export async function GET() {
       {
         status: 500,
         headers: {
-          "Cache-Control": "no-store, max-age=0",
+          "Cache-Control": "no-store",
         },
       }
     );

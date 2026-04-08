@@ -29,10 +29,13 @@ export async function GET(request: NextRequest) {
     const userId = (sessions[0] as { id: string }).id;
     
     // Get reseller profile
-    const profile = await sql`
-      SELECT * FROM reseller_profiles
-      WHERE user_id = ${userId}
-    `;
+    let profile: any[] = [];
+    try {
+      profile = await sql`
+        SELECT * FROM reseller_profiles
+        WHERE user_id = ${userId}
+      `;
+    } catch { profile = []; }
     
     if (profile.length === 0) {
       return NextResponse.json({ success: false, error: "Not a reseller" }, { status: 403 });
@@ -41,10 +44,13 @@ export async function GET(request: NextRequest) {
     const reseller = profile[0] as any;
     
     // Get all tiers
-    const tiers = await sql`
-      SELECT * FROM reseller_tiers
-      ORDER BY min_sales_amount ASC
-    `;
+    let tiers: any[] = [];
+    try {
+      tiers = await sql`
+        SELECT * FROM reseller_tiers
+        ORDER BY min_sales_amount ASC
+      `;
+    } catch { tiers = []; }
     
     // Determine current tier
     let currentTier = tiers[0];

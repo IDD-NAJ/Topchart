@@ -33,6 +33,11 @@ export default function TicketDetailPage() {
   const fetchTicket = async () => {
     try {
       const res = await fetch(`/api/dashboard/tickets/${params.id}`)
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`)
+      }
+      
       const data = await res.json()
       if (data.success) {
         setTicket(data.ticket)
@@ -72,6 +77,11 @@ export default function TicketDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body: reply }),
       })
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`)
+      }
+      
       const data = await res.json()
       if (data.success) {
         setReply("")

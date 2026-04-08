@@ -22,10 +22,11 @@ export function Footer() {
 
   const footerLinks = {
     platform: [
-      { href: "/#features", label: "Features" },
-      { href: "/dashboard", label: "Dashboard" },
-      { href: "/dashboard/airtime", label: "Airtime" },
+      { href: "/dashboard/airtime", label: "Airtime Top-Up" },
       { href: "/dashboard/data", label: "Data Bundles" },
+      { href: "/dashboard/verification", label: "Verification Numbers" },
+      { href: "/dashboard/result-checkers", label: "Result Checkers" },
+      { href: "/dashboard/reseller", label: "Reseller Program" },
     ],
     company: [
       { href: "/about", label: "About Us" },

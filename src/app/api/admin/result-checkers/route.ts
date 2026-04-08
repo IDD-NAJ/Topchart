@@ -39,17 +39,25 @@ export async function GET(request: NextRequest) {
     
     query += ` ORDER BY rcc.created_at DESC`;
     
-    const cards = await sqlUnsafe(query);
-    
-    // Get inventory stats
-    const stats = await sql`
-      SELECT 
-        exam_type,
-        status,
-        COUNT(*) as count
-      FROM result_checker_cards
-      GROUP BY exam_type, status
-    `;
+    let cards: any[] = [];
+    let stats: any[] = [];
+    try {
+      cards = await sqlUnsafe(query);
+      stats = await sql`
+        SELECT 
+          exam_type,
+          status,
+          COUNT(*) as count
+        FROM result_checker_cards
+        GROUP BY exam_type, status
+      `;
+    } catch (dbError: any) {
+      const msg = String(dbError?.message || "");
+      if (msg.includes("does not exist") || msg.includes("relation") || msg.includes("undefined_table")) {
+        return NextResponse.json({ success: true, cards: [], stats: [] });
+      }
+      throw dbError;
+    }
     
     return NextResponse.json({
       success: true,

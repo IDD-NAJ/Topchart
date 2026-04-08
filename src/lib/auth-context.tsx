@@ -20,6 +20,16 @@ import { InactivityWarningModal } from "@/components/inactivity-warning-modal";
 const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 const WARNING_BEFORE_LOGOUT = 30 * 1000; // 30 seconds warning
 
+let _meInFlight: Promise<Response> | null = null;
+function fetchMe(): Promise<Response> {
+  if (!_meInFlight) {
+    _meInFlight = fetch('/api/auth/me', { credentials: 'include' }).finally(() => {
+      _meInFlight = null;
+    });
+  }
+  return _meInFlight;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -90,10 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = useCallback(async () => {
     try {
       // Use API route instead of server action for more reliable cookie reading
-      const response = await fetch('/api/auth/me', {
-        credentials: 'include',
-        cache: 'no-store'
-      });
+      const response = await fetchMe();
       
       if (response.ok) {
         const result = await response.json();
@@ -315,7 +322,7 @@ const register = async (
 
   // Don't track inactivity on auth pages
   const isAuthPage = pathname?.startsWith('/login') || pathname?.startsWith('/register');
-  const shouldShowWarning = showWarning && user && !isAuthPage;
+  const shouldShowWarning = showWarning && !!user && !isAuthPage;
 
   const updateBalance = (newBalance: number) => {
     if (!user) return;

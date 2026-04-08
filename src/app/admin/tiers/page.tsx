@@ -25,6 +25,7 @@ export default function AdminTierConfigPage() {
   const [tiers, setTiers] = useState<ResellerTier[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [savingTierId, setSavingTierId] = useState<string | null>(null);
   const [newPerk, setNewPerk] = useState("");
 
   useEffect(() => {
@@ -36,6 +37,11 @@ export default function AdminTierConfigPage() {
       const res = await fetch("/api/admin/tiers", {
         credentials: "include"
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`);
+      }
+      
       const data = await res.json();
 
       if (data.success) {
@@ -48,7 +54,11 @@ export default function AdminTierConfigPage() {
     }
   };
 
-  const handleSave = async (tier: ResellerTier) => {
+  const handleSave = async (tierId: string) => {
+    const tier = tiers.find(t => t.id === tierId);
+    if (!tier) return;
+    
+    setSavingTierId(tierId);
     try {
       const res = await fetch("/api/admin/tiers", {
         method: "PUT",
@@ -56,6 +66,10 @@ export default function AdminTierConfigPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(tier)
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`);
+      }
 
       const data = await res.json();
 
@@ -63,20 +77,34 @@ export default function AdminTierConfigPage() {
         toast.success("Tier updated");
         setEditing(null);
         loadTiers();
+      } else {
+        toast.error(data.error || "Failed to save");
       }
     } catch (error) {
       toast.error("Failed to save");
+    } finally {
+      setSavingTierId(null);
     }
   };
 
-  const addPerk = (tier: ResellerTier) => {
+  const updateTierField = (tierId: string, field: keyof ResellerTier, value: number) => {
+    setTiers(prev => prev.map(t => 
+      t.id === tierId ? { ...t, [field]: value } : t
+    ));
+  };
+
+  const addPerk = (tierId: string) => {
     if (!newPerk.trim()) return;
-    tier.perks = [...(tier.perks || []), newPerk.trim()];
+    setTiers(prev => prev.map(t => 
+      t.id === tierId ? { ...t, perks: [...(t.perks || []), newPerk.trim()] } : t
+    ));
     setNewPerk("");
   };
 
-  const removePerk = (tier: ResellerTier, index: number) => {
-    tier.perks = tier.perks.filter((_, i) => i !== index);
+  const removePerk = (tierId: string, index: number) => {
+    setTiers(prev => prev.map(t => 
+      t.id === tierId ? { ...t, perks: t.perks.filter((_, i) => i !== index) } : t
+    ));
   };
 
   const getTierIcon = (name: string) => {
@@ -125,7 +153,7 @@ export default function AdminTierConfigPage() {
                       <Input
                         type="number"
                         value={tier.min_sales_amount}
-                        onChange={(e) => tier.min_sales_amount = parseFloat(e.target.value)}
+                        onChange={(e) => updateTierField(tier.id, 'min_sales_amount', parseFloat(e.target.value) || 0)}
                       />
                     </div>
                     <div>
@@ -133,7 +161,7 @@ export default function AdminTierConfigPage() {
                       <Input
                         type="number"
                         value={tier.min_referrals}
-                        onChange={(e) => tier.min_referrals = parseInt(e.target.value)}
+                        onChange={(e) => updateTierField(tier.id, 'min_referrals', parseInt(e.target.value) || 0)}
                       />
                     </div>
                     <div>
@@ -142,7 +170,7 @@ export default function AdminTierConfigPage() {
                         type="number"
                         step="0.01"
                         value={tier.commission_rate}
-                        onChange={(e) => tier.commission_rate = parseFloat(e.target.value)}
+                        onChange={(e) => updateTierField(tier.id, 'commission_rate', parseFloat(e.target.value) || 0)}
                       />
                     </div>
                     <div>
@@ -151,7 +179,7 @@ export default function AdminTierConfigPage() {
                         type="number"
                         step="0.01"
                         value={tier.discount_rate}
-                        onChange={(e) => tier.discount_rate = parseFloat(e.target.value)}
+                        onChange={(e) => updateTierField(tier.id, 'discount_rate', parseFloat(e.target.value) || 0)}
                       />
                     </div>
                     <div>
@@ -159,7 +187,7 @@ export default function AdminTierConfigPage() {
                       <Input
                         type="number"
                         value={tier.bonus_amount}
-                        onChange={(e) => tier.bonus_amount = parseFloat(e.target.value)}
+                        onChange={(e) => updateTierField(tier.id, 'bonus_amount', parseFloat(e.target.value) || 0)}
                       />
                     </div>
                   </div>
@@ -172,7 +200,7 @@ export default function AdminTierConfigPage() {
                         value={newPerk}
                         onChange={(e) => setNewPerk(e.target.value)}
                       />
-                      <Button type="button" size="sm" onClick={() => addPerk(tier)}>
+                      <Button type="button" size="sm" onClick={() => addPerk(tier.id)}>
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
@@ -182,7 +210,7 @@ export default function AdminTierConfigPage() {
                           <Star className="h-3 w-3" />
                           {perk}
                           <button
-                            onClick={() => removePerk(tier, i)}
+                            onClick={() => removePerk(tier.id, i)}
                             className="ml-1 text-muted-foreground hover:text-destructive"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -193,9 +221,9 @@ export default function AdminTierConfigPage() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button onClick={() => handleSave(tier)}>
+                    <Button onClick={() => handleSave(tier.id)} disabled={savingTierId === tier.id}>
                       <Save className="h-4 w-4 mr-2" />
-                      Save Changes
+                      {savingTierId === tier.id ? "Saving..." : "Save Changes"}
                     </Button>
                     <Button variant="outline" onClick={() => setEditing(null)}>
                       Cancel

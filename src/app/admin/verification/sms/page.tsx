@@ -36,6 +36,11 @@ export default function AdminSmsLogPage() {
       const res = await fetch(`/api/admin/verification/sms?limit=${pageSize}&offset=${offset}`, {
         credentials: "include",
       })
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`)
+      }
+      
       const data = await res.json()
       if (data.success) {
         setSmsRows(data.data.sms || [])

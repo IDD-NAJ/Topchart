@@ -15,6 +15,17 @@ import {
   Search,
   RefreshCw
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Application {
   id: string;
@@ -60,6 +71,10 @@ export default function AdminResellersPage() {
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     loadResellers();
@@ -87,16 +102,21 @@ export default function AdminResellersPage() {
   };
 
   const handleApproveApplication = async (applicationId: string) => {
+    setActionLoading(true);
     try {
-      const res = await fetch("/api/reseller/apply", {
+      const res = await fetch("/api/admin/resellers", {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           application_id: applicationId,
-          status: "approved"
+          action: "approve"
         })
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`);
+      }
 
       const data = await res.json();
 
@@ -108,49 +128,71 @@ export default function AdminResellersPage() {
       }
     } catch (error) {
       toast.error("Network error");
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const handleRejectApplication = async (applicationId: string) => {
-    const reason = prompt("Enter rejection reason:");
-    if (!reason) return;
+  const openRejectDialog = (applicationId: string) => {
+    setSelectedApplicationId(applicationId);
+    setRejectReason("");
+    setRejectDialogOpen(true);
+  };
 
+  const handleRejectApplication = async () => {
+    if (!selectedApplicationId || !rejectReason.trim()) return;
+
+    setActionLoading(true);
     try {
-      const res = await fetch("/api/reseller/apply", {
+      const res = await fetch("/api/admin/resellers", {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          application_id: applicationId,
-          status: "rejected",
-          rejection_reason: reason
+          application_id: selectedApplicationId,
+          action: "reject",
+          rejection_reason: rejectReason.trim()
         })
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`);
+      }
 
       const data = await res.json();
 
       if (data.success) {
         toast.success("Application rejected");
+        setRejectDialogOpen(false);
+        setSelectedApplicationId(null);
+        setRejectReason("");
         loadResellers();
       } else {
         toast.error(data.error || "Failed to reject");
       }
     } catch (error) {
       toast.error("Network error");
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleConfirmPayment = async (applicationId: string) => {
+    setActionLoading(true);
     try {
-      const res = await fetch("/api/reseller/apply", {
+      const res = await fetch("/api/admin/resellers", {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           application_id: applicationId,
-          confirm_payment: true
+          action: "confirm_payment"
         })
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`);
+      }
 
       const data = await res.json();
 
@@ -162,6 +204,8 @@ export default function AdminResellersPage() {
       }
     } catch (error) {
       toast.error("Network error");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -253,6 +297,7 @@ export default function AdminResellersPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => handleConfirmPayment(app.id)}
+                        disabled={actionLoading}
                       >
                         <DollarSign className="h-4 w-4 mr-1" />
                         Confirm Payment
@@ -263,6 +308,7 @@ export default function AdminResellersPage() {
                       variant="outline"
                       className="text-green-600"
                       onClick={() => handleApproveApplication(app.id)}
+                      disabled={actionLoading}
                     >
                       <CheckCircle className="h-4 w-4 mr-1" />
                       Approve
@@ -271,7 +317,8 @@ export default function AdminResellersPage() {
                       size="sm"
                       variant="outline"
                       className="text-red-600"
-                      onClick={() => handleRejectApplication(app.id)}
+                      onClick={() => openRejectDialog(app.id)}
+                      disabled={actionLoading}
                     >
                       <XCircle className="h-4 w-4 mr-1" />
                       Reject
@@ -283,6 +330,34 @@ export default function AdminResellersPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Reject Dialog */}
+      <AlertDialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject Application</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please provide a reason for rejecting this application. This will be recorded.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Enter rejection reason..."
+            className="mt-2"
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedApplicationId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleRejectApplication}
+              disabled={!rejectReason.trim() || actionLoading}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Reject Application
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Resellers List */}
       <Card>

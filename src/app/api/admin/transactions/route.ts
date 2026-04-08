@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     const countRows = await sql`
       SELECT COUNT(*)::int AS count
       FROM transactions t
-      LEFT JOIN users u ON u.id::text = t."userId"::text
+      LEFT JOIN users u ON u.id::text = t.user_id::text
       WHERE (${searchPattern}::text IS NULL OR (
         t.reference ILIKE ${searchPattern} OR 
         COALESCE(t.source,'') ILIKE ${searchPattern} OR 
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     const rows = await sql`
       SELECT
         t.id,
-        t."userId" AS user_id,
+        t.user_id,
         t.type,
         t.amount,
         t.status,
@@ -54,12 +54,12 @@ export async function GET(request: NextRequest) {
         t.source AS description,
         t.currency,
         t.metadata,
-        t."createdAt" AS created_at,
+        t.created_at,
         u.email AS user_email,
         u.first_name AS user_first_name,
         u.last_name AS user_last_name
       FROM transactions t
-      LEFT JOIN users u ON u.id::text = t."userId"::text
+      LEFT JOIN users u ON u.id::text = t.user_id::text
       WHERE (${searchPattern}::text IS NULL OR (
         t.reference ILIKE ${searchPattern} OR 
         COALESCE(t.source,'') ILIKE ${searchPattern} OR 
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       ))
       AND (${statusFilter}::text = '' OR LOWER(t.status::text) = ${statusFilter})
       AND (${typeFilter}::text = '' OR LOWER(t.type::text) = ${typeFilter})
-      ORDER BY t."createdAt" DESC
+      ORDER BY t.created_at DESC
       LIMIT ${limit} OFFSET ${offset}
     `;
 

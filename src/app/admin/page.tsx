@@ -145,6 +145,11 @@ export default function AdminDashboard() {
         credentials: "include",
         body: JSON.stringify({ role }),
       })
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`)
+      }
+      
       const data = await res.json()
       if (data.success) {
         await loadUsers()
@@ -198,6 +203,17 @@ export default function AdminDashboard() {
         credentials: "include",
         body: JSON.stringify(payload),
       })
+      
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          router.replace("/admin/login")
+        } else {
+          const data = await res.json()
+          setEditError(data.error || "Failed to update user")
+        }
+        return
+      }
+      
       const data = await res.json()
       if (data.success) {
         await loadUsers(searchTerm)
@@ -223,6 +239,17 @@ export default function AdminDashboard() {
         method: "DELETE",
         credentials: "include",
       })
+      
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          router.replace("/admin/login")
+        } else {
+          const data = await res.json()
+          setDeleteError(data.error || "Failed to delete user")
+        }
+        return
+      }
+      
       const data = await res.json()
       if (data.success) {
         await loadUsers(searchTerm)
@@ -331,6 +358,11 @@ export default function AdminDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reference })
       })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`)
+      }
+      
       const result = await response.json()
       if (result.success) {
         await loadPendingPurchases()

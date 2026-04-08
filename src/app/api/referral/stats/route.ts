@@ -33,14 +33,17 @@ export async function GET() {
       total_earnings: 0
     }
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        totalReferrals: parseInt(result.total_referrals),
-        recentReferrals: parseInt(result.recent_referrals),
-        totalEarnings: parseFloat(result.total_earnings)
-      }
-    })
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          totalReferrals: parseInt(result.total_referrals),
+          recentReferrals: parseInt(result.recent_referrals),
+          totalEarnings: parseFloat(result.total_earnings)
+        }
+      },
+      { headers: { "Cache-Control": "private, max-age=60, stale-while-revalidate=120" } }
+    )
   } catch (error) {
     console.error("Referral stats error:", error)
     return NextResponse.json(

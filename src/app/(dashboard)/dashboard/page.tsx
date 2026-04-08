@@ -39,6 +39,7 @@ import {
   AlertCircle,
   Inbox,
   GraduationCap,
+  Store,
 } from "lucide-react"
 import { Suspense } from "react"
 import Loading from "./loading"
@@ -90,6 +91,14 @@ const services = [
     icon: GraduationCap,
     color: "text-[#6B7280] bg-[#F3F4F6]",
     hoverColor: "group-hover:border-[#6B7280]/30"
+  },
+  {
+    href: "/dashboard/reseller",
+    label: "Reseller Programme",
+    description: "Earn commissions on every referral sale",
+    icon: Store,
+    color: "text-amber-700 bg-amber-50",
+    hoverColor: "group-hover:border-amber-300/50"
   },
 ]
 
@@ -291,7 +300,7 @@ export default function DashboardPage() {
             )}
             <p className="text-muted-foreground flex items-center gap-2">
               <Target className="w-4 h-4 text-[#006994]" />
-              Manage your services and track infrastructure spending.
+              Airtime, data, verification, result checkers &amp; reseller — all in one place.
             </p>
           </div>
           <div className="flex items-center gap-3">

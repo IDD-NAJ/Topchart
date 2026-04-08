@@ -20,44 +20,53 @@ import {
   Calendar,
   CreditCard,
   Loader2,
-  CheckCircle2,
   Copy,
   MessageSquare,
   AlertCircle,
 } from "lucide-react"
 
-const rentalDurations = [
-  { hours: 1, label: "1 hour", multiplier: 0.1 },
-  { hours: 6, label: "6 hours", multiplier: 0.3 },
-  { hours: 12, label: "12 hours", multiplier: 0.5 },
-  { hours: 24, label: "24 hours", multiplier: 1 },
-  { hours: 72, label: "3 days", multiplier: 2.5 },
-  { hours: 168, label: "7 days", multiplier: 5 },
+const LTR_DURATIONS = [
+  { days: 3,  label: "3 Days" },
+  { days: 7,  label: "7 Days" },
+  { days: 14, label: "14 Days" },
+  { days: 30, label: "30 Days" },
 ]
 
 interface Service {
   id: string
+  pvadeals_service_id: string
   name: string
   category: string
-  description: string
-  base_cost: number
-  markup_percentage: number
-  rental_multiplier: number
-  onetime_price: number
-  rental_price_per_day: number
+  picture_url?: string
+  country?: string
+  str_price: number
+  ltr3_price: number
+  ltr7_price: number
+  ltr14_price: number
+  ltr30_price: number
+}
+
+function getLtrPrice(svc: Service, days: number): number {
+  if (days <= 3)  return svc.ltr3_price
+  if (days <= 7)  return svc.ltr7_price
+  if (days <= 14) return svc.ltr14_price
+  return svc.ltr30_price
 }
 
 interface ActiveNumber {
   id: string
   number: string
   service_name: string
-  type: "onetime" | "rental"
+  type: "STR" | "LTR"
   status: string
   time_remaining_ms: number
   time_remaining_formatted: string
   is_expired: boolean
   sms_count: number
   expires_at: string
+  allow_flag?: boolean
+  allow_reuse?: boolean
+  ltr_duration_days?: number
 }
 
 interface SMS {
@@ -78,8 +87,8 @@ export default function ServiceDetailPage() {
   
   const [loading, setLoading] = useState(true)
   const [service, setService] = useState<Service | null>(null)
-  const [purchaseType, setPurchaseType] = useState<"onetime" | "rental">("onetime")
-  const [rentalDuration, setRentalDuration] = useState(24)
+  const [purchaseType, setPurchaseType] = useState<"STR" | "LTR">("STR")
+  const [ltrDays, setLtrDays] = useState(3)
   const [activeNumber, setActiveNumber] = useState<ActiveNumber | null>(null)
   const [smsList, setSmsList] = useState<SMS[]>([])
   const [isPurchasing, setIsPurchasing] = useState(false)
@@ -140,9 +149,8 @@ export default function ServiceDetailPage() {
 
   const fetchSMS = async (numberId: string) => {
     try {
-      const response = await fetch(`/api/verification/sms/${numberId}`)
+      const response = await fetch(`/api/verification/sms?numberId=${numberId}`)
       const data = await response.json()
-      
       if (data.success) {
         setSmsList(data.data.sms)
       }
@@ -153,13 +161,7 @@ export default function ServiceDetailPage() {
 
   const calculatePrice = () => {
     if (!service) return 0
-    
-    if (purchaseType === "onetime") {
-      return service.onetime_price
-    }
-    
-    const duration = rentalDurations.find(d => d.hours === rentalDuration)
-    return service.rental_price_per_day * (duration?.multiplier || 1)
+    return purchaseType === "STR" ? service.str_price : getLtrPrice(service, ltrDays)
   }
 
   const handlePurchase = async () => {
@@ -171,16 +173,16 @@ export default function ServiceDetailPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          serviceId: service.id,
+          pvadealsServiceId: service.pvadeals_service_id,
           type: purchaseType,
-          durationHours: purchaseType === "rental" ? rentalDuration : undefined,
+          ltrDays: purchaseType === "LTR" ? ltrDays : undefined,
         }),
       })
       
       const data = await response.json()
       
       if (data.success) {
-        toast.success(`${purchaseType === "rental" ? "Rental" : "Number"} purchased successfully!`)
+        toast.success(`${purchaseType === "LTR" ? "LTR rental" : "STR number"} purchased successfully!`)
         refreshUser()
         
         // Set the active number and start viewing
@@ -190,11 +192,14 @@ export default function ServiceDetailPage() {
           service_name: service.name,
           type: purchaseType,
           status: "active",
-          time_remaining_ms: purchaseType === "rental" ? rentalDuration * 60 * 60 * 1000 : 20 * 60 * 1000,
-          time_remaining_formatted: purchaseType === "rental" ? `${rentalDuration}h 0m` : "20m 0s",
+          time_remaining_ms: purchaseType === "LTR" ? ltrDays * 24 * 60 * 60 * 1000 : 20 * 60 * 1000,
+          time_remaining_formatted: purchaseType === "LTR" ? `${ltrDays * 24}h 0m` : "20m 0s",
           is_expired: false,
           sms_count: 0,
           expires_at: data.data.expires_at,
+          allow_flag: data.data.allow_flag,
+          allow_reuse: data.data.allow_reuse,
+          ltr_duration_days: purchaseType === "LTR" ? ltrDays : undefined,
         })
         
         // Start polling
@@ -298,8 +303,8 @@ export default function ServiceDetailPage() {
                 <Phone className="h-5 w-5" />
                 Your Number
               </CardTitle>
-              <Badge variant={activeNumber.type === "rental" ? "default" : "secondary"}>
-                {activeNumber.type === "rental" ? "Rental" : "One-time"}
+              <Badge variant={activeNumber.type === "LTR" ? "default" : "secondary"}>
+                {activeNumber.type === "LTR" ? `LTR ${activeNumber.ltr_duration_days ?? ""}d` : "STR 20min"}
               </Badge>
             </div>
           </CardHeader>
@@ -410,7 +415,7 @@ export default function ServiceDetailPage() {
 
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{service.name}</h1>
-        <p className="text-muted-foreground mt-2">{service.description}</p>
+        <p className="text-muted-foreground mt-2">Get a temporary {service.country ?? "US"} number for {service.name} verification</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -424,55 +429,47 @@ export default function ServiceDetailPage() {
             <CardContent>
               <RadioGroup
                 value={purchaseType}
-                onValueChange={(v) => setPurchaseType(v as "onetime" | "rental")}
+                onValueChange={(v) => setPurchaseType(v as "STR" | "LTR")}
                 className="grid gap-4"
               >
                 <div>
-                  <RadioGroupItem
-                    value="onetime"
-                    id="onetime"
-                    className="peer sr-only"
-                  />
+                  <RadioGroupItem value="STR" id="STR" className="peer sr-only" />
                   <Label
-                    htmlFor="onetime"
+                    htmlFor="STR"
                     className="flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-[#006994]"
                   >
                     <div className="flex items-center gap-3">
                       <Clock className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <p className="font-medium">One-time Purchase</p>
+                        <p className="font-medium">STR — Short-Term</p>
                         <p className="text-sm text-muted-foreground">Valid for 20 minutes</p>
                       </div>
                     </div>
-                    <span className="font-bold">{formatCurrency(service.onetime_price)}</span>
+                    <span className="font-bold">{formatCurrency(service.str_price)}</span>
                   </Label>
                 </div>
 
                 <div>
-                  <RadioGroupItem
-                    value="rental"
-                    id="rental"
-                    className="peer sr-only"
-                  />
+                  <RadioGroupItem value="LTR" id="LTR" className="peer sr-only" />
                   <Label
-                    htmlFor="rental"
+                    htmlFor="LTR"
                     className="flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-[#006994]"
                   >
                     <div className="flex items-center gap-3">
                       <Calendar className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <p className="font-medium">Rental</p>
-                        <p className="text-sm text-muted-foreground">Valid for selected duration</p>
+                        <p className="font-medium">LTR — Long-Term</p>
+                        <p className="text-sm text-muted-foreground">3 to 30-day rental</p>
                       </div>
                     </div>
-                    <span className="font-bold">From {formatCurrency(service.rental_price_per_day * 0.1)}</span>
+                    <span className="font-bold">From {formatCurrency(service.ltr3_price)}</span>
                   </Label>
                 </div>
               </RadioGroup>
             </CardContent>
           </Card>
 
-          {purchaseType === "rental" && (
+          {purchaseType === "LTR" && (
             <Card>
               <CardHeader>
                 <CardTitle>Select Duration</CardTitle>
@@ -480,24 +477,20 @@ export default function ServiceDetailPage() {
               </CardHeader>
               <CardContent>
                 <RadioGroup
-                  value={rentalDuration.toString()}
-                  onValueChange={(v) => setRentalDuration(parseInt(v))}
-                  className="grid grid-cols-2 sm:grid-cols-3 gap-3"
+                  value={ltrDays.toString()}
+                  onValueChange={(v) => setLtrDays(parseInt(v))}
+                  className="grid grid-cols-2 sm:grid-cols-4 gap-3"
                 >
-                  {rentalDurations.map((duration) => (
-                    <div key={duration.hours}>
-                      <RadioGroupItem
-                        value={duration.hours.toString()}
-                        id={`duration-${duration.hours}`}
-                        className="peer sr-only"
-                      />
+                  {LTR_DURATIONS.map((d) => (
+                    <div key={d.days}>
+                      <RadioGroupItem value={d.days.toString()} id={`days-${d.days}`} className="peer sr-only" />
                       <Label
-                        htmlFor={`duration-${duration.hours}`}
+                        htmlFor={`days-${d.days}`}
                         className="flex flex-col items-center p-3 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-[#006994] peer-data-[state=checked]:bg-[#006994]/5"
                       >
-                        <span className="font-medium">{duration.label}</span>
+                        <span className="font-medium">{d.label}</span>
                         <span className="text-sm text-muted-foreground">
-                          {formatCurrency(service.rental_price_per_day * duration.multiplier)}
+                          {formatCurrency(getLtrPrice(service, d.days))}
                         </span>
                       </Label>
                     </div>
@@ -521,16 +514,8 @@ export default function ServiceDetailPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Type</span>
-                <span className="font-medium capitalize">{purchaseType}</span>
+                <span className="font-medium">{purchaseType === "STR" ? "STR (20 min)" : `LTR (${ltrDays} days)`}</span>
               </div>
-              {purchaseType === "rental" && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Duration</span>
-                  <span className="font-medium">
-                    {rentalDurations.find(d => d.hours === rentalDuration)?.label}
-                  </span>
-                </div>
-              )}
               
               <Separator />
               

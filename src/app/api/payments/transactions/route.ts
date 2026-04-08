@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     // Verify the session
     const sessions = await sql`
       SELECT s.user_id
-      FROM sessions s
+      FROM auth_sessions s
       WHERE s.token = ${sessionToken}
         AND s.expires_at > NOW()
     `;

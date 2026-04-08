@@ -16,6 +16,9 @@ import {
   MessageSquare,
   ShieldAlert,
   MoreHorizontal,
+  PhoneCall,
+  GraduationCap,
+  Store,
 } from "lucide-react"
 import {
   Sheet,
@@ -34,9 +37,12 @@ const mainNavItems = [
 ]
 
 const moreNavItems = [
-  { href: "/dashboard/profile", label: "Profile", icon: User },
-  { href: "/dashboard/wallet", label: "Wallet", icon: CreditCard },
-  { href: "/dashboard/tickets", label: "Tickets", icon: MessageSquare },
+  { href: "/dashboard/verification", label: "Verification Numbers", icon: PhoneCall },
+  { href: "/dashboard/result-checkers", label: "Result Checkers", icon: GraduationCap },
+  { href: "/dashboard/reseller", label: "Reseller Programme", icon: Store },
+  { href: "/dashboard/wallet", label: "My Wallet", icon: CreditCard },
+  { href: "/dashboard/profile", label: "Profile Settings", icon: User },
+  { href: "/dashboard/tickets", label: "Support Tickets", icon: MessageSquare },
   { href: "/dashboard/disputes", label: "Disputes", icon: ShieldAlert },
 ]
 
