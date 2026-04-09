@@ -131,6 +131,7 @@ export default function ResellerDashboardPage() {
   const [referralView, setReferralView] = useState<'code' | 'link'>('code');
   const [referralLinks, setReferralLinks] = useState<ReferralLink[]>([]);
   const [newLinkLandingPage, setNewLinkLandingPage] = useState('/register');
+  const [geographicStats, setGeographicStats] = useState<any[]>([]);
 
   useEffect(() => {
     loadDashboardData();
@@ -252,9 +253,24 @@ export default function ResellerDashboardPage() {
     }
   };
 
+  const loadGeographicStats = async () => {
+    try {
+      const res = await fetch("/api/reseller/analytics?period=30d", {
+        credentials: "include"
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGeographicStats(data.geographicStats || []);
+      }
+    } catch (error) {
+      console.error("Error loading geographic stats:", error);
+    }
+  };
+
   useEffect(() => {
     if (profile) {
       loadActivities();
+      loadGeographicStats();
     }
   }, [profile]);
 
@@ -838,6 +854,41 @@ export default function ResellerDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Sales by Region */}
+      <Card className="mt-8 border-slate-200">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-slate-100 rounded-lg">
+              <MapPin className="h-6 w-6 text-slate-600" />
+            </div>
+            <div>
+              <CardTitle className="text-slate-900">Sales by Region</CardTitle>
+              <p className="text-sm text-slate-500">Geographic distribution of your sales</p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="space-y-3">
+            {geographicStats.length === 0 ? (
+              <p className="text-center text-slate-500 py-4">No geographic data available yet</p>
+            ) : (
+              geographicStats.map((region: any) => (
+                <div key={region.region} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <MapPin className="h-4 w-4 text-slate-400" />
+                    <span className="font-medium text-slate-900">{region.region || "Unknown"}</span>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-slate-900">GHS {Number(region.sales_amount || 0).toFixed(2)}</p>
+                    <p className="text-xs text-slate-500">{region.sales_count || 0} sales</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Referral Section with Toggle */}
       <Card className="mt-8 border-slate-200">
