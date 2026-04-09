@@ -474,7 +474,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Button>
         </header>
 
-        <main className="flex-1 px-3 py-4 sm:px-6 sm:py-6 pb-24 md:pb-6">
+        <main className="flex-1 px-3 py-4 sm:px-6 sm:py-6 pb-24 md:pb-6 overflow-x-hidden">
           {children}
         </main>
 
@@ -491,56 +491,56 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Mobile Bottom Navigation */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-[#006994]/10 z-40 pb-safe">
-          <div className="flex items-center justify-around px-1 py-2">
+          <div className="flex items-center justify-around px-1 py-2 safe-area-bottom">
             <Link
               href="/admin"
               className={cn(
-                "flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-lg transition-colors min-w-[60px] min-h-[48px]",
+                "flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg transition-colors min-w-[56px] min-h-[44px]",
                 pathname === "/admin" ? "text-[#006994]" : "text-muted-foreground"
               )}
             >
-              <LayoutDashboard className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
-              <span className="text-[9px] sm:text-[10px] font-medium leading-tight">Dashboard</span>
+              <LayoutDashboard className="h-5 w-5 shrink-0" />
+              <span className="text-[10px] font-medium leading-none">Dashboard</span>
             </Link>
             <Link
               href="/admin/users"
               className={cn(
-                "flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-lg transition-colors min-w-[60px] min-h-[48px]",
+                "flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg transition-colors min-w-[56px] min-h-[44px]",
                 pathname.startsWith("/admin/users") ? "text-[#006994]" : "text-muted-foreground"
               )}
             >
-              <Users className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
-              <span className="text-[9px] sm:text-[10px] font-medium leading-tight">Users</span>
+              <Users className="h-5 w-5 shrink-0" />
+              <span className="text-[10px] font-medium leading-none">Users</span>
             </Link>
             <Link
               href="/admin/transactions"
               className={cn(
-                "flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-lg transition-colors min-w-[60px] min-h-[48px]",
+                "flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg transition-colors min-w-[56px] min-h-[44px]",
                 pathname.startsWith("/admin/transactions") ? "text-[#006994]" : "text-muted-foreground"
               )}
             >
-              <CreditCard className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
-              <span className="text-[9px] sm:text-[10px] font-medium leading-tight">Txns</span>
+              <CreditCard className="h-5 w-5 shrink-0" />
+              <span className="text-[10px] font-medium leading-none">Txns</span>
             </Link>
             <Link
               href="/admin/tickets"
               className={cn(
-                "flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-lg transition-colors min-w-[60px] min-h-[48px]",
+                "flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg transition-colors min-w-[56px] min-h-[44px]",
                 pathname.startsWith("/admin/tickets") ? "text-[#722F37]" : "text-muted-foreground"
               )}
             >
-              <MessageSquare className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
-              <span className="text-[9px] sm:text-[10px] font-medium leading-tight">Tickets</span>
+              <MessageSquare className="h-5 w-5 shrink-0" />
+              <span className="text-[10px] font-medium leading-none">Tickets</span>
             </Link>
             <button
               onClick={async () => {
                 await fetch("/api/auth/logout", { method: "POST", credentials: "include" })
                 router.replace("/admin/login")
               }}
-              className="flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-muted-foreground min-w-[60px] min-h-[48px]"
+              className="flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg text-muted-foreground min-w-[56px] min-h-[44px]"
             >
-              <LogOut className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
-              <span className="text-[9px] sm:text-[10px] font-medium leading-tight">Logout</span>
+              <LogOut className="h-5 w-5 shrink-0" />
+              <span className="text-[10px] font-medium leading-none">Logout</span>
             </button>
           </div>
           {/* Safe area padding for mobile devices */}

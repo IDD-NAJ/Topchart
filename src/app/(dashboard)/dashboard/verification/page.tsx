@@ -550,10 +550,10 @@ export default function VerificationPage() {
             <CardDescription>Your currently active verification numbers</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {activeNumbers.map((num) => (
                 <Card key={num.id} className="border bg-background">
-                  <CardContent className="p-4 space-y-2">
+                  <CardContent className="p-3 sm:p-4 space-y-2">
                     <div className="flex items-center justify-between">
                       <Badge variant={num.type === "LTR" ? "default" : "secondary"} className="text-xs">
                         {num.type === "LTR" ? `LTR ${num.ltr_duration_days}d` : "STR 20min"}
@@ -637,7 +637,7 @@ export default function VerificationPage() {
           ) : (
             <>
               <p className="text-xs text-muted-foreground mb-3">{filteredServices.length} result{filteredServices.length !== 1 ? "s" : ""}</p>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredServices.map((svc) => {
                   const catMeta = getCatMeta(svc.category)
                   const CatIcon = catMeta.icon
@@ -704,7 +704,7 @@ export default function VerificationPage() {
                 <p className="text-muted-foreground text-sm">No services available in this category</p>
               </div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredServices.map((svc) => {
                   const catMeta = getCatMeta(svc.category)
                   const CatIcon = catMeta.icon
