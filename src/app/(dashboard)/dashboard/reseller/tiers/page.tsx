@@ -128,7 +128,7 @@ export default function ResellerTiersPage() {
                 </div>
                 <Progress value={progress} className="h-3" />
                 <p className="text-xs text-slate-500">
-                  Need GHS {(nextTier.min_sales_amount - stats.totalSales).toFixed(2)} more sales and {nextTier.min_referrals - stats.totalReferrals} more referrals
+                  Need GHS {(Number(nextTier.min_sales_amount || 0) - Number(stats.totalSales || 0)).toFixed(2)} more sales and {Number(nextTier.min_referrals || 0) - Number(stats.totalReferrals || 0)} more referrals
                 </p>
               </div>
             )}
@@ -144,7 +144,7 @@ export default function ResellerTiersPage() {
             <TrendingUp className="h-4 w-4 text-slate-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">GHS {stats.totalSales.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-slate-900">GHS {Number(stats.totalSales || 0).toFixed(2)}</div>
             <p className="text-xs text-slate-500">Lifetime sales amount</p>
           </CardContent>
         </Card>
