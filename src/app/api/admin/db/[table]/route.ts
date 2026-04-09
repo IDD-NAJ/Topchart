@@ -113,13 +113,13 @@ function validatePayload(tableColumns: { name: string; dataType: string; isNulla
   return { data: out, errors };
 }
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ table: string }> }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ table: string }> }) {
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json({ success: false, error: admin.error }, { status: admin.status });
   }
 
-  const { table } = await params;
+  const { table } = await context.params;
   const url = new URL(request.url);
   const limit = clampInt(url.searchParams.get("limit"), 25, 1, 200);
   const offset = clampInt(url.searchParams.get("offset"), 0, 0, 1_000_000);
@@ -166,13 +166,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   );
 }
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ table: string }> }) {
+export async function POST(request: NextRequest, context: { params: Promise<{ table: string }> }) {
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json({ success: false, error: admin.error }, { status: admin.status });
   }
 
-  const { table } = await params;
+  const { table } = await context.params;
   const body = await request.json().catch(() => ({}));
   const payload = (body && body.data) || body || {};
 
@@ -202,13 +202,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   return NextResponse.json({ success: true, row: (created as any[])[0] }, { status: 200 });
 }
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ table: string }> }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ table: string }> }) {
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json({ success: false, error: admin.error }, { status: admin.status });
   }
 
-  const { table } = await params;
+  const { table } = await context.params;
   const body = await request.json().catch(() => ({}));
   const id = body?.id;
   const payload = body?.data || {};
@@ -252,13 +252,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   return NextResponse.json({ success: true, row: (updated as any[])[0] }, { status: 200 });
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ table: string }> }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ table: string }> }) {
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json({ success: false, error: admin.error }, { status: admin.status });
   }
 
-  const { table } = await params;
+  const { table } = await context.params;
   const body = await request.json().catch(() => ({}));
   const ids: any[] = Array.isArray(body?.ids) ? body.ids : body?.id != null ? [body.id] : [];
 

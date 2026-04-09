@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
+import { withRateLimit } from "@/lib/rate-limit";
+import { validateRequest, formatZodError, markSoldSchema } from "@/lib/validation/schemas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // GET - Fetch reseller inventory and sales history
-export async function GET(request: NextRequest) {
+async function GETHandler(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
@@ -109,7 +111,7 @@ export async function GET(request: NextRequest) {
 }
 
 // PATCH - Mark a card as sold
-export async function PATCH(request: NextRequest) {
+async function PATCHHandler(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
@@ -147,26 +149,36 @@ export async function PATCH(request: NextRequest) {
     const reseller = profile[0] as any;
     
     const body = await request.json();
-    const { inventoryId, soldTo } = body;
     
-    if (!inventoryId) {
-      return NextResponse.json({ success: false, error: "Inventory ID required" }, { status: 400 });
+    // Validate input
+    const validation = validateRequest(markSoldSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid input",
+          errors: formatZodError(validation.errors!),
+        },
+        { status: 400 }
+      );
     }
+    
+    const { inventory_id, sold_to } = validation.data!;
     
     // Update inventory item
     await sql`
       UPDATE reseller_inventory
-      SET status = 'sold', sold_to = ${soldTo || null}, sold_at = NOW()
-      WHERE id = ${inventoryId} AND reseller_id = ${reseller.id}
+      SET status = 'sold', sold_to = ${sold_to || null}, sold_at = NOW()
+      WHERE id = ${inventory_id} AND reseller_id = ${reseller.id}
     `;
     
     // Also update the card status
     await sql`
       UPDATE result_checker_cards
       SET status = 'sold', purchased_by = (
-        SELECT id FROM users WHERE phone = ${soldTo} LIMIT 1
+        SELECT id FROM users WHERE phone = ${sold_to} LIMIT 1
       ), purchased_at = NOW()
-      WHERE id = (SELECT card_id FROM reseller_inventory WHERE id = ${inventoryId})
+      WHERE id = (SELECT card_id FROM reseller_inventory WHERE id = ${inventory_id})
     `;
     
     return NextResponse.json({ success: true, message: "Card marked as sold" });
@@ -179,3 +191,7 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
+
+// Export GET and PATCH with rate limiting
+export const GET = withRateLimit({ type: "api" })(GETHandler);
+export const PATCH = withRateLimit({ type: "api" })(PATCHHandler);

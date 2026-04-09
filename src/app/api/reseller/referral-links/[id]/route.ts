@@ -8,9 +8,10 @@ export const dynamic = "force-dynamic";
 // DELETE - Delete referral link
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
     
@@ -42,7 +43,7 @@ export async function DELETE(
     }
     
     const resellerId = profiles[0].id;
-    const linkId = params.id;
+    const linkId = id;
     
     // Delete the referral link (only if it belongs to this reseller)
     const result = await sql`

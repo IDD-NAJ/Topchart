@@ -1,18 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { register } from "@/lib/actions/auth";
+import { withRateLimit } from "@/lib/rate-limit";
+import { validateRequest, formatZodError, registerSchema } from "@/lib/validation/schemas";
 
-export async function POST(request: NextRequest) {
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const rateLimitedPOST = withRateLimit({ type: "public" })(POST);
+
+async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    const result = await register({
-      email: body.email,
-      phone: body.phone,
-      password: body.password,
-      firstName: body.firstName,
-      lastName: body.lastName,
+    // Validate input
+    const validation = validateRequest(registerSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid input",
+          errors: formatZodError(validation.errors!),
+        },
+        { status: 400 }
+      );
+    }
+    
+    const registerData: any = {
+      email: validation.data!.email,
+      password: validation.data!.password,
+      firstName: validation.data!.first_name,
+      lastName: validation.data!.last_name,
       referralCode: body.referralCode,
-    });
+    };
+    
+    if (validation.data!.phone) {
+      registerData.phone = validation.data!.phone;
+    }
+    
+    const result = await register(registerData);
 
     if (result.success) {
       return NextResponse.json(
@@ -33,3 +58,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export { rateLimitedPOST as POST };

@@ -1,18 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { login } from "@/lib/actions/auth";
 import { shouldUseSecureCookies } from "@/lib/utils";
+import { withRateLimit } from "@/lib/rate-limit";
+import { validateRequest, formatZodError, loginSchema } from "@/lib/validation/schemas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function POST(request: NextRequest) {
+const rateLimitedPOST = withRateLimit({ type: "public" })(POST);
+
+async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
+    // Validate input
+    const validation = validateRequest(loginSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid input",
+          errors: formatZodError(validation.errors!),
+        },
+        { status: 400 }
+      );
+    }
+    
     const result = await login({
-      email: body.email,
-      password: body.password,
+      email: validation.data!.email,
+      password: validation.data!.password,
     });
 
     if (result.success && result.user && result.token && result.expiresAt) {
@@ -45,3 +62,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export { rateLimitedPOST as POST };

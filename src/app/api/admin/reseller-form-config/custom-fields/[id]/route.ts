@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 // DELETE - Remove custom field
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const admin = await requireAdmin();
@@ -19,7 +19,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = await params;
+    const { id } = await context.params;
 
     await sql`
       DELETE FROM custom_form_fields
@@ -42,7 +42,7 @@ export async function DELETE(
 // PUT - Update custom field
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const admin = await requireAdmin();
@@ -52,7 +52,7 @@ export async function PUT(
         { status: admin.status }
       );
     }
-    const { id } = await params;
+    const { id } = await context.params;
     const body = await request.json();
     const { is_enabled, is_required, sort_order } = body;
 

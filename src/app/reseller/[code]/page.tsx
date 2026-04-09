@@ -59,8 +59,9 @@ async function getPublicResellerProfile(code: string): Promise<PublicResellerPro
   }
 }
 
-export async function generateMetadata({ params }: { params: { code: string } }) {
-  const profile = await getPublicResellerProfile(params.code);
+export async function generateMetadata({ params }: { params: Promise<{ code: string }> }) {
+  const { code } = await params;
+  const profile = await getPublicResellerProfile(code);
 
   if (!profile) {
     return {
@@ -74,8 +75,9 @@ export async function generateMetadata({ params }: { params: { code: string } })
   };
 }
 
-export default async function PublicResellerPage({ params }: { params: { code: string } }) {
-  const profile = await getPublicResellerProfile(params.code);
+export default async function PublicResellerPage({ params }: { params: Promise<{ code: string }> }) {
+  const { code } = await params;
+  const profile = await getPublicResellerProfile(code);
 
   if (!profile) {
     notFound();

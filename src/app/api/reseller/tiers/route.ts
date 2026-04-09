@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
+import { withRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // GET - Fetch reseller tier info and progress
-export async function GET(request: NextRequest) {
+async function GETHandler(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
@@ -94,3 +95,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// Export GET with rate limiting
+export const GET = withRateLimit({ type: "api" })(GETHandler);

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Megaphone, Copy, CheckCircle, Download, Link2, MousePointer, Users, Image, FileText, Video, Trash2, Share2, MessageCircle } from "lucide-react";
+import { Megaphone, Copy, CheckCircle, Download, Link2, MousePointer, Users, Image, FileText, Video, Trash2, Share2, MessageCircle, Loader2 } from "lucide-react";
 
 interface ReferralLink {
   id: string;
@@ -116,52 +116,54 @@ export default function ResellerMarketingPage() {
 
   const getAssetIcon = (type: string) => {
     switch (type) {
-      case 'image': return <Image className="h-5 w-5" />;
-      case 'video': return <Video className="h-5 w-5" />;
-      case 'document': return <FileText className="h-5 w-5" />;
-      default: return <Download className="h-5 w-5" />;
+      case 'image': return <Image className="h-5 w-5 text-slate-600" />;
+      case 'video': return <Video className="h-5 w-5 text-slate-600" />;
+      case 'document': return <FileText className="h-5 w-5 text-slate-600" />;
+      default: return <Download className="h-5 w-5 text-slate-600" />;
     }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#006994]" />
+        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">Marketing Tools</h1>
-        <p className="text-muted-foreground">Promote your business with referral links and marketing assets</p>
+    <div className="container mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-6xl">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900">Marketing Tools</h1>
+        <p className="text-sm sm:text-base text-slate-600 mt-1">Promote your business with referral links and marketing assets</p>
       </div>
 
       {/* Referral Code Card */}
-      <Card className="mb-8">
+      <Card className="border-slate-200 mb-6 sm:mb-8">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Megaphone className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-slate-900">
+            <div className="p-2.5 bg-slate-100 rounded-lg">
+              <Megaphone className="h-5 w-5 text-slate-600" />
+            </div>
             Your Referral Code
           </CardTitle>
-          <CardDescription>Share this code with customers to earn commissions</CardDescription>
+          <CardDescription className="text-slate-500">Share this code with customers to earn commissions</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
-            <code className="flex-1 p-4 bg-muted rounded-lg text-xl font-mono font-bold">
+            <code className="flex-1 p-4 bg-slate-100 rounded-lg text-xl font-mono font-bold text-slate-900">
               {resellerCode}
             </code>
             <Button 
               size="lg"
               onClick={copyReferralCode}
-              className="gap-2"
+              className="gap-2 bg-slate-900 text-white hover:bg-slate-800"
             >
               {copiedCode ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               {copiedCode ? "Copied!" : "Copy Code"}
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground mt-4">
+          <p className="text-sm text-slate-500 mt-4">
             Share your code on social media, with friends, or add it to your marketing materials. 
             You earn commission on every purchase made by users who sign up with your code.
           </p>
@@ -169,38 +171,38 @@ export default function ResellerMarketingPage() {
       </Card>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <Card className="border-slate-200">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Clicks</CardTitle>
-            <MousePointer className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-700">Total Clicks</CardTitle>
+            <MousePointer className="h-4 w-4 text-slate-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-slate-900">
               {referralLinks.reduce((sum, link) => sum + (link.clicks || 0), 0)}
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-slate-200">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Conversions</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-700">Conversions</CardTitle>
+            <Users className="h-4 w-4 text-slate-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-slate-900">
               {referralLinks.reduce((sum, link) => sum + (link.conversions || 0), 0)}
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-slate-200">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
-            <Link2 className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-700">Conversion Rate</CardTitle>
+            <Link2 className="h-4 w-4 text-slate-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-slate-900">
               {(() => {
                 const totalClicks = referralLinks.reduce((sum, link) => sum + (link.clicks || 0), 0);
                 const totalConv = referralLinks.reduce((sum, link) => sum + (link.conversions || 0), 0);
@@ -212,10 +214,10 @@ export default function ResellerMarketingPage() {
       </div>
 
       {/* Create New Link */}
-      <Card className="mb-8">
+      <Card className="border-slate-200 mb-6 sm:mb-8">
         <CardHeader>
-          <CardTitle>Create Referral Link</CardTitle>
-          <CardDescription>Create custom referral links for different campaigns</CardDescription>
+          <CardTitle className="text-slate-900">Create Referral Link</CardTitle>
+          <CardDescription className="text-slate-500">Create custom referral links for different campaigns</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4">
@@ -223,9 +225,9 @@ export default function ResellerMarketingPage() {
               placeholder="Landing page (e.g., /register)"
               value={newLinkUrl}
               onChange={(e) => setNewLinkUrl(e.target.value)}
-              className="flex-1"
+              className="flex-1 border-slate-300"
             />
-            <Button onClick={createReferralLink}>
+            <Button onClick={createReferralLink} className="bg-slate-900 text-white hover:bg-slate-800">
               <Link2 className="h-4 w-4 mr-2" />
               Create Link
             </Button>
@@ -234,31 +236,31 @@ export default function ResellerMarketingPage() {
       </Card>
 
       {/* Referral Links */}
-      <Card className="mb-8">
+      <Card className="border-slate-200 mb-6 sm:mb-8">
         <CardHeader>
-          <CardTitle>Your Referral Links</CardTitle>
-          <CardDescription>Track performance of your referral links</CardDescription>
+          <CardTitle className="text-slate-900">Your Referral Links</CardTitle>
+          <CardDescription className="text-slate-500">Track performance of your referral links</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {referralLinks.map((link) => {
               const fullUrl = `${window.location.origin}/r/${link.referral_code}`;
               return (
-                <div key={link.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div key={link.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <Link2 className="h-4 w-4 text-muted-foreground" />
+                    <Link2 className="h-4 w-4 text-slate-500" />
                     <div>
-                      <code className="text-sm font-mono">{link.referral_code}</code>
-                      <p className="text-xs text-muted-foreground">{fullUrl}</p>
+                      <code className="text-sm font-mono text-slate-700">{link.referral_code}</code>
+                      <p className="text-xs text-slate-500">{fullUrl}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <div className="flex items-center gap-3 text-sm">
-                        <span><MousePointer className="h-3 w-3 inline mr-1" />{link.clicks || 0}</span>
-                        <span><Users className="h-3 w-3 inline mr-1" />{link.conversions || 0}</span>
+                        <span className="text-slate-600"><MousePointer className="h-3 w-3 inline mr-1" />{link.clicks || 0}</span>
+                        <span className="text-slate-600"><Users className="h-3 w-3 inline mr-1" />{link.conversions || 0}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-slate-500">
                         {new Date(link.created_at).toLocaleDateString()}
                       </p>
                     </div>
@@ -266,6 +268,7 @@ export default function ResellerMarketingPage() {
                       <Button 
                         variant="ghost" 
                         size="sm"
+                        className="hover:bg-slate-100"
                         onClick={() => shareViaWhatsApp(fullUrl)}
                         title="Share on WhatsApp"
                       >
@@ -274,6 +277,7 @@ export default function ResellerMarketingPage() {
                       <Button 
                         variant="ghost" 
                         size="sm"
+                        className="hover:bg-slate-100"
                         onClick={() => copyLink(fullUrl)}
                         title="Copy link"
                       >
@@ -282,6 +286,7 @@ export default function ResellerMarketingPage() {
                       <Button 
                         variant="ghost" 
                         size="sm"
+                        className="hover:bg-slate-100"
                         onClick={() => deleteLink(link.id)}
                         title="Delete link"
                       >
@@ -293,8 +298,8 @@ export default function ResellerMarketingPage() {
               );
             })}
             {referralLinks.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Link2 className="h-12 w-12 mx-auto mb-2" />
+              <div className="text-center py-8 text-slate-500">
+                <Link2 className="h-12 w-12 mx-auto mb-2 text-slate-400" />
                 <p>No referral links created yet</p>
               </div>
             )}
@@ -303,25 +308,25 @@ export default function ResellerMarketingPage() {
       </Card>
 
       {/* Marketing Assets */}
-      <Card>
+      <Card className="border-slate-200">
         <CardHeader>
-          <CardTitle>Marketing Assets</CardTitle>
-          <CardDescription>Download promotional materials for your business</CardDescription>
+          <CardTitle className="text-slate-900">Marketing Assets</CardTitle>
+          <CardDescription className="text-slate-500">Download promotional materials for your business</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {assets.map((asset) => (
-              <div key={asset.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={asset.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-muted rounded">
+                  <div className="p-2 bg-slate-100 rounded">
                     {getAssetIcon(asset.type)}
                   </div>
                   <div>
-                    <p className="font-medium">{asset.name}</p>
-                    <p className="text-xs text-muted-foreground">{asset.category}</p>
+                    <p className="font-medium text-slate-900">{asset.name}</p>
+                    <p className="text-xs text-slate-500">{asset.category}</p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" size="sm" className="border-slate-300 hover:bg-slate-100" asChild>
                   <a href={asset.file_url} target="_blank" rel="noopener noreferrer">
                     <Download className="h-4 w-4 mr-2" />
                     Download
@@ -330,8 +335,8 @@ export default function ResellerMarketingPage() {
               </div>
             ))}
             {assets.length === 0 && (
-              <div className="col-span-2 text-center py-8 text-muted-foreground">
-                <Image className="h-12 w-12 mx-auto mb-2" />
+              <div className="col-span-2 text-center py-8 text-slate-500">
+                <Image className="h-12 w-12 mx-auto mb-2 text-slate-400" />
                 <p>No marketing assets available</p>
               </div>
             )}

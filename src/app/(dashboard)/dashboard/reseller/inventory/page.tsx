@@ -137,74 +137,74 @@ export default function ResellerInventoryPage() {
     return (
       <div className="container mx-auto py-12 px-4">
         <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-[#006994]" />
+          <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-5xl">
-      <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
+    <div className="container mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-6xl">
+      <Button variant="ghost" className="mb-4 sm:mb-6 border-slate-200 hover:bg-slate-100" onClick={() => router.back()}>
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back
       </Button>
 
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">My Inventory</h1>
-        <p className="text-muted-foreground">Manage your stock and track sales</p>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900">My Inventory</h1>
+        <p className="text-sm sm:text-base text-slate-600 mt-1">Manage your stock and track sales</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <Card className="border-slate-200">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Available Cards</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-700">Available Cards</CardTitle>
+            <Package className="h-4 w-4 text-slate-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.inventory?.available_count || 0}</div>
+            <div className="text-2xl font-bold text-slate-900">{stats?.inventory?.available_count || 0}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-slate-200">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Cards Sold</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-700">Cards Sold</CardTitle>
+            <CheckCircle className="h-4 w-4 text-slate-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.inventory?.sold_count || 0}</div>
+            <div className="text-2xl font-bold text-slate-900">{stats?.inventory?.sold_count || 0}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-slate-200">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-700">Total Sales</CardTitle>
+            <TrendingUp className="h-4 w-4 text-slate-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.sales?.total_sales || 0}</div>
+            <div className="text-2xl font-bold text-slate-900">{stats?.sales?.total_sales || 0}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-slate-200">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Profit</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-700">Total Profit</CardTitle>
+            <DollarSign className="h-4 w-4 text-slate-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">GHS {parseFloat(String(stats?.sales?.total_profit || 0)).toFixed(2)}</div>
+            <div className="text-2xl font-bold text-slate-900">GHS {parseFloat(String(stats?.sales?.total_profit || 0)).toFixed(2)}</div>
           </CardContent>
         </Card>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="cards" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1">
+          <TabsTrigger value="cards" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             <Package className="h-4 w-4" />
             Result Cards
           </TabsTrigger>
-          <TabsTrigger value="sales" className="flex items-center gap-2">
+          <TabsTrigger value="sales" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             <ShoppingCart className="h-4 w-4" />
             Sales History
           </TabsTrigger>
@@ -214,21 +214,23 @@ export default function ResellerInventoryPage() {
         <TabsContent value="cards">
           <div className="space-y-4">
             {/* Available Cards */}
-            <Card>
+            <Card className="border-slate-200">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-green-500" />
+                <CardTitle className="flex items-center gap-2 text-slate-900">
+                  <div className="p-2.5 bg-slate-100 rounded-lg">
+                    <Package className="h-5 w-5 text-slate-600" />
+                  </div>
                   Available Cards ({availableCards.length})
                 </CardTitle>
-                <CardDescription>Cards ready to sell to customers</CardDescription>
+                <CardDescription className="text-slate-500">Cards ready to sell to customers</CardDescription>
               </CardHeader>
               <CardContent>
                 {availableCards.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Package className="h-12 w-12 mx-auto mb-2" />
+                  <div className="text-center py-8 text-slate-500">
+                    <Package className="h-12 w-12 mx-auto mb-2 text-slate-400" />
                     <p>No available cards. Purchase cards from the Buy Wholesale page.</p>
                     <Button 
-                      className="mt-4" 
+                      className="mt-4 bg-slate-900 text-white hover:bg-slate-800" 
                       onClick={() => router.push("/dashboard/reseller/purchase")}
                     >
                       Buy Cards
@@ -237,20 +239,21 @@ export default function ResellerInventoryPage() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {availableCards.map((card) => (
-                      <Card key={card.id} className="border-l-4 border-l-green-500">
+                      <Card key={card.id} className="border-l-4 border-l-slate-300">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between mb-2">
-                            <Badge variant="outline">{card.exam_type}</Badge>
-                            <Badge className="bg-green-100 text-green-700">Available</Badge>
+                            <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300">{card.exam_type}</Badge>
+                            <Badge className="bg-slate-100 text-slate-700">Available</Badge>
                           </div>
-                          <p className="text-xs text-muted-foreground mb-1">Serial: {card.serial_number}</p>
+                          <p className="text-xs text-slate-500 mb-1">Serial: {card.serial_number}</p>
                           <div className="flex items-center gap-2 mb-3">
-                            <code className="flex-1 bg-muted px-2 py-1 rounded text-sm font-mono">
+                            <code className="flex-1 bg-slate-100 px-2 py-1 rounded text-sm font-mono text-slate-700">
                               {showPins[card.id] ? card.card_pin : '••••••••••••'}
                             </code>
                             <Button 
                               variant="ghost" 
                               size="sm"
+                              className="hover:bg-slate-100"
                               onClick={() => togglePinVisibility(card.id)}
                             >
                               {showPins[card.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -258,6 +261,7 @@ export default function ResellerInventoryPage() {
                             <Button 
                               variant="ghost" 
                               size="sm"
+                              className="hover:bg-slate-100"
                               onClick={() => copyPin(card.card_pin)}
                             >
                               <Copy className="h-4 w-4" />
@@ -265,8 +269,8 @@ export default function ResellerInventoryPage() {
                           </div>
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-xs text-muted-foreground">Cost: GHS {parseFloat(String(card.cost_price || 0)).toFixed(2)}</p>
-                              <p className="text-sm font-medium">Sell: GHS {parseFloat(String(card.selling_price || 0)).toFixed(2)}</p>
+                              <p className="text-xs text-slate-500">Cost: GHS {parseFloat(String(card.cost_price || 0)).toFixed(2)}</p>
+                              <p className="text-sm font-medium text-slate-900">Sell: GHS {parseFloat(String(card.selling_price || 0)).toFixed(2)}</p>
                             </div>
                             {sellingCard === card.id ? (
                               <div className="flex items-center gap-2">
@@ -274,14 +278,15 @@ export default function ResellerInventoryPage() {
                                   placeholder="Buyer phone"
                                   value={buyerPhone}
                                   onChange={(e) => setBuyerPhone(e.target.value)}
-                                  className="w-32"
+                                  className="w-32 border-slate-300"
                                 />
-                                <Button size="sm" onClick={() => markAsSold(card.id)}>Sell</Button>
-                                <Button size="sm" variant="ghost" onClick={() => setSellingCard(null)}>Cancel</Button>
+                                <Button size="sm" className="bg-slate-900 text-white hover:bg-slate-800" onClick={() => markAsSold(card.id)}>Sell</Button>
+                                <Button size="sm" variant="ghost" className="hover:bg-slate-100" onClick={() => setSellingCard(null)}>Cancel</Button>
                               </div>
                             ) : (
                               <Button 
                                 size="sm" 
+                                className="bg-slate-900 text-white hover:bg-slate-800"
                                 onClick={() => setSellingCard(card.id)}
                               >
                                 <Tag className="h-4 w-4 mr-1" />
@@ -299,29 +304,31 @@ export default function ResellerInventoryPage() {
 
             {/* Sold Cards */}
             {soldCards.length > 0 && (
-              <Card>
+              <Card className="border-slate-200">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-500" />
+                  <CardTitle className="flex items-center gap-2 text-slate-900">
+                    <div className="p-2.5 bg-slate-100 rounded-lg">
+                      <CheckCircle className="h-5 w-5 text-slate-600" />
+                    </div>
                     Sold Cards ({soldCards.length})
                   </CardTitle>
-                  <CardDescription>Cards already sold to customers</CardDescription>
+                  <CardDescription className="text-slate-500">Cards already sold to customers</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {soldCards.map((card) => (
-                      <Card key={card.id} className="border-l-4 border-l-blue-500 opacity-75">
+                      <Card key={card.id} className="border-l-4 border-l-slate-400 opacity-75">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between mb-2">
-                            <Badge variant="outline">{card.exam_type}</Badge>
-                            <Badge className="bg-blue-100 text-blue-700">Sold</Badge>
+                            <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300">{card.exam_type}</Badge>
+                            <Badge className="bg-slate-100 text-slate-700">Sold</Badge>
                           </div>
-                          <p className="text-xs text-muted-foreground">Serial: {card.serial_number}</p>
-                          <p className="text-xs text-muted-foreground">Sold to: {card.sold_to}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-slate-500">Serial: {card.serial_number}</p>
+                          <p className="text-xs text-slate-500">Sold to: {card.sold_to}</p>
+                          <p className="text-xs text-slate-500">
                             Sold on: {new Date(card.sold_at).toLocaleDateString()}
                           </p>
-                          <p className="text-sm font-medium mt-2">
+                          <p className="text-sm font-medium text-slate-900 mt-2">
                             Sold for: GHS {parseFloat(String(card.selling_price || 0)).toFixed(2)}
                           </p>
                         </CardContent>
@@ -336,48 +343,50 @@ export default function ResellerInventoryPage() {
 
         {/* Sales History Tab */}
         <TabsContent value="sales">
-          <Card>
+          <Card className="border-slate-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-slate-900">
+                <div className="p-2.5 bg-slate-100 rounded-lg">
+                  <ShoppingCart className="h-5 w-5 text-slate-600" />
+                </div>
                 Sales History
               </CardTitle>
-              <CardDescription>All your sales transactions</CardDescription>
+              <CardDescription className="text-slate-500">All your sales transactions</CardDescription>
             </CardHeader>
             <CardContent>
               {sales.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <ShoppingCart className="h-12 w-12 mx-auto mb-2" />
+                <div className="text-center py-8 text-slate-500">
+                  <ShoppingCart className="h-12 w-12 mx-auto mb-2 text-slate-400" />
                   <p>No sales yet. Start selling to see your history here.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-3 text-sm font-medium">Date</th>
-                        <th className="text-left p-3 text-sm font-medium">Product</th>
-                        <th className="text-left p-3 text-sm font-medium">Customer</th>
-                        <th className="text-left p-3 text-sm font-medium">Amount</th>
-                        <th className="text-left p-3 text-sm font-medium">Profit</th>
-                        <th className="text-left p-3 text-sm font-medium">Status</th>
+                      <tr className="border-b border-slate-200">
+                        <th className="text-left p-3 text-sm font-medium text-slate-700">Date</th>
+                        <th className="text-left p-3 text-sm font-medium text-slate-700">Product</th>
+                        <th className="text-left p-3 text-sm font-medium text-slate-700">Customer</th>
+                        <th className="text-left p-3 text-sm font-medium text-slate-700">Amount</th>
+                        <th className="text-left p-3 text-sm font-medium text-slate-700">Profit</th>
+                        <th className="text-left p-3 text-sm font-medium text-slate-700">Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {sales.map((sale) => (
-                        <tr key={sale.id} className="border-b hover:bg-muted/50">
-                          <td className="p-3 text-sm">{new Date(sale.created_at).toLocaleDateString()}</td>
+                        <tr key={sale.id} className="border-b border-slate-100 hover:bg-slate-50">
+                          <td className="p-3 text-sm text-slate-900">{new Date(sale.created_at).toLocaleDateString()}</td>
                           <td className="p-3 text-sm">
-                            <Badge variant="outline">{sale.product_type}</Badge>
-                            {sale.network && <span className="text-xs text-muted-foreground ml-1">({sale.network})</span>}
+                            <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300">{sale.product_type}</Badge>
+                            {sale.network && <span className="text-xs text-slate-600 ml-1">({sale.network})</span>}
                           </td>
-                          <td className="p-3 text-sm">{sale.customer_phone || '-'}</td>
-                          <td className="p-3 text-sm">GHS {parseFloat(String(sale.selling_price || 0)).toFixed(2)}</td>
-                          <td className="p-3 text-sm text-green-600">
+                          <td className="p-3 text-sm text-slate-600">{sale.customer_phone || '-'}</td>
+                          <td className="p-3 text-sm text-slate-600">GHS {parseFloat(String(sale.selling_price || 0)).toFixed(2)}</td>
+                          <td className="p-3 text-sm text-slate-700">
                             +GHS {parseFloat(String(sale.profit || 0)).toFixed(2)}
                           </td>
                           <td className="p-3 text-sm">
-                            <Badge variant={sale.status === 'completed' ? 'default' : 'secondary'}>
+                            <Badge variant={sale.status === 'completed' ? 'default' : 'secondary'} className={sale.status === 'completed' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'}>
                               {sale.status}
                             </Badge>
                           </td>
