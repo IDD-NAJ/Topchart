@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Megaphone, Copy, CheckCircle, Download, Link2, MousePointer, Users, Image, FileText, Video } from "lucide-react";
+import { Megaphone, Copy, CheckCircle, Download, Link2, MousePointer, Users, Image, FileText, Video, Trash2, Share2, MessageCircle } from "lucide-react";
 
 interface ReferralLink {
   id: string;
@@ -68,6 +68,29 @@ export default function ResellerMarketingPage() {
   const copyLink = (url: string) => {
     navigator.clipboard.writeText(url);
     toast.success("Link copied to clipboard");
+  };
+
+  const shareViaWhatsApp = (url: string) => {
+    const text = `Join Topchart Ghana and get amazing deals on airtime and data! Use my referral link: ${url}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const deleteLink = async (linkId: string) => {
+    try {
+      const res = await fetch(`/api/reseller/marketing?id=${linkId}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Link deleted");
+        setReferralLinks(prev => prev.filter(link => link.id !== linkId));
+      } else {
+        toast.error(data.error || "Failed to delete link");
+      }
+    } catch (error) {
+      toast.error("Failed to delete link");
+    }
   };
 
   const createReferralLink = async () => {
@@ -218,35 +241,57 @@ export default function ResellerMarketingPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {referralLinks.map((link) => (
-              <div key={link.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Link2 className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <code className="text-sm font-mono">{link.referral_code}</code>
-                    <p className="text-xs text-muted-foreground">{link.landing_page}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <div className="flex items-center gap-3 text-sm">
-                      <span><MousePointer className="h-3 w-3 inline mr-1" />{link.clicks || 0}</span>
-                      <span><Users className="h-3 w-3 inline mr-1" />{link.conversions || 0}</span>
+            {referralLinks.map((link) => {
+              const fullUrl = `${window.location.origin}/r/${link.referral_code}`;
+              return (
+                <div key={link.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Link2 className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <code className="text-sm font-mono">{link.referral_code}</code>
+                      <p className="text-xs text-muted-foreground">{fullUrl}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(link.created_at).toLocaleDateString()}
-                    </p>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => copyLink(`${window.location.origin}/r/${link.referral_code}`)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className="flex items-center gap-3 text-sm">
+                        <span><MousePointer className="h-3 w-3 inline mr-1" />{link.clicks || 0}</span>
+                        <span><Users className="h-3 w-3 inline mr-1" />{link.conversions || 0}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(link.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => shareViaWhatsApp(fullUrl)}
+                        title="Share on WhatsApp"
+                      >
+                        <MessageCircle className="h-4 w-4 text-green-600" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => copyLink(fullUrl)}
+                        title="Copy link"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => deleteLink(link.id)}
+                        title="Delete link"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {referralLinks.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <Link2 className="h-12 w-12 mx-auto mb-2" />

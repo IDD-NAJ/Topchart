@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
       password: body.password,
       firstName: body.firstName,
       lastName: body.lastName,
+      referralCode: body.referralCode,
     });
 
     if (result.success) {

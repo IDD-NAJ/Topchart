@@ -77,14 +77,17 @@ export async function register(formData: {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Look up referrer if referral code provided
+    // Look up reseller referrer if referral code provided
     let referredBy: string | null = null;
+    let referrerResellerId: string | null = null;
     if (referralCode) {
       const referrer = await sql`
-        SELECT id FROM users WHERE referral_code = ${referralCode.toUpperCase()}
+        SELECT id, user_id, reseller_code FROM reseller_profiles
+        WHERE reseller_code = ${referralCode.toUpperCase()}
       `;
       if (referrer.length > 0) {
-        referredBy = referrer[0].id;
+        referredBy = referrer[0].reseller_code;
+        referrerResellerId = referrer[0].id;
       }
     }
 
@@ -98,6 +101,25 @@ export async function register(formData: {
     `;
 
     const user = result[0] as User;
+
+    // Update reseller stats if referred
+    if (referrerResellerId) {
+      try {
+        await sql`
+          UPDATE reseller_profiles
+          SET total_referrals = total_referrals + 1
+          WHERE id = ${referrerResellerId}
+        `;
+        
+        // Also update any matching referral link conversion
+        await sql`
+          UPDATE reseller_referral_links
+          SET conversions = conversions + 1
+          WHERE reseller_id = ${referrerResellerId}
+            AND referral_code = ${referralCode?.toUpperCase()}
+        `;
+      } catch { /* ignore stats update errors */ }
+    }
 
     // Create session with explicit UUID
     const token = uuidv4();

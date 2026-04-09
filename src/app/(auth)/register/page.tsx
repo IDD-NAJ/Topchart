@@ -70,6 +70,18 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
+    // Check URL query params first
+    const urlParams = new URLSearchParams(window.location.search)
+    const urlRef = urlParams.get("ref")
+    
+    if (urlRef) {
+      localStorage.setItem("referral_code", urlRef)
+      setReferralCode(urlRef)
+      setFormData(prev => ({ ...prev, manualReferralCode: urlRef }))
+      return
+    }
+    
+    // Fall back to localStorage
     const storedCode = localStorage.getItem("referral_code")
     if (storedCode) {
       setReferralCode(storedCode)
