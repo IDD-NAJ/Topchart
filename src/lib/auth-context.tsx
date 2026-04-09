@@ -17,7 +17,7 @@ import {
 import { isAdmin as checkIsAdmin } from "@/lib/roles";
 import { InactivityWarningModal } from "@/components/inactivity-warning-modal";
 
-const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const WARNING_BEFORE_LOGOUT = 30 * 1000; // 30 seconds warning
 
 let _meInFlight: Promise<Response> | null = null;
@@ -231,13 +231,7 @@ const register = async (
     }
   };
 
-  // Auto logout disabled to prevent logout on refresh
-  // useEffect(() => {
-  //   if (!user) return;
-  //   return; // Early return to prevent auto-logout
-  // }, [user]);
-
-  // Inactivity tracking - Auto logout after 5 minutes
+  // Inactivity tracking - Auto logout after 30 minutes
   const clearAllTimers = useCallback(() => {
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
