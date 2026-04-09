@@ -65,8 +65,8 @@ export default function DashboardLayout({
       <DashboardSidebar />
         <div className="flex-1 flex flex-col lg:pl-64">
           <DashboardHeader />
-          <main className="flex-1 pt-16 lg:pt-20 pb-24 lg:pb-0">
-            <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-6xl">{children}</div>
+          <main className="flex-1 pt-16 lg:pt-20 pb-24 lg:pb-0 overflow-x-hidden">
+            <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-6xl w-full">{children}</div>
           </main>
           <div className="hidden lg:block">
             <DashboardFooter />
