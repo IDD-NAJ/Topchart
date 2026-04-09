@@ -135,7 +135,7 @@ export default function ResellerAnalyticsPage() {
             <DollarSign className="h-4 w-4 text-slate-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">GHS {summary.totalSales.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-slate-900">GHS {Number(summary.totalSales || 0).toFixed(2)}</div>
             <div className="flex items-center gap-1 text-xs mt-1">
               {trends.salesGrowth >= 0 ? (
                 <>
