@@ -53,6 +53,12 @@ export async function GET(request: NextRequest) {
         r.bank_account_number,
         r.bank_name,
         r.created_at,
+        r.logo_url,
+        r.phone_verified,
+        r.email_verified,
+        r.kyc_status,
+        r.security_score,
+        r.last_login_at,
         COALESCE(rt.name, 'BRONZE') as tier_name,
         rt.benefits as tier_benefits,
         u.email as business_email
@@ -128,7 +134,8 @@ export async function PUT(request: NextRequest) {
       business_email,
       bank_name,
       bank_account_name,
-      bank_account_number
+      bank_account_number,
+      logo_url
     } = body;
 
     // Verify user owns the reseller profile
@@ -155,6 +162,7 @@ export async function PUT(request: NextRequest) {
         bank_name = COALESCE(${bank_name}, bank_name),
         bank_account_name = COALESCE(${bank_account_name}, bank_account_name),
         bank_account_number = COALESCE(${bank_account_number}, bank_account_number),
+        logo_url = COALESCE(${logo_url}, logo_url),
         updated_at = NOW()
       WHERE id = ${resellerId}
     `;
@@ -188,6 +196,12 @@ export async function PUT(request: NextRequest) {
         r.bank_account_number,
         r.bank_name,
         r.created_at,
+        r.logo_url,
+        r.phone_verified,
+        r.email_verified,
+        r.kyc_status,
+        r.security_score,
+        r.last_login_at,
         COALESCE(rt.name, 'BRONZE') as tier_name,
         u.email as business_email
       FROM reseller_profiles r
