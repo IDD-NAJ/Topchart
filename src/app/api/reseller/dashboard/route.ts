@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
+import { finalizeResellerApplicationPayment } from "@/lib/reseller-payment";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
     
     const sessions = await sql`
-      SELECT u.id FROM auth_sessions s
+      SELECT u.id, u.role FROM auth_sessions s
       JOIN users u ON s.user_id = u.id
       WHERE s.token = ${sessionToken} AND s.expires_at > NOW()
       LIMIT 1
@@ -26,7 +27,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
     
-    const userId = (sessions[0] as { id: string }).id;
+    const sessionUser = sessions[0] as { id: string; role: string };
+    const userId = sessionUser.id;
     
     // Get reseller profile
     let profile: any[] = [];
@@ -35,10 +37,109 @@ export async function GET(request: NextRequest) {
         SELECT * FROM reseller_profiles
         WHERE user_id = ${userId}
       `;
-    } catch { profile = []; }
+    } catch (error) {
+      console.error("Error fetching reseller profile:", error);
+      return NextResponse.json(
+        { success: false, error: "Database error fetching profile" },
+        { status: 500 }
+      );
+    }
     
+    let applicationRows: unknown[] = [];
+    try {
+      applicationRows = await sql`
+        SELECT application_status, payment_status, created_at, updated_at
+        FROM reseller_applications
+        WHERE user_id = ${userId}
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+    } catch {
+      applicationRows = await sql`
+        SELECT application_status, payment_status, created_at
+        FROM reseller_applications
+        WHERE user_id = ${userId}
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+    }
+    const latestApplication = applicationRows[0] as
+      | {
+          application_status: string;
+          payment_status: string;
+          created_at: string;
+          updated_at: string;
+        }
+      | undefined;
+
     if (profile.length === 0) {
-      return NextResponse.json({ success: false, error: "Not a reseller" }, { status: 403 });
+      const looksApproved =
+        String(sessionUser.role || "").toUpperCase() === "RESELLER" ||
+        latestApplication?.payment_status === "paid" ||
+        latestApplication?.application_status === "approved";
+
+      if (looksApproved) {
+        try {
+          const latestTxRows = await sql`
+            SELECT id
+            FROM transactions
+            WHERE user_id = ${userId}
+              AND status = 'success'
+              AND (type = 'reseller_application' OR metadata->>'payment_type' = 'reseller_application')
+            ORDER BY created_at DESC
+            LIMIT 1
+          `;
+          const transactionId = (latestTxRows[0] as { id?: string } | undefined)?.id;
+          const latestApplicationIdRows = await sql`
+            SELECT id
+            FROM reseller_applications
+            WHERE user_id = ${userId}
+            ORDER BY created_at DESC
+            LIMIT 1
+          `;
+          const latestApplicationId =
+            (latestApplicationIdRows[0] as { id?: string } | undefined)?.id;
+
+          if (transactionId) {
+            const finalized = await finalizeResellerApplicationPayment({
+              transactionId,
+              applicationId: latestApplicationId,
+              actor: "system",
+              reason: "reseller_dashboard_profile_reconciliation",
+            });
+            if (!finalized.ok) {
+              console.warn("Reseller dashboard reconciliation skipped:", finalized.message);
+            }
+          }
+        } catch (reconciliationError) {
+          console.warn("Reseller dashboard reconciliation failed:", reconciliationError);
+        }
+
+        try {
+          profile = await sql`
+            SELECT * FROM reseller_profiles
+            WHERE user_id = ${userId}
+          `;
+        } catch {
+          profile = [];
+        }
+      }
+    }
+
+    if (profile.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Not a reseller",
+          state: {
+            role: sessionUser.role,
+            profile_exists: false,
+            application_status: latestApplication?.application_status || null,
+            payment_status: latestApplication?.payment_status || null,
+          },
+        },
+        { status: 403 }
+      );
     }
     
     const resellerId = (profile[0] as { id: string }).id;
@@ -74,6 +175,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       profile: profile[0],
+      state: {
+        role: sessionUser.role,
+        profile_exists: true,
+        application_status: latestApplication?.application_status || "approved",
+        payment_status: latestApplication?.payment_status || "paid",
+      },
       stats: {
         sales: sales[0],
         commissions: commissions[0],

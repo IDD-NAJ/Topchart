@@ -161,3 +161,65 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// DELETE - Delete a referral link
+export async function DELETE(request: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get("session_token")?.value;
+    
+    if (!sessionToken) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+    
+    const sessions = await sql`
+      SELECT u.id FROM auth_sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.token = ${sessionToken} AND s.expires_at > NOW()
+      LIMIT 1
+    `;
+    
+    if (!sessions.length) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+    
+    const userId = (sessions[0] as { id: string }).id;
+    
+    // Get reseller profile
+    let profile: any[] = [];
+    try {
+      profile = await sql`
+        SELECT * FROM reseller_profiles
+        WHERE user_id = ${userId}
+      `;
+    } catch { profile = []; }
+    
+    if (profile.length === 0) {
+      return NextResponse.json({ success: false, error: "Not a reseller" }, { status: 403 });
+    }
+    
+    const reseller = profile[0] as any;
+    
+    const url = new URL(request.url);
+    const linkId = url.searchParams.get("id");
+    
+    if (!linkId) {
+      return NextResponse.json({ success: false, error: "Link ID required" }, { status: 400 });
+    }
+    
+    // Delete the link (only if it belongs to this reseller)
+    await sql`
+      DELETE FROM reseller_referral_links
+      WHERE id = ${linkId} AND reseller_id = ${reseller.id}
+    `;
+    
+    return NextResponse.json({ success: true, message: "Link deleted" });
+    
+  } catch (error) {
+    console.error("Reseller marketing DELETE error:", error);
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

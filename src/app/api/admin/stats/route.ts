@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
             SELECT
               COALESCE(to_jsonb(s)->>'user_id', to_jsonb(s)->>'userId') AS user_id,
               COALESCE(to_jsonb(s)->>'expires_at', to_jsonb(s)->>'expiresAt') AS expires_at
-            FROM sessions s
+            FROM auth_sessions s
           `)
         : Promise.resolve([]);
 

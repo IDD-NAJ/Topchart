@@ -59,6 +59,34 @@ export default function ResellerSecurityPage() {
     }
   };
 
+  const resolveAlert = async (alertId: string) => {
+    try {
+      const res = await fetch("/api/reseller/security", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ alertId })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        toast.success("Alert resolved");
+        // Update local state
+        setFraudAlerts(prev => prev.map(alert => 
+          alert.id === alertId ? { ...alert, status: 'resolved' } : alert
+        ));
+        // Recalculate security score
+        const openAlerts = fraudAlerts.filter(a => a.id !== alertId && a.status === 'open').length;
+        setSecurityScore(Math.max(0, 100 - (openAlerts * 10)));
+      } else {
+        toast.error(data.error || "Failed to resolve alert");
+      }
+    } catch (error) {
+      toast.error("Failed to resolve alert");
+    }
+  };
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'high': return 'destructive';
@@ -174,6 +202,16 @@ export default function ResellerSecurityPage() {
                       </p>
                     </div>
                   </div>
+                  {alert.status === 'open' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => resolveAlert(alert.id)}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Resolve
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>

@@ -55,8 +55,8 @@ export function MobileBottomNav() {
   return (
     <>
       {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t z-50">
-        <div className="flex items-center justify-around p-2">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t z-50 pb-safe">
+        <div className="flex items-center justify-around px-1 py-2">
           {mainNavItems.map((item) => {
             const Icon = item.icon
             const active = pathname === item.href
@@ -65,12 +65,12 @@ export function MobileBottomNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors min-w-[64px]",
+                  "flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-lg transition-colors min-w-[60px] min-h-[48px]",
                   active ? "text-[#006994]" : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <Icon className="h-5 w-5" />
-                <span className="text-[10px] font-medium">{item.label}</span>
+                <Icon className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+                <span className="text-[9px] sm:text-[10px] font-medium leading-tight">{item.label}</span>
               </Link>
             )
           })}
@@ -80,14 +80,14 @@ export function MobileBottomNav() {
             <SheetTrigger asChild>
               <button
                 className={cn(
-                  "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors min-w-[64px]",
+                  "flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-lg transition-colors min-w-[60px] min-h-[48px]",
                   moreNavItems.some(item => pathname === item.href)
                     ? "text-[#006994]"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <MoreHorizontal className="h-5 w-5" />
-                <span className="text-[10px] font-medium">More</span>
+                <MoreHorizontal className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+                <span className="text-[9px] sm:text-[10px] font-medium leading-tight">More</span>
               </button>
             </SheetTrigger>
             <SheetContent side="bottom" className="h-auto max-h-[70vh]">

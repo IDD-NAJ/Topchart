@@ -53,8 +53,58 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
       );
     }
 
+    if (!application_id) {
+      return NextResponse.json(
+        { success: false, error: "Application ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const applicationRows = await sql`
+      SELECT id, payment_status, application_fee
+      FROM reseller_applications
+      WHERE id = ${application_id}
+        AND user_id = ${userId}
+      LIMIT 1
+    `;
+
+    if (applicationRows.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "Application not found" },
+        { status: 404 }
+      );
+    }
+
+    if ((applicationRows[0] as { payment_status: string }).payment_status === "paid") {
+      return NextResponse.json(
+        { success: false, error: "Application is already paid" },
+        { status: 400 }
+      );
+    }
+
+    const applicationFee = Number((applicationRows[0] as { application_fee?: number }).application_fee ?? 100);
+    if (Math.abs(amount - applicationFee) > 0.01) {
+      return NextResponse.json(
+        { success: false, error: "Invalid payment amount for this application" },
+        { status: 400 }
+      );
+    }
+
     // Generate unique reference
     const reference = `RSL-${generatePaystackReference()}`;
+
+    await sql`
+      UPDATE transactions
+      SET status = 'failed',
+          updated_at = NOW(),
+          metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+            superseded_at: new Date().toISOString(),
+            superseded_reason: "new_reseller_payment_reference_created",
+          })}::jsonb
+      WHERE type = 'reseller_application'
+        AND status = 'pending'
+        AND metadata->>'application_id' = ${application_id}
+    `;
 
     // Convert to pesewas (Paystack uses smallest currency unit)
     const amountInPesewas = Math.round(amount * 100);
@@ -92,6 +142,8 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
         ${JSON.stringify({
           application_id,
           payment_type: "reseller_application",
+          expected_amount: amount,
+          expected_currency: "GHS",
           initiated_at: new Date().toISOString(),
           ...metadata
         })}::jsonb,
@@ -141,24 +193,40 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
       WHERE reference = ${reference}
     `;
 
-    // Update application with payment reference
-    await sql`
-      UPDATE reseller_applications
-      SET payment_reference = ${reference},
-          payment_status = 'pending',
-          transaction_id = ${txId},
-          updated_at = NOW()
-      WHERE id = ${application_id}
-    `;
+    // Update application with payment reference (transaction_id may not exist yet)
+    try {
+      await sql`
+        UPDATE reseller_applications
+        SET payment_reference = ${reference},
+            payment_status = 'pending',
+            transaction_id = ${txId},
+            updated_at = NOW()
+        WHERE id = ${application_id}
+      `;
+    } catch {
+      await sql`
+        UPDATE reseller_applications
+        SET payment_reference = ${reference},
+            payment_status = 'pending',
+            updated_at = NOW()
+        WHERE id = ${application_id}
+      `;
+    }
+
+    const payload = {
+      authorization_url: result.data?.authorization_url,
+      access_code: result.data?.access_code,
+      reference: reference,
+      application_id: application_id,
+    };
 
     return NextResponse.json({
       success: true,
-      data: {
-        authorization_url: result.data?.authorization_url,
-        access_code: result.data?.access_code,
-        reference: reference,
-        application_id: application_id,
-      },
+      authorization_url: payload.authorization_url,
+      access_code: payload.access_code,
+      reference: payload.reference,
+      application_id: payload.application_id,
+      data: payload,
     });
   } catch (error) {
     console.error("Reseller payment initialization error:", error);

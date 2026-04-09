@@ -1,8 +1,9 @@
 import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
+import { getServerEnv } from "@/lib/env";
 
 function getCleanConnectionString(): string {
   const rawConnection =
-    process.env.DATABASE_URL ||
+    getServerEnv().DATABASE_URL ||
     process.env.NEON_DATABASE_URL ||
     process.env.NETLIFY_DATABASE_URL ||
     process.env.NEXT_PUBLIC_DATABASE_URL ||

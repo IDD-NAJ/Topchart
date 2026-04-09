@@ -55,7 +55,7 @@ async function main() {
           WHERE conname = 'chk_users_role' AND conrelid = 'public.users'::regclass
         ) THEN
           ALTER TABLE users
-          ADD CONSTRAINT chk_users_role CHECK (UPPER(role) IN ('USER', 'ADMIN'));
+          ADD CONSTRAINT chk_users_role CHECK (UPPER(role) IN ('USER', 'ADMIN', 'RESELLER'));
         END IF;
       END $$;
     `;

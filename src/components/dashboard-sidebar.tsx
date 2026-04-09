@@ -7,12 +7,12 @@ import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
-import { 
-  LayoutDashboard, 
-  Phone, 
-  Wifi, 
-  History, 
-  User, 
+import {
+  LayoutDashboard,
+  Phone,
+  Wifi,
+  History,
+  User,
   CreditCard,
   Settings,
   HelpCircle,
@@ -24,7 +24,16 @@ import {
   PhoneCall,
   ClipboardList,
   GraduationCap,
+  ShoppingCart,
+  Package,
+  BarChart3,
+  Shield,
+  Trophy,
+  Megaphone,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react"
+import { useState } from "react"
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -40,6 +49,17 @@ const resellerItems = [
   { href: "/dashboard/reseller", label: "Reseller Programme", icon: Store },
 ]
 
+const resellerExpandedItems = [
+  { href: "/dashboard/reseller", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/reseller/purchase", label: "Buy Wholesale", icon: ShoppingCart },
+  { href: "/dashboard/reseller/inventory", label: "My Inventory", icon: Package },
+  { href: "/dashboard/reseller/marketing", label: "Marketing Tools", icon: Megaphone },
+  { href: "/dashboard/reseller/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/dashboard/reseller/security", label: "Security Center", icon: Shield },
+  { href: "/dashboard/reseller/tiers", label: "Tier Progress", icon: Trophy },
+  { href: "/dashboard/reseller/profile", label: "Profile Settings", icon: User },
+]
+
 const secondaryItems = [
   { href: "/dashboard/profile", label: "Profile Settings", icon: User },
   { href: "/dashboard/wallet", label: "My Wallet", icon: CreditCard },
@@ -50,6 +70,10 @@ const secondaryItems = [
 export function DashboardSidebar() {
   const pathname = usePathname()
   const { user, logout } = useAuth()
+  const [resellerMenuOpen, setResellerMenuOpen] = useState(true)
+
+  const isReseller = user?.role === 'RESELLER'
+  const isResellerPage = pathname?.startsWith('/dashboard/reseller')
 
   return (
     <motion.aside
@@ -107,25 +131,74 @@ export function DashboardSidebar() {
             Business
           </h3>
           <nav className="space-y-1">
-            {resellerItems.map((item) => {
-              const active = pathname === item.href
-              const Icon = item.icon
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
+            {!isReseller ? (
+              // Simple menu for non-resellers
+              resellerItems.map((item) => {
+                const active = pathname === item.href
+                const Icon = item.icon
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all group",
+                      active
+                        ? "bg-[#722F37]/10 text-[#722F37]"
+                        : "text-muted-foreground hover:text-[#722F37] hover:bg-[#FDF2F3]"
+                    )}
+                  >
+                    <Icon className={cn("h-4 w-4", active ? "text-[#722F37]" : "group-hover:text-[#722F37]")} />
+                    {item.label}
+                  </Link>
+                )
+              })
+            ) : (
+              // Expanded menu for resellers
+              <>
+                <button
+                  onClick={() => setResellerMenuOpen(!resellerMenuOpen)}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all group",
-                    active
+                    "w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition-all group",
+                    isResellerPage
                       ? "bg-[#722F37]/10 text-[#722F37]"
                       : "text-muted-foreground hover:text-[#722F37] hover:bg-[#FDF2F3]"
                   )}
                 >
-                  <Icon className={cn("h-4 w-4", active ? "text-[#722F37]" : "group-hover:text-[#722F37]")} />
-                  {item.label}
-                </Link>
-              )
-            })}
+                  <div className="flex items-center gap-3">
+                    <Store className={cn("h-4 w-4", isResellerPage ? "text-[#722F37]" : "group-hover:text-[#722F37]")} />
+                    <span>Reseller Hub</span>
+                  </div>
+                  {resellerMenuOpen ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </button>
+                {resellerMenuOpen && (
+                  <div className="ml-4 mt-1 space-y-1">
+                    {resellerExpandedItems.map((item) => {
+                      const active = pathname === item.href
+                      const Icon = item.icon
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className={cn(
+                            "flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all group",
+                            active
+                              ? "bg-[#722F37]/10 text-[#722F37]"
+                              : "text-muted-foreground hover:text-[#722F37] hover:bg-[#FDF2F3]"
+                          )}
+                        >
+                          <Icon className={cn("h-4 w-4", active ? "text-[#722F37]" : "group-hover:text-[#722F37]")} />
+                          {item.label}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </>
+            )}
           </nav>
         </div>
 

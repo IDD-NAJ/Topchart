@@ -1,5 +1,8 @@
-const PVADEALS_BASE_URL = process.env.PVADEALS_BASE_URL || "https://prod-v3.pvadeals.com";
-const PVADEALS_API_KEY = process.env.PVADEALS_API_KEY || "";
+import { getServerEnv } from "@/lib/env";
+
+const env = getServerEnv();
+const PVADEALS_BASE_URL = env.PVADEALS_BASE_URL || "https://prod-v3.pvadeals.com";
+const PVADEALS_API_KEY = env.PVADEALS_API_KEY || "";
 
 export interface PVAService {
   _id: string;
@@ -211,5 +214,5 @@ export function mapCategoryByName(name: string): string {
   return "social_media";
 }
 
-export const USD_TO_GHS_RATE = parseFloat(process.env.USD_TO_GHS_RATE || "15.5");
-export const DEFAULT_MARKUP_PERCENT = parseFloat(process.env.PVADEALS_MARKUP_PERCENT || "40");
+export const USD_TO_GHS_RATE = parseFloat(env.USD_TO_GHS_RATE || "15.5");
+export const DEFAULT_MARKUP_PERCENT = parseFloat(env.PVADEALS_MARKUP_PERCENT || "40");

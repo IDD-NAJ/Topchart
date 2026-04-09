@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { BarChart3, TrendingUp, TrendingDown, DollarSign, Users, ShoppingCart, MapPin, Calendar } from "lucide-react";
 
@@ -32,7 +33,9 @@ export default function ResellerAnalyticsPage() {
     totalSales: 0,
     totalCommission: 0,
     totalReferrals: 0,
-    avgDailySales: 0
+    avgDailySales: 0,
+    totalProfit: 0,
+    transactionCount: 0
   });
   const [dailyStats, setDailyStats] = useState<DailyStat[]>([]);
   const [geoStats, setGeoStats] = useState<GeoStat[]>([]);
@@ -41,15 +44,17 @@ export default function ResellerAnalyticsPage() {
     salesGrowth: 0,
     commissionGrowth: 0
   });
+  const [commissionHistory, setCommissionHistory] = useState<any[]>([]);
+  const [period, setPeriod] = useState<"7d" | "30d" | "90d">("30d");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadAnalyticsData();
-  }, []);
+    loadAnalyticsData(period);
+  }, [period]);
 
-  const loadAnalyticsData = async () => {
+  const loadAnalyticsData = async (selectedPeriod: string = "30d") => {
     try {
-      const res = await fetch("/api/reseller/analytics", {
+      const res = await fetch(`/api/reseller/analytics?period=${selectedPeriod}`, {
         credentials: "include"
       });
       const data = await res.json();
@@ -60,6 +65,7 @@ export default function ResellerAnalyticsPage() {
         setGeoStats(data.geographicStats);
         setCategoryStats(data.salesByCategory);
         setTrends(data.trends);
+        setCommissionHistory(data.commissionHistory || []);
       }
     } catch (error) {
       toast.error("Failed to load analytics data");
@@ -100,8 +106,24 @@ export default function ResellerAnalyticsPage() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold">Advanced Analytics</h1>
-        <p className="text-muted-foreground">Track your sales, commissions, and performance metrics</p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold">Advanced Analytics</h1>
+            <p className="text-muted-foreground">Track your sales, commissions, and performance metrics</p>
+          </div>
+          <div className="flex gap-2">
+            {(["7d", "30d", "90d"] as const).map((p) => (
+              <Button
+                key={p}
+                variant={period === p ? "default" : "outline"}
+                size="sm"
+                onClick={() => setPeriod(p)}
+              >
+                {p === "7d" ? "7 Days" : p === "30d" ? "30 Days" : "90 Days"}
+              </Button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -285,6 +307,46 @@ export default function ResellerAnalyticsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Commission History */}
+      {commissionHistory.length > 0 && (
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Commission History</CardTitle>
+            <CardDescription>Recent commissions earned from referrals</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-3 text-sm font-medium">Date</th>
+                    <th className="text-left p-3 text-sm font-medium">Referred User</th>
+                    <th className="text-left p-3 text-sm font-medium">Transaction</th>
+                    <th className="text-left p-3 text-sm font-medium">Amount</th>
+                    <th className="text-left p-3 text-sm font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {commissionHistory.map((commission) => (
+                    <tr key={commission.id} className="border-b hover:bg-muted/50">
+                      <td className="p-3 text-sm">{new Date(commission.created_at).toLocaleDateString()}</td>
+                      <td className="p-3 text-sm">{commission.first_name} {commission.last_name}</td>
+                      <td className="p-3 text-sm">GHS {parseFloat(commission.transaction_amount || 0).toFixed(2)}</td>
+                      <td className="p-3 text-sm font-medium">GHS {parseFloat(commission.commission_amount || 0).toFixed(2)}</td>
+                      <td className="p-3 text-sm">
+                        <Badge variant={commission.status === 'paid' ? 'default' : 'secondary'}>
+                          {commission.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

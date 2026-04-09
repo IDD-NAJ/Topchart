@@ -465,8 +465,8 @@ export default function VerificationPage() {
                     <p className="text-sm text-muted-foreground">No services found. Sync from PVADeals to populate.</p>
                   </div>
                 ) : (
-                  <div className="rounded-lg border overflow-hidden">
-                    <table className="w-full text-xs">
+                  <div className="rounded-lg border overflow-hidden overflow-x-auto">
+                    <table className="w-full text-xs min-w-[600px]">
                       <thead className="bg-muted/60">
                         <tr>
                           <th className="px-3 py-2 text-left font-medium text-muted-foreground">Service</th>

@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     "*.daytona.works",
     "*.proxy.daytona.works",
     "localhost:3000",
+    "127.0.0.1:3000",
   ],
   experimental: {
     serverActions: {
@@ -32,7 +33,7 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 };
 

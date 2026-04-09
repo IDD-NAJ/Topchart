@@ -1,6 +1,5 @@
 [build]
-  command = "rm -rf .next && npm run build"
-  publish = ".next"
+  command = "npm run build"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
@@ -9,7 +8,6 @@
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
   NEXT_TELEMETRY_DISABLED = "1"
-  NEXT_SKIP_TYPE_CHECK = "true"
 
 # Headers for security and caching
 [[headers]]
@@ -28,3 +26,4 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"

@@ -3,9 +3,30 @@ import { NextRequest, NextResponse } from "next/server";
 import { sql, sqlUnsafe } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 import { withCSRFProtection } from "@/lib/csrf-middleware";
+import { finalizeResellerApplicationPayment } from "@/lib/reseller-payment";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+async function ensureUsersRoleConstraintSupportsReseller(): Promise<void> {
+  await sqlUnsafe(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'chk_users_role'
+          AND conrelid = 'public.users'::regclass
+      ) THEN
+        ALTER TABLE public.users DROP CONSTRAINT chk_users_role;
+      END IF;
+
+      ALTER TABLE public.users
+      ADD CONSTRAINT chk_users_role CHECK (UPPER(role) IN ('USER', 'ADMIN', 'RESELLER'));
+    END
+    $$;
+  `);
+}
 
 // GET - Check application status or list applications (admin)
 export async function GET(request: NextRequest) {
@@ -15,9 +36,31 @@ export async function GET(request: NextRequest) {
     
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") || "all";
+    const applicationId = searchParams.get("id");
     
     // Admin can see all applications
     if (isAdmin) {
+      if (applicationId) {
+        const applicationRows = await sql`
+          SELECT 
+            ra.*,
+            u.email as user_email,
+            u.first_name,
+            u.last_name,
+            reviewer.email as reviewer_email
+          FROM reseller_applications ra
+          JOIN users u ON ra.user_id = u.id
+          LEFT JOIN users reviewer ON ra.reviewed_by = reviewer.id
+          WHERE ra.id = ${applicationId}
+          LIMIT 1
+        `;
+
+        return NextResponse.json({
+          success: true,
+          application: applicationRows[0] || null
+        });
+      }
+
       let query = `
         SELECT 
           ra.*,
@@ -65,12 +108,18 @@ export async function GET(request: NextRequest) {
     
     let application: any[] = [];
     try {
-      application = await sql`
-        SELECT * FROM reseller_applications
-        WHERE user_id = ${userId}
-        ORDER BY created_at DESC
-        LIMIT 1
-      `;
+      application = applicationId
+        ? await sql`
+            SELECT * FROM reseller_applications
+            WHERE user_id = ${userId} AND id = ${applicationId}
+            LIMIT 1
+          `
+        : await sql`
+            SELECT * FROM reseller_applications
+            WHERE user_id = ${userId}
+            ORDER BY created_at DESC
+            LIMIT 1
+          `;
     } catch { application = []; }
     
     return NextResponse.json({ 
@@ -144,13 +193,13 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
       const app = existingApp[0] as any;
       if (app.application_status === "pending") {
         return NextResponse.json(
-          { success: false, error: "You already have a pending application" },
+          { success: false, error: "You already have a pending application", application: app },
           { status: 409 }
         );
       }
       if (app.application_status === "approved") {
         return NextResponse.json(
-          { success: false, error: "You are already a reseller" },
+          { success: false, error: "You are already a reseller", application: app },
           { status: 409 }
         );
       }
@@ -166,33 +215,67 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
     } catch { configResult = []; }
     const applicationFee = configResult[0]?.fee ? parseFloat(configResult[0].fee) : 100.00;
     
-    // Create new application with custom fields
-    const application = await sql`
-      INSERT INTO reseller_applications (
-        user_id,
-        business_name,
-        business_address,
-        business_phone,
-        business_email,
-        business_type,
-        custom_fields,
-        application_status,
-        application_fee,
-        payment_status
-      ) VALUES (
-        ${user.id},
-        ${business_name},
-        ${business_address || null},
-        ${business_phone || null},
-        ${business_email || null},
-        ${business_type || null},
-        ${JSON.stringify(customFields)}::jsonb,
-        'pending',
-        ${applicationFee},
-        'pending'
-      )
-      RETURNING *
-    `;
+    // Create new application — try with custom_fields, fall back without if column missing
+    let application: any[] = [];
+    try {
+      application = await sql`
+        INSERT INTO reseller_applications (
+          user_id,
+          business_name,
+          business_address,
+          business_phone,
+          business_email,
+          business_type,
+          custom_fields,
+          application_status,
+          application_fee,
+          payment_status
+        ) VALUES (
+          ${user.id},
+          ${business_name},
+          ${business_address || null},
+          ${business_phone || null},
+          ${business_email || null},
+          ${business_type || null},
+          ${JSON.stringify(customFields)}::jsonb,
+          'pending',
+          ${applicationFee},
+          'pending'
+        )
+        RETURNING *
+      `;
+    } catch (insertErr: any) {
+      const msg = insertErr?.message || "";
+      if (msg.includes("custom_fields") || msg.includes("column")) {
+        // Column missing — retry without custom_fields
+        application = await sql`
+          INSERT INTO reseller_applications (
+            user_id,
+            business_name,
+            business_address,
+            business_phone,
+            business_email,
+            business_type,
+            application_status,
+            application_fee,
+            payment_status
+          ) VALUES (
+            ${user.id},
+            ${business_name},
+            ${business_address || null},
+            ${business_phone || null},
+            ${business_email || null},
+            ${business_type || null},
+            'pending',
+            ${applicationFee},
+            'pending'
+          )
+          RETURNING *
+        `;
+      } else {
+        throw insertErr;
+      }
+    }
     
     return NextResponse.json({
       success: true,
@@ -232,19 +315,35 @@ export const PATCH = withCSRFProtection(async (request: NextRequest) => {
     
     // Handle payment confirmation
     if (confirm_payment) {
-      const updated = await sql`
-        UPDATE reseller_applications
-        SET 
-          payment_status = 'paid',
-          updated_at = NOW()
-        WHERE id = ${application_id}
-        RETURNING *
+      const txRows = await sql`
+        SELECT id
+        FROM transactions
+        WHERE metadata->>'application_id' = ${application_id}
+          AND (type = 'reseller_application' OR metadata->>'payment_type' = 'reseller_application')
+        ORDER BY created_at DESC
+        LIMIT 1
       `;
-      
+      const transactionId = (txRows[0] as { id?: string } | undefined)?.id;
+      if (!transactionId) {
+        return NextResponse.json(
+          { success: false, error: "No payment transaction found for this application" },
+          { status: 400 }
+        );
+      }
+      const finalized = await finalizeResellerApplicationPayment({
+        transactionId,
+        actor: "admin",
+        reason: "admin_confirm_payment_from_reseller_apply_route",
+      });
+      if (!finalized.ok) {
+        return NextResponse.json(
+          { success: false, error: finalized.message },
+          { status: 400 }
+        );
+      }
       return NextResponse.json({
         success: true,
-        message: "Payment confirmed",
-        application: updated[0]
+        message: finalized.message
       });
     }
     
@@ -333,11 +432,33 @@ export const PATCH = withCSRFProtection(async (request: NextRequest) => {
         `;
         
         // Update user role to RESELLER
-        await sql`
-          UPDATE users
-          SET role = 'RESELLER'
-          WHERE id = ${app.user_id}
-        `;
+        try {
+          await sql`
+            UPDATE users
+            SET role = 'RESELLER'
+            WHERE id = ${app.user_id}
+          `;
+        } catch (userRoleError: unknown) {
+          const errorMessage =
+            typeof userRoleError === "object" &&
+            userRoleError !== null &&
+            "message" in userRoleError &&
+            typeof (userRoleError as { message?: unknown }).message === "string"
+              ? (userRoleError as { message: string }).message
+              : "";
+          const isRoleConstraintError = errorMessage.includes("chk_users_role");
+          if (!isRoleConstraintError) {
+            throw userRoleError;
+          }
+
+          await ensureUsersRoleConstraintSupportsReseller();
+
+          await sql`
+            UPDATE users
+            SET role = 'RESELLER'
+            WHERE id = ${app.user_id}
+          `;
+        }
       }
     }
     
