@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +14,7 @@ import { ErrorBoundary, useErrorHandler } from "@/components/error-boundary";
 import { secureFetch } from "@/lib/csrf";
 import { saveFormData, loadFormData, clearFormData, hasCachedData } from "@/lib/form-cache";
 import { useFormCache } from "@/hooks/use-form-cache";
-import { Store, ArrowLeft, ArrowRight, Loader2, CreditCard, CheckCircle, AlertCircle, Circle, Check, RotateCcw, CloudUpload } from "lucide-react";
+import { Store, ArrowLeft, ArrowRight, Loader2, CreditCard, CheckCircle, AlertCircle, Circle, Check, RotateCcw, CloudUpload, Wallet } from "lucide-react";
 
 interface FormField {
   enabled: boolean;
@@ -46,15 +48,17 @@ interface ValidationErrors {
 }
 
 function ResellerApplyContent() {
+  const router = useRouter();
   const { captureError } = useErrorHandler();
   const [loading, setLoading] = useState(false);
   const [configLoading, setConfigLoading] = useState(true);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [currentStep, setCurrentStep] = useState(1);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [paymentMethod, setPaymentMethod] = useState<"paystack" | "wallet">("paystack");
+  const [walletBalance, setWalletBalance] = useState<number>(0);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [config, setConfig] = useState<FormConfig>({
     business_name: { enabled: true, required: true },
@@ -89,6 +93,11 @@ function ResellerApplyContent() {
 
   useEffect(() => {
     loadFormConfig();
+    loadWalletBalance();
+    
+    // Initialize CSRF token
+    const { getCSRFToken } = require("@/lib/csrf");
+    getCSRFToken();
     
     // Check for cached form data
     if (hasCachedData()) {
@@ -98,6 +107,20 @@ function ResellerApplyContent() {
       }
     }
   }, []);
+
+  const loadWalletBalance = async () => {
+    try {
+      const res = await fetch("/api/wallet", {
+        credentials: "include"
+      });
+      const data = await res.json();
+      if (data.success) {
+        setWalletBalance(data.data?.balance || 0);
+      }
+    } catch (error) {
+      console.error("Failed to load wallet balance:", error);
+    }
+  };
 
   const loadFormConfig = async () => {
     try {
@@ -169,7 +192,7 @@ function ResellerApplyContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowConfirmDialog(true);
+    await confirmSubmit();
   };
 
   const confirmSubmit = async () => {
@@ -178,7 +201,6 @@ function ResellerApplyContent() {
       return;
     }
 
-    setShowConfirmDialog(false);
     setLoading(true);
 
     try {
@@ -191,6 +213,88 @@ function ResellerApplyContent() {
       });
 
       if (!applyRes.ok) {
+        // Handle 409 Conflict - user already has pending application or is already a reseller
+        if (applyRes.status === 409) {
+          const conflictData = await applyRes.json().catch(() => ({ error: "Application already exists", application: null }));
+          const errorMsg = conflictData.error || "You already have an application";
+          
+          // Redirect based on status
+          if (errorMsg.includes("already a reseller")) {
+            toast.info("You are already a reseller!");
+            window.location.href = "/dashboard/reseller";
+            return;
+          } else if (conflictData.application && conflictData.application.payment_status !== "paid") {
+            // Application exists but not paid - handle payment inline
+            const application = conflictData.application;
+            console.log("[DEBUG] Application already exists, processing payment inline, application_id:", application.id);
+            
+            if (config.require_payment_before_approval && config.application_fee > 0) {
+              if (paymentMethod === "wallet") {
+                // Wallet payment
+                console.log("[DEBUG] Processing wallet payment for existing application");
+                const walletRes = await secureFetch("/api/reseller/payment/wallet", {
+                  method: "POST",
+                  credentials: "include",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    application_id: application.id,
+                    amount: config.application_fee
+                  })
+                });
+                if (!walletRes.ok) {
+                  const walletError = await walletRes.json().catch(() => ({}));
+                  throw new Error(walletError.error || `Wallet payment failed (HTTP ${walletRes.status})`);
+                }
+                
+                const walletData = await walletRes.json();
+                
+                if (walletData.success) {
+                  toast.success("Payment successful! Your application has been approved.");
+                  router.push("/dashboard/reseller/status");
+                } else {
+                  throw new Error(walletData.error || "Wallet payment failed");
+                }
+              } else {
+                // Paystack payment
+                console.log("[DEBUG] Initializing Paystack payment for existing application");
+                const paystackRes = await secureFetch("/api/reseller/payment/initialize", {
+                  method: "POST",
+                  credentials: "include",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    application_id: application.id,
+                    amount: config.application_fee,
+                    payment_method: "paystack"
+                  })
+                });
+                if (!paystackRes.ok) {
+                  const paystackError = await paystackRes.json().catch(() => ({}));
+                  throw new Error(paystackError.error || `Failed to initialize payment (HTTP ${paystackRes.status})`);
+                }
+                
+                const paystackData = await paystackRes.json();
+                
+                const authorizationUrl = paystackData.authorization_url || paystackData.data?.authorization_url;
+                
+                if (paystackData.success && authorizationUrl) {
+                  toast.success("Redirecting to payment...");
+                  window.location.href = authorizationUrl;
+                } else {
+                  throw new Error(paystackData.error || "Failed to initialize payment");
+                }
+              }
+            } else {
+              // No payment required - redirect to status page
+              toast.info(errorMsg);
+              router.push("/dashboard/reseller/status");
+            }
+          } else {
+            // Application exists and paid - redirect to status page
+            toast.info(errorMsg);
+            router.push("/dashboard/reseller/status");
+          }
+          return;
+        }
         throw new Error(`HTTP ${applyRes.status}: ${applyRes.statusText}`);
       }
 
@@ -200,41 +304,64 @@ function ResellerApplyContent() {
         throw new Error(applyData.error || "Failed to submit application");
       }
 
-      // Step 2: Initialize Paystack payment
+      // Step 3: Handle payment based on selected method
       if (config.require_payment_before_approval && config.application_fee > 0) {
-        toast.info("Initializing payment...");
-        
-        const paymentRes = await secureFetch("/api/reseller/payment/initialize", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amount: config.application_fee,
-            application_id: applyData.application.id,
-            metadata: {
-              business_name: formData.business_name,
-              business_type: formData.business_type
-            }
-          })
-        });
-
-        if (!paymentRes.ok) {
-          throw new Error(`HTTP ${paymentRes.status}: ${paymentRes.statusText}`);
-        }
-
-        const paymentData = await paymentRes.json();
-
-        if (paymentData.success && paymentData.data?.authorization_url) {
-          // Redirect to Paystack checkout
-          window.location.href = paymentData.data.authorization_url;
+        if (paymentMethod === "wallet") {
+          // Wallet payment
+          const walletRes = await secureFetch("/api/reseller/payment/wallet", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              application_id: applyData.application.id,
+              amount: config.application_fee
+            })
+          });
+          if (!walletRes.ok) {
+            const walletError = await walletRes.json().catch(() => ({}));
+            throw new Error(walletError.error || `Wallet payment failed (HTTP ${walletRes.status})`);
+          }
+          
+          const walletData = await walletRes.json();
+          
+          if (walletData.success) {
+            toast.success("Payment successful! Your application has been approved.");
+            router.push("/dashboard/reseller/status");
+          } else {
+            throw new Error(walletData.error || "Wallet payment failed");
+          }
         } else {
-          throw new Error(paymentData.error || "Failed to initialize payment");
+          // Paystack payment
+          const paystackRes = await secureFetch("/api/reseller/payment/initialize", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              application_id: applyData.application.id,
+              amount: config.application_fee,
+              payment_method: "paystack"
+            })
+          });
+          if (!paystackRes.ok) {
+            const paystackError = await paystackRes.json().catch(() => ({}));
+            throw new Error(paystackError.error || `Failed to initialize payment (HTTP ${paystackRes.status})`);
+          }
+          
+          const paystackData = await paystackRes.json();
+          
+          const authorizationUrl = paystackData.authorization_url || paystackData.data?.authorization_url;
+          
+          if (paystackData.success && authorizationUrl) {
+            toast.success("Application submitted! Redirecting to payment...");
+            window.location.href = authorizationUrl;
+          } else {
+            throw new Error(paystackData.error || "Failed to initialize payment");
+          }
         }
       } else {
-        // No payment required, go directly to reseller dashboard
+        // No payment required - redirect to status page
         toast.success("Application submitted successfully!");
-        clearCache(); // Clear cache after successful submission
-        window.location.href = "/dashboard/reseller";
+        router.push("/dashboard/reseller/status");
       }
     } catch (error) {
       console.error("Application submission error:", error);
@@ -645,6 +772,78 @@ function ResellerApplyContent() {
                     <span className="text-sm font-bold text-[#006994]">{config.currency} {config.application_fee?.toFixed(2)}</span>
                   </div>
                 </div>
+
+                {config.require_payment_before_approval && config.application_fee > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-foreground">Select Payment Method</h4>
+                    
+                    <Button
+                      type="button"
+                      variant={paymentMethod === "paystack" ? "default" : "outline"}
+                      className={`w-full h-auto py-4 justify-between ${paymentMethod === "paystack" ? "bg-[#006994] text-white hover:bg-[#00567A]" : ""}`}
+                      onClick={() => setPaymentMethod("paystack")}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${paymentMethod === "paystack" ? "bg-white/20" : "bg-blue-100"}`}>
+                          <CreditCard className={`h-5 w-5 ${paymentMethod === "paystack" ? "text-white" : "text-blue-600"}`} />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-medium">Pay with Card/Bank</p>
+                          <p className="text-xs text-muted-foreground">Secure payment via Paystack</p>
+                        </div>
+                      </div>
+                      {paymentMethod === "paystack" && <CheckCircle className="h-5 w-5" />}
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant={paymentMethod === "wallet" ? "default" : "outline"}
+                      className={`w-full h-auto py-4 justify-between ${paymentMethod === "wallet" ? "bg-[#006994] text-white hover:bg-[#00567A]" : ""}`}
+                      onClick={() => setPaymentMethod("wallet")}
+                      disabled={walletBalance < config.application_fee}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${paymentMethod === "wallet" ? "bg-white/20" : "bg-green-100"}`}>
+                          <Wallet className={`h-5 w-5 ${paymentMethod === "wallet" ? "text-white" : "text-green-600"}`} />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-medium">Pay with Wallet</p>
+                          <p className="text-xs text-muted-foreground">
+                            Balance: {config.currency} {walletBalance.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                      {walletBalance < config.application_fee ? (
+                        <span className="text-xs text-red-600">Insufficient</span>
+                      ) : paymentMethod === "wallet" ? (
+                        <CheckCircle className="h-5 w-5" />
+                      ) : null}
+                    </Button>
+                    {walletBalance < config.application_fee && (
+                      <p className="text-xs text-red-600">
+                        Wallet balance is insufficient.{" "}
+                        <Link href="/dashboard/wallet" className="underline">
+                          Fund wallet
+                        </Link>
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex items-start space-x-2 pt-2">
+                  <Checkbox
+                    id="terms"
+                    checked={acceptedTerms}
+                    onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                  />
+                  <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
+                    I agree to the{" "}
+                    <a href="/terms" target="_blank" className="text-[#006994] hover:underline">
+                      Terms and Conditions
+                    </a>{" "}
+                    and understand that my application will be reviewed after payment confirmation.
+                  </Label>
+                </div>
               </div>
             )}
 
@@ -676,8 +875,8 @@ function ResellerApplyContent() {
                 <Button
                   type="submit"
                   className="bg-[#006994] text-white hover:bg-[#00567A] h-11"
-                  disabled={loading}
-                  aria-disabled={loading}
+                  disabled={loading || !acceptedTerms}
+                  aria-disabled={loading || !acceptedTerms}
                   aria-busy={loading}
                 >
                   {loading ? (
@@ -697,91 +896,6 @@ function ResellerApplyContent() {
           </form>
         </CardContent>
       </Card>
-
-      {/* Confirmation Dialog */}
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent className="max-w-md mx-4">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-[#006994]" />
-              Confirm Application
-            </DialogTitle>
-            <DialogDescription>
-              Please review your application details before submitting.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="bg-muted p-4 rounded-lg space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Business Name:</span>
-                <span className="font-medium">{formData.business_name}</span>
-              </div>
-              {config.business_address.enabled && formData.business_address && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Address:</span>
-                  <span className="font-medium">{formData.business_address}</span>
-                </div>
-              )}
-              {config.business_phone.enabled && formData.business_phone && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Phone:</span>
-                  <span className="font-medium">{formData.business_phone}</span>
-                </div>
-              )}
-              {config.business_type.enabled && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Type:</span>
-                  <span className="font-medium capitalize">{formData.business_type}</span>
-                </div>
-              )}
-              <div className="border-t pt-2 mt-2">
-                <div className="flex justify-between text-lg font-semibold">
-                  <span>Application Fee:</span>
-                  <span>{config.currency} {config.application_fee?.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-2">
-              <Checkbox
-                id="terms"
-                checked={acceptedTerms}
-                onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
-              />
-              <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
-                I agree to the{" "}
-                <a href="/terms" target="_blank" className="text-[#006994] hover:underline">
-                  Terms and Conditions
-                </a>{" "}
-                and understand that my application will be reviewed after payment confirmation.
-              </Label>
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={confirmSubmit}
-              disabled={!acceptedTerms || loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Pay & Submit
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Restore Draft Dialog */}
       <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>

@@ -1,3 +1,6 @@
+import { getServerEnv } from "@/lib/env";
+
+const env = getServerEnv();
 /**
  * Textverified API Client
  * 
@@ -5,8 +8,8 @@
  * API Documentation: https://docs.textverified.com
  */
 
-const TEXTVERIFIED_API_URL = process.env.TEXTVERIFIED_API_URL || "https://api.textverified.com";
-const TEXTVERIFIED_API_KEY = process.env.TEXTVERIFIED_API_KEY || "";
+const TEXTVERIFIED_API_URL = env.TEXTVERIFIED_API_URL || "https://api.textverified.com";
+const TEXTVERIFIED_API_KEY = env.TEXTVERIFIED_API_KEY || "";
 
 interface TextverifiedService {
   id: string;

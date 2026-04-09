@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle, XCircle, ArrowRight } from "lucide-react";
+import { Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function PaymentCallbackPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
   const [message, setMessage] = useState("Verifying your payment...");
 
@@ -16,7 +17,7 @@ export default function PaymentCallbackPage() {
   const applicationId = searchParams.get("application_id");
 
   useEffect(() => {
-    if (reference && applicationId) {
+    if (reference) {
       verifyPayment();
     } else {
       setStatus("failed");
@@ -30,21 +31,24 @@ export default function PaymentCallbackPage() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reference, application_id: applicationId }),
+        body: JSON.stringify({ reference, application_id: applicationId || undefined }),
       });
 
       const data = await res.json();
 
       if (data.success) {
         setStatus("success");
-        setMessage("Payment successful! Your reseller application has been submitted.");
+        setMessage("Payment verified. Redirecting to your reseller status...");
         toast.success("Payment verified successfully");
+        setTimeout(() => {
+          router.replace("/dashboard/reseller/status");
+        }, 800);
       } else {
         setStatus("failed");
         setMessage(data.error || "Payment verification failed");
         toast.error(data.error || "Payment verification failed");
       }
-    } catch (error) {
+    } catch {
       setStatus("failed");
       setMessage("Network error while verifying payment");
       toast.error("Network error");
@@ -60,46 +64,36 @@ export default function PaymentCallbackPage() {
               <Loader2 className="h-12 w-12 animate-spin text-[#006994] mx-auto" />
             )}
             {status === "success" && (
-              <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
+              <Loader2 className="h-12 w-12 animate-spin text-[#006994] mx-auto" />
             )}
             {status === "failed" && (
               <XCircle className="h-12 w-12 text-red-500 mx-auto" />
             )}
           </div>
           <CardTitle>
-            {status === "loading" && "Processing Payment"}
-            {status === "success" && "Payment Successful"}
-            {status === "failed" && "Payment Failed"}
+            {status === "failed" ? "Payment Failed" : "Processing Payment"}
           </CardTitle>
           <CardDescription>{message}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {status === "success" && (
-            <>
-              <p className="text-sm text-muted-foreground text-center">
-                Your application is now pending admin review. You will be notified once approved.
-              </p>
-              <Button 
-                className="w-full" 
-                onClick={() => window.location.href = "/dashboard/reseller"}
-              >
-                Go to Reseller Dashboard
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </>
-          )}
+        <CardContent className="space-y-3">
           {status === "failed" && (
             <>
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                onClick={() => window.location.href = "/dashboard/reseller/apply"}
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() =>
+                  router.push(
+                    applicationId
+                      ? `/dashboard/reseller/payment?application_id=${encodeURIComponent(applicationId)}`
+                      : "/dashboard/reseller/status"
+                  )
+                }
               >
                 Try Again
               </Button>
-              <Button 
-                className="w-full" 
-                onClick={() => window.location.href = "/dashboard"}
+              <Button
+                className="w-full"
+                onClick={() => router.push("/dashboard")}
               >
                 Go to Dashboard
               </Button>

@@ -113,6 +113,7 @@ const navItems: NavItem[] = [
       { title: "Resellers", href: "/admin/resellers", icon: Users },
       { title: "Applications", href: "/admin/resellers?tab=applications", icon: FileText },
       { title: "Commissions", href: "/admin/resellers?tab=commissions", icon: DollarSign },
+      { title: "Transactions", href: "/admin/resellers?tab=transactions", icon: CreditCard },
     ]
   },
   {
@@ -173,12 +174,34 @@ const navItems: NavItem[] = [
 const INACTIVITY_TIMEOUT = 5 * 60 * 1000
 const WARNING_BEFORE_LOGOUT = 30 * 1000
 
-function NavSection({ item, pathname, collapsed }: { item: NavItem; pathname: string; collapsed: boolean }) {
+function isNavHrefActive(href: string, pathname: string, currentTab: string | null): boolean {
+  const [hrefPath, hrefQuery = ""] = href.split("?");
+  if (hrefPath !== pathname) {
+    return false;
+  }
+  const params = new URLSearchParams(hrefQuery);
+  const hrefTab = params.get("tab");
+  if (!hrefTab) {
+    return pathname !== "/admin/resellers" ? true : !currentTab || currentTab === "resellers";
+  }
+  return pathname === "/admin/resellers" && currentTab === hrefTab;
+}
+
+function NavSection({
+  item,
+  pathname,
+  currentTab,
+  collapsed
+}: {
+  item: NavItem;
+  pathname: string;
+  currentTab: string | null;
+  collapsed: boolean
+}) {
   const [open, setOpen] = useState(false)
   const Icon = item.icon
-  const hrefPath = item.href?.split("?")[0]
-  const isActive = hrefPath === pathname
-  const hasActiveChild = item.children?.some(c => c.href?.split("?")[0] === pathname)
+  const isActive = item.href ? isNavHrefActive(item.href, pathname, currentTab) : false
+  const hasActiveChild = item.children?.some(c => c.href ? isNavHrefActive(c.href, pathname, currentTab) : false)
 
   useEffect(() => {
     if (hasActiveChild) setOpen(true)
@@ -205,7 +228,13 @@ function NavSection({ item, pathname, collapsed }: { item: NavItem; pathname: st
         {!collapsed && open && (
           <div className="ml-4 mt-1 space-y-1 border-l pl-3">
             {item.children.map((child) => (
-              <NavSection key={child.href} item={child} pathname={pathname} collapsed={collapsed} />
+              <NavSection
+                key={child.href}
+                item={child}
+                pathname={pathname}
+                currentTab={currentTab}
+                collapsed={collapsed}
+              />
             ))}
           </div>
         )}
@@ -230,6 +259,9 @@ function NavSection({ item, pathname, collapsed }: { item: NavItem; pathname: st
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
+  const currentTab = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("tab")
+    : null
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -351,7 +383,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
-            <NavSection key={item.title} item={item} pathname={pathname} collapsed={!sidebarOpen} />
+            <NavSection
+              key={item.title}
+              item={item}
+              pathname={pathname}
+              currentTab={currentTab}
+              collapsed={!sidebarOpen}
+            />
           ))}
         </nav>
         <div className="p-3 border-t">
@@ -385,7 +423,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
               {navItems.map((item) => (
-                <NavSection key={item.title} item={item} pathname={pathname} collapsed={false} />
+                <NavSection
+                  key={item.title}
+                  item={item}
+                  pathname={pathname}
+                  currentTab={currentTab}
+                  collapsed={false}
+                />
               ))}
             </nav>
             <div className="p-3 border-t">
@@ -430,7 +474,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Button>
         </header>
 
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 px-3 py-4 sm:px-6 sm:py-6 pb-24 md:pb-6">
           {children}
         </main>
 
@@ -446,64 +490,64 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </footer>
 
         {/* Mobile Bottom Navigation */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-[#006994]/10 z-40">
-          <div className="flex items-center justify-around p-2">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-[#006994]/10 z-40 pb-safe">
+          <div className="flex items-center justify-around px-1 py-2">
             <Link
               href="/admin"
               className={cn(
-                "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors",
+                "flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-lg transition-colors min-w-[60px] min-h-[48px]",
                 pathname === "/admin" ? "text-[#006994]" : "text-muted-foreground"
               )}
             >
-              <LayoutDashboard className="h-5 w-5" />
-              <span className="text-[10px]">Dashboard</span>
+              <LayoutDashboard className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+              <span className="text-[9px] sm:text-[10px] font-medium leading-tight">Dashboard</span>
             </Link>
             <Link
               href="/admin/users"
               className={cn(
-                "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors",
+                "flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-lg transition-colors min-w-[60px] min-h-[48px]",
                 pathname.startsWith("/admin/users") ? "text-[#006994]" : "text-muted-foreground"
               )}
             >
-              <Users className="h-5 w-5" />
-              <span className="text-[10px]">Users</span>
+              <Users className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+              <span className="text-[9px] sm:text-[10px] font-medium leading-tight">Users</span>
             </Link>
             <Link
               href="/admin/transactions"
               className={cn(
-                "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors",
+                "flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-lg transition-colors min-w-[60px] min-h-[48px]",
                 pathname.startsWith("/admin/transactions") ? "text-[#006994]" : "text-muted-foreground"
               )}
             >
-              <CreditCard className="h-5 w-5" />
-              <span className="text-[10px]">Txns</span>
+              <CreditCard className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+              <span className="text-[9px] sm:text-[10px] font-medium leading-tight">Txns</span>
             </Link>
             <Link
               href="/admin/tickets"
               className={cn(
-                "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors",
+                "flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-lg transition-colors min-w-[60px] min-h-[48px]",
                 pathname.startsWith("/admin/tickets") ? "text-[#722F37]" : "text-muted-foreground"
               )}
             >
-              <MessageSquare className="h-5 w-5" />
-              <span className="text-[10px]">Tickets</span>
+              <MessageSquare className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+              <span className="text-[9px] sm:text-[10px] font-medium leading-tight">Tickets</span>
             </Link>
             <button
               onClick={async () => {
                 await fetch("/api/auth/logout", { method: "POST", credentials: "include" })
                 router.replace("/admin/login")
               }}
-              className="flex flex-col items-center gap-1 p-2 rounded-lg text-muted-foreground"
+              className="flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-muted-foreground min-w-[60px] min-h-[48px]"
             >
-              <LogOut className="h-5 w-5" />
-              <span className="text-[10px]">Logout</span>
+              <LogOut className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+              <span className="text-[9px] sm:text-[10px] font-medium leading-tight">Logout</span>
             </button>
           </div>
           {/* Safe area padding for mobile devices */}
           <div className="h-safe-area-inset-bottom" />
         </nav>
         {/* Mobile bottom nav spacer */}
-        <div className="md:hidden h-20" />
+        <div className="md:hidden h-[calc(5rem+env(safe-area-inset-bottom))]" />
       </div>
     </div>
   )

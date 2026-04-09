@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
 import { verifyPaystackTransaction } from "@/lib/paystack";
+import { finalizeResellerApplicationPayment } from "@/lib/reseller-payment";
 
 const REFERRAL_REWARD = 0.15;
 const MIN_DEPOSIT_FOR_REFERRAL = 15;
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
 
     // Check if transaction exists and belongs to user
     const existingTx = await sql`
-      SELECT id, status, amount, user_id
+      SELECT id, status, amount, user_id, type, metadata
       FROM transactions
       WHERE reference = ${reference}
     `;
@@ -105,7 +106,52 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // If already processed successfully, return current status
+    const txMetadata = (transaction.metadata || {}) as Record<string, unknown>;
+    const txType = String(txMetadata.payment_type || transaction.type || "").toLowerCase();
+    const isResellerPayment = txType === "reseller_application";
+
+    if (isResellerPayment) {
+      let paystackData: Awaited<ReturnType<typeof verifyPaystackTransaction>>["data"] | undefined;
+      if (transaction.status !== "success") {
+        const verifyResult = await verifyPaystackTransaction(reference);
+        if (!verifyResult.success || verifyResult.data?.status !== "success") {
+          return NextResponse.json(
+            { success: false, error: verifyResult.error || "Reseller payment is not successful" },
+            { status: 400 }
+          );
+        }
+        paystackData = verifyResult.data;
+      }
+
+      const finalized = await finalizeResellerApplicationPayment({
+        reference,
+        transactionId: String(transaction.id),
+        applicationId:
+          typeof txMetadata.application_id === "string"
+            ? txMetadata.application_id
+            : undefined,
+        paystackData,
+        actor: "user",
+        reason: "generic_verify_route_reseller_reconcile",
+      });
+      if (!finalized.ok) {
+        return NextResponse.json(
+          { success: false, error: finalized.message },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json({
+        success: true,
+        data: {
+          status: "success",
+          amount: Number(transaction.amount),
+          reference,
+          message: finalized.message,
+          resellerApproved: true,
+        },
+      });
+    }
+
     if (transaction.status === "success") {
       return NextResponse.json({
         success: true,

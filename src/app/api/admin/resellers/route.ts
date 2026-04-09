@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql, sqlUnsafe } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
+import { sendResellerApprovalEmail, sendResellerRejectionEmail } from "@/lib/email";
+import { finalizeResellerApplicationPayment } from "@/lib/reseller-payment";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +22,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") || "all";
     const search = searchParams.get("search") || "";
     
-    // Get pending applications
+    // Get all applications (not just pending)
     let applications: any[] = [];
     try {
       applications = await sql`
@@ -31,7 +33,6 @@ export async function GET(request: NextRequest) {
           u.last_name
         FROM reseller_applications ra
         JOIN users u ON ra.user_id = u.id
-        WHERE ra.application_status = 'pending'
         ORDER BY ra.created_at DESC
       `;
     } catch { applications = []; }
@@ -137,7 +138,7 @@ export async function GET(request: NextRequest) {
       applications,
       resellers,
       stats: {
-        pendingApplications: applications.length,
+        pendingApplications: applications.filter((a: any) => a.application_status === 'pending').length,
         totalResellers: resellers.length,
         activeResellers: resellers.filter((r: any) => r.status === 'active').length
       }
@@ -191,37 +192,43 @@ export async function PATCH(request: NextRequest) {
           );
         }
         
-        // Update application status
-        await sql`
-          UPDATE reseller_applications
-          SET application_status = 'approved', updated_at = NOW()
-          WHERE id = ${application_id}
+        const txRows = await sql`
+          SELECT id
+          FROM transactions
+          WHERE metadata->>'application_id' = ${application_id}
+            AND (type = 'reseller_application' OR metadata->>'payment_type' = 'reseller_application')
+          ORDER BY created_at DESC
+          LIMIT 1
         `;
+        const transactionId = (txRows[0] as { id?: string } | undefined)?.id;
+        if (!transactionId) {
+          return NextResponse.json(
+            { success: false, error: "No payment transaction found for this application" },
+            { status: 400 }
+          );
+        }
+        const finalized = await finalizeResellerApplicationPayment({
+          transactionId,
+          actor: "admin",
+          reason: "admin_manual_approve_paid_application",
+        });
+        if (!finalized.ok) {
+          return NextResponse.json(
+            { success: false, error: finalized.message },
+            { status: 400 }
+          );
+        }
         
-        // Create reseller profile
-        const existingProfile = await sql`
-          SELECT * FROM reseller_profiles WHERE user_id = ${application.user_id}
-        `;
-        
-        if (existingProfile.length === 0) {
-          // Generate reseller code
-          const code = `RSL${Date.now().toString(36).toUpperCase()}`;
-          
-          await sql`
-            INSERT INTO reseller_profiles (
-              user_id, business_name, business_address, business_phone,
-              reseller_code, commission_rate, discount_rate, status, wallet_balance
-            ) VALUES (
-              ${application.user_id}, ${application.business_name},
-              ${application.business_address}, ${application.business_phone},
-              ${code}, 5.0, 2.0, 'active', 0
-            )
-          `;
+        // Get applicant email for notification
+        const userRows = await sql`SELECT email FROM users WHERE id = ${application.user_id}`;
+        const userEmail = (userRows[0] as { email: string })?.email;
+        if (userEmail && finalized.resellerCode) {
+          sendResellerApprovalEmail(userEmail, application.business_name, finalized.resellerCode).catch(() => {});
         }
         
         return NextResponse.json({
           success: true,
-          message: "Application approved successfully"
+          message: finalized.message
         });
       }
       
@@ -241,6 +248,13 @@ export async function PATCH(request: NextRequest) {
           WHERE id = ${application_id}
         `;
         
+        // Get applicant email for notification
+        const userRows = await sql`SELECT email FROM users WHERE id = ${application.user_id}`;
+        const userEmail = (userRows[0] as { email: string })?.email;
+        if (userEmail) {
+          sendResellerRejectionEmail(userEmail, application.business_name, rejection_reason.trim()).catch(() => {});
+        }
+        
         return NextResponse.json({
           success: true,
           message: "Application rejected successfully"
@@ -248,15 +262,36 @@ export async function PATCH(request: NextRequest) {
       }
       
       if (action === "confirm_payment") {
-        await sql`
-          UPDATE reseller_applications
-          SET payment_status = 'paid', updated_at = NOW()
-          WHERE id = ${application_id}
+        const txRows = await sql`
+          SELECT id
+          FROM transactions
+          WHERE metadata->>'application_id' = ${application_id}
+            AND (type = 'reseller_application' OR metadata->>'payment_type' = 'reseller_application')
+          ORDER BY created_at DESC
+          LIMIT 1
         `;
-        
+        const transactionId = (txRows[0] as { id?: string } | undefined)?.id;
+        if (!transactionId) {
+          return NextResponse.json(
+            { success: false, error: "No payment transaction found for this application" },
+            { status: 400 }
+          );
+        }
+        const finalized = await finalizeResellerApplicationPayment({
+          transactionId,
+          applicationId: application_id,
+          actor: "admin",
+          reason: "admin_application_payment_confirmation",
+        });
+        if (!finalized.ok) {
+          return NextResponse.json(
+            { success: false, error: finalized.message },
+            { status: 400 }
+          );
+        }
         return NextResponse.json({
           success: true,
-          message: "Payment confirmed successfully"
+          message: finalized.message
         });
       }
       

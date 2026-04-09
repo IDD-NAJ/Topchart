@@ -192,10 +192,14 @@ export default function DashboardPage() {
     setError(null)
     setReferralError(null)
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
       const [dashRes, refRes] = await Promise.all([
-        fetch("/api/dashboard", { credentials: "include", cache: "no-store" }),
-        fetch("/api/referral/stats", { credentials: "include", cache: "no-store" }),
-      ])
+        fetch("/api/dashboard", { credentials: "include", cache: "no-store", signal: controller.signal }),
+        fetch("/api/referral/stats", { credentials: "include", cache: "no-store", signal: controller.signal }),
+      ]);
+      clearTimeout(timeoutId);
       
       if (!dashRes.ok) {
         throw new Error(`Dashboard API error: ${dashRes.status}`)
@@ -232,7 +236,17 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.error("Dashboard load error:", err)
-      setError(err instanceof Error ? err.message : "Network error. Please try again.")
+      if (err instanceof Error) {
+        if (err.name === "AbortError") {
+          setError("Request timed out. Please try again.")
+        } else if (err.message.includes("Failed to fetch")) {
+          setError("Network error. Check your connection and try again.")
+        } else {
+          setError(err.message)
+        }
+      } else {
+        setError("An unexpected error occurred. Please try again.")
+      }
     } finally {
       setLoading(false)
     }
@@ -244,7 +258,10 @@ export default function DashboardPage() {
     // Auto-refresh processing purchases every 10 seconds
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
-        loadDashboardData()
+        loadDashboardData().catch((err) => {
+          console.error("Auto-refresh error:", err)
+          // Silently fail on auto-refresh to avoid spamming users
+        })
       }
     }, 10000)
 

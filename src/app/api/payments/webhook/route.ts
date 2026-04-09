@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { sql } from "@/lib/db";
+import { finalizeResellerApplicationPayment } from "@/lib/reseller-payment";
 
 const REFERRAL_REWARD = 0.15;
 const MIN_DEPOSIT_FOR_REFERRAL = 15;
@@ -44,6 +45,9 @@ export async function POST(req: NextRequest) {
     const rawBody = await req.text();
     const signature = req.headers.get("x-paystack-signature") ?? "";
     const secret = process.env.PAYSTACK_SECRET_KEY ?? "";
+    if (!secret) {
+      return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
+    }
 
     const hash = crypto.createHmac("sha512", secret).update(rawBody).digest("hex");
 
@@ -60,44 +64,68 @@ export async function POST(req: NextRequest) {
       const paidAmount = data.amount / 100;
       const userId = data.metadata?.user_id;
 
-      // Check if transaction already successful
       const existingTx = await sql`
-        SELECT status FROM transactions WHERE reference = ${reference}
+        SELECT id, status, type, metadata
+        FROM transactions
+        WHERE reference = ${reference}
+        LIMIT 1
       `;
 
-      if (existingTx.length > 0 && existingTx[0].status !== "success") {
-        // Update transaction and credit wallet
-        await sql`
-          WITH updated_tx AS (
-            UPDATE transactions
-            SET status = 'success',
-                metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
-                  webhook_at: new Date().toISOString(),
-                  paystack_id: data.id,
-                  paid_at: data.paid_at,
-                  channel: data.channel,
-                  gateway_response: data.gateway_response,
-                  customer_email: data.customer.email,
-                })}::jsonb,
-                payment_channel = ${data.channel},
-                card_type = ${data.authorization?.card_type},
-                card_last4 = ${data.authorization?.last4},
-                bank_name = ${data.authorization?.bank},
-                paid_at = ${data.paid_at ? new Date(data.paid_at).toISOString() : null},
-                ip_address = ${data.ip_address},
-                updated_at = NOW()
-            WHERE reference = ${reference}
-              AND status != 'success'
-            RETURNING user_id, amount
-          )
-          UPDATE users
-          SET wallet_balance = wallet_balance + (SELECT amount FROM updated_tx),
-              total_deposits = total_deposits + (SELECT amount FROM updated_tx)
-          WHERE id::text = (SELECT user_id FROM updated_tx)
-        `;
+      if (existingTx.length > 0) {
+        const transaction = existingTx[0] as {
+          id: string;
+          status: string;
+          type?: string;
+          metadata?: Record<string, unknown>;
+        };
+        const paymentType = String(
+          transaction.metadata?.payment_type || transaction.type || ""
+        ).toLowerCase();
 
-        if (userId) {
-          await checkAndCreditReferrer(userId, paidAmount);
+        if (paymentType === "reseller_application") {
+          await finalizeResellerApplicationPayment({
+            reference,
+            transactionId: transaction.id,
+            paystackData: data,
+            actor: "system",
+            reason: "paystack_webhook_charge_success",
+          });
+          return NextResponse.json({ received: true }, { status: 200 });
+        }
+
+        if (transaction.status !== "success") {
+          await sql`
+            WITH updated_tx AS (
+              UPDATE transactions
+              SET status = 'success',
+                  metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+                    webhook_at: new Date().toISOString(),
+                    paystack_id: data.id,
+                    paid_at: data.paid_at,
+                    channel: data.channel,
+                    gateway_response: data.gateway_response,
+                    customer_email: data.customer.email,
+                  })}::jsonb,
+                  payment_channel = ${data.channel},
+                  card_type = ${data.authorization?.card_type},
+                  card_last4 = ${data.authorization?.last4},
+                  bank_name = ${data.authorization?.bank},
+                  paid_at = ${data.paid_at ? new Date(data.paid_at).toISOString() : null},
+                  ip_address = ${data.ip_address},
+                  updated_at = NOW()
+              WHERE reference = ${reference}
+                AND status != 'success'
+              RETURNING user_id, amount
+            )
+            UPDATE users
+            SET wallet_balance = wallet_balance + (SELECT amount FROM updated_tx),
+                total_deposits = total_deposits + (SELECT amount FROM updated_tx)
+            WHERE id::text = (SELECT user_id FROM updated_tx)
+          `;
+
+          if (userId) {
+            await checkAndCreditReferrer(userId, paidAmount);
+          }
         }
       }
     }

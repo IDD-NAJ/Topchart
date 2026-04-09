@@ -1,6 +1,6 @@
-import crypto from "crypto";
+import { getServerEnv } from "@/lib/env";
 
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+const PAYSTACK_SECRET_KEY = getServerEnv().PAYSTACK_SECRET_KEY;
 const PAYSTACK_BASE_URL = "https://api.paystack.co";
 
 if (!PAYSTACK_SECRET_KEY) {
