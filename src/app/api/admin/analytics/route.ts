@@ -35,9 +35,9 @@ export async function GET(request: NextRequest) {
     safe(() => sql`SELECT COUNT(*)::int AS total FROM fraud_alerts WHERE status = 'open'`, []),
     safe(
       () => sql`
-        SELECT rp.business_name, rp.reseller_code, rp.total_sales, rp.total_commission_earned, rp.status,
+        SELECT rp.business_name, rp.reseller_code, rp.total_sales::numeric, rp.total_commission_earned::numeric, rp.status,
                u.email AS user_email,
-               COALESCE(rp.total_referrals, 0) AS total_referrals
+               COALESCE(rp.total_referrals, 0)::int AS total_referrals
         FROM reseller_profiles rp
         JOIN users u ON u.id = rp.user_id
         ORDER BY rp.total_sales DESC NULLS LAST

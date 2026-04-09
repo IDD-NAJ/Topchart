@@ -214,7 +214,7 @@ export default function DataPage() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">Authorized Magnitude</p>
-                    <p className="text-2xl font-black">GH₵{selectedPlan?.price?.toFixed(2)}</p>
+                    <p className="text-2xl font-black">GH₵{Number(selectedPlan?.price || 0).toFixed(2)}</p>
                   </div>
                 </div>
               </div>
@@ -378,7 +378,7 @@ export default function DataPage() {
                                 <p className="text-xs text-muted-foreground font-mono">{plan.size}</p>
                               </div>
                               <div className="text-right">
-                                 <p className="text-sm font-bold">GH₵{plan.price.toFixed(2)}</p>
+                                 <p className="text-sm font-bold">GH₵{Number(plan.price || 0).toFixed(2)}</p>
                                  {selectedPlan?.id === plan.id && <Badge className="text-[8px] h-3 px-1 uppercase">Selected</Badge>}
                               </div>
                             </button>
@@ -437,13 +437,13 @@ export default function DataPage() {
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-dashed border-[#006994]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Liquidity</span>
-                      <span className="text-sm font-bold text-green-600">GH₵{user?.walletBalance?.toFixed(2) || '0.00'}</span>
+                      <span className="text-sm font-bold text-green-600">GH₵{Number(user?.walletBalance || 0).toFixed(2)}</span>
                     </div>
                     
                     <div className="pt-4 flex justify-between items-end">
                        <div className="space-y-1">
                           <p className="text-[10px] font-bold uppercase text-[#006994]">Total Magnitude</p>
-                          <p className="text-3xl font-bold tracking-tighter">GH₵{selectedPlan?.price?.toFixed(2) || "0.00"}</p>
+                          <p className="text-3xl font-bold tracking-tighter">GH₵{Number(selectedPlan?.price || 0).toFixed(2)}</p>
                        </div>
                        <div className="p-2 rounded bg-[#006994]/10 border border-[#006994]/20">
                           <CreditCard className="w-4 h-4 text-[#006994]" />

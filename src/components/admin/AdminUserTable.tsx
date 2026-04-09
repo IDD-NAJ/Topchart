@@ -238,7 +238,7 @@ export default function AdminUserTable() {
                     </div>
                   </td>
                   <td className="p-3">{user.phone}</td>
-                  <td className="p-3">GH₵{user.wallet_balance.toFixed(2)}</td>
+                  <td className="p-3">GH₵{Number(user.wallet_balance || 0).toFixed(2)}</td>
                   <td className="p-3">
                     <Badge variant={user.is_verified ? "default" : "secondary"}>
                       {user.is_verified ? "Verified" : "Unverified"}

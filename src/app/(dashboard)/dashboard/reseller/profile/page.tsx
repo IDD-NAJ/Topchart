@@ -540,7 +540,7 @@ export default function ResellerProfilePage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-4 sm:p-5 bg-slate-50 rounded-lg border border-slate-200">
                 <p className="text-2xl sm:text-3xl font-bold text-slate-900 font-mono">
-                  GHS {profile.wallet_balance.toFixed(2)}
+                  GHS {Number(profile.wallet_balance || 0).toFixed(2)}
                 </p>
                 <p className="text-xs sm:text-sm text-slate-600 mt-1">Wallet Balance</p>
               </div>

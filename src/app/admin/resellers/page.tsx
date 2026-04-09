@@ -1163,7 +1163,7 @@ function AdminResellersContent() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">GHS {commissionStats.totalCommissions.toFixed(2)}</div>
+                <div className="text-2xl font-bold">GHS {Number(commissionStats.totalCommissions || 0).toFixed(2)}</div>
               </CardContent>
             </Card>
 
@@ -1173,7 +1173,7 @@ function AdminResellersContent() {
                 <Wallet className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">GHS {commissionStats.pendingPayouts.toFixed(2)}</div>
+                <div className="text-2xl font-bold">GHS {Number(commissionStats.pendingPayouts || 0).toFixed(2)}</div>
               </CardContent>
             </Card>
 
@@ -1183,7 +1183,7 @@ function AdminResellersContent() {
                 <CheckCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">GHS {commissionStats.totalPaid.toFixed(2)}</div>
+                <div className="text-2xl font-bold">GHS {Number(commissionStats.totalPaid || 0).toFixed(2)}</div>
               </CardContent>
             </Card>
           </div>
@@ -1223,10 +1223,10 @@ function AdminResellersContent() {
                             </div>
                           </td>
                           <td className="p-3">
-                            GHS {commission.sale_amount?.toFixed(2)}
+                            GHS {Number(commission.sale_amount || 0).toFixed(2)}
                           </td>
                           <td className="p-3 font-medium">
-                            GHS {commission.amount.toFixed(2)}
+                            GHS {Number(commission.amount || 0).toFixed(2)}
                           </td>
                           <td className="p-3">
                             <Badge variant={commission.status === 'paid' ? 'default' : 'secondary'}>
