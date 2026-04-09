@@ -112,7 +112,6 @@ export default function AdminDashboard() {
   const [statsError, setStatsError] = useState<string | null>(null)
   const [purchasesError, setPurchasesError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-  const [dataBundles, setDataBundles] = useState<any[]>([])
   const router = useRouter()
 
   useEffect(() => {
@@ -121,8 +120,7 @@ export default function AdminDashboard() {
       await Promise.all([
         loadUsers(),
         loadStats(),
-        loadPendingPurchases(),
-        loadDataBundles()
+        loadPendingPurchases()
       ])
       setLoading(false)
     }
@@ -375,20 +373,6 @@ export default function AdminDashboard() {
       console.error('Failed to confirm purchase:', error)
     } finally {
       setConfirmingRef(null)
-    }
-  }
-
-  const loadDataBundles = async () => {
-    try {
-      const response = await fetch('/api/admin/tables?table=data_bundles&orderBy=sizeMb&orderDir=asc&pageSize=100', {
-        credentials: 'include'
-      })
-      const result = await response.json()
-      if (result.success) {
-        setDataBundles(result.data || [])
-      }
-    } catch (error) {
-      console.error('Failed to load data bundles:', error)
     }
   }
 
@@ -704,45 +688,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
-
-      {/* Package Classification */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Wifi className="w-4 h-4" />
-            Package Classification
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {dataBundles.length === 0 ? (
-            <p className="text-center text-muted-foreground py-4">No data bundles available</p>
-          ) : (
-            <div className="space-y-2">
-              {dataBundles.map((bundle: any) => {
-                const sizeGB = bundle.sizeMb ? (bundle.sizeMb / 1024).toFixed(2) : '0';
-                const pricePerGB = bundle.sizeMb && bundle.sizeMb > 0 ? (bundle.price / (bundle.sizeMb / 1024)).toFixed(2) : '0';
-                return (
-                  <div key={bundle.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-full bg-[#006994]/10">
-                        <Wifi className="w-4 h-4 text-[#006994]" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-sm">{bundle.name || 'Unknown'}</div>
-                        <div className="text-xs text-muted-foreground">{sizeGB} GB</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-medium">GH₵{Number(bundle.price || 0).toFixed(2)}</div>
-                      <div className="text-xs text-muted-foreground">{pricePerGB} per GB</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Transaction Breakdown */}
       {stats && stats.transactionsByType && stats.transactionsByType.length > 0 && (
