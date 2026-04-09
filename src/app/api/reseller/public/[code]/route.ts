@@ -28,9 +28,9 @@ export async function GET(
         r.reseller_code,
         COALESCE(rt.name, 'BRONZE') as tier_name,
         r.status,
-        r.total_sales,
-        r.commission_rate,
-        r.total_referrals,
+        r.total_sales::numeric,
+        r.commission_rate::numeric,
+        r.total_referrals::int,
         u.email as business_email
       FROM reseller_profiles r
       LEFT JOIN reseller_tiers rt ON rt.name = (

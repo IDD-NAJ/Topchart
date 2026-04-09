@@ -408,7 +408,7 @@ export default function AirtimePage() {
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-dashed border-[#006994]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Liquidity</span>
-                      <span className="text-sm font-bold text-green-600">GH₵{user?.walletBalance?.toFixed(2) || '0.00'}</span>
+                      <span className="text-sm font-bold text-green-600">GH₵{Number(user?.walletBalance || 0).toFixed(2)}</span>
                     </div>
                     
                     <div className="pt-4 flex justify-between items-end">
