@@ -7,10 +7,10 @@ export const revalidate = 0;
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ slug: string }> }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const { slug } = await params;
+    const { slug } = await context.params;
 
     const posts = await sql`
       SELECT 

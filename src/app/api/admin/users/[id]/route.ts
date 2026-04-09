@@ -12,7 +12,7 @@ export const revalidate = 0;
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const admin = await requireAdmin();
@@ -23,7 +23,7 @@ export async function PATCH(
       );
     }
 
-    const { id } = await params;
+    const { id } = await context.params;
     const body = await request.json().catch(() => ({}));
 
     if (body.role !== undefined) {
@@ -75,7 +75,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const admin = await requireAdmin();
@@ -86,7 +86,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = await params;
+    const { id } = await context.params;
     if (id === admin.userId) {
       return NextResponse.json(
         { success: false, error: "You cannot delete your own account." },

@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ serviceId: string }> }
+  context: { params: Promise<{ serviceId: string }> }
 ) {
   try {
     const cookieStore = await cookies();
@@ -33,7 +33,7 @@ export async function GET(
       );
     }
 
-    const { serviceId } = await params;
+    const { serviceId } = await context.params;
 
     if (!serviceId) {
       return NextResponse.json(

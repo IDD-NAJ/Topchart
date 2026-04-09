@@ -16,14 +16,14 @@ type ColumnMeta = {
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ table: string }> }
+  context: { params: Promise<{ table: string }> }
 ) {
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json({ success: false, error: admin.error }, { status: admin.status });
   }
 
-  const { table } = await params;
+  const { table } = await context.params;
 
   const columns = await sql`
     SELECT DISTINCT ON (c.ordinal_position)

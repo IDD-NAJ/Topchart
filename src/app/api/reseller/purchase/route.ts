@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
+import { withRateLimit } from "@/lib/rate-limit";
+import { validateRequest, formatZodError, purchaseSchema } from "@/lib/validation/schemas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // GET - Fetch available products and pricing
-export async function GET(request: NextRequest) {
+async function GETHandler(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
@@ -92,7 +94,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST - Create a wholesale purchase
-export async function POST(request: NextRequest) {
+async function POSTHandler(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
@@ -131,7 +133,21 @@ export async function POST(request: NextRequest) {
     const discountRate = reseller.discount_rate || 10;
     
     const body = await request.json();
-    const { type, network, phone, amount, bundleId, bundlePrice, examType, quantity } = body;
+    
+    // Validate input
+    const validation = validateRequest(purchaseSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid input",
+          errors: formatZodError(validation.errors!),
+        },
+        { status: 400 }
+      );
+    }
+    
+    const { type } = validation.data!;
     
     let saleData: any = {
       reseller_id: reseller.id,
@@ -143,45 +159,48 @@ export async function POST(request: NextRequest) {
     let sellingPrice = 0;
     
     if (type === 'airtime') {
+      const data = validation.data as { type: 'airtime'; network: string; phone: string; amount: number };
       // Airtime purchase
-      const discountedAmount = parseFloat(amount) * (1 - discountRate / 100);
+      const discountedAmount = data.amount * (1 - discountRate / 100);
       totalCost = discountedAmount;
-      sellingPrice = parseFloat(amount);
+      sellingPrice = data.amount;
       
       saleData = {
         ...saleData,
-        customer_phone: phone,
-        network,
+        customer_phone: data.phone,
+        network: data.network,
         amount: sellingPrice,
         cost_price: totalCost,
         selling_price: sellingPrice,
         profit: sellingPrice - totalCost
       };
     } else if (type === 'data') {
+      const data = validation.data as { type: 'data'; network: string; phone: string; bundle_id: string; bundle_price: number };
       // Data bundle purchase
-      const discountedPrice = bundlePrice * (1 - discountRate / 100);
+      const discountedPrice = data.bundle_price * (1 - discountRate / 100);
       totalCost = discountedPrice;
-      sellingPrice = bundlePrice;
+      sellingPrice = data.bundle_price;
       
       saleData = {
         ...saleData,
-        customer_phone: phone,
-        network,
-        bundle_id: bundleId,
+        customer_phone: data.phone,
+        network: data.network,
+        bundle_id: data.bundle_id,
         amount: sellingPrice,
         cost_price: totalCost,
         selling_price: sellingPrice,
         profit: sellingPrice - totalCost
       };
     } else if (type === 'result_checker') {
+      const data = validation.data as { type: 'result_checker'; exam_type: string; quantity: number };
       // Result checker cards
       const cards = await sql`
         SELECT * FROM result_checker_cards
-        WHERE exam_type = ${examType} AND status = 'available'
-        LIMIT ${parseInt(quantity || '1')}
+        WHERE exam_type = ${data.exam_type} AND status = 'available'
+        LIMIT ${data.quantity}
       `;
       
-      if (cards.length < parseInt(quantity || '1')) {
+      if (cards.length < data.quantity) {
         return NextResponse.json(
           { success: false, error: `Only ${cards.length} cards available` },
           { status: 400 }
@@ -283,3 +302,7 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Export GET and POST with rate limiting
+export const GET = withRateLimit({ type: "api" })(GETHandler);
+export const POST = withRateLimit({ type: "api" })(POSTHandler);

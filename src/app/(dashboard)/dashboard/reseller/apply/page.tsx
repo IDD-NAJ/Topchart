@@ -14,7 +14,7 @@ import { ErrorBoundary, useErrorHandler } from "@/components/error-boundary";
 import { secureFetch } from "@/lib/csrf";
 import { saveFormData, loadFormData, clearFormData, hasCachedData } from "@/lib/form-cache";
 import { useFormCache } from "@/hooks/use-form-cache";
-import { Store, ArrowLeft, ArrowRight, Loader2, CreditCard, CheckCircle, AlertCircle, Circle, Check, RotateCcw, CloudUpload, Wallet } from "lucide-react";
+import { Store, ArrowLeft, ArrowRight, Loader2, CreditCard, CheckCircle, AlertCircle, Circle, Check, RotateCcw, CloudUpload, Wallet, AlertTriangle } from "lucide-react";
 
 interface FormField {
   enabled: boolean;
@@ -59,6 +59,7 @@ function ResellerApplyContent() {
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [paymentMethod, setPaymentMethod] = useState<"paystack" | "wallet">("paystack");
   const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [config, setConfig] = useState<FormConfig>({
     business_name: { enabled: true, required: true },
@@ -201,7 +202,7 @@ function ResellerApplyContent() {
       return;
     }
 
-    setLoading(true);
+    setIsSubmitting(true);
 
     try {
       // Step 1: Create the application
@@ -374,7 +375,7 @@ function ResellerApplyContent() {
       } else {
         toast.error("An unexpected error occurred. Please try again.");
       }
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -500,35 +501,35 @@ function ResellerApplyContent() {
         <div className="space-y-6">
           {/* Header Skeleton */}
           <div className="flex items-center gap-3">
-            <div className="h-6 w-6 bg-muted rounded animate-pulse" />
-            <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+            <div className="h-6 w-6 bg-slate-200 rounded animate-pulse" />
+            <div className="h-8 w-48 bg-slate-200 rounded animate-pulse" />
           </div>
-          <div className="h-4 w-64 bg-muted rounded animate-pulse" />
+          <div className="h-4 w-64 bg-slate-200 rounded animate-pulse" />
           
           {/* Form Fields Skeleton */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <div className="h-4 w-24 bg-muted rounded animate-pulse" />
-              <div className="h-10 w-full bg-muted rounded animate-pulse" />
+              <div className="h-4 w-24 bg-slate-200 rounded animate-pulse" />
+              <div className="h-10 w-full bg-slate-200 rounded animate-pulse" />
             </div>
             <div className="space-y-2">
-              <div className="h-4 w-28 bg-muted rounded animate-pulse" />
-              <div className="h-10 w-full bg-muted rounded animate-pulse" />
+              <div className="h-4 w-28 bg-slate-200 rounded animate-pulse" />
+              <div className="h-10 w-full bg-slate-200 rounded animate-pulse" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <div className="h-4 w-20 bg-muted rounded animate-pulse" />
-                <div className="h-10 w-full bg-muted rounded animate-pulse" />
+                <div className="h-4 w-20 bg-slate-200 rounded animate-pulse" />
+                <div className="h-10 w-full bg-slate-200 rounded animate-pulse" />
               </div>
               <div className="space-y-2">
-                <div className="h-4 w-16 bg-muted rounded animate-pulse" />
-                <div className="h-10 w-full bg-muted rounded animate-pulse" />
+                <div className="h-4 w-16 bg-slate-200 rounded animate-pulse" />
+                <div className="h-10 w-full bg-slate-200 rounded animate-pulse" />
               </div>
             </div>
           </div>
           
           {/* Submit Button Skeleton */}
-          <div className="h-12 w-full bg-muted rounded animate-pulse" />
+          <div className="h-12 w-full bg-slate-200 rounded animate-pulse" />
         </div>
       </div>
     );
@@ -538,20 +539,22 @@ function ResellerApplyContent() {
     <div className="container mx-auto py-6 px-4 sm:py-8 sm:px-6 max-w-2xl">
       <Button 
         variant="ghost" 
-        className="mb-4 sm:mb-6"
+        className="mb-4 sm:mb-6 border-slate-200 hover:bg-slate-100"
         onClick={() => window.location.href = "/dashboard"}
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back to Dashboard
       </Button>
 
-      <Card>
+      <Card className="border-slate-200">
         <CardHeader>
           <div className="flex items-center gap-3 mb-2">
-            <Store className="h-6 w-6 text-[#006994]" />
-            <CardTitle>Become a Reseller</CardTitle>
+            <div className="p-2 bg-slate-100 rounded-lg">
+              <Store className="h-6 w-6 text-slate-600" />
+            </div>
+            <CardTitle className="text-slate-900">Become a Reseller</CardTitle>
           </div>
-          <CardDescription>
+          <CardDescription className="text-slate-500">
             Fill in your business details to apply for a reseller account.
             Application fee: {config.currency} {config.application_fee?.toFixed(2)}
           </CardDescription>
@@ -573,48 +576,48 @@ function ResellerApplyContent() {
             )}
           </div>
 
-          {/* Progress Indicator */}
+        {/* Progress Indicator */}
+        <div
+          className="mb-6 sm:mb-8"
+          role="group"
+          aria-label="Application progress"
+        >
+          <div className="flex items-center justify-between mb-4">
+            {(["Business Details", "Contact Info", "Review & Submit"] as const).map((label, index) => {
+              const isCompleted = index < currentStep - 1;
+              const isCurrent = index === currentStep - 1;
+              return (
+                <div key={label} className="flex items-center space-x-2">
+                  {isCompleted ? (
+                    <Check className="h-5 w-5 text-green-600" />
+                  ) : isCurrent ? (
+                    <div className="h-5 w-5 rounded-full border-2 border-slate-900 flex items-center justify-center shrink-0">
+                      <div className="h-2 w-2 rounded-full bg-slate-900" />
+                    </div>
+                  ) : (
+                    <Circle className="h-5 w-5 text-slate-400" />
+                  )}
+                  <span className={`text-sm font-medium ${
+                    isCompleted ? "text-green-600" : isCurrent ? "text-slate-900" : "text-slate-500"
+                  }`}>
+                    {label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
           <div
-            className="mb-6 sm:mb-8"
-            role="group"
-            aria-label="Application progress"
+            className="w-full bg-slate-200 rounded-full h-2"
+            role="progressbar"
+            aria-valuenow={currentStep}
+            aria-valuemin={1}
+            aria-valuemax={3}
+            aria-label={`Step ${currentStep} of 3`}
           >
-            <div className="flex items-center justify-between mb-4">
-              {(["Business Details", "Contact Info", "Review & Submit"] as const).map((label, index) => {
-                const isCompleted = index < currentStep - 1;
-                const isCurrent = index === currentStep - 1;
-                return (
-                  <div key={label} className="flex items-center space-x-2">
-                    {isCompleted ? (
-                      <Check className="h-5 w-5 text-green-600" />
-                    ) : isCurrent ? (
-                      <div className="h-5 w-5 rounded-full border-2 border-[#006994] flex items-center justify-center shrink-0">
-                        <div className="h-2 w-2 rounded-full bg-[#006994]" />
-                      </div>
-                    ) : (
-                      <Circle className="h-5 w-5 text-muted-foreground" />
-                    )}
-                    <span className={`text-sm font-medium ${
-                      isCompleted ? "text-green-600" : isCurrent ? "text-[#006994]" : "text-muted-foreground"
-                    }`}>
-                      {label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-            <div
-              className="w-full bg-muted rounded-full h-2"
-              role="progressbar"
-              aria-valuenow={currentStep}
-              aria-valuemin={1}
-              aria-valuemax={3}
-              aria-label={`Step ${currentStep} of 3`}
-            >
-              <div 
-                className="bg-[#006994] h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(currentStep / 3) * 100}%` }}
-              />
+            <div 
+              className="bg-slate-900 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(currentStep / 3) * 100}%` }}
+            />
             </div>
           </div>
           
@@ -737,162 +740,118 @@ function ResellerApplyContent() {
             {/* Step 3: Review & Submit */}
             {currentStep === 3 && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground">Review Your Application</h3>
+                <h3 className="text-lg font-semibold text-slate-900">Review Your Application</h3>
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-1">
                   <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
-                    <span className="text-sm text-muted-foreground">Business Name</span>
+                    <span className="text-sm text-slate-600">Business Name</span>
                     <span className="text-sm font-semibold text-slate-900">{formData.business_name || "—"}</span>
                   </div>
                   {config.business_address?.enabled && (
                     <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
-                      <span className="text-sm text-muted-foreground">Business Address</span>
+                      <span className="text-sm text-slate-600">Business Address</span>
                       <span className="text-sm font-semibold text-slate-900">{formData.business_address || "—"}</span>
                     </div>
                   )}
                   {config.business_phone?.enabled && (
                     <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
-                      <span className="text-sm text-muted-foreground">Business Phone</span>
+                      <span className="text-sm text-slate-600">Business Phone</span>
                       <span className="text-sm font-semibold text-slate-900">{formData.business_phone || "—"}</span>
                     </div>
                   )}
                   {config.business_email?.enabled && (
                     <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
-                      <span className="text-sm text-muted-foreground">Business Email</span>
+                      <span className="text-sm text-slate-600">Business Email</span>
                       <span className="text-sm font-semibold text-slate-900">{formData.business_email || "—"}</span>
                     </div>
                   )}
                   {config.business_type?.enabled && (
                     <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
-                      <span className="text-sm text-muted-foreground">Business Type</span>
+                      <span className="text-sm text-slate-600">Business Type</span>
                       <span className="text-sm font-semibold text-slate-900 capitalize">{formData.business_type || "—"}</span>
                     </div>
                   )}
                   <div className="flex justify-between items-center pt-3">
-                    <span className="text-sm font-bold text-slate-800">Application Fee</span>
-                    <span className="text-sm font-bold text-[#006994]">{config.currency} {config.application_fee?.toFixed(2)}</span>
+                    <span className="text-sm font-bold text-slate-900">Application Fee</span>
+                    <span className="text-sm font-bold text-slate-900">{config.currency} {config.application_fee?.toFixed(2)}</span>
                   </div>
                 </div>
 
                 {config.require_payment_before_approval && config.application_fee > 0 && (
                   <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-foreground">Select Payment Method</h4>
-                    
-                    <Button
-                      type="button"
-                      variant={paymentMethod === "paystack" ? "default" : "outline"}
-                      className={`w-full h-auto py-4 justify-between ${paymentMethod === "paystack" ? "bg-[#006994] text-white hover:bg-[#00567A]" : ""}`}
-                      onClick={() => setPaymentMethod("paystack")}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${paymentMethod === "paystack" ? "bg-white/20" : "bg-blue-100"}`}>
-                          <CreditCard className={`h-5 w-5 ${paymentMethod === "paystack" ? "text-white" : "text-blue-600"}`} />
-                        </div>
-                        <div className="text-left">
-                          <p className="font-medium">Pay with Card/Bank</p>
-                          <p className="text-xs text-muted-foreground">Secure payment via Paystack</p>
-                        </div>
+                    <h4 className="text-sm font-medium text-slate-900">Select Payment Method</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Button
+                        type="button"
+                        variant={paymentMethod === "paystack" ? "default" : "outline"}
+                        className={paymentMethod === "paystack" ? "bg-slate-900 text-white hover:bg-slate-800" : "border-slate-300 hover:bg-slate-100"}
+                        onClick={() => setPaymentMethod("paystack")}
+                      >
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Pay with Paystack
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={paymentMethod === "wallet" ? "default" : "outline"}
+                        className={paymentMethod === "wallet" ? "bg-slate-900 text-white hover:bg-slate-800" : "border-slate-300 hover:bg-slate-100"}
+                        onClick={() => setPaymentMethod("wallet")}
+                        disabled={walletBalance < config.application_fee}
+                      >
+                        <Wallet className="h-4 w-4 mr-2" />
+                        Pay with Wallet
+                      </Button>
+                    </div>
+                    {paymentMethod === "wallet" && walletBalance < config.application_fee && (
+                      <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span className="text-sm text-amber-800">
+                          Your wallet balance ({config.currency} {walletBalance.toFixed(2)}) is insufficient for the application fee ({config.currency} {config.application_fee.toFixed(2)}). Please add funds to your wallet or choose Paystack payment.
+                        </span>
                       </div>
-                      {paymentMethod === "paystack" && <CheckCircle className="h-5 w-5" />}
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant={paymentMethod === "wallet" ? "default" : "outline"}
-                      className={`w-full h-auto py-4 justify-between ${paymentMethod === "wallet" ? "bg-[#006994] text-white hover:bg-[#00567A]" : ""}`}
-                      onClick={() => setPaymentMethod("wallet")}
-                      disabled={walletBalance < config.application_fee}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${paymentMethod === "wallet" ? "bg-white/20" : "bg-green-100"}`}>
-                          <Wallet className={`h-5 w-5 ${paymentMethod === "wallet" ? "text-white" : "text-green-600"}`} />
-                        </div>
-                        <div className="text-left">
-                          <p className="font-medium">Pay with Wallet</p>
-                          <p className="text-xs text-muted-foreground">
-                            Balance: {config.currency} {walletBalance.toFixed(2)}
-                          </p>
-                        </div>
+                    )}
+                    {paymentMethod === "wallet" && walletBalance >= config.application_fee && (
+                      <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                        <span className="text-sm text-green-800">
+                          Your wallet balance ({config.currency} {walletBalance.toFixed(2)}) is sufficient for the application fee ({config.currency} {config.application_fee.toFixed(2)}).
+                        </span>
                       </div>
-                      {walletBalance < config.application_fee ? (
-                        <span className="text-xs text-red-600">Insufficient</span>
-                      ) : paymentMethod === "wallet" ? (
-                        <CheckCircle className="h-5 w-5" />
-                      ) : null}
-                    </Button>
-                    {walletBalance < config.application_fee && (
-                      <p className="text-xs text-red-600">
-                        Wallet balance is insufficient.{" "}
-                        <Link href="/dashboard/wallet" className="underline">
-                          Fund wallet
-                        </Link>
-                      </p>
                     )}
                   </div>
                 )}
-
-                <div className="flex items-start space-x-2 pt-2">
-                  <Checkbox
-                    id="terms"
-                    checked={acceptedTerms}
-                    onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
-                  />
-                  <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
-                    I agree to the{" "}
-                    <a href="/terms" target="_blank" className="text-[#006994] hover:underline">
-                      Terms and Conditions
-                    </a>{" "}
-                    and understand that my application will be reviewed after payment confirmation.
-                  </Label>
-                </div>
               </div>
             )}
 
-            {/* Step Navigation */}
-            <div className="flex items-center justify-between pt-2">
-              {currentStep > 1 ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleBack}
-                  className="flex items-center gap-2"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Back
-                </Button>
+          {/* Navigation Buttons */}
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-slate-300 hover:bg-slate-100"
+              onClick={handleBack}
+              disabled={currentStep === 1}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <Button
+              type={currentStep === 3 ? "submit" : "button"}
+              onClick={currentStep === 3 ? undefined : handleNext}
+              disabled={isSubmitting}
+              className="bg-slate-900 text-white hover:bg-slate-800"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {currentStep === 3 ? "Submitting..." : "Next"}
+                </>
               ) : (
-                <div />
+                <>
+                  {currentStep === 3 ? "Submit Application" : "Next"}
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </>
               )}
-              {currentStep < 3 ? (
-                <Button
-                  type="button"
-                  onClick={handleNext}
-                  className="bg-[#006994] text-white hover:bg-[#00567A] flex items-center gap-2"
-                >
-                  Next
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              ) : (
-                <Button
-                  type="submit"
-                  className="bg-[#006994] text-white hover:bg-[#00567A] h-11"
-                  disabled={loading || !acceptedTerms}
-                  aria-disabled={loading || !acceptedTerms}
-                  aria-busy={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Submit Application ({config.currency} {config.application_fee?.toFixed(2)})
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
+            </Button>
+          </div>
           </form>
         </CardContent>
       </Card>
@@ -901,23 +860,25 @@ function ResellerApplyContent() {
       <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
         <DialogContent className="max-w-md mx-4">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <RotateCcw className="h-5 w-5 text-[#006994]" />
+            <DialogTitle className="flex items-center gap-2 text-slate-900">
+              <div className="p-2 bg-slate-100 rounded-lg">
+                <RotateCcw className="h-5 w-5 text-slate-600" />
+              </div>
               Restore Draft?
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-slate-500">
               We found a partially completed application. Would you like to restore it?
             </DialogDescription>
           </DialogHeader>
           
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => {
+            <Button variant="outline" className="border-slate-300 hover:bg-slate-100" onClick={() => {
               clearCache();
               setShowRestoreDialog(false);
             }}>
               Start Fresh
             </Button>
-            <Button onClick={() => {
+            <Button className="bg-slate-900 text-white hover:bg-slate-800" onClick={() => {
               const cachedData = loadFromCache();
               if (cachedData) {
                 setFormData(prev => ({ ...prev, ...cachedData }));

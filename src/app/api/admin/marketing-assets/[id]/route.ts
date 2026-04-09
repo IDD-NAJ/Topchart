@@ -7,14 +7,14 @@ export const dynamic = "force-dynamic";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json({ success: false, error: admin.error }, { status: admin.status });
   }
 
-  const { id } = await params;
+  const { id } = await context.params;
   const body = await request.json().catch(() => ({}));
   const { name, type, category, file_url, thumbnail_url, dimensions, file_size, is_active } = body;
 
@@ -48,14 +48,14 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json({ success: false, error: admin.error }, { status: admin.status });
   }
 
-  const { id } = await params;
+  const { id } = await context.params;
 
   try {
     const deleted = await sql`

@@ -193,7 +193,7 @@ export default function DashboardPage() {
     setReferralError(null)
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       
       const [dashRes, refRes] = await Promise.all([
         fetch("/api/dashboard", { credentials: "include", cache: "no-store", signal: controller.signal }),
