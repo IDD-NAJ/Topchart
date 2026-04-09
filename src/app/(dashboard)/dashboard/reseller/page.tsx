@@ -216,7 +216,6 @@ export default function ResellerDashboardPage() {
         setProfile(data.profile);
         setStats(data.stats);
         setTrends(data.trends || null);
-        setActivities(data.activities || []);
         setResellerState(data.state || null);
         setLoadError(null);
       } else {
@@ -227,16 +226,37 @@ export default function ResellerDashboardPage() {
         } else {
           const errorMessage = data.error || "Failed to load dashboard";
           setLoadError(errorMessage);
-          toast.error(errorMessage);
+          console.error("Dashboard load error:", errorMessage);
         }
       }
     } catch (error) {
-      setLoadError("Network error");
-      toast.error("Network error");
+      const errorMessage = error instanceof Error ? error.message : "Failed to load dashboard";
+      setLoadError(errorMessage);
+      console.error("Dashboard load error:", errorMessage);
     } finally {
       setLoading(false);
     }
   };
+
+  const loadActivities = async () => {
+    try {
+      const res = await fetch("/api/reseller/activity?limit=5", {
+        credentials: "include"
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActivities(data.activities || []);
+      }
+    } catch (error) {
+      console.error("Error loading activities:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (profile) {
+      loadActivities();
+    }
+  }, [profile]);
 
   if (loading) {
     return (
