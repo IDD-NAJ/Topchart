@@ -1,3 +1,0 @@
-module.exports=[936975,a=>{"use strict";var b=a.i(907997);function c({children:a}){return(0,b.jsx)(b.Fragment,{children:a})}a.s(["default",()=>c,"metadata",0,{title:"Blog & Updates",description:"Read the latest news, product updates, security guides, and company announcements from the Topchart Ghana team.",openGraph:{title:"Topchart Blog & Updates",description:"Stay up to date with the latest from Topchart — new data bundles, security tips, and company milestones.",url:"https://topchart.gh/blog"},alternates:{canonical:"https://topchart.gh/blog"}}])}];
-
-//# sourceMappingURL=src_app_blog_layout_tsx_5d6ad2d5._.js.map

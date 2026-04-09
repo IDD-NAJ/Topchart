@@ -1,3 +1,0 @@
-module.exports=[861080,a=>{"use strict";var b=a.i(907997);function c({children:a}){return(0,b.jsx)(b.Fragment,{children:a})}a.s(["default",()=>c,"metadata",0,{title:"Privacy Policy",description:"Read the Topchart Ghana Privacy Policy. Learn how we collect, use, and protect your personal information when you use our airtime and data top-up services.",robots:{index:!0,follow:!0},openGraph:{title:"Privacy Policy | Topchart Ghana",description:"How Topchart Ghana collects, uses, and safeguards your personal information.",url:"https://topchart.gh/privacy"},alternates:{canonical:"https://topchart.gh/privacy"}}])}];
-
-//# sourceMappingURL=src_app_privacy_layout_tsx_3d7f1cef._.js.map
