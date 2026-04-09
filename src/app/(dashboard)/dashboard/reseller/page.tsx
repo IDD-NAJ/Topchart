@@ -84,6 +84,20 @@ interface ResellerStats {
   };
 }
 
+interface TrendData {
+  date: string;
+  amount: number;
+}
+
+interface DashboardData {
+  profile: ResellerProfile;
+  stats: ResellerStats;
+  trends?: {
+    sales: TrendData[];
+    commissions: TrendData[];
+  };
+}
+
 interface ResellerState {
   role: string | null;
   profile_exists: boolean;
@@ -109,6 +123,7 @@ function asMoney(value: unknown): string {
 export default function ResellerDashboardPage() {
   const [profile, setProfile] = useState<ResellerProfile | null>(null);
   const [stats, setStats] = useState<ResellerStats | null>(null);
+  const [trends, setTrends] = useState<{ sales: TrendData[]; commissions: TrendData[] } | null>(null);
   const [activities, setActivities] = useState<RecentActivity[]>([]);
   const [resellerState, setResellerState] = useState<ResellerState | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -200,6 +215,7 @@ export default function ResellerDashboardPage() {
       if (data.success) {
         setProfile(data.profile);
         setStats(data.stats);
+        setTrends(data.trends || null);
         setActivities(data.activities || []);
         setResellerState(data.state || null);
         setLoadError(null);

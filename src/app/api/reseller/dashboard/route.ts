@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
       try { return await fn(); } catch { return [{ total_sales: 0, total_amount: 0, total_profit: 0, total_commissions: 0, total_earned: 0, count: 0 }] as any[]; }
     };
 
-    const [sales, commissions, inventory] = await Promise.all([
+    const [sales, commissions, inventory, salesTrend, commissionTrend] = await Promise.all([
       safeQuery(() => sql`
         SELECT
           COUNT(*) as total_sales,
@@ -170,6 +170,26 @@ export async function GET(request: NextRequest) {
         WHERE reseller_id = ${resellerId}
         AND status = 'available'
       `),
+      safeQuery(() => sql`
+        SELECT
+          DATE(created_at) as date,
+          COALESCE(SUM(amount), 0) as amount
+        FROM reseller_sales
+        WHERE reseller_id = ${resellerId}
+          AND created_at >= NOW() - INTERVAL '7 days'
+        GROUP BY DATE(created_at)
+        ORDER BY date ASC
+      `),
+      safeQuery(() => sql`
+        SELECT
+          DATE(created_at) as date,
+          COALESCE(SUM(commission_amount), 0) as amount
+        FROM reseller_commissions
+        WHERE reseller_id = ${resellerId}
+          AND created_at >= NOW() - INTERVAL '7 days'
+        GROUP BY DATE(created_at)
+        ORDER BY date ASC
+      `),
     ]);
     
     return NextResponse.json({
@@ -185,6 +205,10 @@ export async function GET(request: NextRequest) {
         sales: sales[0],
         commissions: commissions[0],
         inventory: inventory[0]
+      },
+      trends: {
+        sales: salesTrend,
+        commissions: commissionTrend
       }
     });
     
