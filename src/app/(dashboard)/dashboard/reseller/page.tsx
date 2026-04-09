@@ -589,43 +589,90 @@ export default function ResellerDashboardPage() {
 
       {/* Quick Actions */}
       <h2 className="text-lg font-semibold mb-4 text-slate-900">Quick Links</h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-        <QuickActionCard
-          title="Buy Wholesale"
-          description={`${profile.discount_rate}% discount`}
-          icon={ShoppingCart}
-          onClick={() => window.location.href = "/dashboard/reseller/purchase"}
-        />
-        <QuickActionCard
-          title="Inventory"
-          description={`${stats?.inventory.count || 0} cards`}
-          icon={Store}
-          onClick={() => window.location.href = "/dashboard/reseller/inventory"}
-        />
-        <QuickActionCard
-          title="Marketing"
-          description="Referral tools"
-          icon={Megaphone}
-          onClick={() => window.location.href = "/dashboard/reseller/marketing"}
-        />
-        <QuickActionCard
-          title="Analytics"
-          description="View reports"
-          icon={BarChart3}
-          onClick={() => window.location.href = "/dashboard/reseller/analytics"}
-        />
-        <QuickActionCard
-          title="Settings"
-          description="Account config"
-          icon={Shield}
-          onClick={() => window.location.href = "/dashboard/reseller/security"}
-        />
-        <QuickActionCard
-          title="Support"
-          description="Get help"
-          icon={MessageCircle}
-          onClick={() => window.location.href = "/dashboard/tickets"}
-        />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        <Card className="group hover:border-slate-400 hover:shadow-lg transition-all duration-200 border-slate-200 cursor-pointer" onClick={() => window.location.href = "/dashboard/reseller/purchase"}>
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-slate-200 group-hover:to-slate-300 flex items-center justify-center transition-all">
+                <ShoppingCart className="h-6 w-6 text-slate-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 text-sm">Buy Wholesale</h3>
+                <p className="text-xs text-slate-500 mt-1">{profile.discount_rate}% discount</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="group hover:border-slate-400 hover:shadow-lg transition-all duration-200 border-slate-200 cursor-pointer" onClick={() => window.location.href = "/dashboard/reseller/inventory"}>
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-slate-200 group-hover:to-slate-300 flex items-center justify-center transition-all">
+                <Store className="h-6 w-6 text-slate-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 text-sm">Inventory</h3>
+                <p className="text-xs text-slate-500 mt-1">{stats?.inventory.count || 0} cards</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="group hover:border-slate-400 hover:shadow-lg transition-all duration-200 border-slate-200 cursor-pointer" onClick={() => window.location.href = "/dashboard/reseller/marketing"}>
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-slate-200 group-hover:to-slate-300 flex items-center justify-center transition-all">
+                <Megaphone className="h-6 w-6 text-slate-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 text-sm">Marketing</h3>
+                <p className="text-xs text-slate-500 mt-1">Referral tools</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="group hover:border-slate-400 hover:shadow-lg transition-all duration-200 border-slate-200 cursor-pointer" onClick={() => window.location.href = "/dashboard/reseller/analytics"}>
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-slate-200 group-hover:to-slate-300 flex items-center justify-center transition-all">
+                <BarChart3 className="h-6 w-6 text-slate-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 text-sm">Analytics</h3>
+                <p className="text-xs text-slate-500 mt-1">View reports</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="group hover:border-slate-400 hover:shadow-lg transition-all duration-200 border-slate-200 cursor-pointer" onClick={() => window.location.href = "/dashboard/reseller/security"}>
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-slate-200 group-hover:to-slate-300 flex items-center justify-center transition-all">
+                <Shield className="h-6 w-6 text-slate-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 text-sm">Settings</h3>
+                <p className="text-xs text-slate-500 mt-1">Account config</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="group hover:border-slate-400 hover:shadow-lg transition-all duration-200 border-slate-200 cursor-pointer" onClick={() => window.location.href = "/dashboard/tickets"}>
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-slate-200 group-hover:to-slate-300 flex items-center justify-center transition-all">
+                <MessageCircle className="h-6 w-6 text-slate-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 text-sm">Support</h3>
+                <p className="text-xs text-slate-500 mt-1">Get help</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* New Feature Sections */}
