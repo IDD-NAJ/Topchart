@@ -3,12 +3,14 @@ import { cookies } from "next/headers";
 import { randomUUID } from "node:crypto";
 import { sql } from "@/lib/db";
 import { finalizeResellerApplicationPayment } from "@/lib/reseller-payment";
+import { withRateLimit } from "@/lib/rate-limit";
+import { validateRequest, formatZodError, walletPaymentSchema } from "@/lib/validation/schemas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // POST - Pay reseller application fee using wallet
-export async function POST(request: NextRequest) {
+async function POSTHandler(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
@@ -38,14 +40,21 @@ export async function POST(request: NextRequest) {
     const user = sessions[0];
     
     const body = await request.json();
-    const { application_id, amount } = body;
     
-    if (!application_id || !amount) {
+    // Validate input
+    const validation = validateRequest(walletPaymentSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: "Application ID and amount are required" },
+        {
+          success: false,
+          error: "Invalid input",
+          errors: formatZodError(validation.errors!),
+        },
         { status: 400 }
       );
     }
+    
+    const { application_id, amount } = validation.data!;
     
     // Get application details
     const applications = await sql`
@@ -213,3 +222,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Export POST with rate limiting
+export const POST = withRateLimit({ type: "payment" })(POSTHandler);

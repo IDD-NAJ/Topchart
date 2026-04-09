@@ -3,12 +3,14 @@ import { sql, sqlUnsafe } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 import { sendResellerApprovalEmail, sendResellerRejectionEmail } from "@/lib/email";
 import { finalizeResellerApplicationPayment } from "@/lib/reseller-payment";
+import { withRateLimit } from "@/lib/rate-limit";
+import { validateRequest, formatZodError, resellerApplicationUpdateSchema } from "@/lib/validation/schemas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // GET - List all resellers and applications
-export async function GET(request: NextRequest) {
+async function GETHandler(request: NextRequest) {
   try {
     const admin = await requireAdmin();
     if (!admin.ok) {
@@ -154,7 +156,7 @@ export async function GET(request: NextRequest) {
 }
 
 // PATCH - Update reseller rates or handle application actions
-export async function PATCH(request: NextRequest) {
+async function PATCHHandler(request: NextRequest) {
   try {
     const admin = await requireAdmin();
     if (!admin.ok) {
@@ -165,7 +167,22 @@ export async function PATCH(request: NextRequest) {
     }
     
     const body = await request.json();
-    const { reseller_id, application_id, action, commission_rate, discount_rate, status, rejection_reason } = body;
+    
+    // Validate input
+    const validation = validateRequest(resellerApplicationUpdateSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid input",
+          errors: formatZodError(validation.errors!),
+        },
+        { status: 400 }
+      );
+    }
+    
+    const { application_id, status, rejection_reason } = validation.data!;
+    const { reseller_id, action, commission_rate, discount_rate } = body;
     
     // Handle application actions
     if (application_id && action) {
@@ -403,3 +420,7 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
+
+// Export GET, PATCH, and DELETE with rate limiting
+export const GET = withRateLimit({ type: "admin" })(GETHandler);
+export const PATCH = withRateLimit({ type: "admin" })(PATCHHandler);

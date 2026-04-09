@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
+import { withRateLimit } from "@/lib/rate-limit";
+import { validateRequest, formatZodError, createReferralLinkSchema } from "@/lib/validation/schemas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // GET - Fetch marketing data (referral links, assets)
-export async function GET(request: NextRequest) {
+async function GETHandler(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
@@ -85,7 +87,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST - Create new referral link
-export async function POST(request: NextRequest) {
+async function POSTHandler(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
@@ -122,7 +124,21 @@ export async function POST(request: NextRequest) {
     
     const reseller = profilePost[0] as any;
     const body = await request.json();
-    const { landing_page, utm_source, utm_medium } = body;
+    
+    // Validate input
+    const validation = validateRequest(createReferralLinkSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid input",
+          errors: formatZodError(validation.errors!),
+        },
+        { status: 400 }
+      );
+    }
+    
+    const { landing_page, utm_source, utm_medium } = validation.data!;
     
     // Generate unique referral code
     const referralCode = `${reseller.reseller_code}-${Date.now().toString(36).toUpperCase()}`;
@@ -163,7 +179,7 @@ export async function POST(request: NextRequest) {
 }
 
 // DELETE - Delete a referral link
-export async function DELETE(request: NextRequest) {
+async function DELETEHandler(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
@@ -223,3 +239,8 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
+
+// Export GET, POST, and DELETE with rate limiting
+export const GET = withRateLimit({ type: "api" })(GETHandler);
+export const POST = withRateLimit({ type: "api" })(POSTHandler);
+export const DELETE = withRateLimit({ type: "api" })(DELETEHandler);

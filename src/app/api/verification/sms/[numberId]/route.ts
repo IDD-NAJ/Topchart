@@ -6,10 +6,10 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ numberId: string }> }
+  context: { params: Promise<{ numberId: string }> }
 ) {
   try {
-    const { numberId } = await params;
+    const { numberId } = await context.params;
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
 

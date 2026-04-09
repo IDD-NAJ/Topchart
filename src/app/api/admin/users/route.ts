@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { sql } from "@/lib/db";
+import { withRateLimit } from "@/lib/rate-limit";
+import { validateRequest, formatZodError, adminUserUpdateSchema } from "@/lib/validation/schemas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,7 +14,7 @@ function clampInt(value: string | null, def: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
-export async function GET(request: NextRequest) {
+async function GETHandler(request: NextRequest) {
   try {
     // Check if user is admin
     const admin = await requireAdmin();
@@ -117,3 +119,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// Export GET with rate limiting
+export const GET = withRateLimit({ type: "admin" })(GETHandler);

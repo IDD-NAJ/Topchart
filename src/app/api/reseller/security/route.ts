@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
+import { withRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // GET - Fetch reseller security data (fraud alerts, audit logs)
-export async function GET(request: NextRequest) {
+async function GETHandler(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
@@ -105,7 +106,7 @@ export async function GET(request: NextRequest) {
 }
 
 // PATCH - Resolve a fraud alert
-export async function PATCH(request: NextRequest) {
+async function PATCHHandler(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
@@ -172,3 +173,7 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
+
+// Export GET and PATCH with rate limiting
+export const GET = withRateLimit({ type: "api" })(GETHandler);
+export const PATCH = withRateLimit({ type: "api" })(PATCHHandler);

@@ -7,15 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { secureFetch } from "@/lib/csrf";
-import { 
-  CreditCard, 
-  Wallet, 
-  Loader2, 
-  ArrowLeft,
-  CheckCircle,
-  Building2,
-  DollarSign
-} from "lucide-react";
+import { CreditCard, Wallet, ArrowLeft, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 interface ApplicationData {
@@ -161,21 +153,16 @@ export default function ResellerPaymentPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-12 px-4 max-w-md">
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="h-12 w-12 animate-spin text-[#006994] mb-4" />
-            <p className="text-muted-foreground">Loading payment details...</p>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
       </div>
     );
   }
 
   if (!application) {
     return (
-      <div className="container mx-auto py-12 px-4 max-w-md">
-        <Card>
+      <div className="container mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-6xl">
+        <Card className="border-slate-200">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground">Application not found</p>
             <Link href="/dashboard/reseller/apply">
@@ -199,109 +186,119 @@ export default function ResellerPaymentPage() {
   const isWalletProcessing = processing && paymentMethod === "wallet";
 
   return (
-    <div className="container mx-auto py-12 px-4 max-w-md">
-      <Card>
-        <CardHeader className="text-center pb-4">
-          <div className="mx-auto mb-4">
-            <div className="h-16 w-16 bg-[#006994]/10 rounded-full flex items-center justify-center mx-auto">
-              <DollarSign className="h-8 w-8 text-[#006994]" />
-            </div>
-          </div>
-          <CardTitle className="text-xl">Complete Your Application</CardTitle>
-          <CardDescription>
-            Choose a payment method to pay the application fee
-          </CardDescription>
-        </CardHeader>
+    <div className="container mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-6xl">
+      <Button variant="ghost" className="mb-4 sm:mb-6 border-slate-200 hover:bg-slate-100" onClick={() => router.back()}>
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back
+      </Button>
 
-        <CardContent className="space-y-6">
-          {/* Application Summary */}
-          <div className="bg-muted/50 rounded-lg p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <Building2 className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm text-muted-foreground">Business Name</p>
-                <p className="font-medium">{application.business_name}</p>
+      <div className="max-w-2xl mx-auto">
+        <Card className="border-slate-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-slate-900">
+              <div className="p-2 bg-slate-100 rounded-lg">
+                <CreditCard className="h-5 w-5 text-slate-600" />
+              </div>
+              Complete Payment
+            </CardTitle>
+            <CardDescription className="text-slate-500">
+              Pay the application fee to activate your reseller account
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-6">
+            {/* Application Summary */}
+            <div className="bg-slate-50 p-4 rounded-lg">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-slate-700">Application Fee</span>
+                <span className="text-lg font-bold text-slate-900">GHS {application?.application_fee?.toFixed(2) || "0.00"}</span>
+              </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-slate-600">Business Name</span>
+                <span className="text-sm text-slate-900">{application?.business_name || "—"}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-slate-600">Payment Status</span>
+                <Badge variant={application?.payment_status === "paid" ? "default" : "secondary"} className={application?.payment_status === "paid" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}>
+                  {application?.payment_status || "—"}
+                </Badge>
               </div>
             </div>
-            <div className="flex items-center justify-between pt-3 border-t">
-              <span className="text-sm text-muted-foreground">Application Fee</span>
-              <span className="text-lg font-bold text-[#006994]">GHS {fee.toFixed(2)}</span>
-            </div>
-          </div>
 
-          {/* Payment Options */}
-          <div className="space-y-3">
-            <p className="text-sm font-medium">Select Payment Method</p>
-            
-            {/* Paystack Option */}
-            <Button
-              variant="outline"
-              className="w-full h-auto py-4 justify-between"
-              onClick={handlePaystackPayment}
-              disabled={processing}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <CreditCard className="h-5 w-5 text-blue-600" />
+            {/* Payment Options */}
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-slate-900">Select Payment Method</p>
+              
+              {/* Paystack Option */}
+              <Button
+                variant="outline"
+                className="w-full h-auto py-4 justify-between border-slate-300 hover:bg-slate-100"
+                onClick={handlePaystackPayment}
+                disabled={processing}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-slate-100 rounded-lg">
+                    <CreditCard className="h-5 w-5 text-slate-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-slate-900">Pay with Card/Bank</p>
+                    <p className="text-xs text-slate-500">Secure payment via Paystack</p>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <p className="font-medium">Pay with Card/Bank</p>
-                  <p className="text-xs text-muted-foreground">Secure payment via Paystack</p>
+                {isPaystackProcessing ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-5 w-5 text-slate-500" />
+                )}
+              </Button>
+
+              {/* Wallet Option */}
+              <Button
+                variant="outline"
+                className="w-full h-auto py-4 justify-between border-slate-300 hover:bg-slate-100"
+                onClick={handleWalletPayment}
+                disabled={processing || !hasEnoughBalance}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-slate-100 rounded-lg">
+                    <Wallet className="h-5 w-5 text-slate-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-slate-900">Pay with Wallet</p>
+                    <p className="text-xs text-slate-500">
+                      Balance: GHS {Number(wallet?.balance).toFixed(2) || "0.00"}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              {isPaystackProcessing ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <CheckCircle className="h-5 w-5 text-muted-foreground" />
+                {!hasEnoughBalance && (
+                  <Badge variant="secondary" className="bg-slate-100 text-slate-700">Insufficient</Badge>
+                )}
+                {isWalletProcessing ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : hasEnoughBalance ? (
+                  <CheckCircle className="h-5 w-5 text-slate-500" />
+                ) : null}
+              </Button>
+              {paymentMethod === "wallet" && wallet && wallet.balance < (application?.application_fee || 0) && (
+                <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                  <span className="text-sm text-amber-800">
+                    Insufficient wallet balance. Please add funds or use Paystack.
+                  </span>
+                </div>
               )}
-            </Button>
+            </div>
 
-            {/* Wallet Option */}
-            <Button
-              variant="outline"
-              className="w-full h-auto py-4 justify-between"
-              onClick={handleWalletPayment}
-              disabled={processing || !hasEnoughBalance}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Wallet className="h-5 w-5 text-green-600" />
-                </div>
-                <div className="text-left">
-                  <p className="font-medium">Pay with Wallet</p>
-                  <p className="text-xs text-muted-foreground">
-                    Balance: GHS {Number(wallet?.balance).toFixed(2) || "0.00"}
-                  </p>
-                </div>
-              </div>
-              {!hasEnoughBalance && (
-                <Badge variant="secondary">Insufficient</Badge>
-              )}
-              {isWalletProcessing ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : hasEnoughBalance ? (
-                <CheckCircle className="h-5 w-5 text-muted-foreground" />
-              ) : null}
-            </Button>
-            {!hasEnoughBalance && (
-              <p className="text-xs text-red-600">
-                Wallet balance is insufficient for this fee.{" "}
-                <Link href="/dashboard/wallet" className="underline">
-                  Fund wallet
-                </Link>
-              </p>
-            )}
-          </div>
-
-          {/* Back Link */}
-          <Link href="/dashboard/reseller/apply">
-            <Button variant="ghost" className="w-full">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Application
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
+            {/* Back Link */}
+            <Link href="/dashboard/reseller/apply">
+              <Button variant="ghost" className="w-full border-slate-200 hover:bg-slate-100">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Application
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

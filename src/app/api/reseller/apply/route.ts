@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { sql, sqlUnsafe } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 import { withCSRFProtection } from "@/lib/csrf-middleware";
+import { withRateLimit } from "@/lib/rate-limit";
+import { validateRequest, formatZodError, resellerApplySchema, resellerApplicationUpdateSchema } from "@/lib/validation/schemas";
 import { finalizeResellerApplicationPayment } from "@/lib/reseller-payment";
 
 export const runtime = "nodejs";
@@ -137,7 +139,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST - Submit new application
-export const POST = withCSRFProtection(async (request: NextRequest) => {
+async function POSTHandler(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
@@ -160,22 +162,29 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
     const user = sessions[0] as { id: string; email: string };
     
     const body = await request.json();
+    
+    // Validate input
+    const validation = validateRequest(resellerApplySchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid input",
+          errors: formatZodError(validation.errors!),
+        },
+        { status: 400 }
+      );
+    }
+    
     const {
       business_name,
       business_address,
       business_phone,
       business_email,
       business_type,
+      accepted_terms,
       ...customFields
-    } = body;
-    
-    // Validate required fields
-    if (!business_name) {
-      return NextResponse.json(
-        { success: false, error: "Business name is required" },
-        { status: 400 }
-      );
-    }
+    } = validation.data!;
     
     // Check if user already has a pending or approved application
     let existingApp: any[] = [];
@@ -290,10 +299,13 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-});
+}
+
+// Export POST with both rate limiting and CSRF protection
+export const POST = withRateLimit({ type: "api" })(withCSRFProtection(POSTHandler));
 
 // PATCH - Update application status (admin only)
-export const PATCH = withCSRFProtection(async (request: NextRequest) => {
+async function PATCHHandler(request: NextRequest) {
   try {
     const admin = await requireAdmin();
     if (!admin.ok) {
@@ -304,14 +316,21 @@ export const PATCH = withCSRFProtection(async (request: NextRequest) => {
     }
     
     const body = await request.json();
-    const { application_id, status, rejection_reason, confirm_payment } = body;
     
-    if (!application_id) {
+    // Validate input
+    const validation = validateRequest(resellerApplicationUpdateSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: "Application ID is required" },
+        {
+          success: false,
+          error: "Invalid input",
+          errors: formatZodError(validation.errors!),
+        },
         { status: 400 }
       );
     }
+    
+    const { application_id, status, rejection_reason, confirm_payment } = validation.data!;
     
     // Handle payment confirmation
     if (confirm_payment) {
@@ -475,4 +494,7 @@ export const PATCH = withCSRFProtection(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-});
+}
+
+// Export PATCH with both rate limiting and CSRF protection
+export const PATCH = withRateLimit({ type: "admin" })(withCSRFProtection(PATCHHandler));

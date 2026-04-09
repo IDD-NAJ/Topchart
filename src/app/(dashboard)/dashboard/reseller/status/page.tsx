@@ -100,11 +100,11 @@ export default function ResellerStatusPage() {
 
   return (
     <div className="container mx-auto py-12 px-4 max-w-lg">
-      <Card>
+      <Card className="border-slate-200">
         <CardHeader className="text-center pb-4">
           <div className="mx-auto mb-4 mt-2">
             {status === "loading" && (
-              <Loader2 className="h-14 w-14 animate-spin text-[#006994] mx-auto" />
+              <Loader2 className="h-14 w-14 animate-spin text-slate-400 mx-auto" />
             )}
             {status === "pending" && (
               <div className="relative inline-flex">
@@ -112,17 +112,17 @@ export default function ResellerStatusPage() {
               </div>
             )}
             {status === "approved" && (
-              <CheckCircle className="h-14 w-14 text-green-500 mx-auto" />
+              <CheckCircle className="h-14 w-14 text-green-600 mx-auto" />
             )}
             {status === "rejected" && (
-              <XCircle className="h-14 w-14 text-red-500 mx-auto" />
+              <XCircle className="h-14 w-14 text-red-600 mx-auto" />
             )}
             {status === "none" && (
-              <Store className="h-14 w-14 text-muted-foreground mx-auto" />
+              <Store className="h-14 w-14 text-slate-400 mx-auto" />
             )}
           </div>
 
-          <CardTitle className="text-xl">
+          <CardTitle className="text-xl text-slate-900">
             {status === "loading" && "Checking Application Status"}
             {status === "pending" && "Application Under Review"}
             {status === "approved" && "Application Approved!"}
@@ -130,7 +130,7 @@ export default function ResellerStatusPage() {
             {status === "none" && "No Application Found"}
           </CardTitle>
 
-          <CardDescription className="mt-1">
+          <CardDescription className="mt-1 text-slate-500">
             {status === "loading" && "Please wait..."}
             {status === "pending" && "Your application is being reviewed by our team. This page updates automatically."}
             {status === "approved" && `Congratulations! You are now a Topchart Reseller.`}
@@ -141,19 +141,19 @@ export default function ResellerStatusPage() {
 
         <CardContent className="space-y-4">
           {application && (
-            <div className="rounded-lg border bg-muted/30 p-4 space-y-2 text-sm">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Business</span>
-                <span className="font-medium">{application.business_name}</span>
+                <span className="text-slate-600">Business</span>
+                <span className="font-medium text-slate-900">{application.business_name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Payment</span>
-                <Badge variant={application.payment_status === "paid" ? "default" : "secondary"}>
+                <span className="text-slate-600">Payment</span>
+                <Badge variant={application.payment_status === "paid" ? "default" : "secondary"} className={application.payment_status === "paid" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}>
                   {application.payment_status}
                 </Badge>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Status</span>
+                <span className="text-slate-600">Status</span>
                 <Badge
                   variant={
                     application.application_status === "approved"
@@ -162,19 +162,26 @@ export default function ResellerStatusPage() {
                       ? "destructive"
                       : "secondary"
                   }
+                  className={
+                    application.application_status === "approved"
+                      ? "bg-slate-900 text-white"
+                      : application.application_status === "rejected"
+                      ? ""
+                      : "bg-slate-100 text-slate-700"
+                  }
                 >
                   {application.application_status}
                 </Badge>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Submitted</span>
-                <span>{new Date(application.created_at).toLocaleDateString()}</span>
+                <span className="text-slate-600">Submitted</span>
+                <span className="text-slate-900">{new Date(application.created_at).toLocaleDateString()}</span>
               </div>
             </div>
           )}
 
           {status === "pending" && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-sm text-slate-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
               <Loader2 className="h-4 w-4 animate-spin text-amber-500 shrink-0" />
               <span>Auto-refreshing every 5 seconds...</span>
             </div>
@@ -188,12 +195,12 @@ export default function ResellerStatusPage() {
 
           {status === "approved" && (
             <div className="space-y-3">
-              <p className="text-sm text-center text-muted-foreground">
+              <p className="text-sm text-center text-slate-600">
                 Redirecting to your reseller dashboard in{" "}
-                <span className="font-bold text-[#006994]">{countdown}s</span>...
+                <span className="font-bold text-slate-900">{countdown}s</span>...
               </p>
               <Button
-                className="w-full bg-[#006994] hover:bg-[#005a7a]"
+                className="w-full bg-slate-900 text-white hover:bg-slate-800"
                 onClick={() => router.replace("/dashboard/reseller")}
               >
                 Go to Reseller Dashboard Now
@@ -210,14 +217,14 @@ export default function ResellerStatusPage() {
                 </div>
               )}
               <Button
-                className="w-full"
+                className="w-full bg-slate-900 text-white hover:bg-slate-800"
                 onClick={() => router.push("/dashboard/reseller/apply")}
               >
                 Apply Again
               </Button>
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full border-slate-300 hover:bg-slate-100"
                 onClick={() => router.push("/dashboard")}
               >
                 Back to Dashboard
@@ -227,7 +234,7 @@ export default function ResellerStatusPage() {
 
           {status === "none" && (
             <Button
-              className="w-full"
+              className="w-full bg-slate-900 text-white hover:bg-slate-800"
               onClick={() => router.push("/dashboard/reseller/apply")}
             >
               Apply to Become a Reseller
@@ -238,14 +245,14 @@ export default function ResellerStatusPage() {
             <div className="space-y-2">
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full border-slate-300 hover:bg-slate-100"
                 onClick={() => fetchStatus()}
               >
                 Refresh Status
               </Button>
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full border-slate-300 hover:bg-slate-100"
                 onClick={() => router.push("/dashboard")}
               >
                 Back to Dashboard

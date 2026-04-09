@@ -7,11 +7,13 @@ import {
   generatePaystackReference,
 } from "@/lib/paystack";
 import { withCSRFProtection } from "@/lib/csrf-middleware";
+import { withRateLimit } from "@/lib/rate-limit";
+import { validateRequest, formatZodError, paymentInitializeSchema } from "@/lib/validation/schemas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export const POST = withCSRFProtection(async (request: NextRequest) => {
+async function POSTHandler(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
@@ -43,15 +45,21 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
     const userId = user.user_id;
 
     const body = await request.json();
-    const { amount, application_id, metadata } = body;
-
-    // Validate amount
-    if (!amount || typeof amount !== "number" || amount < 1) {
+    
+    // Validate input
+    const validation = validateRequest(paymentInitializeSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: "Invalid amount" },
+        {
+          success: false,
+          error: "Invalid input",
+          errors: formatZodError(validation.errors!),
+        },
         { status: 400 }
       );
     }
+    
+    const { amount, application_id, metadata } = validation.data!;
 
     if (!application_id) {
       return NextResponse.json(
@@ -236,4 +244,7 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-});
+}
+
+// Export POST with both rate limiting and CSRF protection
+export const POST = withRateLimit({ type: "payment" })(withCSRFProtection(POSTHandler));
