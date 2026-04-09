@@ -728,7 +728,7 @@ export default function ResellerDashboardPage() {
                       key={i}
                       className="flex-1 bg-slate-300 rounded-t transition-all"
                       style={{ height: `${Math.max(height, 5)}%` }}
-                      title={`${new Date(trend.date).toLocaleDateString()}: GHS ${trend.amount.toFixed(2)}`}
+                      title={`${new Date(trend.date).toLocaleDateString()}: GHS ${(Number(trend.amount) || 0).toFixed(2)}`}
                     />
                   );
                 })
