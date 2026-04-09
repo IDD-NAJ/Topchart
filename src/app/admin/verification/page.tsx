@@ -198,7 +198,7 @@ export default function AdminVerificationPage() {
           <Wallet className="h-4 w-4 text-primary" />
           <span className="text-muted-foreground">PVADeals Balance:</span>
           <span className="font-semibold">
-            {pvaBalance !== null ? `$${pvaBalance.toFixed(2)} USD` : "—"}
+            {pvaBalance !== null ? `$${Number(pvaBalance).toFixed(2)} USD` : "—"}
           </span>
         </div>
         {syncStatus.message && (
@@ -383,7 +383,7 @@ export default function AdminVerificationPage() {
                   <tbody className="divide-y bg-background">
                     {pricingServices.slice(0, 8).map(svc => {
                       const strGhs = svc.str_price
-                        ? (svc.str_price * exchangeRate * (1 + svc.markup_percentage / 100)).toFixed(2)
+                        ? Number(svc.str_price * exchangeRate * (1 + svc.markup_percentage / 100)).toFixed(2)
                         : '—'
                       return (
                         <tr key={svc.id} className={!svc.is_active ? 'opacity-50' : ''}>

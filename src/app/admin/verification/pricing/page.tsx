@@ -190,9 +190,9 @@ export default function AdminVerificationPricingPage() {
         s.is_active ? "Yes" : "No",
         m,
         s.str_price, s.ltr3_price, s.ltr7_price, s.ltr14_price, s.ltr30_price,
-        (s.str_price * exchangeRate * (1 + m / 100)).toFixed(2),
-        (s.ltr3_price * exchangeRate * (1 + m / 100)).toFixed(2),
-        (s.ltr30_price * exchangeRate * (1 + m / 100)).toFixed(2),
+        Number(s.str_price * exchangeRate * (1 + m / 100)).toFixed(2),
+        Number(s.ltr3_price * exchangeRate * (1 + m / 100)).toFixed(2),
+        Number(s.ltr30_price * exchangeRate * (1 + m / 100)).toFixed(2),
         s.purchase_count ?? 0,
       ].join(",")
     })
@@ -356,7 +356,7 @@ export default function AdminVerificationPricingPage() {
           {pvaBalance !== null && (
             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm ${pvaBalance < 5 ? "border-yellow-400 bg-yellow-50 text-yellow-700" : "border-border bg-muted/40"}`}>
               <Wallet className="h-3.5 w-3.5" />
-              <span className="font-medium">${pvaBalance.toFixed(2)}</span>
+              <span className="font-medium">${Number(pvaBalance).toFixed(2)}</span>
               {pvaBalance < 5 && <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" />}
             </div>
           )}

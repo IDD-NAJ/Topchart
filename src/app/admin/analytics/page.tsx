@@ -94,7 +94,7 @@ export default function AdminAnalyticsOverviewPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">GHS {stats.totalCommissions?.toFixed(2)}</div>
+            <div className="text-2xl font-bold">GHS {Number(stats.totalCommissions || 0).toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">To resellers</p>
           </CardContent>
         </Card>

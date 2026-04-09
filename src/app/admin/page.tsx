@@ -586,7 +586,7 @@ export default function AdminDashboard() {
                 <DollarSign className="h-4 w-4 text-[#006994]" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">GH₵{stats.totalRevenue.toFixed(0)}</div>
+                <div className="text-2xl font-bold">GH₵{Number(stats.totalRevenue || 0).toFixed(0)}</div>
                 <p className="text-xs text-muted-foreground">Total deposits</p>
               </CardContent>
             </Card>
@@ -599,7 +599,7 @@ export default function AdminDashboard() {
                 <Wallet className="h-4 w-4 text-[#1A85B8]" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">GH₵{stats.totalWalletBalance.toFixed(0)}</div>
+                <div className="text-2xl font-bold">GH₵{Number(stats.totalWalletBalance || 0).toFixed(0)}</div>
                 <p className="text-xs text-muted-foreground">User balances</p>
               </CardContent>
             </Card>
@@ -874,7 +874,7 @@ export default function AdminDashboard() {
                       <div className="text-xs text-muted-foreground">{user.email}</div>
                     </td>
                     <td className="p-3">{user.phone}</td>
-                    <td className="p-3">GH₵{user.wallet_balance.toFixed(2)}</td>
+                    <td className="p-3">GH₵{Number(user.wallet_balance || 0).toFixed(2)}</td>
                     <td className="p-3">
                       <Badge variant={user.is_verified ? "default" : "secondary"}>
                         {user.is_verified ? "Verified" : "Unverified"}
