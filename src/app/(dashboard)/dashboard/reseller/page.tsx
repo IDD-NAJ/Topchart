@@ -615,21 +615,37 @@ export default function ResellerDashboardPage() {
         {/* Security Overview */}
         <Card className="hover:border-slate-300 transition-colors cursor-pointer border-slate-200" onClick={() => window.location.href = "/dashboard/reseller/security"}>
           <CardContent className="p-5 sm:p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-slate-100 rounded-lg">
                   <Shield className="h-6 w-6 text-slate-600" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-slate-900">Security Overview</h3>
-                  <p className="text-sm text-slate-500">No fraud alerts</p>
+                  <p className="text-sm text-slate-500">Account security status</p>
                 </div>
               </div>
               <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-200">Secure</Badge>
             </div>
-            <div className="mt-4 flex items-center gap-2 text-sm text-slate-500">
-              <CheckCircle className="h-4 w-4 text-slate-400" />
-              <span>Account security score: 100%</span>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle className="h-4 w-4 text-slate-400" />
+                <span className="text-slate-600">Phone verified</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle className="h-4 w-4 text-slate-400" />
+                <span className="text-slate-600">Email verified</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle className="h-4 w-4 text-slate-400" />
+                <span className="text-slate-600">Account active</span>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">Security score</span>
+                <span className="font-semibold text-slate-900">100%</span>
+              </div>
             </div>
           </CardContent>
         </Card>
