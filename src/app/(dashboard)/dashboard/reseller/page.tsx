@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { MetricCard } from "@/components/dashboard/reseller/MetricCard";
+import { QuickActionCard } from "@/components/dashboard/reseller/QuickActionCard";
 import {
   Store,
   DollarSign,
@@ -316,62 +318,29 @@ export default function ResellerDashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-        <Card className="border-slate-200 hover:border-slate-300 transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">Wallet Balance</CardTitle>
-            <DollarSign className="h-4 w-4 text-slate-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold text-slate-900 font-mono">
-              GHS {asMoney(profile.wallet_balance)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200 hover:border-slate-300 transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">Total Sales</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-slate-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold text-slate-900 font-mono">
-              GHS {asMoney(profile.total_sales)}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              {stats?.sales.total_sales || 0} transactions
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200 hover:border-slate-300 transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">Commissions</CardTitle>
-            <TrendingUp className="h-4 w-4 text-slate-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold text-slate-900 font-mono">
-              GHS {asMoney(profile.total_commission_earned)}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              {profile.commission_rate}% rate
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200 hover:border-slate-300 transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">Referrals</CardTitle>
-            <Users className="h-4 w-4 text-slate-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold text-slate-900 font-mono">
-              {profile.total_referrals}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Total referred users
-            </p>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Wallet Balance"
+          value={`GHS ${asMoney(profile.wallet_balance)}`}
+          icon={DollarSign}
+        />
+        <MetricCard
+          title="Total Sales"
+          value={`GHS ${asMoney(profile.total_sales)}`}
+          subtitle={`${stats?.sales.total_sales || 0} transactions`}
+          icon={ShoppingCart}
+        />
+        <MetricCard
+          title="Commissions"
+          value={`GHS ${asMoney(profile.total_commission_earned)}`}
+          subtitle={`${profile.commission_rate}% rate`}
+          icon={TrendingUp}
+        />
+        <MetricCard
+          title="Referrals"
+          value={profile.total_referrals.toString()}
+          subtitle="Total referred users"
+          icon={Users}
+        />
       </div>
 
       {/* Profile & Tier Info */}
@@ -575,49 +544,24 @@ export default function ResellerDashboardPage() {
       {/* Quick Actions */}
       <h2 className="text-lg font-semibold mb-4 text-slate-900">Quick Links</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-        <Card className="hover:border-slate-300 transition-colors cursor-pointer border-slate-200" onClick={() => window.location.href = "/dashboard/reseller/purchase"}>
-          <CardContent className="p-5 sm:p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-slate-100 rounded-lg">
-                <ShoppingCart className="h-6 w-6 text-slate-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-slate-900">Buy Wholesale</h3>
-                <p className="text-sm text-slate-500">Purchase at {profile.discount_rate}% discount</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:border-slate-300 transition-colors cursor-pointer border-slate-200" onClick={() => window.location.href = "/dashboard/reseller/inventory"}>
-          <CardContent className="p-5 sm:p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-slate-100 rounded-lg">
-                <Store className="h-6 w-6 text-slate-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-slate-900">My Inventory</h3>
-                <p className="text-sm text-slate-500">
-                  {stats?.inventory.count || 0} cards in stock
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:border-slate-300 transition-colors cursor-pointer border-slate-200" onClick={() => window.location.href = "/dashboard/reseller/marketing"}>
-          <CardContent className="p-5 sm:p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-slate-100 rounded-lg">
-                <Users className="h-6 w-6 text-slate-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-slate-900">Marketing Tools</h3>
-                <p className="text-sm text-slate-500">Referral links & assets</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <QuickActionCard
+          title="Buy Wholesale"
+          description={`Purchase at ${profile.discount_rate}% discount`}
+          icon={ShoppingCart}
+          onClick={() => window.location.href = "/dashboard/reseller/purchase"}
+        />
+        <QuickActionCard
+          title="My Inventory"
+          description={`${stats?.inventory.count || 0} cards in stock`}
+          icon={Store}
+          onClick={() => window.location.href = "/dashboard/reseller/inventory"}
+        />
+        <QuickActionCard
+          title="Marketing Tools"
+          description="Referral links & assets"
+          icon={Users}
+          onClick={() => window.location.href = "/dashboard/reseller/marketing"}
+        />
       </div>
 
       {/* New Feature Sections */}
