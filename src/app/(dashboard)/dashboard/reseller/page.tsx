@@ -589,24 +589,42 @@ export default function ResellerDashboardPage() {
 
       {/* Quick Actions */}
       <h2 className="text-lg font-semibold mb-4 text-slate-900">Quick Links</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <QuickActionCard
           title="Buy Wholesale"
-          description={`Purchase at ${profile.discount_rate}% discount`}
+          description={`${profile.discount_rate}% discount`}
           icon={ShoppingCart}
           onClick={() => window.location.href = "/dashboard/reseller/purchase"}
         />
         <QuickActionCard
-          title="My Inventory"
-          description={`${stats?.inventory.count || 0} cards in stock`}
+          title="Inventory"
+          description={`${stats?.inventory.count || 0} cards`}
           icon={Store}
           onClick={() => window.location.href = "/dashboard/reseller/inventory"}
         />
         <QuickActionCard
-          title="Marketing Tools"
-          description="Referral links & assets"
-          icon={Users}
+          title="Marketing"
+          description="Referral tools"
+          icon={Megaphone}
           onClick={() => window.location.href = "/dashboard/reseller/marketing"}
+        />
+        <QuickActionCard
+          title="Analytics"
+          description="View reports"
+          icon={BarChart3}
+          onClick={() => window.location.href = "/dashboard/reseller/analytics"}
+        />
+        <QuickActionCard
+          title="Settings"
+          description="Account config"
+          icon={Shield}
+          onClick={() => window.location.href = "/dashboard/reseller/security"}
+        />
+        <QuickActionCard
+          title="Support"
+          description="Get help"
+          icon={MessageCircle}
+          onClick={() => window.location.href = "/dashboard/tickets"}
         />
       </div>
 
@@ -615,37 +633,48 @@ export default function ResellerDashboardPage() {
         {/* Security Overview */}
         <Card className="hover:border-slate-300 transition-colors cursor-pointer border-slate-200" onClick={() => window.location.href = "/dashboard/reseller/security"}>
           <CardContent className="p-5 sm:p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-slate-100 rounded-lg">
-                  <Shield className="h-6 w-6 text-slate-600" />
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-slate-100 rounded-lg">
+                  <Shield className="h-5 w-5 text-slate-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900">Security Overview</h3>
-                  <p className="text-sm text-slate-500">Account security status</p>
+                  <h3 className="font-semibold text-slate-900 text-base">Security Overview</h3>
+                  <p className="text-xs text-slate-500">Account protection status</p>
                 </div>
               </div>
-              <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-200">Secure</Badge>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-slate-400" />
-                <span className="text-slate-600">Phone verified</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-slate-400" />
-                <span className="text-slate-600">Email verified</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-slate-400" />
-                <span className="text-slate-600">Account active</span>
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+                  <span className="text-sm font-semibold text-slate-700">100</span>
+                </div>
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t border-slate-100">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500">Security score</span>
-                <span className="font-semibold text-slate-900">100%</span>
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-slate-700">Phone Verified</span>
+                </div>
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">Active</Badge>
               </div>
+              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-slate-700">Email Verified</span>
+                </div>
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">Active</Badge>
+              </div>
+              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-slate-700">Account Active</span>
+                </div>
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">Active</Badge>
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100">
+              <span>Last checked: Today</span>
+              <span className="text-slate-600">View details →</span>
             </div>
           </CardContent>
         </Card>
@@ -709,16 +738,26 @@ export default function ResellerDashboardPage() {
         {/* Analytics Snapshot */}
         <Card className="hover:border-slate-300 transition-colors cursor-pointer border-slate-200" onClick={() => window.location.href = "/dashboard/reseller/analytics"}>
           <CardContent className="p-5 sm:p-6">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="p-3 bg-slate-100 rounded-lg">
-                <BarChart3 className="h-6 w-6 text-slate-600" />
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-slate-100 rounded-lg">
+                  <BarChart3 className="h-5 w-5 text-slate-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900 text-base">Analytics Snapshot</h3>
+                  <p className="text-xs text-slate-500">Last 7 days performance</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-slate-900">Analytics Snapshot</h3>
-                <p className="text-sm text-slate-500">Last 7 days</p>
+              <div className="text-right">
+                <p className="text-xs text-slate-500">Total Sales</p>
+                <p className="text-lg font-semibold text-slate-900 font-mono">
+                  GHS {trends?.sales && trends.sales.length > 0 
+                    ? trends.sales.slice(-7).reduce((sum, t) => sum + (Number(t.amount) || 0), 0).toFixed(0)
+                    : '0'}
+                </p>
               </div>
             </div>
-            <div className="flex items-end gap-2 h-16">
+            <div className="flex items-end gap-1.5 h-20 mb-3">
               {trends?.sales && trends.sales.length > 0 ? (
                 trends.sales.slice(-7).map((trend, i) => {
                   const maxAmount = Math.max(...trends.sales.map(t => Number(t.amount) || 0), 1);
@@ -726,8 +765,8 @@ export default function ResellerDashboardPage() {
                   return (
                     <div
                       key={i}
-                      className="flex-1 bg-slate-300 rounded-t transition-all"
-                      style={{ height: `${Math.max(height, 5)}%` }}
+                      className="flex-1 bg-slate-200 hover:bg-slate-300 rounded-t transition-all cursor-pointer"
+                      style={{ height: `${Math.max(height, 8)}%` }}
                       title={`${new Date(trend.date).toLocaleDateString()}: GHS ${(Number(trend.amount) || 0).toFixed(2)}`}
                     />
                   );
@@ -736,11 +775,18 @@ export default function ResellerDashboardPage() {
                 [40, 65, 45, 80, 55, 70, 60].map((h, i) => (
                   <div
                     key={i}
-                    className="flex-1 bg-slate-300 rounded-t"
+                    className="flex-1 bg-slate-200 rounded-t"
                     style={{ height: `${h}%` }}
                   />
                 ))
               )}
+            </div>
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100">
+              <div className="flex items-center gap-4">
+                <span>Transactions: {stats?.sales.total_sales || 0}</span>
+                <span>Avg: GHS {stats?.sales.total_sales ? (Number(stats.sales.total_amount) / Number(stats.sales.total_sales)).toFixed(0) : '0'}</span>
+              </div>
+              <span className="text-slate-600">View details →</span>
             </div>
           </CardContent>
         </Card>
