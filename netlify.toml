@@ -1,16 +1,16 @@
 [build]
   base = "."
-  command = "mkdir -p .netlify/publish && npm run build"
-  publish = ".netlify/publish"
+  command = "npm run build"
+  publish = ".next"
 
 [context.production]
-  publish = ".netlify/publish"
+  publish = ".next"
 
 [context.deploy-preview]
-  publish = ".netlify/publish"
+  publish = ".next"
 
 [context.branch-deploy]
-  publish = ".netlify/publish"
+  publish = ".next"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
