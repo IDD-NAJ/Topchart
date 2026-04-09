@@ -26,7 +26,6 @@ import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 
 type Step = "form" | "confirm" | "processing" | "success" | "failed"
-type PlanType = "daily" | "weekly" | "monthly" | "mega"
 
 export default function DataPage() {
   const router = useRouter()
@@ -34,7 +33,6 @@ export default function DataPage() {
   const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null)
   const [selectedPlan, setSelectedPlan] = useState<DataPlan | null>(null)
   const [phone, setPhone] = useState("")
-  const [planType, setPlanType] = useState<PlanType>("monthly")
   const [step, setStep] = useState<Step>("form")
   const [error, setError] = useState("")
   const [user, setUser] = useState<any>(null)
@@ -329,27 +327,6 @@ export default function DataPage() {
                      </CardContent>
                    </Card>
 
-                   <Card className="md:col-span-1">
-                     <CardHeader className="pb-4 border-b bg-muted/20">
-                        <CardTitle className="text-base">Package Classification</CardTitle>
-                        <CardDescription>Duration and magnitude of the data bundle.</CardDescription>
-                     </CardHeader>
-                     <CardContent className="pt-6">
-                        <div className="grid grid-cols-2 gap-2">
-                           {["daily", "weekly", "monthly", "mega"].map((type) => (
-                             <Button
-                               key={type}
-                               variant={planType === type ? "default" : "outline"}
-                               size="sm"
-                               onClick={() => setPlanType(type as PlanType)}
-                               className="h-9 uppercase text-[10px] font-bold tracking-widest"
-                             >
-                               {type}
-                             </Button>
-                           ))}
-                        </div>
-                     </CardContent>
-                   </Card>
                 </div>
               </section>
 
@@ -362,30 +339,28 @@ export default function DataPage() {
                  <Card className="overflow-hidden">
                     <CardContent className="p-0">
                       <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-y divide-border">
-                        {allNetworkPlans
-                          .filter((plan) => plan.type === planType)
-                          .map((plan) => (
-                            <button
-                              key={plan.id}
-                              onClick={() => setSelectedPlan(plan)}
-                              className={cn(
-                                "p-4 text-left transition-all hover:bg-muted/50 group flex items-center justify-between",
-                                selectedPlan?.id === plan.id ? "bg-[#006994]/5 ring-1 ring-inset ring-[#006994]/20" : ""
-                              )}
-                            >
-                              <div className="space-y-1">
-                                <p className="text-sm font-bold group-hover:text-[#006994] transition-colors">{plan.name}</p>
-                                <p className="text-xs text-muted-foreground font-mono">{plan.size}</p>
-                              </div>
-                              <div className="text-right">
-                                 <p className="text-sm font-bold">GH₵{Number(plan.price || 0).toFixed(2)}</p>
-                                 {selectedPlan?.id === plan.id && <Badge className="text-[8px] h-3 px-1 uppercase">Selected</Badge>}
-                              </div>
-                            </button>
-                          ))}
-                        {allNetworkPlans.filter((plan) => plan.type === planType).length === 0 && (
+                        {allNetworkPlans.map((plan) => (
+                          <button
+                            key={plan.id}
+                            onClick={() => setSelectedPlan(plan)}
+                            className={cn(
+                              "p-4 text-left transition-all hover:bg-muted/50 group flex items-center justify-between",
+                              selectedPlan?.id === plan.id ? "bg-[#006994]/5 ring-1 ring-inset ring-[#006994]/20" : ""
+                            )}
+                          >
+                            <div className="space-y-1">
+                              <p className="text-sm font-bold group-hover:text-[#006994] transition-colors">{plan.name}</p>
+                              <p className="text-xs text-muted-foreground font-mono">{plan.size}</p>
+                            </div>
+                            <div className="text-right">
+                               <p className="text-sm font-bold">GH₵{Number(plan.price || 0).toFixed(2)}</p>
+                               {selectedPlan?.id === plan.id && <Badge className="text-[8px] h-3 px-1 uppercase">Selected</Badge>}
+                            </div>
+                          </button>
+                        ))}
+                        {allNetworkPlans.length === 0 && (
                           <div className="md:col-span-2 p-8 text-center text-muted-foreground italic text-sm">
-                            No bundles found for this classification on the selected network.
+                            No bundles found for the selected network.
                           </div>
                         )}
                       </div>
