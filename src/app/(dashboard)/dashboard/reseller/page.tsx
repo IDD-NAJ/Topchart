@@ -400,7 +400,12 @@ export default function ResellerDashboardPage() {
                   <Phone className="h-4 w-4 text-slate-400 mt-0.5" />
                   <div>
                     <p className="text-xs text-slate-500 uppercase tracking-wide">Phone</p>
-                    <p className="font-medium text-slate-900">{profile.business_phone || 'N/A'}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-slate-900">{profile.business_phone || 'N/A'}</p>
+                      <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200 text-xs">
+                        Verified
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -447,14 +452,19 @@ export default function ResellerDashboardPage() {
         {/* Tier Status Card */}
         <Card className="border-slate-200">
           <CardHeader className="pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-slate-100 rounded-lg">
-                <Trophy className="h-6 w-6 text-slate-600" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-slate-100 rounded-lg">
+                  <Trophy className="h-6 w-6 text-slate-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-slate-900">Tier Status</CardTitle>
+                  <p className="text-sm text-slate-500">{profile.tier_name || 'Bronze'} Reseller</p>
+                </div>
               </div>
-              <div>
-                <CardTitle className="text-slate-900">Tier Status</CardTitle>
-                <p className="text-sm text-slate-500">{profile.tier_name || 'Bronze'} Reseller</p>
-              </div>
+              <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200 text-xs">
+                Active
+              </Badge>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
