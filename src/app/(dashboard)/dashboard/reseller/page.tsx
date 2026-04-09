@@ -699,17 +699,32 @@ export default function ResellerDashboardPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-slate-900">Analytics Snapshot</h3>
-                <p className="text-sm text-slate-500">Last 30 days</p>
+                <p className="text-sm text-slate-500">Last 7 days</p>
               </div>
             </div>
             <div className="flex items-end gap-2 h-16">
-              {[40, 65, 45, 80, 55, 70, 60].map((h, i) => (
-                <div
-                  key={i}
-                  className="flex-1 bg-slate-300 rounded-t"
-                  style={{ height: `${h}%` }}
-                />
-              ))}
+              {trends?.sales && trends.sales.length > 0 ? (
+                trends.sales.slice(-7).map((trend, i) => {
+                  const maxAmount = Math.max(...trends.sales.map(t => Number(t.amount) || 0), 1);
+                  const height = maxAmount > 0 ? ((Number(trend.amount) || 0) / maxAmount) * 100 : 0;
+                  return (
+                    <div
+                      key={i}
+                      className="flex-1 bg-slate-300 rounded-t transition-all"
+                      style={{ height: `${Math.max(height, 5)}%` }}
+                      title={`${new Date(trend.date).toLocaleDateString()}: GHS ${trend.amount.toFixed(2)}`}
+                    />
+                  );
+                })
+              ) : (
+                [40, 65, 45, 80, 55, 70, 60].map((h, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 bg-slate-300 rounded-t"
+                    style={{ height: `${h}%` }}
+                  />
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
