@@ -64,6 +64,7 @@ export async function GET(request: NextRequest) {
       success: true,
       discountRate,
       resellerCode: reseller.reseller_code,
+      walletBalance: reseller.wallet_balance || 0,
       resultCheckerCards: cardCounts,
       samplePricing: sampleCards,
       networks: [
