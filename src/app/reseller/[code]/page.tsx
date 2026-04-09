@@ -178,7 +178,7 @@ export default async function PublicResellerPage({ params }: { params: Promise<{
             <div className="grid grid-cols-2 gap-4 pt-4 border-t">
               <div className="text-center">
                 <p className="text-2xl font-bold text-[#006994]">
-                  GHS {profile.total_sales?.toFixed(2) || '0.00'}
+                  GHS {Number(profile.total_sales || 0).toFixed(2)}
                 </p>
                 <p className="text-sm text-muted-foreground">Total Sales</p>
               </div>

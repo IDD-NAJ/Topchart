@@ -993,13 +993,13 @@ function AdminResellersContent() {
                         </td>
                         <td className="p-3">
                           <div>
-                            <p className="font-medium">GHS {reseller.total_sales.toFixed(2)}</p>
+                            <p className="font-medium">GHS {Number(reseller.total_sales || 0).toFixed(2)}</p>
                             <p className="text-xs text-muted-foreground">{reseller.total_referrals} referrals</p>
                           </div>
                         </td>
                         <td className="p-3">
                           <div>
-                            <p className="font-medium">GHS {reseller.total_commission_earned.toFixed(2)}</p>
+                            <p className="font-medium">GHS {Number(reseller.total_commission_earned || 0).toFixed(2)}</p>
                             <p className="text-xs text-muted-foreground">{reseller.commission_rate}% rate</p>
                           </div>
                         </td>

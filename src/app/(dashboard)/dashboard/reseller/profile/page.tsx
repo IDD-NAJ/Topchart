@@ -454,7 +454,7 @@ export default function ResellerProfilePage() {
             </div>
             <p className="text-sm text-slate-500">
               {profile.next_tier_threshold
-                ? `You need GHS ${(profile.next_tier_threshold - profile.total_sales).toFixed(0)} more in sales to reach ${profile.next_tier_name}`
+                ? `You need GHS ${(Number(profile.next_tier_threshold || 0) - Number(profile.total_sales || 0)).toFixed(0)} more in sales to reach ${profile.next_tier_name}`
                 : 'Congratulations! You have reached the maximum tier.'}
             </p>
           </CardContent>
@@ -546,13 +546,13 @@ export default function ResellerProfilePage() {
               </div>
               <div className="text-center p-4 sm:p-5 bg-slate-50 rounded-lg border border-slate-200">
                 <p className="text-2xl sm:text-3xl font-bold text-slate-900 font-mono">
-                  GHS {profile.total_sales.toFixed(2)}
+                  GHS {Number(profile.total_sales || 0).toFixed(2)}
                 </p>
                 <p className="text-xs sm:text-sm text-slate-600 mt-1">Total Sales</p>
               </div>
               <div className="text-center p-4 sm:p-5 bg-slate-50 rounded-lg border border-slate-200">
                 <p className="text-2xl sm:text-3xl font-bold text-slate-900 font-mono">
-                  GHS {profile.total_commission_earned.toFixed(2)}
+                  GHS {Number(profile.total_commission_earned || 0).toFixed(2)}
                 </p>
                 <p className="text-xs sm:text-sm text-slate-600 mt-1">Commission Earned</p>
               </div>

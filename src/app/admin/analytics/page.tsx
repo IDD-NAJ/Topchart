@@ -83,7 +83,7 @@ export default function AdminAnalyticsOverviewPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">GHS {stats.totalSales?.toFixed(2)}</div>
+            <div className="text-2xl font-bold">GHS {Number(stats.totalSales || 0).toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">All time revenue</p>
           </CardContent>
         </Card>
@@ -145,7 +145,7 @@ export default function AdminAnalyticsOverviewPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold">GHS {reseller.total_sales?.toFixed(2)}</p>
+                    <p className="font-bold">GHS {Number(reseller.total_sales || 0).toFixed(2)}</p>
                     <p className="text-xs text-muted-foreground">{reseller.total_referrals} referrals</p>
                   </div>
                 </div>
@@ -176,7 +176,7 @@ export default function AdminAnalyticsOverviewPage() {
                     <span className="font-medium">{region.region || "Unknown"}</span>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">GHS {parseFloat(region.total_sales || 0).toFixed(2)}</p>
+                    <p className="font-semibold">GHS {Number(region.total_sales || 0).toFixed(2)}</p>
                     <p className="text-xs text-muted-foreground">{region.sales_count} sales</p>
                   </div>
                 </div>

@@ -510,7 +510,7 @@ export default function ResellerDashboardPage() {
                 </div>
                 <p className="text-xs text-slate-500 mt-2">
                   {profile.next_tier_threshold
-                    ? `Need GHS ${(profile.next_tier_threshold - profile.total_sales).toFixed(0)} more in sales`
+                    ? `Need GHS ${(Number(profile.next_tier_threshold || 0) - Number(profile.total_sales || 0)).toFixed(0)} more in sales`
                     : 'Maximum tier reached!'}
                 </p>
               </div>
@@ -831,7 +831,7 @@ export default function ResellerDashboardPage() {
             <div className="flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100">
               <div className="flex items-center gap-4">
                 <span>Transactions: {stats?.sales.total_sales || 0}</span>
-                <span>Avg: GHS {stats?.sales.total_sales ? (Number(stats.sales.total_amount) / Number(stats.sales.total_sales)).toFixed(0) : '0'}</span>
+                <span>Avg: GHS {stats?.sales.total_sales ? (Number(stats.sales.total_amount || 0) / Number(stats.sales.total_sales || 0)).toFixed(0) : '0'}</span>
               </div>
               <span className="text-slate-600">View details →</span>
             </div>
