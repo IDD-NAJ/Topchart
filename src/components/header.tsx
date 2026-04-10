@@ -32,6 +32,7 @@ import {
   MessageSquare,
   FileText,
   HelpCircle,
+  Gift,
   type LucideIcon
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -55,6 +56,7 @@ const navConfig: NavItem[] = [
 const servicesConfig: NavItem[] = [
   { href: "/dashboard/airtime", label: "Airtime", icon: Phone, description: "Instant top-up for all networks", showOn: ['mobile'], auth: 'all' },
   { href: "/dashboard/data", label: "Data Bundles", icon: Wifi, description: "Affordable data packages", showOn: ['mobile'], auth: 'all' },
+  { href: "/dashboard/giftcards", label: "Gift Cards", icon: Gift, description: "Buy gift cards for popular brands", showOn: ['mobile'], auth: 'all' },
   { href: "/dashboard/verification", label: "Verification Numbers", icon: PhoneCall, description: "Temporary phone numbers for OTPs", showOn: ['mobile'], auth: 'all' },
   { href: "/dashboard/result-checkers", label: "Result Checkers", icon: CreditCard, description: "WAEC, BECE, NOVDEC results", showOn: ['mobile'], auth: 'all' },
   { href: "/dashboard/reseller", label: "Reseller Program", icon: Store, description: "Earn commissions as a reseller", showOn: ['mobile'], auth: 'all' },
