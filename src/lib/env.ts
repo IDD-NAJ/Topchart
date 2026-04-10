@@ -15,6 +15,11 @@ const envSchema = z.object({
   EMAIL_USER: z.string().optional(),
   EMAIL_PASS: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
+  RELOADLY_CLIENT_ID: z.string().optional(),
+  RELOADLY_CLIENT_SECRET: z.string().optional(),
+  RELOADLY_API_BASE_URL: z.string().url().optional(),
+  RELOADLY_SANDBOX: z.string().optional(),
+  DEFAULT_GIFTCARD_MARKUP: z.string().optional(),
 });
 
 type ServerEnv = z.infer<typeof envSchema>;
