@@ -77,6 +77,14 @@ const services = [
     hoverColor: "group-hover:border-[#1A85B8]/30"
   },
   {
+    href: "/dashboard/giftcards",
+    label: "Gift Cards",
+    description: "Purchase digital gift cards instantly",
+    icon: Gift,
+    color: "text-purple-600 bg-purple-50",
+    hoverColor: "group-hover:border-purple-300/50"
+  },
+  {
     href: "/dashboard/verification",
     label: "Number Verification",
     description: "Get US numbers for SMS verification",
