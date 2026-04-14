@@ -5,7 +5,6 @@ import {
   getAllServices,
   calculateUserPrice,
   mapCategoryByName,
-  USD_TO_GHS_RATE,
   DEFAULT_MARKUP_PERCENT,
   type PVAService,
 } from "@/lib/pvadeals";
@@ -71,6 +70,19 @@ export async function GET(request: NextRequest) {
       // Table might not exist yet — proceed with defaults
     }
 
+    // Fetch dynamic exchange rate from settings
+    let exchangeRate = 15.5;
+    try {
+      const settings = await sql`
+        SELECT value FROM app_settings WHERE key = 'exchange_rate'
+      `;
+      if (settings.length > 0) {
+        exchangeRate = parseFloat(settings[0].value) || exchangeRate;
+      }
+    } catch {
+      // Table might not exist yet — use default
+    }
+
     // Build enriched services
     const services = pvaServices
       .map((svc) => {
@@ -94,11 +106,11 @@ export async function GET(request: NextRequest) {
           ltr14_price_usd: svc.LTR14price,
           ltr30_price_usd: svc.LTR30price,
           // GHS prices with markup for display
-          str_price: calculateUserPrice(svc.STRprice, USD_TO_GHS_RATE, markup),
-          ltr3_price: calculateUserPrice(svc.LTR3price, USD_TO_GHS_RATE, markup),
-          ltr7_price: calculateUserPrice(svc.LTR7price, USD_TO_GHS_RATE, markup),
-          ltr14_price: calculateUserPrice(svc.LTR14price, USD_TO_GHS_RATE, markup),
-          ltr30_price: calculateUserPrice(svc.LTR30price, USD_TO_GHS_RATE, markup),
+          str_price: calculateUserPrice(svc.STRprice, exchangeRate, markup),
+          ltr3_price: calculateUserPrice(svc.LTR3price, exchangeRate, markup),
+          ltr7_price: calculateUserPrice(svc.LTR7price, exchangeRate, markup),
+          ltr14_price: calculateUserPrice(svc.LTR14price, exchangeRate, markup),
+          ltr30_price: calculateUserPrice(svc.LTR30price, exchangeRate, markup),
           markup_percentage: markup,
         };
       })
@@ -120,7 +132,7 @@ export async function GET(request: NextRequest) {
         services: filtered,
         grouped,
         categories: CATEGORIES,
-        exchange_rate: USD_TO_GHS_RATE,
+        exchange_rate: exchangeRate,
       },
     });
   } catch (error) {

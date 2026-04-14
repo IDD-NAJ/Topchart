@@ -144,6 +144,9 @@ export default function VerificationPage() {
   const [areaCodeFallback, setAreaCodeFallback] = useState(false)
   const [globalAreaCodes, setGlobalAreaCodes] = useState<{ code: string; state: string }[]>([])
   const [apiError, setApiError] = useState<string | null>(null)
+  
+  // Global pricing settings
+  const [exchangeRate, setExchangeRate] = useState(15.5)
 
   // Fetch global area codes on mount
   useEffect(() => {
@@ -221,6 +224,10 @@ export default function VerificationPage() {
       const data = await res.json()
       if (data.success) {
         setServices(data.data.services)
+        // Also update exchange rate from services API
+        if (data.data.exchange_rate) {
+          setExchangeRate(data.data.exchange_rate)
+        }
         setError(null)
       } else {
         setError(data.error || "Failed to load services")
@@ -240,6 +247,16 @@ export default function VerificationPage() {
     } catch {}
     finally { setAdminLoading(false) }
   }, [isAdmin])
+
+  const fetchGlobalSettings = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/verification/settings")
+      const data = await res.json()
+      if (data.success && data.data?.exchangeRate) {
+        setExchangeRate(data.data.exchangeRate)
+      }
+    } catch { /* ignore - use default */ }
+  }, [])
 
   const handleAdminSave = async (serviceId: string) => {
     const edit = adminEdits[serviceId]
@@ -295,7 +312,8 @@ export default function VerificationPage() {
     refreshUser()
     fetchServices()
     fetchActiveNumbers()
-  }, [fetchServices, fetchActiveNumbers, refreshUser])
+    fetchGlobalSettings()
+  }, [fetchServices, fetchActiveNumbers, refreshUser, fetchGlobalSettings])
 
   useEffect(() => {
     if (isAdmin && adminPanelOpen && adminServices.length === 0) {
@@ -517,7 +535,7 @@ export default function VerificationPage() {
                       const isActive = adminEdits[svc.id]?.is_active ?? svc.is_active
                       const isDirty = !!adminEdits[svc.id]
                       const isSaving = adminSaving === svc.id
-                      const strGhs = svc.str_price ? (svc.str_price * 15.5 * (1 + (markup || 0) / 100)).toFixed(2) : "---"
+                      const strGhs = svc.str_price ? (svc.str_price * exchangeRate * (1 + (markup || 0) / 100)).toFixed(2) : "---"
                       return (
                         <Card key={svc.id} className={isDirty ? "border-amber-300/60 bg-amber-50/40" : ""}>
                           <CardContent className="space-y-3 p-4">
@@ -594,7 +612,7 @@ export default function VerificationPage() {
                           const isActive = adminEdits[svc.id]?.is_active ?? svc.is_active
                           const isDirty = !!adminEdits[svc.id]
                           const isSaving = adminSaving === svc.id
-                          const strGhs = svc.str_price ? (svc.str_price * 15.5 * (1 + (markup || 0) / 100)).toFixed(2) : '---'
+                          const strGhs = svc.str_price ? (svc.str_price * exchangeRate * (1 + (markup || 0) / 100)).toFixed(2) : '---'
                           return (
                             <tr key={svc.id} className={isDirty ? "bg-amber-50/60 dark:bg-amber-950/20" : "bg-background"}>
                               <td className="px-2 sm:px-3 py-2">
