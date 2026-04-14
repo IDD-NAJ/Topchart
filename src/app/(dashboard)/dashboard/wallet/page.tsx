@@ -125,7 +125,7 @@ export default function WalletPage() {
         </div>
 
         {/* Main Balance Card */}
-        <Card className="mb-8 border-[#006994]/10 bg-gradient-to-br from-[#006994]/5 to-background">
+        <Card className="mb-8 border-[#0052CC]/10 bg-gradient-to-br from-[#0052CC]/5 to-background">
           <CardContent className="p-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
@@ -156,7 +156,7 @@ export default function WalletPage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card className="bg-card/50 backdrop-blur-sm border-[#006994]/5">
+          <Card className="bg-card/50 backdrop-blur-sm border-[#0052CC]/5">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-muted-foreground">Total Deposited</p>
@@ -170,7 +170,7 @@ export default function WalletPage() {
               <p className="text-xs text-muted-foreground mt-1">Lifetime deposits</p>
             </CardContent>
           </Card>
-          <Card className="bg-card/50 backdrop-blur-sm border-[#006994]/5">
+          <Card className="bg-card/50 backdrop-blur-sm border-[#0052CC]/5">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-muted-foreground">Total Spent</p>
@@ -184,11 +184,11 @@ export default function WalletPage() {
               <p className="text-xs text-muted-foreground mt-1">Lifetime spending</p>
             </CardContent>
           </Card>
-          <Card className="bg-card/50 backdrop-blur-sm border-[#006994]/5">
+          <Card className="bg-card/50 backdrop-blur-sm border-[#0052CC]/5">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-muted-foreground">Net Position</p>
-                <TrendingUp className="w-4 h-4 text-[#006994]" />
+                <TrendingUp className="w-4 h-4 text-[#0052CC]" />
               </div>
               <div className="flex items-baseline gap-1">
                 <h3 className="text-2xl font-bold">
@@ -201,7 +201,7 @@ export default function WalletPage() {
         </div>
 
         {/* Recent Transactions */}
-        <Card className="border-[#006994]/5">
+        <Card className="border-[#0052CC]/5">
           <CardHeader>
             <CardTitle>Recent Transactions</CardTitle>
             <CardDescription>Your latest wallet activity</CardDescription>
@@ -209,13 +209,13 @@ export default function WalletPage() {
           <CardContent>
             {loading ? (
               <div className="flex flex-col items-center justify-center py-12 gap-4">
-                <Loader2 className="w-8 h-8 animate-spin text-[#006994]" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#0052CC]" />
                 <p className="text-muted-foreground animate-pulse">Loading transactions...</p>
               </div>
             ) : walletData?.recentTransactions?.length === 0 ? (
               <div className="text-center py-12">
-                <div className="w-16 h-16 bg-[#006994]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Plus className="w-8 h-8 text-[#006994]" />
+                <div className="w-16 h-16 bg-[#0052CC]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Plus className="w-8 h-8 text-[#0052CC]" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Start using your wallet</h3>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-6">

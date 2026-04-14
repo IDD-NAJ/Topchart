@@ -17,6 +17,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  const correlationId = `ver-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
+  
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
@@ -74,8 +76,14 @@ export async function POST(request: NextRequest) {
     // Get the live service from PVADeals to confirm it exists and get prices
     const allServicesResult = await getAllServices();
     if (!allServicesResult.success || !allServicesResult.data) {
+      console.error(`[${correlationId}] getAllServices failed:`, allServicesResult.error)
       return NextResponse.json(
-        { success: false, error: "Failed to fetch services from provider" },
+        { 
+          success: false, 
+          error: "Verification provider unavailable — check API configuration", 
+          code: "PROVIDER_SERVICES",
+          correlationId 
+        },
         { status: 502 }
       );
     }
@@ -133,11 +141,21 @@ export async function POST(request: NextRequest) {
         // Check for provider-specific errors
         const errorMsg = result.error || "";
         let userError = errorMsg;
+        let errorCode = "PROVIDER_PURCHASE";
+        
         if (errorMsg.toLowerCase().includes("insufficient credits") || errorMsg.toLowerCase().includes("out of credits")) {
           userError = "Provider temporarily out of credits. Please try again in a few minutes or contact support.";
+          errorCode = "INSUFFICIENT_CREDITS";
         }
+        
+        console.error(`[${correlationId}] purchaseSTR failed:`, errorMsg)
         return NextResponse.json(
-          { success: false, error: userError || "Failed to purchase number from provider" },
+          { 
+            success: false, 
+            error: userError || "Failed to purchase number from provider",
+            code: errorCode,
+            correlationId 
+          },
           { status: 502 }
         );
       }
@@ -148,11 +166,21 @@ export async function POST(request: NextRequest) {
         // Check for provider-specific errors
         const errorMsg = result.error || "";
         let userError = errorMsg;
+        let errorCode = "PROVIDER_PURCHASE";
+        
         if (errorMsg.toLowerCase().includes("insufficient credits") || errorMsg.toLowerCase().includes("out of credits")) {
           userError = "Provider temporarily out of credits. Please try again in a few minutes or contact support.";
+          errorCode = "INSUFFICIENT_CREDITS";
         }
+        
+        console.error(`[${correlationId}] purchaseLTR failed:`, errorMsg)
         return NextResponse.json(
-          { success: false, error: userError || "Failed to purchase LTR number from provider" },
+          { 
+            success: false, 
+            error: userError || "Failed to purchase LTR number from provider",
+            code: errorCode,
+            correlationId 
+          },
           { status: 502 }
         );
       }
@@ -300,15 +328,29 @@ export async function POST(request: NextRequest) {
         console.error("Failed to cancel PVADeals number after DB error:", cancelError);
       }
       console.error("Database transaction error:", dbError);
+      const errorMessage = dbError instanceof Error ? dbError.message : "Unknown database error";
       return NextResponse.json(
-        { success: false, error: "Failed to complete purchase. Please contact support." },
+        { 
+          success: false, 
+          error: "Failed to complete purchase due to a database error. Please try again or contact support if the issue persists.",
+          code: "DATABASE_ERROR",
+          correlationId,
+          details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+        },
         { status: 500 }
       );
     }
   } catch (error) {
     console.error("Verification purchase error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { success: false, error: "Failed to process purchase" },
+      { 
+        success: false, 
+        error: "Failed to process purchase. Please try again.",
+        code: "PROCESSING_ERROR",
+        correlationId,
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
       { status: 500 }
     );
   }

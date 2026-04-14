@@ -5,12 +5,15 @@ export function DashboardFooter() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="border-t border-border bg-muted/20 animate-in fade-in duration-700">
+    <footer className="animate-in fade-in border-t border-[color:var(--marketing-accent)]/10 bg-[color:var(--marketing-cream-alt)]/50 duration-700">
       <div className="container mx-auto px-4 py-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="grid gap-8 md:grid-cols-3">
           <div>
             <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#006994] animate-in zoom-in duration-500 delay-100">
+              <div
+                className="flex h-9 w-9 items-center justify-center rounded-lg animate-in zoom-in duration-500 delay-100"
+                style={{ backgroundColor: "var(--marketing-accent)" }}
+              >
                 <Zap className="h-5 w-5 text-white" />
               </div>
               <span className="text-lg font-bold text-foreground">Topchart</span>

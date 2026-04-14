@@ -100,9 +100,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:grid lg:grid-cols-[1.1fr,0.9fr] bg-background selection:bg-[#006994]/15 selection:text-foreground">
-      {/* Left Side: Form */}
-      <main className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 lg:p-16 relative pt-28 lg:pt-24">
+    <div className="flex min-h-screen flex-col bg-[color:var(--marketing-cream-alt)] selection:bg-[color:var(--marketing-accent)]/15 lg:grid lg:grid-cols-[1.1fr,0.9fr]">
+      <main className="relative flex flex-1 flex-col items-center justify-center p-6 pt-8 md:p-12 lg:p-16 lg:pt-12">
         <div className="absolute inset-0 bg-[radial-gradient(50%_50%_at_50%_50%,rgba(0,105,148,0.03)_0%,transparent_100%)] pointer-events-none" />
         
         <motion.div 
@@ -117,7 +116,7 @@ export default function LoginPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4, delay: 0.1 }}
             >
-              <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-[#006994] transition-all duration-300 group" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
+              <Link href="/" className="group inline-flex items-center text-sm font-medium text-neutral-600 transition-colors hover:text-[color:var(--marketing-accent)]">
                 <ChevronLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
                 Back to home
               </Link>
@@ -129,15 +128,11 @@ export default function LoginPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="space-y-2"
             >
-              <Link href="/" className="block">
-                <div className="flex items-center mb-8">
-                  <span className="font-heading text-3xl font-normal tracking-tight text-foreground">
-                    Topchart
-                  </span>
-                  <span className="ml-2 text-[11px] font-bold uppercase tracking-widest text-[#006994] bg-[#006994]/10 px-2.5 py-1 rounded-full">
-                    GH
-                  </span>
-                </div>
+              <Link href="/" className="mb-8 block">
+                <span className="font-marketing-script text-4xl text-[color:var(--marketing-gold)]">Topchart</span>
+                <span className="ml-2 inline-block rounded-full bg-[color:var(--marketing-accent)]/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-widest text-[color:var(--marketing-accent)]">
+                  GH
+                </span>
               </Link>
               <h1 className="font-heading text-3xl font-normal tracking-tight text-foreground">Welcome back</h1>
               <p className="text-muted-foreground font-body">Sign in to access your account and continue topping up.</p>
@@ -182,8 +177,7 @@ export default function LoginPage() {
                   <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">Password</Label>
                   <Link 
                     href="/forgot-password" 
-                    className="text-xs font-medium text-[#006994] hover:text-[#004D6E] transition-all duration-300"
-                    style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
+                    className="text-xs font-medium text-[color:var(--marketing-accent)] hover:opacity-90"
                   >
                     Forgot password?
                   </Link>
@@ -210,7 +204,12 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full h-12 text-base font-medium bg-gradient-to-r from-[#006994] to-[#1A85B8] text-white hover:from-[#00567A] hover:to-[#006994] shadow-lg shadow-[#006994]/20 rounded-xl transition-all duration-300" disabled={isLoading} style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
+              <Button
+                type="submit"
+                className="h-12 w-full rounded-full text-base font-semibold text-white shadow-md transition-opacity hover:opacity-95 disabled:opacity-60"
+                style={{ backgroundColor: "var(--marketing-accent)" }}
+                disabled={isLoading}
+              >
                 {isLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -227,7 +226,7 @@ export default function LoginPage() {
                 <span className="w-full border-t border-border/50" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">New to Topchart?</span>
+                <span className="bg-[color:var(--marketing-cream-alt)] px-2 text-muted-foreground">New to Topchart?</span>
               </div>
             </div>
 
@@ -286,12 +285,22 @@ export default function LoginPage() {
       </main>
 
       {/* Right Side: Visual Content */}
-      <aside className="hidden lg:flex flex-col relative text-white p-16 overflow-hidden border-l border-white/5" style={{ background: 'linear-gradient(135deg, #004D6E 0%, #006994 50%, #1A85B8 100%)' }}>
-        {/* Abstract background elements */}
+      <aside
+        className="relative hidden flex-col overflow-hidden border-l border-white/10 p-16 text-white lg:flex"
+        style={{ backgroundColor: "var(--marketing-hero-dark)" }}
+      >
+        <div className="pointer-events-none absolute inset-0 opacity-20">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-width='0.5' d='M40 200 Q100 80 200 200 T360 200'/%3E%3C/svg%3E")`,
+              backgroundSize: "380px 380px",
+            }}
+          />
+        </div>
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#722F37]/25 rounded-full blur-[120px]" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-white/5 rounded-full blur-[120px]" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px]" />
+          <div className="absolute left-[-10%] top-[-10%] h-[40%] w-[40%] rounded-full bg-[color:var(--marketing-accent)]/20 blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] h-[40%] w-[40%] rounded-full bg-white/5 blur-[120px]" />
         </div>
         
         <motion.div 
@@ -300,75 +309,7 @@ export default function LoginPage() {
           transition={{ duration: 0.7 }}
           className="relative z-10 flex flex-col h-full"
         >
-          <div className="flex-1 flex flex-col justify-center">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="inline-flex items-center px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-bold text-white/90 uppercase tracking-widest mb-8 w-fit backdrop-blur-sm"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-success mr-2 animate-pulse"></span>
-              Platform Operational
-            </motion.div>
-            
-            <motion.h2 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="font-heading text-5xl xl:text-6xl font-normal tracking-tight mb-10 leading-[1.05]"
-            >
-              Ghana&apos;s #1 <br />
-              <span className="text-[#FDF2F3]">Digital Recharge</span><br />
-              Platform
-            </motion.h2>
-            
-            <motion.div 
-              variants={staggerContainer}
-              initial="initial"
-              animate="animate"
-              className="space-y-8 max-w-md"
-            >
-              {benefits.map((benefit, i) => (
-                <motion.div 
-                  key={i} 
-                  variants={fadeInUp}
-                  transition={{ delay: 0.4 + i * 0.1 }}
-                  className="flex gap-4 group"
-                >
-                  <motion.div 
-                    whileHover={{ scale: 1.05 }}
-                    className="h-12 w-12 shrink-0 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white"
-                  >
-                    <benefit.icon className="h-6 w-6" />
-                  </motion.div>
-                  <div className="pt-0.5">
-                    <h3 className="font-heading text-lg font-normal mb-1 text-white">{benefit.title}</h3>
-                    <p className="text-white/60 text-sm leading-relaxed font-body">
-                      {benefit.description}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.8 }}
-            className="pt-12 mt-auto"
-          >
-            <div className="grid grid-cols-2 gap-6">
-              <div className="p-5 rounded-2xl bg-white/[0.05] border border-white/10 backdrop-blur-sm">
-                <div className="font-heading text-3xl font-normal text-white mb-1">500K+</div>
-                <div className="text-[11px] font-bold uppercase tracking-widest text-white/50 font-body">Active Users</div>
-              </div>
-              <div className="p-5 rounded-2xl bg-white/[0.05] border border-white/10 backdrop-blur-sm">
-                <div className="font-heading text-3xl font-normal text-white mb-1">99.9%</div>
-                <div className="text-[11px] font-bold uppercase tracking-widest text-white/50 font-body">Uptime</div>
-              </div>
-            </div>
-          </motion.div>
+          <div className="flex-1 flex flex-col justify-center"></div>
         </motion.div>
       </aside>
     </div>

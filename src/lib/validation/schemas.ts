@@ -12,13 +12,13 @@ export const passwordSchema = z
   .string()
   .min(8, "Password must be at least 8 characters")
   .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-  .regex(/[0-9]/, "Password must contain at least one number");
+  .regex(/[0-9]/, "Password must contain at least one number")
+  .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character");
 
 export const phoneSchema = z
   .string()
   .min(1, "Phone number is required")
-  .regex(/^0[2-9]\d{8}$/, "Invalid Ghana phone number (format: 024XXXXXXX)");
+  .regex(/^0[2-5][0-9]\d{7}$/, "Invalid Ghana phone number (format: 024XXXXXXX)");
 
 export const nameSchema = z
   .string()

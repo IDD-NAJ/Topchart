@@ -2,9 +2,12 @@ import React from "react"
 import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/lib/auth-context'
+import { AntiClone } from '@/components/anti-clone'
 import '@fontsource-variable/inter'
 import '@fontsource/dm-serif-display'
 import './globals.css'
+
+// Fallback standard CSS variable system for Great Vibes (fixes Turbopack internal/font compilation network flake issues)
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://topchart.gh'),
@@ -115,6 +118,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className="font-sans antialiased">
         <AuthProvider>
+          <AntiClone />
           {children}
         </AuthProvider>
         <Analytics />

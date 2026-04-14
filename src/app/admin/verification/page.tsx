@@ -299,12 +299,12 @@ export default function AdminVerificationPage() {
       </Card>
 
       {/* ── Pricing Panel ── */}
-      <Card className="border-[#006994]/20 bg-[#EFF6FA]/40">
+      <Card className="border-[color:var(--marketing-accent)]/20 bg-[color:var(--marketing-cream-alt)]/40">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-[#006994]/10 flex items-center justify-center">
-                <DollarSign className="h-5 w-5 text-[#006994]" />
+              <div className="h-10 w-10 rounded-lg bg-[color:var(--marketing-accent)]/10 flex items-center justify-center">
+                <DollarSign className="h-5 w-5 text-[color:var(--marketing-accent)]" />
               </div>
               <div>
                 <CardTitle className="text-base">Pricing &amp; Markup Settings</CardTitle>
@@ -317,7 +317,7 @@ export default function AdminVerificationPage() {
               </div>
             </div>
             <Link href="/admin/verification/pricing">
-              <Button size="sm" className="gap-2 bg-[#006994] hover:bg-[#005a7d]">
+              <Button size="sm" className="gap-2 bg-[color:var(--marketing-accent)] hover:bg-[color:var(--marketing-accent-hover)]">
                 <Settings className="h-3.5 w-3.5" />
                 Full Pricing Editor
                 <ArrowRight className="h-3.5 w-3.5" />
@@ -346,7 +346,7 @@ export default function AdminVerificationPage() {
               <span className="text-sm text-muted-foreground">%</span>
               <Button
                 size="sm"
-                className="h-8 gap-1.5 bg-[#006994] hover:bg-[#005a7d]"
+                className="h-8 gap-1.5 bg-[color:var(--marketing-accent)] hover:bg-[color:var(--marketing-accent-hover)]"
                 onClick={handleSaveGlobalMarkup}
                 disabled={globalMarkupSaving}
               >
@@ -359,13 +359,13 @@ export default function AdminVerificationPage() {
           {/* Top services pricing preview */}
           {pricingLoading ? (
             <div className="flex items-center justify-center py-6">
-              <Loader2 className="h-5 w-5 animate-spin text-[#006994]" />
+              <Loader2 className="h-5 w-5 animate-spin text-[color:var(--marketing-accent)]" />
             </div>
           ) : pricingServices.length > 0 ? (
             <div>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Top Services — Current Prices</p>
-                <Link href="/admin/verification/pricing" className="text-xs text-[#006994] hover:underline flex items-center gap-0.5">
+                <Link href="/admin/verification/pricing" className="text-xs text-[color:var(--marketing-accent)] hover:underline flex items-center gap-0.5">
                   View all <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
@@ -401,7 +401,7 @@ export default function AdminVerificationPage() {
                             </Badge>
                           </td>
                           <td className="px-3 py-2 text-right font-medium">{svc.markup_percentage}%</td>
-                          <td className="px-3 py-2 text-right font-mono font-semibold text-[#006994]">GH₵{strGhs}</td>
+                          <td className="px-3 py-2 text-right font-mono font-semibold text-[color:var(--marketing-accent)]">GH₵{strGhs}</td>
                           <td className="px-3 py-2 text-right hidden sm:table-cell text-muted-foreground">
                             {svc.purchase_count ?? 0}
                           </td>
@@ -414,7 +414,7 @@ export default function AdminVerificationPage() {
               {pricingServices.length > 8 && (
                 <p className="text-xs text-muted-foreground text-center mt-2">
                   +{pricingServices.length - 8} more services —{" "}
-                  <Link href="/admin/verification/pricing" className="text-[#006994] hover:underline">view all</Link>
+                  <Link href="/admin/verification/pricing" className="text-[color:var(--marketing-accent)] hover:underline">view all</Link>
                 </p>
               )}
             </div>
@@ -432,9 +432,9 @@ export default function AdminVerificationPage() {
       {/* Quick Links */}
       <div className="grid gap-4 md:grid-cols-3">
         <Link href="/admin/verification/numbers">
-          <Card className="hover:border-[#006994] transition-colors cursor-pointer">
+          <Card className="hover:border-[color:var(--marketing-accent)] transition-colors cursor-pointer">
             <CardContent className="p-6">
-              <Phone className="h-8 w-8 mb-4 text-[#006994]" />
+              <Phone className="h-8 w-8 mb-4 text-[color:var(--marketing-accent)]" />
               <h3 className="font-semibold">Manage Numbers</h3>
               <p className="text-sm text-muted-foreground">
                 View all active and completed verifications
@@ -444,22 +444,22 @@ export default function AdminVerificationPage() {
         </Link>
 
         <Link href="/admin/verification/pricing">
-          <Card className="hover:border-[#006994] border-[#006994]/30 bg-[#EFF6FA]/30 transition-colors cursor-pointer">
+          <Card className="hover:border-[color:var(--marketing-accent)] border-[color:var(--marketing-accent)]/30 bg-[color:var(--marketing-cream-alt)]/30 transition-colors cursor-pointer">
             <CardContent className="p-6">
-              <DollarSign className="h-8 w-8 mb-4 text-[#006994]" />
+              <DollarSign className="h-8 w-8 mb-4 text-[color:var(--marketing-accent)]" />
               <h3 className="font-semibold">Full Pricing Editor</h3>
               <p className="text-sm text-muted-foreground">
                 Bulk markup, category defaults, export CSV
               </p>
-              <Badge className="mt-3 text-[10px] bg-[#006994]">Recommended</Badge>
+              <Badge className="mt-3 text-[10px] bg-[color:var(--marketing-accent)]">Recommended</Badge>
             </CardContent>
           </Card>
         </Link>
 
         <Link href="/admin/verification/sms">
-          <Card className="hover:border-[#006994] transition-colors cursor-pointer">
+          <Card className="hover:border-[color:var(--marketing-accent)] transition-colors cursor-pointer">
             <CardContent className="p-6">
-              <MessageSquare className="h-8 w-8 mb-4 text-[#006994]" />
+              <MessageSquare className="h-8 w-8 mb-4 text-[color:var(--marketing-accent)]" />
               <h3 className="font-semibold">SMS Log</h3>
               <p className="text-sm text-muted-foreground">
                 View received SMS messages

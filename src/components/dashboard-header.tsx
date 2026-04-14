@@ -24,7 +24,6 @@ import {
   Megaphone,
   MessageSquare,
   ShieldAlert,
-  Gift,
   GraduationCap,
 } from "lucide-react"
 
@@ -61,7 +60,6 @@ const resellerNavSimple = [
 const preferencesNavItems = [
   { href: "/dashboard/profile", label: "Profile Settings", icon: User },
   { href: "/dashboard/wallet", label: "My Wallet", icon: CreditCard },
-  { href: "/dashboard/giftcards", label: "Gift Cards", icon: Gift },
   { href: "/dashboard/tickets", label: "Support Tickets", icon: MessageSquare },
   { href: "/dashboard/disputes", label: "My Disputes", icon: ShieldAlert },
 ]

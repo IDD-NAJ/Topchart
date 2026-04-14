@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
@@ -76,7 +76,7 @@ interface SMS {
   received_at: string
 }
 
-export default function ServiceDetailPage() {
+function ServiceDetailPageContent() {
   const params = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -217,6 +217,7 @@ export default function ServiceDetailPage() {
       }
     } catch (err) {
       toast.error("Failed to complete purchase")
+      refreshUser()
     } finally {
       setIsPurchasing(false)
     }
@@ -290,29 +291,29 @@ export default function ServiceDetailPage() {
           </Button>
         </Link>
 
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{service.name}</h1>
-          <p className="text-muted-foreground mt-2">Your verification number</p>
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight truncate">{service.name}</h1>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">Your verification number</p>
         </div>
 
         {/* Number Card */}
-        <Card className="border-2 border-[#006994]">
+        <Card className="border-2 border-[color:var(--marketing-accent)]">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Phone className="h-5 w-5" />
-                Your Number
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="flex items-center gap-2 min-w-0">
+                <Phone className="h-5 w-5 shrink-0" />
+                <span className="truncate">Your Number</span>
               </CardTitle>
-              <Badge variant={activeNumber.type === "LTR" ? "default" : "secondary"}>
+              <Badge variant={activeNumber.type === "LTR" ? "default" : "secondary"} className="shrink-0">
                 {activeNumber.type === "LTR" ? `LTR ${activeNumber.ltr_duration_days ?? ""}d` : "STR 20min"}
               </Badge>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <span className="text-2xl font-mono font-bold">{activeNumber.number}</span>
-              <Button variant="outline" size="sm" onClick={copyNumber}>
-                <Copy className="h-4 w-4 mr-2" />
+            <div className="flex flex-col gap-3 rounded-lg bg-muted p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+              <span className="break-all font-mono text-lg font-bold sm:text-2xl">{activeNumber.number}</span>
+              <Button variant="outline" size="sm" onClick={copyNumber} className="w-full shrink-0 sm:w-auto">
+                <Copy className="mr-2 h-4 w-4" />
                 Copy
               </Button>
             </div>
@@ -338,11 +339,11 @@ export default function ServiceDetailPage() {
         {/* SMS Inbox */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              SMS Inbox
+            <CardTitle className="flex items-center gap-2 flex-wrap">
+              <MessageSquare className="h-5 w-5 shrink-0" />
+              <span>SMS Inbox</span>
               {smsList.length > 0 && (
-                <Badge variant="secondary">{smsList.length}</Badge>
+                <Badge variant="secondary" className="shrink-0">{smsList.length}</Badge>
               )}
             </CardTitle>
             <CardDescription>
@@ -365,20 +366,20 @@ export default function ServiceDetailPage() {
                     key={sms.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-4 bg-muted rounded-lg"
+                    className="p-3 sm:p-4 bg-muted rounded-lg"
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="text-sm font-medium">From: {sms.from_number}</p>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">From: {sms.from_number}</p>
                         <p className="text-xs text-muted-foreground">
                           {new Date(sms.received_at).toLocaleString()}
                         </p>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => copySMS(sms.message)}>
+                      <Button variant="ghost" size="sm" onClick={() => copySMS(sms.message)} className="shrink-0 h-8 w-8 p-0">
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>
-                    <p className="font-mono text-sm whitespace-pre-wrap">{sms.message}</p>
+                    <p className="font-mono text-sm whitespace-pre-wrap break-all">{sms.message}</p>
                   </motion.div>
                 ))}
               </div>
@@ -388,9 +389,9 @@ export default function ServiceDetailPage() {
 
         {/* Instructions */}
         <Card className="bg-muted/50">
-          <CardContent className="p-6">
-            <h4 className="font-medium mb-2">How to use this number</h4>
-            <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+          <CardContent className="p-4 sm:p-6">
+            <h4 className="font-medium mb-2 text-sm sm:text-base">How to use this number</h4>
+            <ol className="text-xs sm:text-sm text-muted-foreground space-y-1 list-decimal list-inside">
               <li>Copy the number above</li>
               <li>Go to {service.name} and enter this number for verification</li>
               <li>Request the verification code on {service.name}</li>
@@ -413,14 +414,14 @@ export default function ServiceDetailPage() {
         </Button>
       </Link>
 
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{service.name}</h1>
-        <p className="text-muted-foreground mt-2">Get a temporary {service.country ?? "US"} number for {service.name} verification</p>
+      <div className="min-w-0">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight truncate">{service.name}</h1>
+        <p className="text-muted-foreground mt-2 text-sm sm:text-base">Get a temporary {service.country ?? "US"} number for {service.name} verification</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
         {/* Purchase Options */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="order-2 lg:order-1 lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Select Purchase Type</CardTitle>
@@ -436,16 +437,16 @@ export default function ServiceDetailPage() {
                   <RadioGroupItem value="STR" id="STR" className="peer sr-only" />
                   <Label
                     htmlFor="STR"
-                    className="flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-[#006994]"
+                    className="flex cursor-pointer flex-col justify-between gap-2 rounded-lg border-2 p-3 peer-data-[state=checked]:border-[color:var(--marketing-accent)] sm:flex-row sm:items-center sm:gap-0 sm:p-4"
                   >
-                    <div className="flex items-center gap-3">
-                      <Clock className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium">STR — Short-Term</p>
-                        <p className="text-sm text-muted-foreground">Valid for 20 minutes</p>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm">STR — Short-Term</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Valid for 20 minutes</p>
                       </div>
                     </div>
-                    <span className="font-bold">{formatCurrency(service.str_price)}</span>
+                    <span className="font-bold text-sm sm:text-base shrink-0">{formatCurrency(service.str_price)}</span>
                   </Label>
                 </div>
 
@@ -453,16 +454,16 @@ export default function ServiceDetailPage() {
                   <RadioGroupItem value="LTR" id="LTR" className="peer sr-only" />
                   <Label
                     htmlFor="LTR"
-                    className="flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-[#006994]"
+                    className="flex cursor-pointer flex-col justify-between gap-2 rounded-lg border-2 p-3 peer-data-[state=checked]:border-[color:var(--marketing-accent)] sm:flex-row sm:items-center sm:gap-0 sm:p-4"
                   >
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium">LTR — Long-Term</p>
-                        <p className="text-sm text-muted-foreground">3 to 30-day rental</p>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm">LTR — Long-Term</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">3 to 30-day rental</p>
                       </div>
                     </div>
-                    <span className="font-bold">From {formatCurrency(service.ltr3_price)}</span>
+                    <span className="font-bold text-sm sm:text-base shrink-0">From {formatCurrency(service.ltr3_price)}</span>
                   </Label>
                 </div>
               </RadioGroup>
@@ -479,17 +480,17 @@ export default function ServiceDetailPage() {
                 <RadioGroup
                   value={ltrDays.toString()}
                   onValueChange={(v) => setLtrDays(parseInt(v))}
-                  className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+                  className="grid grid-cols-2 lg:grid-cols-4 gap-3"
                 >
                   {LTR_DURATIONS.map((d) => (
                     <div key={d.days}>
                       <RadioGroupItem value={d.days.toString()} id={`days-${d.days}`} className="peer sr-only" />
                       <Label
                         htmlFor={`days-${d.days}`}
-                        className="flex flex-col items-center p-3 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-[#006994] peer-data-[state=checked]:bg-[#006994]/5"
+                        className="flex cursor-pointer flex-col items-center rounded-lg border-2 p-2 peer-data-[state=checked]:border-[color:var(--marketing-accent)] peer-data-[state=checked]:bg-[color:var(--marketing-accent)]/5 sm:p-3"
                       >
-                        <span className="font-medium">{d.label}</span>
-                        <span className="text-sm text-muted-foreground">
+                        <span className="font-medium text-xs sm:text-sm">{d.label}</span>
+                        <span className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                           {formatCurrency(getLtrPrice(service, d.days))}
                         </span>
                       </Label>
@@ -502,32 +503,32 @@ export default function ServiceDetailPage() {
         </div>
 
         {/* Order Summary */}
-        <div>
-          <Card className="sticky top-6">
+        <div className="order-1 lg:order-2">
+          <Card className="lg:sticky lg:top-6">
             <CardHeader>
               <CardTitle>Order Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Service</span>
-                <span className="font-medium">{service.name}</span>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground shrink-0">Service</span>
+                <span className="font-medium text-right truncate max-w-[150px] sm:max-w-[200px]">{service.name}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Type</span>
-                <span className="font-medium">{purchaseType === "STR" ? "STR (20 min)" : `LTR (${ltrDays} days)`}</span>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground shrink-0">Type</span>
+                <span className="font-medium text-right">{purchaseType === "STR" ? "STR (20 min)" : `LTR (${ltrDays} days)`}</span>
               </div>
-              
+
               <Separator />
-              
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Total</span>
-                <span className="text-2xl font-bold">{formatCurrency(calculatePrice())}</span>
+
+              <div className="flex justify-between items-center gap-2">
+                <span className="text-muted-foreground shrink-0">Total</span>
+                <span className="text-xl sm:text-2xl font-bold text-right">{formatCurrency(calculatePrice())}</span>
               </div>
 
               {user && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Wallet Balance</span>
-                  <span className={user.walletBalance < calculatePrice() ? "text-red-600" : "text-green-600"}>
+                <div className="flex justify-between text-sm gap-2">
+                  <span className="text-muted-foreground shrink-0">Wallet Balance</span>
+                  <span className={user.walletBalance < calculatePrice() ? "text-red-600" : "text-green-600 text-right"}>
                     {formatCurrency(user.walletBalance || 0)}
                   </span>
                 </div>
@@ -565,5 +566,21 @@ export default function ServiceDetailPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+function Fallback() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <Loader2 className="h-8 w-8 animate-spin" />
+    </div>
+  )
+}
+
+export default function ServiceDetailPage() {
+  return (
+    <Suspense fallback={<Fallback />}>
+      <ServiceDetailPageContent />
+    </Suspense>
   )
 }

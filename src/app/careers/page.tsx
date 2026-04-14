@@ -70,15 +70,15 @@ export default function CareersPage() {
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col bg-background selection:bg-[#006994]/15 selection:text-foreground">
+    <div className="flex min-h-screen flex-col bg-[color:var(--marketing-cream)] selection:bg-[color:var(--marketing-accent)]/15">
       <Header />
-      <main className="flex-1 pt-32 pb-20">
+      <main className="flex-1 pb-20 pt-[calc(72px+1.5rem)]">
         {/* Hero */}
         <div className="relative bg-gradient-hero border-b border-border/40 pb-16 mb-16 overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(45%_60%_at_50%_0%,rgba(0,105,148,0.06)_0%,transparent_100%)]" />
-          <div className="absolute top-10 -right-24 w-80 h-80 rounded-full bg-[#006994]/5 blur-[100px]" />
+          <div className="absolute -right-24 top-10 h-80 w-80 rounded-full bg-[color:var(--marketing-accent)]/10 blur-[100px]" />
           <div className="container mx-auto px-4 relative text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#006994]/10 border border-[#006994]/25 text-[#006994] text-xs font-bold uppercase tracking-widest mb-6">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[color:var(--marketing-accent)]/30 bg-[color:var(--marketing-accent)]/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[color:var(--marketing-accent)]">
               <Briefcase className="h-3.5 w-3.5" />
               We&apos;re Hiring
             </div>
@@ -90,7 +90,7 @@ export default function CareersPage() {
         {/* Why Join Us */}
         <div className="container mx-auto px-4 mb-20">
           <div className="text-center mb-12">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-[#722F37] mb-3 font-body">Why Topchart</h2>
+            <h2 className="mb-3 font-body text-sm font-bold uppercase tracking-widest text-[color:var(--marketing-accent)]">Why Topchart</h2>
             <h3 className="font-heading text-3xl font-normal">Perks & Benefits</h3>
           </div>
           
@@ -136,11 +136,11 @@ export default function CareersPage() {
             ) : (
               <div className="space-y-4">
                 {jobs.map((job) => (
-                  <Card key={job.id} className="border-[#006994]/15 hover:border-[#006994]/35 hover:shadow-lg hover:shadow-[#006994]/10 transition-all duration-300 cursor-pointer group overflow-hidden" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
+                  <Card key={job.id} className="border-[#0052CC]/15 hover:border-[#0052CC]/35 hover:shadow-lg hover:shadow-[#0052CC]/10 transition-all duration-300 cursor-pointer group overflow-hidden" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
                     <CardContent className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
                         <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-heading text-lg font-normal group-hover:text-[#006994] transition-colors duration-300">{job.title}</h3>
+                          <h3 className="font-heading text-lg font-normal group-hover:text-[#0052CC] transition-colors duration-300">{job.title}</h3>
                           <span className={`hidden sm:inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${deptColors[job.department] ?? 'bg-muted text-muted-foreground'}`}>{job.department}</span>
                         </div>
                         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground font-body">
@@ -154,7 +154,7 @@ export default function CareersPage() {
                           </div>
                         </div>
                       </div>
-                      <Button variant="outline" className="shrink-0 group-hover:bg-[#722F37] group-hover:text-white group-hover:border-[#722F37] transition-all duration-300 rounded-xl" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
+                      <Button variant="outline" className="shrink-0 group-hover:bg-[#FF5630] group-hover:text-white group-hover:border-[#FF5630] transition-all duration-300 rounded-xl" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
                         Apply Now
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>

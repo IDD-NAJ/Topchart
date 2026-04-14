@@ -2,6 +2,7 @@
 
 import { motion, useInView, useMotionValue, useSpring, AnimatePresence } from "framer-motion"
 import { ReactNode, useEffect, useRef } from "react"
+import { cn } from "@/lib/utils"
 
 const EXPO = [0.16, 1, 0.3, 1] as const
 const SPRING = { type: "spring", stiffness: 260, damping: 22 }
@@ -34,21 +35,27 @@ export function ScrollReveal({
   delay = 0,
   direction = "up",
   amount = 0.15,
-}: AnimatedSectionProps & { direction?: "up" | "down" | "left" | "right"; amount?: number }) {
+  once = true,
+}: AnimatedSectionProps & {
+  direction?: "up" | "down" | "left" | "right"
+  amount?: number
+  once?: boolean
+}) {
   const ref = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { once: true, amount })
+  const inView = useInView(ref, { once, amount })
   const dirMap = {
-    up: { y: 32, x: 0 },
-    down: { y: -32, x: 0 },
-    left: { x: 40, y: 0 },
-    right: { x: -40, y: 0 },
+    up: { y: 36, x: 0 },
+    down: { y: -36, x: 0 },
+    left: { x: 44, y: 0 },
+    right: { x: -44, y: 0 },
   }
+  const hidden = { opacity: 0, ...dirMap[direction] }
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, ...dirMap[direction] }}
-      animate={inView ? { opacity: 1, x: 0, y: 0 } : {}}
-      transition={{ duration: 0.6, delay, ease: EXPO }}
+      initial={hidden}
+      animate={inView ? { opacity: 1, x: 0, y: 0 } : hidden}
+      transition={{ duration: 0.58, delay, ease: EXPO }}
       className={className}
     >
       {children}
@@ -63,15 +70,19 @@ export function StaggerReveal({
   stagger = 0.1,
   delay = 0,
   amount = 0.1,
+  once = true,
+  stack = false,
 }: {
   children: ReactNode
   className?: string
   stagger?: number
   delay?: number
   amount?: number
+  once?: boolean
+  stack?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { once: true, amount })
+  const inView = useInView(ref, { once, amount })
   return (
     <motion.div
       ref={ref}
@@ -81,18 +92,53 @@ export function StaggerReveal({
         hidden: { opacity: 0 },
         visible: { opacity: 1, transition: { staggerChildren: stagger, delayChildren: delay } },
       }}
-      className={className}
+      className={cn(stack && "perspective-[1000px] [transform-style:preserve-3d]", className)}
     >
       {children}
     </motion.div>
   )
 }
 
-export function StaggerRevealItem({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function StaggerRevealItem({
+  children,
+  className = "",
+  index = 0,
+  stack = false,
+}: {
+  children: ReactNode
+  className?: string
+  index?: number
+  stack?: boolean
+}) {
+  if (stack) {
+    return (
+      <motion.div
+        variants={{
+          hidden: {
+            opacity: 0,
+            y: 32 + index * 12,
+            scale: 0.94,
+            rotateX: 12,
+          },
+          visible: {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            rotateX: 0,
+            transition: { duration: 0.58, ease: EXPO },
+          },
+        }}
+        style={{ transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
+        className={className}
+      >
+        {children}
+      </motion.div>
+    )
+  }
   return (
     <motion.div
       variants={{
-        hidden: { opacity: 0, y: 24 },
+        hidden: { opacity: 0, y: 28 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: EXPO } },
       }}
       className={className}

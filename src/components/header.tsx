@@ -16,7 +16,6 @@ import {
   Wifi,
   PhoneCall,
   GraduationCap,
-  Gift,
   ShieldCheck,
   Sparkles,
   type LucideIcon,
@@ -59,12 +58,6 @@ const serviceLinks: { href: string; label: string; description: string; icon: Lu
     label: "Result checkers",
     description: "Exam results and PINs",
     icon: GraduationCap,
-  },
-  {
-    href: "/dashboard/giftcards",
-    label: "Gift cards",
-    description: "Digital brands and denominations",
-    icon: Gift,
   },
 ]
 

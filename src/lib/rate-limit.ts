@@ -156,20 +156,12 @@ export function withRateLimit(config?: Partial<RateLimitConfig> & { type?: keyof
       const userId = await getUserId(req);
       const ip = getClientIP(req);
       
-      // Use user ID if authenticated, otherwise IP
       const key = userId ? `user:${userId}` : `ip:${ip}`;
       const keyWithEndpoint = `${key}:${req.nextUrl.pathname}`;
       
       const result = checkRateLimit(keyWithEndpoint, mergedConfig);
       
-      // Add rate limit headers
-      const response = await handler(req);
-      response.headers.set("X-RateLimit-Limit", result.limit.toString());
-      response.headers.set("X-RateLimit-Remaining", result.remaining.toString());
-      response.headers.set("X-RateLimit-Reset", result.reset.toString());
-      
       if (!result.success) {
-        // Log violation to database
         await logRateLimitViolation(
           userId || ip,
           req.nextUrl.pathname,
@@ -194,6 +186,11 @@ export function withRateLimit(config?: Partial<RateLimitConfig> & { type?: keyof
           }
         );
       }
+      
+      const response = await handler(req);
+      response.headers.set("X-RateLimit-Limit", result.limit.toString());
+      response.headers.set("X-RateLimit-Remaining", result.remaining.toString());
+      response.headers.set("X-RateLimit-Reset", result.reset.toString());
       
       return response;
     };

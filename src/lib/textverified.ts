@@ -1,15 +1,12 @@
 import { getServerEnv } from "@/lib/env";
 
-const env = getServerEnv();
-/**
- * Textverified API Client
- * 
- * Integration with Textverified.com for phone number verification services
- * API Documentation: https://docs.textverified.com
- */
-
-const TEXTVERIFIED_API_URL = env.TEXTVERIFIED_API_URL || "https://api.textverified.com";
-const TEXTVERIFIED_API_KEY = env.TEXTVERIFIED_API_KEY || "";
+function getTextverifiedConfig() {
+  const env = getServerEnv();
+  return {
+    url: env.TEXTVERIFIED_API_URL || "https://api.textverified.com",
+    key: env.TEXTVERIFIED_API_KEY || ""
+  };
+}
 
 interface TextverifiedService {
   id: string;
@@ -49,16 +46,16 @@ async function textverifiedRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
-  if (!TEXTVERIFIED_API_KEY) {
+  if (!getTextverifiedConfig().key) {
     return { success: false, error: "Textverified API key not configured" };
   }
 
   try {
-    const url = `${TEXTVERIFIED_API_URL}${endpoint}`;
+    const url = `${getTextverifiedConfig().url}${endpoint}`;
     const response = await fetch(url, {
       ...options,
       headers: {
-        "Authorization": `Bearer ${TEXTVERIFIED_API_KEY}`,
+        "Authorization": `Bearer ${getTextverifiedConfig().key}`,
         "Content-Type": "application/json",
         ...options.headers,
       },

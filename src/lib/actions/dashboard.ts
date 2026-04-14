@@ -3,7 +3,7 @@
 import { sql } from "@/lib/db";
 import { getCurrentUser } from "@/lib/actions/auth";
 
-export type DashboardTransactionType = "deposit" | "airtime" | "data";
+export type DashboardTransactionType = "deposit" | "airtime" | "data" | "verification" | "result_checker";
 export type DashboardTransactionStatus = "pending" | "success" | "failed";
 
 export interface DashboardTransactionRow {
@@ -29,6 +29,8 @@ export interface DashboardData {
     totalSpend: number;
     airtimeSpend: number;
     dataSpend: number;
+    verificationSpend: number;
+    resultCheckerSpend: number;
     successfulCount: number;
     totalCount: number;
   };
@@ -52,6 +54,8 @@ export async function getDashboardData(options?: {
         totalSpend: 0,
         airtimeSpend: 0,
         dataSpend: 0,
+        verificationSpend: 0,
+        resultCheckerSpend: 0,
         successfulCount: 0,
         totalCount: 0,
       },
@@ -61,105 +65,191 @@ export async function getDashboardData(options?: {
     };
   }
 
-  // Optimize: Run all queries in parallel to reduce database round-trip latency
-  const [
-    totalsResult,
-    recentRaw,
-    processingRaw,
-    beneficiariesResult
-  ] = await Promise.all([
-    // 1. Totals Summary
-    sql`
-      SELECT
-        COALESCE(SUM(amount) FILTER (
-          WHERE status = 'success'
-            AND type = 'deposit'
-        ), 0) AS "totalDeposits",
-        COALESCE(SUM(amount) FILTER (
-          WHERE status = 'success'
-            AND type IN ('airtime', 'data')
-        ), 0) AS "totalSpend",
-        COALESCE(SUM(amount) FILTER (
-          WHERE status = 'success'
-            AND type = 'airtime'
-        ), 0) AS "airtimeSpend",
-        COALESCE(SUM(amount) FILTER (
-          WHERE status = 'success'
-            AND type = 'data'
-        ), 0) AS "dataSpend",
-        COALESCE(COUNT(*) FILTER (WHERE status = 'success'), 0) AS "successfulCount",
-        COALESCE(COUNT(*), 0) AS "totalCount"
-      FROM transactions
-      WHERE user_id = ${user.id}
-    `,
+  let totalsResult: any[] = [];
+  let recentRaw: any[] = [];
+  let processingRaw: any[] = [];
+  let beneficiariesResult: any[] = [];
 
-    // 2. Recent Transactions
-    sql`
-      SELECT
-        id,
-        type,
-        amount,
-        status,
-        metadata,
-        created_at
-      FROM transactions
-      WHERE user_id = ${user.id}
-      ORDER BY created_at DESC
-      LIMIT ${recentLimit}
-    `,
-
-    // 3. Processing/Pending Purchases
-    sql`
-      SELECT
-        id,
-        type,
-        amount,
-        status,
-        metadata,
-        created_at
-      FROM transactions
-      WHERE user_id = ${user.id}
-        AND type IN ('airtime', 'data', 'AIRTIME', 'DATA')
-        AND status IN ('pending', 'PENDING', 'processing', 'PROCESSING')
-      ORDER BY created_at DESC
-      LIMIT 10
-    `,
-
-    // 4. Frequent Beneficiaries
-    sql`
-      SELECT DISTINCT ON (
-        COALESCE(
-          metadata->>'phoneNumber',
-          metadata->>'phone_number'
+  try {
+    [totalsResult, recentRaw, processingRaw, beneficiariesResult] = await Promise.all([
+      sql`
+        SELECT
+          COALESCE(SUM(amount) FILTER (
+            WHERE status = 'success'
+              AND type = 'deposit'
+          ), 0) AS "totalDeposits",
+          COALESCE(SUM(amount) FILTER (
+            WHERE status = 'success'
+              AND type IN ('airtime', 'data', 'verification', 'result_checker')
+          ), 0) AS "totalSpend",
+          COALESCE(SUM(amount) FILTER (
+            WHERE status = 'success'
+              AND type = 'airtime'
+          ), 0) AS "airtimeSpend",
+          COALESCE(SUM(amount) FILTER (
+            WHERE status = 'success'
+              AND type = 'data'
+          ), 0) AS "dataSpend",
+          COALESCE(SUM(amount) FILTER (
+            WHERE status = 'success'
+              AND type = 'verification'
+          ), 0) AS "verificationSpend",
+          COALESCE(SUM(amount) FILTER (
+            WHERE status = 'success'
+              AND type = 'result_checker'
+          ), 0) AS "resultCheckerSpend",
+          COALESCE(COUNT(*) FILTER (WHERE status = 'success'), 0) AS "successfulCount",
+          COALESCE(COUNT(*), 0) AS "totalCount"
+        FROM transactions
+        WHERE user_id = ${user.id}
+      `,
+      sql`
+        SELECT
+          id,
+          type,
+          amount,
+          status,
+          metadata,
+          created_at
+        FROM transactions
+        WHERE user_id = ${user.id}
+        ORDER BY created_at DESC
+        LIMIT ${recentLimit}
+      `,
+      sql`
+        SELECT
+          id,
+          type,
+          amount,
+          status,
+          metadata,
+          created_at
+        FROM transactions
+        WHERE user_id = ${user.id}
+          AND type IN ('airtime', 'data', 'AIRTIME', 'DATA')
+          AND status IN ('pending', 'PENDING', 'processing', 'PROCESSING')
+        ORDER BY created_at DESC
+        LIMIT 10
+      `,
+      sql`
+        SELECT DISTINCT ON (
+          COALESCE(
+            metadata->>'phoneNumber',
+            metadata->>'phone_number'
+          )
         )
-      )
-        COALESCE(
-          metadata->>'phoneNumber',
-          metadata->>'phone_number'
-        ) AS phone_number,
-        COALESCE(
-          metadata->>'network',
-          metadata->>'network_name',
-          metadata->>'provider'
-        ) AS network,
-        created_at AS created_at
-      FROM transactions
-      WHERE user_id = ${user.id}
-        AND status IN ('success', 'SUCCESS')
-        AND type IN ('airtime', 'data', 'AIRTIME', 'DATA')
-        AND COALESCE(
-          metadata->>'phoneNumber',
-          metadata->>'phone_number'
-        ) IS NOT NULL
-      ORDER BY
-        COALESCE(
-          metadata->>'phoneNumber',
-          metadata->>'phone_number'
-        ),
-        created_at DESC
-      LIMIT ${beneficiaryLimit}
-    `
-  ]);
+          COALESCE(
+            metadata->>'phoneNumber',
+            metadata->>'phone_number'
+          ) AS phone_number,
+          COALESCE(
+            metadata->>'network',
+            metadata->>'network_name',
+            metadata->>'provider'
+          ) AS network,
+          created_at AS created_at
+        FROM transactions
+        WHERE user_id = ${user.id}
+          AND status IN ('success', 'SUCCESS')
+          AND type IN ('airtime', 'data', 'AIRTIME', 'DATA')
+          AND COALESCE(
+            metadata->>'phoneNumber',
+            metadata->>'phone_number'
+          ) IS NOT NULL
+        ORDER BY
+          COALESCE(
+            metadata->>'phoneNumber',
+            metadata->>'phone_number'
+          ),
+          created_at DESC
+        LIMIT ${beneficiaryLimit}
+      `
+    ]);
+  } catch (error: any) {
+    const message = `${error?.message || ""}`.toLowerCase();
+    const missingMetadataColumn =
+      error?.code === "42703" &&
+      message.includes("metadata");
+
+    if (!missingMetadataColumn) {
+      throw error;
+    }
+
+    [totalsResult, recentRaw, processingRaw, beneficiariesResult] = await Promise.all([
+      sql`
+        SELECT
+          COALESCE(SUM(amount) FILTER (
+            WHERE status = 'success'
+              AND type = 'deposit'
+          ), 0) AS "totalDeposits",
+          COALESCE(SUM(amount) FILTER (
+            WHERE status = 'success'
+              AND type IN ('airtime', 'data', 'verification', 'result_checker')
+          ), 0) AS "totalSpend",
+          COALESCE(SUM(amount) FILTER (
+            WHERE status = 'success'
+              AND type = 'airtime'
+          ), 0) AS "airtimeSpend",
+          COALESCE(SUM(amount) FILTER (
+            WHERE status = 'success'
+              AND type = 'data'
+          ), 0) AS "dataSpend",
+          COALESCE(SUM(amount) FILTER (
+            WHERE status = 'success'
+              AND type = 'verification'
+          ), 0) AS "verificationSpend",
+          COALESCE(SUM(amount) FILTER (
+            WHERE status = 'success'
+              AND type = 'result_checker'
+          ), 0) AS "resultCheckerSpend",
+          COALESCE(COUNT(*) FILTER (WHERE status = 'success'), 0) AS "successfulCount",
+          COALESCE(COUNT(*), 0) AS "totalCount"
+        FROM transactions
+        WHERE user_id = ${user.id}
+      `,
+      sql`
+        SELECT
+          id,
+          type,
+          amount,
+          status,
+          NULL::jsonb AS metadata,
+          created_at
+        FROM transactions
+        WHERE user_id = ${user.id}
+        ORDER BY created_at DESC
+        LIMIT ${recentLimit}
+      `,
+      sql`
+        SELECT
+          id,
+          type,
+          amount,
+          status,
+          NULL::jsonb AS metadata,
+          created_at
+        FROM transactions
+        WHERE user_id = ${user.id}
+          AND type IN ('airtime', 'data', 'AIRTIME', 'DATA')
+          AND status IN ('pending', 'PENDING', 'processing', 'PROCESSING')
+        ORDER BY created_at DESC
+        LIMIT 10
+      `,
+      sql`
+        SELECT DISTINCT ON (phone_number)
+          phone_number,
+          network,
+          created_at
+        FROM transactions
+        WHERE user_id = ${user.id}
+          AND status IN ('success', 'SUCCESS')
+          AND type IN ('airtime', 'data', 'AIRTIME', 'DATA')
+          AND phone_number IS NOT NULL
+        ORDER BY phone_number, created_at DESC
+        LIMIT ${beneficiaryLimit}
+      `
+    ]);
+  }
 
   const totalsRow = (totalsResult?.[0] ?? {}) as any;
 
@@ -190,6 +280,8 @@ export async function getDashboardData(options?: {
       totalSpend: Number(totalsRow.totalSpend ?? 0),
       airtimeSpend: Number(totalsRow.airtimeSpend ?? 0),
       dataSpend: Number(totalsRow.dataSpend ?? 0),
+      verificationSpend: Number(totalsRow.verificationSpend ?? 0),
+      resultCheckerSpend: Number(totalsRow.resultCheckerSpend ?? 0),
       successfulCount: Number(totalsRow.successfulCount ?? 0),
       totalCount: Number(totalsRow.totalCount ?? 0),
     },

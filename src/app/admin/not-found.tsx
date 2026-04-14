@@ -5,7 +5,7 @@ import { Search, ChevronLeft, LayoutDashboard, Home } from "lucide-react"
 export default function AdminNotFound() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-      <div className="w-20 h-20 rounded-2xl bg-[#006994]/10 flex items-center justify-center text-[#006994] mb-6">
+      <div className="w-20 h-20 rounded-2xl flex items-center justify-center bg-[color:var(--marketing-accent)]/10 text-[color:var(--marketing-accent)] mb-6">
         <Search className="w-10 h-10" />
       </div>
       

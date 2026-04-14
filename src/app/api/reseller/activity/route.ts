@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { sql } from "@/lib/db";
+import { sql, isPgMissingRelation } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -98,6 +98,18 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
+    if (isPgMissingRelation(error)) {
+      const { searchParams } = new URL(request.url);
+      const page = parseInt(searchParams.get("page") || "1");
+      const limit = parseInt(searchParams.get("limit") || "10");
+      return NextResponse.json({
+        success: true,
+        activities: [],
+        total: 0,
+        page,
+        total_pages: 0,
+      });
+    }
     console.error("Error fetching activity:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },

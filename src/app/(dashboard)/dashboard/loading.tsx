@@ -17,7 +17,7 @@ export default function Loading() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* Wallet Card Skeleton */}
-          <Card className="bg-gradient-to-br from-[#006994]/20 to-[#006994]/10">
+          <Card className="bg-gradient-to-br from-[#0052CC]/20 to-[#0052CC]/10">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <Skeleton className="h-5 w-32" />
@@ -117,7 +117,7 @@ export default function Loading() {
             <Card>
               <CardContent className="p-8">
                 <div className="flex flex-col items-center space-y-4">
-                  <Skeleton className="h-10 w-10 animate-spin rounded-full border-4 border-[#006994] border-t-transparent" />
+                  <Skeleton className="h-10 w-10 animate-spin rounded-full border-4 border-[#0052CC] border-t-transparent" />
                   <Skeleton className="h-4 w-36" />
                 </div>
               </CardContent>

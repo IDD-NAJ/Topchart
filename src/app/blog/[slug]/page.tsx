@@ -148,13 +148,16 @@ export default function BlogPostPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background selection:bg-primary/10 selection:text-primary">
+    <div className="flex min-h-screen flex-col bg-[color:var(--marketing-cream)] selection:bg-[color:var(--marketing-accent)]/15">
       <Header />
-      
-      <main className="flex-1 pt-28 pb-12">
+
+      <main className="flex-1 pb-12 pt-[calc(72px+1.5rem)]">
         <div className="container mx-auto px-4 max-w-3xl">
           {/* Back Link */}
-          <Link href="/blog" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors mb-8">
+          <Link
+            href="/blog"
+            className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-[color:var(--marketing-accent)]"
+          >
             <ArrowLeft className="h-4 w-4" />
             Back to Blog
           </Link>

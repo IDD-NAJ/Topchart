@@ -42,7 +42,7 @@ export function FavoriteNumbers({ userId, type, onSelect, className }: FavoriteN
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
-    const result = await removeFavorite(id)
+    const result = await removeFavorite(id, userId)
     if (result.success) {
       setFavorites(favorites.filter(f => f.id !== id))
     }
@@ -56,7 +56,7 @@ export function FavoriteNumbers({ userId, type, onSelect, className }: FavoriteN
   if (loading) {
     return (
       <div className="flex items-center justify-center p-4">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#006994]"></div>
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[color:var(--marketing-accent)]"></div>
       </div>
     )
   }
@@ -88,10 +88,10 @@ export function FavoriteNumbers({ userId, type, onSelect, className }: FavoriteN
           <div 
             key={fav.id}
             onClick={() => onSelect(fav.phone_number)}
-            className="group flex items-center justify-between p-3 rounded-lg border bg-card hover:border-[#006994] hover:bg-[#006994]/5 transition-all cursor-pointer"
+            className="group flex items-center justify-between p-3 rounded-lg border bg-card hover:border-[color:var(--marketing-accent)] hover:bg-[color:var(--marketing-accent)]/5 transition-all cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#006994]/10 flex items-center justify-center text-[#006994]">
+              <div className="w-10 h-10 rounded-full bg-[color:var(--marketing-accent)]/10 flex items-center justify-center text-[color:var(--marketing-accent)]">
                 <User className="w-5 h-5" />
               </div>
               <div>

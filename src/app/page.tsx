@@ -17,7 +17,6 @@ import {
   PhoneCall,
   Store,
   GraduationCap,
-  Gift,
   Play,
   Fingerprint,
   CreditCard,
@@ -68,13 +67,6 @@ const SERVICES = [
     href: "/dashboard/reseller",
     label: "Become a reseller",
   },
-  {
-    icon: Gift,
-    title: "Gift Cards",
-    description: "Digital gift cards from global brands, delivered to your wallet or inbox.",
-    href: "/dashboard/giftcards",
-    label: "Shop gift cards",
-  },
 ]
 
 const FAQS = [
@@ -117,7 +109,7 @@ const TESTIMONIALS: Testimonial[] = [
   {
     brand: "Retail Collective",
     quote:
-      "Gift cards and airtime in one dashboard simplified payouts for our field teams.",
+      "Airtime and data in one dashboard simplified payouts for our field teams.",
     name: "Esi T.",
     role: "Finance Director",
   },

@@ -1,10 +1,9 @@
-import { getServerEnv } from "@/lib/env";
+﻿import { getServerEnv } from "@/lib/env";
 
-const PAYSTACK_SECRET_KEY = getServerEnv().PAYSTACK_SECRET_KEY;
 const PAYSTACK_BASE_URL = "https://api.paystack.co";
 
-if (!PAYSTACK_SECRET_KEY) {
-  console.error("PAYSTACK_SECRET_KEY environment variable is not set");
+function getPaystackKey(): string {
+  return getServerEnv().PAYSTACK_SECRET_KEY || "";
 }
 
 export interface PaystackInitializeResponse {
@@ -89,14 +88,14 @@ export async function initializePaystackTransaction(
   callbackUrl?: string
 ): Promise<{ success: boolean; data?: PaystackInitializeResponse["data"]; error?: string }> {
   try {
-    if (!PAYSTACK_SECRET_KEY) {
+    if (!getPaystackKey()) {
       return { success: false, error: "Paystack configuration error - secret key not set" };
     }
 
     const response = await fetch(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        Authorization: `Bearer ${getPaystackKey()}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -141,7 +140,7 @@ export async function verifyPaystackTransaction(
       {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+          Authorization: `Bearer ${getPaystackKey()}`,
           "Content-Type": "application/json",
         },
       }
@@ -181,7 +180,7 @@ export async function listPaystackTransactions(
       {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+          Authorization: `Bearer ${getPaystackKey()}`,
           "Content-Type": "application/json",
         },
       }
@@ -210,7 +209,7 @@ export async function getPaystackTransaction(
       {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+          Authorization: `Bearer ${getPaystackKey()}`,
           "Content-Type": "application/json",
         },
       }
@@ -235,14 +234,14 @@ export async function createPaystackRefund(
   amountInPesewas: number
 ): Promise<{ success: boolean; data?: { id: number; status: string; refund_amount: number }; error?: string }> {
   try {
-    if (!PAYSTACK_SECRET_KEY) {
+    if (!getPaystackKey()) {
       return { success: false, error: "Paystack configuration error - secret key not set" };
     }
 
     const response = await fetch(`${PAYSTACK_BASE_URL}/refund`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        Authorization: `Bearer ${getPaystackKey()}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

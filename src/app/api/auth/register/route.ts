@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { register } from "@/lib/actions/auth";
+import { shouldUseSecureCookies } from "@/lib/utils";
 import { withRateLimit } from "@/lib/rate-limit";
 import { validateRequest, formatZodError, registerSchema } from "@/lib/validation/schemas";
 
@@ -12,9 +13,12 @@ async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
+    console.log("Register request body:", JSON.stringify(body, null, 2));
+    
     // Validate input
     const validation = validateRequest(registerSchema, body);
     if (!validation.success) {
+      console.log("Validation failed:", formatZodError(validation.errors!));
       return NextResponse.json(
         {
           success: false,
@@ -37,13 +41,27 @@ async function POST(request: NextRequest) {
       registerData.phone = validation.data!.phone;
     }
     
+    console.log("Calling register with data:", JSON.stringify(registerData, null, 2));
+    
     const result = await register(registerData);
 
-    if (result.success) {
-      return NextResponse.json(
+    console.log("Register result:", JSON.stringify(result, null, 2));
+
+    if (result.success && result.user) {
+      const response = NextResponse.json(
         { success: true, user: result.user },
         { status: 201 }
       );
+      if (result.token && result.expiresAt) {
+        response.cookies.set("session_token", result.token, {
+          httpOnly: true,
+          secure: shouldUseSecureCookies(),
+          sameSite: "lax",
+          expires: new Date(result.expiresAt),
+          path: "/",
+        });
+      }
+      return response;
     } else {
       return NextResponse.json(
         { success: false, error: result.error },
@@ -52,6 +70,7 @@ async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error("Register API error:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 }

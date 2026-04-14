@@ -10,20 +10,39 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import {
-  register as serverRegister,
-  type User as ServerUser,
-} from "@/lib/actions/auth";
+import { type User as ServerUser } from "@/lib/actions/auth";
 import { isAdmin as checkIsAdmin } from "@/lib/roles";
 import { InactivityWarningModal } from "@/components/inactivity-warning-modal";
 
-const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
-const WARNING_BEFORE_LOGOUT = 30 * 1000; // 30 seconds warning
+const INACTIVITY_TIMEOUT = 5 * 60 * 1000;
+const WARNING_BEFORE_LOGOUT = 60 * 1000;
 
-let _meInFlight: Promise<Response> | null = null;
-function fetchMe(): Promise<Response> {
+type MePayload = { success?: boolean; user?: ServerUser };
+
+type MeFetchResult =
+  | { kind: "ok"; status: number; payload: MePayload | null }
+  | { kind: "network" };
+
+let _meInFlight: Promise<MeFetchResult> | null = null;
+
+async function fetchMeOnce(): Promise<MeFetchResult> {
+  try {
+    const response = await fetch("/api/auth/me", { credentials: "include" });
+    let payload: MePayload | null = null;
+    try {
+      payload = (await response.json()) as MePayload;
+    } catch {
+      payload = null;
+    }
+    return { kind: "ok", status: response.status, payload };
+  } catch {
+    return { kind: "network" };
+  }
+}
+
+function fetchMe(): Promise<MeFetchResult> {
   if (!_meInFlight) {
-    _meInFlight = fetch('/api/auth/me', { credentials: 'include' }).finally(() => {
+    _meInFlight = fetchMeOnce().finally(() => {
       _meInFlight = null;
     });
   }
@@ -99,36 +118,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      // Use API route instead of server action for more reliable cookie reading
-      const response = await fetchMe();
-      
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.user) {
-          setUser(mapServerUser(result.user));
+      const result = await fetchMe();
+      if (result.kind === "network") {
+        console.warn("Network error during user refresh");
+        return;
+      }
+      if (result.status >= 200 && result.status < 300) {
+        const body = result.payload;
+        if (body?.success && body.user) {
+          setUser(mapServerUser(body.user));
         } else {
           setUser(null);
         }
-      } else {
-        // 401 is expected when not logged in, don't log as error
-        if (response.status !== 401) {
-          console.error("Failed to refresh user:", response.status, response.statusText);
-        }
-        setUser(null);
+        return;
       }
+      if (result.status !== 401) {
+        console.error("Failed to refresh user:", result.status);
+      }
+      setUser(null);
     } catch (error) {
-      // Don't set user to null on network errors - this prevents logout on refresh
-      if (error instanceof Error && 
-          (error.name === 'TypeError' || 
-           error.name === 'NetworkError' || 
-           error.message?.includes('fetch') ||
-           error.message?.includes('network'))) {
-        // Network errors - don't log out, just log warning
+      if (error instanceof Error &&
+          (error.name === "TypeError" ||
+            error.name === "NetworkError" ||
+            error.message?.includes("fetch") ||
+            error.message?.includes("network"))) {
         console.warn("Network error during user refresh:", error);
-        return; // Don't set user to null
+        return;
       }
-      
-      // Only log out on actual errors, not network issues
       console.error("Failed to refresh user:", error);
       setUser(null);
     }
@@ -189,19 +205,31 @@ const register = async (
       data: RegisterData
     ): Promise<{ success: boolean; error?: string }> => {
       try {
-        const normalizedData = {
-          ...data,
-          email: data.email.toLowerCase()
+        const requestBody = {
+          email: data.email.toLowerCase(),
+          password: data.password,
+          first_name: data.firstName,
+          last_name: data.lastName,
+          phone: data.phone,
+          referralCode: data.referralCode,
         };
         
-        const result = await serverRegister({
-          email: normalizedData.email,
-          password: normalizedData.password,
-          firstName: normalizedData.firstName,
-          lastName: normalizedData.lastName,
-          phone: normalizedData.phone,
-          referralCode: normalizedData.referralCode,
+        console.log("Auth-context register request:", JSON.stringify(requestBody, null, 2));
+        
+        const response = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(requestBody),
         });
+        
+        console.log("Auth-context register response status:", response.status);
+        
+        const result = await response.json();
+        
+        console.log("Auth-context register response:", JSON.stringify(result, null, 2));
 
         if (result.success && result.user) {
           setUser(mapServerUser(result.user));

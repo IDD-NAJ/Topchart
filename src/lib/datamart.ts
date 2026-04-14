@@ -1,0 +1,228 @@
+import { getDatamartEnv } from "@/lib/env";
+import { providerRequest, type ProviderHttpError } from "@/lib/providers/http-client";
+
+function normalizeDatamartBaseUrl(rawBaseUrl?: string): string {
+  const fallback = "https://api.datamartgh.shop";
+  const candidate = rawBaseUrl?.trim() || fallback;
+
+  try {
+    const parsed = new URL(candidate);
+    const hostname = parsed.hostname.toLowerCase();
+    if (hostname === "www.datamartgh.shop" || hostname === "datamartgh.shop") {
+      parsed.hostname = "api.datamartgh.shop";
+    }
+    return parsed.origin;
+  } catch {
+    return fallback;
+  }
+}
+
+function getDatamartConfig() {
+  const env = getDatamartEnv();
+  return {
+    baseUrl: normalizeDatamartBaseUrl(env.DATAMART_BASE_URL),
+    apiKey: env.DATAMART_API_KEY,
+  };
+}
+
+export interface DatamartNetwork {
+  id: string;
+  name: string;
+  network_type?: string;
+}
+
+export interface DatamartDataPlan {
+  id: string;
+  data_plan: string;
+  plan_network: string;
+  month_validate: string;
+  plan_amount: string;
+  plan_type?: string;
+}
+
+export interface DatamartUserInfo {
+  username: string;
+  wallet_balance: string;
+  email: string;
+}
+
+export interface DatamartOrderResult {
+  id?: number;
+  Status: "successful" | "failed" | "pending";
+  plan_network?: string;
+  mobile_number?: string;
+  plan_amount?: string;
+  plan_name?: string;
+  ident?: string;
+  api_response?: string;
+  message?: string;
+  error?: string;
+}
+
+export interface DatamartAirtimeResult {
+  Status: "successful" | "failed" | "pending";
+  mobile_number?: string;
+  amount?: string;
+  network?: string;
+  message?: string;
+  error?: string;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  statusCode?: number;
+  errorCode?: ProviderHttpError["code"];
+  attempts?: number;
+}
+
+const NETWORK_MAP: Record<string, string> = {
+  mtn: "MTN",
+  vodafone: "Vodafone",
+  telecel: "Telecel",
+  airteltigo: "AirtelTigo",
+  at: "AirtelTigo",
+};
+
+async function datamartRequest<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<ApiResponse<T>> {
+  let config: { baseUrl: string; apiKey: string };
+  try {
+    config = getDatamartConfig();
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "DataMart configuration error",
+      errorCode: "PROVIDER_BAD_RESPONSE",
+    };
+  }
+
+  const result = await providerRequest<T>("datamart", config.baseUrl, endpoint, {
+    ...options,
+    timeoutMs: 12000,
+    retries: 2,
+    retryDelayMs: 500,
+    headers: {
+      Authorization: `Token ${config.apiKey}`,
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.error?.message || "DataMart request failed",
+      statusCode: result.statusCode,
+      errorCode: result.error?.code,
+      attempts: result.attempts,
+    };
+  }
+  return { success: true, data: result.data, statusCode: result.statusCode, attempts: result.attempts };
+}
+
+function ensureArray<T>(value: unknown, fallbackMessage: string): ApiResponse<T[]> {
+  if (Array.isArray(value)) {
+    return { success: true, data: value as T[] };
+  }
+  return { success: false, error: fallbackMessage, errorCode: "PROVIDER_BAD_RESPONSE" };
+}
+
+export async function getAccountInfo(): Promise<ApiResponse<DatamartUserInfo>> {
+  return datamartRequest<DatamartUserInfo>("/api/user/");
+}
+
+export async function getNetworks(): Promise<ApiResponse<DatamartNetwork[]>> {
+  const result = await datamartRequest<DatamartNetwork[]>("/api/network/");
+  if (!result.success) return result;
+  return ensureArray<DatamartNetwork>(result.data, "Invalid DataMart networks response");
+}
+
+export async function getDataPlans(
+  network?: string
+): Promise<ApiResponse<DatamartDataPlan[]>> {
+  const qs = network ? `?network=${encodeURIComponent(network)}` : "";
+  const result = await datamartRequest<DatamartDataPlan[]>(`/api/data/${qs}`);
+  if (!result.success) return result;
+  return ensureArray<DatamartDataPlan>(result.data, "Invalid DataMart plans response");
+}
+
+export async function purchaseDataBundle(params: {
+  networkCode: string;
+  phoneNumber: string;
+  planId: string;
+  bypassPortedNumber?: boolean;
+}): Promise<ApiResponse<DatamartOrderResult>> {
+  const networkName = NETWORK_MAP[params.networkCode.toLowerCase()] || params.networkCode;
+
+  const payload = {
+    network: networkName,
+    mobile_number: params.phoneNumber,
+    data_plan: params.planId,
+    Ported_number: params.bypassPortedNumber !== false,
+  };
+
+  const result = await datamartRequest<DatamartOrderResult>("/api/data/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  if (!result.success) return result;
+  if (!result.data || typeof result.data !== "object" || !("Status" in result.data)) {
+    return { success: false, error: "Invalid DataMart data purchase response", errorCode: "PROVIDER_BAD_RESPONSE" };
+  }
+  return result;
+}
+
+export async function purchaseAirtime(params: {
+  networkCode: string;
+  phoneNumber: string;
+  amount: number;
+  bypassPortedNumber?: boolean;
+}): Promise<ApiResponse<DatamartAirtimeResult>> {
+  const networkName = NETWORK_MAP[params.networkCode.toLowerCase()] || params.networkCode;
+
+  const payload = {
+    network: networkName,
+    amount: params.amount,
+    mobile_number: params.phoneNumber,
+    Ported_number: params.bypassPortedNumber !== false,
+    airtime_type: "VTU",
+  };
+
+  const result = await datamartRequest<DatamartAirtimeResult>("/api/topup/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  if (!result.success) return result;
+  if (!result.data || typeof result.data !== "object" || !("Status" in result.data)) {
+    return { success: false, error: "Invalid DataMart airtime response", errorCode: "PROVIDER_BAD_RESPONSE" };
+  }
+  return result;
+}
+
+export async function getDataOrderStatus(
+  orderId: string | number
+): Promise<ApiResponse<DatamartOrderResult>> {
+  const result = await datamartRequest<DatamartOrderResult>(`/api/data/${orderId}/`);
+  if (!result.success) return result;
+  if (!result.data || typeof result.data !== "object" || !("Status" in result.data)) {
+    return { success: false, error: "Invalid DataMart order status response", errorCode: "PROVIDER_BAD_RESPONSE" };
+  }
+  return result;
+}
+
+export function resolveNetworkCode(internalId: string): string {
+  return NETWORK_MAP[internalId.toLowerCase()] || internalId;
+}
+
+export function datamartNetworkMatches(planNetwork: string, selectedNetwork: string): boolean {
+  const plan = planNetwork.toLowerCase();
+  const selected = selectedNetwork.toLowerCase();
+  if (plan.includes(selected) || selected.includes(plan)) return true;
+  if (selected.includes("airtel") && plan.includes("at")) return true;
+  if (selected.includes("telecel") && (plan.includes("voda") || plan.includes("vodafone"))) return true;
+  if (selected.includes("vodafone") && plan.includes("telecel")) return true;
+  return false;
+}

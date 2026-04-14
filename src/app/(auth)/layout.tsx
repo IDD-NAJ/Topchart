@@ -26,26 +26,24 @@ export default function AuthLayout({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="flex min-h-screen items-center justify-center bg-[color:var(--marketing-cream)]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[color:var(--marketing-accent)] border-t-transparent" />
       </div>
     )
   }
 
   if (user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-[#006994] border-t-transparent rounded-full animate-spin" />
+      <div className="flex min-h-screen items-center justify-center bg-[color:var(--marketing-cream)]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[color:var(--marketing-accent)] border-t-transparent" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col bg-[color:var(--marketing-cream)]">
       <Header />
-      <main className="flex-1">
-        {children}
-      </main>
+      <main className="flex-1 pt-[72px]">{children}</main>
       <Footer />
     </div>
   )

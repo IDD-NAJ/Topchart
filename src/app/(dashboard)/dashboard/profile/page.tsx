@@ -39,6 +39,12 @@ export default function ProfilePage() {
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [referralStats, setReferralStats] = useState<{
+    referralCode: string
+    totalReferred: number
+    qualifiedReferrals: number
+    totalEarnings: number
+  } | null>(null)
 
   const [profileData, setProfileData] = useState({
     firstName: "",
@@ -61,6 +67,15 @@ export default function ProfilePage() {
       })
     }
   }, [user])
+
+  useEffect(() => {
+    fetch("/api/referral/stats", { credentials: "include", cache: "no-store" })
+      .then(res => res.json())
+      .then(json => {
+        if (json?.success && json?.data) setReferralStats(json.data)
+      })
+      .catch(() => {})
+  }, [])
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -147,9 +162,11 @@ export default function ProfilePage() {
     }
   }
 
+  const referralCode = referralStats?.referralCode || (user?.id ? user.id.slice(0, 8).toUpperCase() : "")
+  const referralLink = typeof window !== "undefined" ? `${window.location.origin}/r/${referralCode}` : `/r/${referralCode}`
+
   const handleCopyReferral = async () => {
-    const link = `${window.location.origin}/r/${user?.id?.slice(0, 8).toUpperCase()}`
-    const success = await copyToClipboard(link)
+    const success = await copyToClipboard(referralLink)
     if (success) {
       setCopied(true)
       setTimeout(() => setCopied(false), 1200)
@@ -164,7 +181,7 @@ export default function ProfilePage() {
       {/* Professional Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <Link href="/dashboard" className="inline-flex items-center text-xs font-bold text-muted-foreground hover:text-[#006994] transition-colors uppercase tracking-widest mb-2 group">
+          <Link href="/dashboard" className="inline-flex items-center text-xs font-bold text-muted-foreground hover:text-[#0052CC] transition-colors uppercase tracking-widest mb-2 group">
             <ArrowLeft className="w-3 h-3 mr-1.5 group-hover:-translate-x-1 transition-transform" />
             Back to Dashboard
           </Link>
@@ -183,10 +200,10 @@ export default function ProfilePage() {
         
         {/* Left Column: Profile Summary */}
         <div className="lg:col-span-4 space-y-6">
-          <Card className="overflow-hidden border-[#006994]/20">
-            <div className="h-28 bg-[#006994]/10 relative">
+          <Card className="overflow-hidden border-[#0052CC]/20">
+            <div className="h-28 bg-[#0052CC]/10 relative">
                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
-                  <div className="h-24 w-24 rounded-2xl bg-background border-4 border-background shadow-2xl flex items-center justify-center text-[#006994] font-bold text-3xl uppercase ring-1 ring-[#006994]/10">
+                  <div className="h-24 w-24 rounded-2xl bg-background border-4 border-background shadow-2xl flex items-center justify-center text-[#0052CC] font-bold text-3xl uppercase ring-1 ring-[#0052CC]/10">
                     {user.firstName?.[0]}{user.lastName?.[0]}
                   </div>
                </div>
@@ -212,7 +229,7 @@ export default function ProfilePage() {
               <div className="grid grid-cols-2 gap-3 pt-4 border-t border-dashed">
                 <div className="p-3 rounded-xl bg-muted/30 border border-border/50 text-left">
                   <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Wallet Balance</p>
-                  <p className="text-sm font-black text-[#006994]">{formatCurrency(user.walletBalance || 0)}</p>
+                  <p className="text-sm font-black text-[#0052CC]">{formatCurrency(user.walletBalance || 0)}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-muted/30 border border-border/50 text-left">
                   <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Account Score</p>
@@ -222,33 +239,44 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Refer & Earn */}
-          <Card className="bg-[#006994]/5 border-[#006994]/20 overflow-hidden relative">
+          <Card className="bg-[#0052CC]/5 border-[#0052CC]/20 overflow-hidden relative">
              <div className="absolute top-0 right-0 p-8 opacity-5 -mr-4 -mt-4 rotate-12">
-                <Gift className="w-32 h-32 text-[#006994]" />
+                <Gift className="w-32 h-32 text-[#0052CC]" />
              </div>
              <CardHeader className="pb-2">
                <CardTitle className="text-base flex items-center gap-2">
-                 <Gift className="w-4 h-4 text-[#006994]" />
+                 <Gift className="w-4 h-4 text-[#0052CC]" />
                  Refer & Earn
                </CardTitle>
                <CardDescription>Share your referral link and earn rewards for every friend you invite.</CardDescription>
              </CardHeader>
              <CardContent className="space-y-4 pt-4">
-               <div className="flex items-center justify-between p-3 rounded-lg bg-background border border-[#006994]/20">
-                 <div className="flex items-center gap-2">
-                    <LinkIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-[10px] font-mono truncate max-w-[120px]">{user.id.slice(0, 8).toUpperCase()}</span>
+               <div className="flex items-center justify-between p-3 rounded-lg bg-background border border-[#0052CC]/20">
+                 <div className="flex items-center gap-2 min-w-0">
+                    <LinkIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-[10px] font-mono truncate">{referralLink}</span>
                  </div>
                  <Button 
                    size="sm" 
                    variant="ghost"
-                   className="h-7 w-7 p-0"
+                   className="h-7 w-7 p-0 ml-2 shrink-0"
                    onClick={handleCopyReferral}
                  >
                    {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
                  </Button>
                </div>
+               {referralStats && (
+                 <div className="grid grid-cols-2 gap-2">
+                   <div className="p-2.5 rounded-lg bg-background border border-border text-center">
+                     <p className="text-[9px] uppercase text-muted-foreground font-bold">Referred</p>
+                     <p className="text-base font-bold text-foreground">{referralStats.totalReferred}</p>
+                   </div>
+                   <div className="p-2.5 rounded-lg bg-background border border-border text-center">
+                     <p className="text-[9px] uppercase text-muted-foreground font-bold">Qualified</p>
+                     <p className="text-base font-bold text-[#0052CC]">{referralStats.qualifiedReferrals}</p>
+                   </div>
+                 </div>
+               )}
                <div className="flex gap-2">
                  <Button asChild size="sm" className="flex-1 h-8 text-[9px] uppercase font-bold tracking-widest">
                     <Link href="/dashboard/history?type=referral">View Earnings</Link>
@@ -264,7 +292,7 @@ export default function ProfilePage() {
           {/* Identity Sync */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 px-1">
-               <Fingerprint className="w-4 h-4 text-[#006994]" />
+               <Fingerprint className="w-4 h-4 text-[#0052CC]" />
                <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Personal Information</h2>
             </div>
             <Card>
@@ -343,7 +371,7 @@ export default function ProfilePage() {
           {/* Change Password */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 px-1">
-               <ShieldAlert className="w-4 h-4 text-[#722F37]" />
+               <ShieldAlert className="w-4 h-4 text-[#FF5630]" />
                <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Password & Security</h2>
             </div>
             <Card>

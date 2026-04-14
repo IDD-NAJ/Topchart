@@ -99,6 +99,48 @@ export async function getServiceAreaCodes(serviceId: string): Promise<ApiRespons
   return pvaRequest<{ areaCodes: AreaCodeInfo[] }>(`/v3/api/services/${serviceId}/area-codes`);
 }
 
+export async function getAllAreaCodes(): Promise<ApiResponse<{ areaCodes: AreaCodeInfo[] }>> {
+  return pvaRequest<{ areaCodes: AreaCodeInfo[] }>("/v3/api/area-codes");
+}
+
+export async function getPopularServiceAreaCodes(): Promise<ApiResponse<{ areaCodes: AreaCodeInfo[] }>> {
+  console.log("Fetching all services to find area codes");
+  const allServicesResult = await getAllServices();
+  
+  if (!allServicesResult.success) {
+    console.error("Failed to fetch services for area codes:", allServicesResult.error);
+    return { success: false, error: allServicesResult.error || "Failed to fetch services" };
+  }
+  
+  const services = allServicesResult.data?.services || [];
+  console.log(`Trying ${services.length} services for area codes`);
+  
+  if (services.length === 0) {
+    console.error("No services available");
+    return { success: false, error: "No services available" };
+  }
+  
+  const popularServices = services.slice(0, 5);
+  
+  for (const service of popularServices) {
+    try {
+      console.log(`Fetching area codes for service: ${service.name} (${service._id})`);
+      const result = await getServiceAreaCodes(service._id);
+      console.log(`Area codes result for ${service.name}:`, result.success, result.data?.areaCodes?.length || 0);
+      if (result.success && result.data?.areaCodes && result.data.areaCodes.length > 0) {
+        console.log(`Found ${result.data.areaCodes.length} area codes from service ${service.name}`);
+        return result;
+      }
+    } catch (error) {
+      console.log(`Failed to fetch area codes for service ${service.name}:`, error);
+      continue;
+    }
+  }
+  
+  console.error("No area codes available from any service");
+  return { success: false, error: "No area codes available from any service" };
+}
+
 export interface STRPurchaseResult {
   requests: PVARequest[];
 }

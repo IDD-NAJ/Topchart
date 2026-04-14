@@ -70,9 +70,10 @@ async function main() {
     path.join(__dirname, "009-add-role-constraint.sql"),
     path.join(__dirname, "010-create-content-tables.sql"),
     path.join(__dirname, "011-create-blog-tables.sql"),
-    path.join(__dirname, "012-create-faqs-table.sql"),
+    path.join(__dirname, "012-create-faqs-tables.sql"),
     path.join(__dirname, "013-create-press-tables.sql"),
     path.join(__dirname, "015-add-verification-tables.sql"),
+    path.join(__dirname, "020-referral-links.sql"),
   ];
  
   for (const f of files) {

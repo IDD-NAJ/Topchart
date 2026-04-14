@@ -32,6 +32,8 @@ import {
   Megaphone,
   ChevronDown,
   ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -67,10 +69,25 @@ const secondaryItems = [
   { href: "/dashboard/disputes", label: "My Disputes", icon: ShieldAlert },
 ]
 
-export function DashboardSidebar() {
+interface DashboardSidebarProps {
+  collapsed?: boolean
+  onCollapsedChange?: (collapsed: boolean) => void
+}
+
+export function DashboardSidebar({ collapsed: controlledCollapsed, onCollapsedChange }: DashboardSidebarProps = {}) {
   const pathname = usePathname()
   const { user, logout } = useAuth()
   const [resellerMenuOpen, setResellerMenuOpen] = useState(true)
+  const [internalCollapsed, setInternalCollapsed] = useState(false)
+  
+  const collapsed = controlledCollapsed ?? internalCollapsed
+  const setCollapsed = (value: boolean) => {
+    if (onCollapsedChange) {
+      onCollapsedChange(value)
+    } else {
+      setInternalCollapsed(value)
+    }
+  }
 
   const isReseller = user?.role === 'RESELLER'
   const isResellerPage = pathname?.startsWith('/dashboard/reseller')
@@ -80,23 +97,36 @@ export function DashboardSidebar() {
       initial={{ x: -20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="hidden lg:flex h-screen w-64 flex-col fixed left-0 top-0 border-r border-[#006994]/15 bg-background/80 backdrop-blur-xl z-40"
+      className={cn(
+        "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-[color:var(--marketing-accent)]/15 bg-[color:var(--marketing-cream)]/95 backdrop-blur-xl lg:flex transition-all duration-300 ease-out",
+        collapsed ? "w-20" : "w-64"
+      )}
     >
-      <div className="p-6">
-          <Link href="/dashboard" className="flex items-center gap-2.5 group">
-            <Image 
-              src="/logo.svg" 
-              alt="Topchart" 
-              width={140} 
-              height={40} 
-              className="h-9 w-auto object-contain"
-            />
-          </Link>
+      <div className={cn("flex items-center justify-between", collapsed ? "p-4 justify-center" : "p-6")}>
+        <Link href="/dashboard" className={cn("flex items-center gap-2.5 group", collapsed && "hidden")}>
+          <Image 
+            src="/logo.svg" 
+            alt="Topchart" 
+            width={140} 
+            height={40} 
+            className="h-9 w-auto object-contain"
+          />
+        </Link>
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="p-2 rounded-lg text-muted-foreground hover:bg-[color:var(--marketing-accent)]/10 hover:text-[color:var(--marketing-accent)] transition-colors"
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+        </button>
       </div>
 
       <div className="flex-1 px-4 py-4 space-y-8 overflow-y-auto">
         <div>
-          <h3 className="px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-4 font-body">
+          <h3 className={cn(
+            "px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-4 font-body transition-opacity",
+            collapsed && "opacity-0 hidden"
+          )}>
             Main Menu
           </h3>
           <nav className="space-y-1">
@@ -109,17 +139,18 @@ export function DashboardSidebar() {
                   href={item.href}
                   className={cn(
                     "flex items-center gap-3 rounded-lg text-sm font-medium transition-all group",
-                    (item as any).indent ? "px-4 py-2 ml-4 text-xs" : "px-4 py-2.5",
+                    collapsed ? "justify-center px-2 py-2.5" : (item as any).indent ? "px-4 py-2 ml-4 text-xs" : "px-4 py-2.5",
                     active
-                      ? "bg-[#006994]/10 text-[#006994]"
-                      : "text-muted-foreground hover:text-[#006994] hover:bg-[#EFF6FA]"
+                      ? "bg-[color:var(--marketing-accent)]/10 text-[color:var(--marketing-accent)]"
+                      : "text-muted-foreground hover:bg-[color:var(--marketing-cream-alt)] hover:text-[color:var(--marketing-accent)]"
                   )}
+                  title={collapsed ? item.label : undefined}
                 >
                   <Icon className={cn(
-                    (item as any).indent ? "h-3.5 w-3.5" : "h-4 w-4",
-                    active ? "text-[#006994]" : "group-hover:text-[#006994]"
+                    collapsed ? "h-5 w-5" : (item as any).indent ? "h-3.5 w-3.5" : "h-4 w-4",
+                    active ? "text-[color:var(--marketing-accent)]" : "group-hover:text-[color:var(--marketing-accent)]"
                   )} />
-                  {item.label}
+                  {!collapsed && item.label}
                 </Link>
               )
             })}
@@ -127,7 +158,10 @@ export function DashboardSidebar() {
         </div>
 
         <div>
-          <h3 className="px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-4 font-body">
+          <h3 className={cn(
+            "px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-4 font-body transition-opacity",
+            collapsed && "opacity-0 hidden"
+          )}>
             Business
           </h3>
           <nav className="space-y-1">
@@ -141,14 +175,16 @@ export function DashboardSidebar() {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all group",
+                      "flex items-center gap-3 rounded-lg text-sm font-medium transition-all group",
+                      collapsed ? "justify-center px-2 py-2.5" : "px-4 py-2.5",
                       active
-                        ? "bg-[#722F37]/10 text-[#722F37]"
-                        : "text-muted-foreground hover:text-[#722F37] hover:bg-[#FDF2F3]"
+                        ? "bg-[#FF5630]/10 text-[#FF5630]"
+                        : "text-muted-foreground hover:text-[#FF5630] hover:bg-[#FFE5E8]"
                     )}
+                    title={collapsed ? item.label : undefined}
                   >
-                    <Icon className={cn("h-4 w-4", active ? "text-[#722F37]" : "group-hover:text-[#722F37]")} />
-                    {item.label}
+                    <Icon className={cn(collapsed ? "h-5 w-5" : "h-4 w-4", active ? "text-[#FF5630]" : "group-hover:text-[#FF5630]")} />
+                    {!collapsed && item.label}
                   </Link>
                 )
               })
@@ -156,23 +192,25 @@ export function DashboardSidebar() {
               // Expanded menu for resellers
               <>
                 <button
-                  onClick={() => setResellerMenuOpen(!resellerMenuOpen)}
+                  onClick={() => !collapsed && setResellerMenuOpen(!resellerMenuOpen)}
                   className={cn(
-                    "w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition-all group",
+                    "w-full flex items-center rounded-lg text-sm font-medium transition-all group",
+                    collapsed ? "justify-center px-2 py-2.5" : "justify-between px-4 py-2.5",
                     isResellerPage
-                      ? "bg-[#722F37]/10 text-[#722F37]"
-                      : "text-muted-foreground hover:text-[#722F37] hover:bg-[#FDF2F3]"
+                      ? "bg-[#FF5630]/10 text-[#FF5630]"
+                      : "text-muted-foreground hover:text-[#FF5630] hover:bg-[#FFE5E8]"
                   )}
+                  title={collapsed ? "Reseller Hub" : undefined}
                 >
-                  <div className="flex items-center gap-3">
-                    <Store className={cn("h-4 w-4", isResellerPage ? "text-[#722F37]" : "group-hover:text-[#722F37]")} />
-                    <span>Reseller Hub</span>
+                  <div className={cn("flex items-center gap-3", collapsed && "gap-0")}>
+                    <Store className={cn(collapsed ? "h-5 w-5" : "h-4 w-4", isResellerPage ? "text-[#FF5630]" : "group-hover:text-[#FF5630]")} />
+                    {!collapsed && <span>Reseller Hub</span>}
                   </div>
-                  {resellerMenuOpen ? (
+                  {!collapsed && (resellerMenuOpen ? (
                     <ChevronDown className="h-4 w-4" />
                   ) : (
                     <ChevronRight className="h-4 w-4" />
-                  )}
+                  ))}
                 </button>
                 {resellerMenuOpen && (
                   <div className="ml-4 mt-1 space-y-1">
@@ -184,14 +222,16 @@ export function DashboardSidebar() {
                           key={item.href}
                           href={item.href}
                           className={cn(
-                            "flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all group",
+                            "flex items-center gap-3 rounded-lg text-sm font-medium transition-all group",
+                            collapsed ? "justify-center px-2 py-2" : "px-4 py-2",
                             active
-                              ? "bg-[#722F37]/10 text-[#722F37]"
-                              : "text-muted-foreground hover:text-[#722F37] hover:bg-[#FDF2F3]"
+                              ? "bg-[#FF5630]/10 text-[#FF5630]"
+                              : "text-muted-foreground hover:text-[#FF5630] hover:bg-[#FFE5E8]"
                           )}
+                          title={collapsed ? item.label : undefined}
                         >
-                          <Icon className={cn("h-4 w-4", active ? "text-[#722F37]" : "group-hover:text-[#722F37]")} />
-                          {item.label}
+                          <Icon className={cn(collapsed ? "h-5 w-5" : "h-4 w-4", active ? "text-[#FF5630]" : "group-hover:text-[#FF5630]")} />
+                          {!collapsed && item.label}
                         </Link>
                       )
                     })}
@@ -203,7 +243,10 @@ export function DashboardSidebar() {
         </div>
 
         <div>
-          <h3 className="px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-4 font-body">
+          <h3 className={cn(
+            "px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-4 font-body transition-opacity",
+            collapsed && "opacity-0 hidden"
+          )}>
             Preferences
           </h3>
           <nav className="space-y-1">
@@ -215,14 +258,16 @@ export function DashboardSidebar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all group",
+                    "flex items-center gap-3 rounded-lg text-sm font-medium transition-all group",
+                    collapsed ? "justify-center px-2 py-2.5" : "px-4 py-2.5",
                     active
-                      ? "bg-[#006994]/10 text-[#006994]"
-                      : "text-muted-foreground hover:text-[#006994] hover:bg-[#EFF6FA]"
+                      ? "bg-[color:var(--marketing-accent)]/10 text-[color:var(--marketing-accent)]"
+                      : "text-muted-foreground hover:bg-[color:var(--marketing-cream-alt)] hover:text-[color:var(--marketing-accent)]"
                   )}
+                  title={collapsed ? item.label : undefined}
                 >
-                  <Icon className={cn("h-4 w-4", active ? "text-[#006994]" : "group-hover:text-[#006994]")} />
-                  {item.label}
+                  <Icon className={cn(collapsed ? "h-5 w-5" : "h-4 w-4", active ? "text-[color:var(--marketing-accent)]" : "group-hover:text-[color:var(--marketing-accent)]")} />
+                  {!collapsed && item.label}
                 </Link>
               )
             })}
@@ -230,24 +275,33 @@ export function DashboardSidebar() {
         </div>
       </div>
 
-      <div className="p-4 border-t border-[#006994]/10 bg-[#EFF6FA]/30">
-        <div className="flex items-center gap-3 px-2 mb-4">
-          <div className="h-9 w-9 rounded-full bg-[#006994]/10 border border-[#006994]/20 flex items-center justify-center text-[#006994] font-bold text-xs uppercase">
+      <div className="border-t border-[color:var(--marketing-accent)]/10 bg-[color:var(--marketing-cream-alt)]/40 p-4">
+        <div className={cn("flex items-center gap-3 mb-4", collapsed ? "justify-center px-0" : "px-2")}>
+          <div className={cn(
+            "flex items-center justify-center rounded-full border border-[color:var(--marketing-accent)]/20 bg-[color:var(--marketing-accent)]/10 text-[color:var(--marketing-accent)] text-xs font-bold uppercase",
+            collapsed ? "h-10 w-10 text-sm" : "h-9 w-9"
+          )}>
             {user?.firstName?.[0]}{user?.lastName?.[0]}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate">{user?.firstName} {user?.lastName}</p>
-            <p className="text-[10px] text-muted-foreground truncate font-medium">{user?.email}</p>
-          </div>
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate">{user?.firstName} {user?.lastName}</p>
+              <p className="text-[10px] text-muted-foreground truncate font-medium">{user?.email}</p>
+            </div>
+          )}
         </div>
         <Button 
           variant="ghost" 
           onClick={() => logout()}
-          className="w-full justify-start gap-3 h-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all duration-300"
+          className={cn(
+            "gap-3 h-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all duration-300",
+            collapsed ? "w-full justify-center px-2" : "w-full justify-start"
+          )}
           style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
+          title={collapsed ? "Sign Out" : undefined}
         >
-          <LogOut className="h-4 w-4" />
-          <span className="text-sm font-medium">Sign Out</span>
+          <LogOut className={cn(collapsed ? "h-5 w-5" : "h-4 w-4")} />
+          {!collapsed && <span className="text-sm font-medium">Sign Out</span>}
         </Button>
       </div>
     </motion.aside>

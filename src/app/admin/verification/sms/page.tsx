@@ -81,7 +81,7 @@ export default function AdminSmsLogPage() {
             </Link>
           </Button>
           <div className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-[#006994]" />
+            <MessageSquare className="h-5 w-5 text-[color:var(--marketing-accent)]" />
             <h2 className="text-xl font-semibold">SMS Log</h2>
             <Badge variant="secondary">{total}</Badge>
           </div>

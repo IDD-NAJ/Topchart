@@ -9,6 +9,7 @@ import { DashboardFooter } from "@/components/dashboard-footer"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { MobileBottomNav } from "@/components/dashboard/mobile-bottom-nav"
 import { OfflineBanner } from "@/components/dashboard/offline-banner"
+import { cn } from "@/lib/utils"
 
 export default function DashboardLayout({
   children,
@@ -19,6 +20,7 @@ export default function DashboardLayout({
   const router = useRouter()
   const [retryCount, setRetryCount] = useState(0)
   const [stabilized, setStabilized] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const maxRetries = 4
 
   useEffect(() => {
@@ -45,27 +47,27 @@ export default function DashboardLayout({
 
   if (isLoading || !stabilized || (!user && retryCount < maxRetries)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-[#006994] border-t-transparent rounded-full animate-spin" />
+      <div className="flex min-h-screen items-center justify-center bg-[color:var(--marketing-cream)]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[color:var(--marketing-accent)]/30 border-t-transparent" />
       </div>
     )
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-[#006994] border-t-transparent rounded-full animate-spin" />
+      <div className="flex min-h-screen items-center justify-center bg-[color:var(--marketing-cream)]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[color:var(--marketing-accent)]/30 border-t-transparent" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="flex min-h-screen bg-[color:var(--marketing-cream)]">
       <OfflineBanner />
-      <DashboardSidebar />
-        <div className="flex-1 flex flex-col lg:pl-64">
-          <DashboardHeader />
-          <main className="flex-1 pt-16 lg:pt-20 pb-24 lg:pb-0 overflow-x-hidden">
+      <DashboardSidebar collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />
+        <div className={cn("flex-1 flex flex-col transition-all duration-300 ease-out", sidebarCollapsed ? "lg:pl-20" : "lg:pl-64")}>
+          <DashboardHeader sidebarCollapsed={sidebarCollapsed} />
+          <main className="flex-1 pt-16 lg:pt-20 pb-40 lg:pb-0 overflow-x-hidden">
             <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-6xl w-full">{children}</div>
           </main>
           <div className="hidden lg:block">

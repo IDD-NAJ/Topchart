@@ -62,7 +62,7 @@ export default function AdminActiveUsersPage() {
             </Link>
           </Button>
           <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-[#006994]" />
+            <Activity className="h-5 w-5 text-[color:var(--marketing-accent)]" />
             <h2 className="text-xl font-semibold">Active Users</h2>
             <Badge variant="secondary">{total}</Badge>
           </div>

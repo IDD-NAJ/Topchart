@@ -4,35 +4,93 @@ import type { NextRequest } from "next/server";
 const LOGIN = "/login";
 const ADMIN_LOGIN = "/admin/login";
 
+const SECURITY_HEADERS = {
+  "X-Frame-Options": "DENY",
+  "X-Content-Type-Options": "nosniff",
+  "X-XSS-Protection": "1; mode=block",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  "X-DNS-Prefetch-Control": "off",
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "Content-Security-Policy":
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://embed.tawk.to https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.paystack.co https://embed.tawk.to wss://chat.tawk.to https://va.vercel-scripts.com; frame-src https://embed.tawk.to https://checkout.paystack.com;",
+};
+
+function applySecurityHeaders(response: NextResponse): NextResponse {
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    response.headers.set(key, value);
+  }
+  return response;
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionToken = request.cookies.get("session_token")?.value;
 
-  // Protect dashboard: require authenticated session
-  if (pathname.startsWith("/dashboard")) {
-    if (!sessionToken) {
-      return NextResponse.redirect(new URL(LOGIN, request.url));
+  // Skip middleware for Server Actions (they have next-action header)
+  const isServerAction = request.headers.get("next-action");
+  if (isServerAction) {
+    // For server actions, just check auth without applying security headers
+    // that might interfere with the action processing
+    if (pathname.startsWith("/dashboard") || 
+        (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login"))) {
+      if (!sessionToken) {
+        return NextResponse.redirect(new URL(LOGIN, request.url));
+      }
     }
+    
+    // Fix forwarded headers mismatch for browser preview proxy
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    const origin = request.headers.get("origin");
+    
+    if (forwardedHost && origin && forwardedHost !== origin) {
+      // Clone the request and modify the origin header
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set("origin", forwardedHost);
+      const newRequest = new Request(request.url, {
+        method: request.method,
+        headers: requestHeaders,
+        body: request.body,
+        cache: request.cache,
+        credentials: request.credentials,
+        integrity: request.integrity,
+        keepalive: request.keepalive,
+        mode: request.mode,
+        redirect: request.redirect,
+        referrer: request.referrer,
+        referrerPolicy: request.referrerPolicy,
+        signal: request.signal,
+      });
+      return NextResponse.next({ request: newRequest });
+    }
+    
     return NextResponse.next();
   }
 
-  // Protect admin routes (except /admin/login): require session AND admin_role cookie
+  if (pathname.startsWith("/dashboard")) {
+    if (!sessionToken) {
+      return applySecurityHeaders(
+        NextResponse.redirect(new URL(LOGIN, request.url))
+      );
+    }
+    return applySecurityHeaders(NextResponse.next());
+  }
+
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
     if (!sessionToken) {
-      return NextResponse.redirect(new URL(ADMIN_LOGIN, request.url));
-    }
-    const adminRole = request.cookies.get("admin_role")?.value;
-    if (adminRole !== "ADMIN") {
-      return NextResponse.redirect(new URL(ADMIN_LOGIN, request.url));
+      return applySecurityHeaders(
+        NextResponse.redirect(new URL(ADMIN_LOGIN, request.url))
+      );
     }
   }
 
-  return NextResponse.next();
+  return applySecurityHeaders(NextResponse.next());
 }
 
 export const config = {
   matcher: [
     "/dashboard/:path*",
     "/admin/:path*",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

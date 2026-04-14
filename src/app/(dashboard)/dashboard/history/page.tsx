@@ -458,11 +458,11 @@ export default function HistoryPage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card className="bg-card/50 backdrop-blur-sm border-[#006994]/5">
+          <Card className="bg-card/50 backdrop-blur-sm border-[#0052CC]/5">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-muted-foreground">Total Spent</p>
-                <TrendingUp className="w-4 h-4 text-[#006994]" />
+                <TrendingUp className="w-4 h-4 text-[#0052CC]" />
               </div>
               <div className="flex items-baseline gap-1">
                 <h3 className="text-2xl font-bold">GH₵{stats.totalSpent.toFixed(2)}</h3>
@@ -470,7 +470,7 @@ export default function HistoryPage() {
               <p className="text-xs text-muted-foreground mt-1">Lifetime spending on Topchart</p>
             </CardContent>
           </Card>
-          <Card className="bg-card/50 backdrop-blur-sm border-[#006994]/5">
+          <Card className="bg-card/50 backdrop-blur-sm border-[#0052CC]/5">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-muted-foreground">Total Funded</p>
@@ -482,7 +482,7 @@ export default function HistoryPage() {
               <p className="text-xs text-muted-foreground mt-1">Total wallet top-ups</p>
             </CardContent>
           </Card>
-          <Card className="bg-card/50 backdrop-blur-sm border-[#006994]/5">
+          <Card className="bg-card/50 backdrop-blur-sm border-[#0052CC]/5">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-muted-foreground">Success Rate</p>
@@ -523,13 +523,13 @@ export default function HistoryPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
               placeholder="Search by description or reference..." 
-              className="pl-10 bg-card border-[#006994]/5"
+              className="pl-10 bg-card border-[#0052CC]/5"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <Tabs value={filter} onValueChange={(value: string) => setFilter(value as FilterType)} className="w-full md:w-auto">
-            <TabsList className="bg-card border border-[#006994]/5 h-10">
+            <TabsList className="bg-card border border-[#0052CC]/5 h-10">
               <TabsTrigger value="all" className="px-4">All</TabsTrigger>
               <TabsTrigger value="deposit" className="px-4">Deposits</TabsTrigger>
               <TabsTrigger value="airtime" className="px-4">Airtime</TabsTrigger>
@@ -543,7 +543,7 @@ export default function HistoryPage() {
         <div className="space-y-8">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <Loader2 className="w-10 h-10 animate-spin text-[#006994]" />
+              <Loader2 className="w-10 h-10 animate-spin text-[#0052CC]" />
               <p className="text-muted-foreground animate-pulse">Fetching your records...</p>
             </div>
           ) : filteredTransactions.length === 0 ? (
@@ -581,12 +581,12 @@ export default function HistoryPage() {
                     <div
                       key={tx.id}
                       onClick={() => setSelectedTx(tx)}
-                      className="group flex items-center justify-between p-4 bg-card hover:bg-accent/50 rounded-xl border border-[#006994]/5 transition-all cursor-pointer active:scale-[0.98]"
+                      className="group flex items-center justify-between p-4 bg-card hover:bg-accent/50 rounded-xl border border-[#0052CC]/5 transition-all cursor-pointer active:scale-[0.98]"
                     >
                       <div className="flex items-center gap-4">
                         {getTransactionIcon(tx.type)}
                         <div>
-                          <p className="font-semibold text-sm group-hover:text-[#006994] transition-colors">{tx.description}</p>
+                          <p className="font-semibold text-sm group-hover:text-[#0052CC] transition-colors">{tx.description}</p>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                             <span>{new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             <span>•</span>
@@ -623,7 +623,7 @@ export default function HistoryPage() {
             </DialogHeader>
             {selectedTx && (
               <div className="space-y-6">
-                <div className="flex flex-col items-center justify-center py-6 bg-muted/30 rounded-2xl border border-[#006994]/5">
+                <div className="flex flex-col items-center justify-center py-6 bg-muted/30 rounded-2xl border border-[#0052CC]/5">
                   <div className="mb-2">{getTransactionIcon(selectedTx.type)}</div>
                   <h2 className={cn(
                     "text-3xl font-bold",
@@ -764,7 +764,7 @@ export default function HistoryPage() {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="p-4 bg-muted/50 rounded-xl text-sm border border-[#006994]/5">
+              <div className="p-4 bg-muted/50 rounded-xl text-sm border border-[#0052CC]/5">
                 <p className="font-semibold">{selectedTx?.description}</p>
                 <div className="flex justify-between items-center mt-1">
                   <p className="text-muted-foreground">Amount: GH₵{selectedTx?.amount.toFixed(2)}</p>

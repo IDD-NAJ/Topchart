@@ -96,7 +96,7 @@ export default function DisputesPage() {
       {/* Infrastructure Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <Link href="/dashboard" className="inline-flex items-center text-xs font-bold text-muted-foreground hover:text-[#006994] transition-colors uppercase tracking-widest mb-2 group">
+          <Link href="/dashboard" className="inline-flex items-center text-xs font-bold text-muted-foreground hover:text-[#0052CC] transition-colors uppercase tracking-widest mb-2 group">
             <ArrowLeft className="w-3 h-3 mr-1.5 group-hover:-translate-x-1 transition-transform" />
             Back to Dashboard
           </Link>
@@ -114,8 +114,8 @@ export default function DisputesPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-8">
-        <Card className="border-[#006994]/10 overflow-hidden">
-          <CardHeader className="pb-4 border-b bg-[#722F37]/10">
+        <Card className="border-[#0052CC]/10 overflow-hidden">
+          <CardHeader className="pb-4 border-b bg-[#FF5630]/10">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                <div>
                  <CardTitle className="text-base">My Disputes</CardTitle>
@@ -140,7 +140,7 @@ export default function DisputesPage() {
           <CardContent className="p-0">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
-                <Loader2 className="w-10 h-10 animate-spin text-[#006994] opacity-50" />
+                <Loader2 className="w-10 h-10 animate-spin text-[#0052CC] opacity-50" />
                 <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground animate-pulse">Loading...</p>
               </div>
             ) : filteredDisputes.length === 0 ? (
@@ -151,7 +151,7 @@ export default function DisputesPage() {
                 <div className="space-y-1">
                   <h3 className="font-bold text-lg">No Disputes Yet</h3>
                   <p className="text-muted-foreground text-sm max-w-[320px] mx-auto leading-relaxed">
-                    Everything looks good! You can raise a dispute from your <Link href="/dashboard/history" className="text-[#006994] hover:underline font-bold">Transaction History</Link>.
+                    Everything looks good! You can raise a dispute from your <Link href="/dashboard/history" className="text-[#0052CC] hover:underline font-bold">Transaction History</Link>.
                   </p>
                 </div>
               </div>
@@ -211,10 +211,10 @@ export default function DisputesPage() {
 
         {/* Support Options */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           <Card className="bg-[#006994]/5 border-[#006994]/10">
+           <Card className="bg-[#0052CC]/5 border-[#0052CC]/10">
               <CardContent className="p-6 flex items-start gap-4">
                  <div className="w-12 h-12 rounded-2xl bg-background border flex items-center justify-center shrink-0 shadow-sm">
-                    <Target className="w-6 h-6 text-[#006994]" />
+                    <Target className="w-6 h-6 text-[#0052CC]" />
                  </div>
                  <div className="space-y-2">
                     <h4 className="text-sm font-bold uppercase tracking-widest">How Disputes Work</h4>
@@ -232,7 +232,7 @@ export default function DisputesPage() {
                  <div className="space-y-2">
                     <h4 className="text-sm font-bold uppercase tracking-widest">Need Urgent Help?</h4>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      If you have an urgent issue that needs immediate attention, please open an <Link href="/dashboard/tickets" className="text-[#722F37] font-bold hover:underline">Urgent Support Ticket</Link>.
+                      If you have an urgent issue that needs immediate attention, please open an <Link href="/dashboard/tickets" className="text-[#FF5630] font-bold hover:underline">Urgent Support Ticket</Link>.
                     </p>
                  </div>
               </CardContent>

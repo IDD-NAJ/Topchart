@@ -4,7 +4,6 @@ import React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import Image from "next/image"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -101,6 +100,7 @@ export default function RegisterPage() {
     { label: "8+ characters", met: formData.password.length >= 8 },
     { label: "Number", met: /\d/.test(formData.password) },
     { label: "Uppercase", met: /[A-Z]/.test(formData.password) },
+    { label: "Special char", met: /[^A-Za-z0-9]/.test(formData.password) },
   ]
 
   const allRequirementsMet = passwordRequirements.every((req) => req.met)
@@ -180,9 +180,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:grid lg:grid-cols-[1.1fr,0.9fr] bg-background selection:bg-[#006994]/15 selection:text-foreground">
-      {/* Left Side: Form */}
-      <main className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 lg:p-16 relative overflow-y-auto pt-28 lg:pt-24">
+    <div className="flex min-h-screen flex-col bg-[color:var(--marketing-cream-alt)] selection:bg-[color:var(--marketing-accent)]/15 lg:grid lg:grid-cols-[1.1fr,0.9fr]">
+      <main className="relative flex flex-1 flex-col items-center justify-center overflow-y-auto p-6 pt-8 md:p-12 lg:p-16 lg:pt-12">
         <div className="absolute inset-0 bg-[radial-gradient(50%_50%_at_50%_50%,rgba(0,105,148,0.03)_0%,transparent_100%)] pointer-events-none" />
         
         <motion.div 
@@ -197,7 +196,7 @@ export default function RegisterPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4, delay: 0.1 }}
             >
-              <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-[#006994] transition-all duration-300 group" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}>
+              <Link href="/" className="group inline-flex items-center text-sm font-medium text-neutral-600 transition-colors hover:text-[color:var(--marketing-accent)]">
                 <ChevronLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
                 Back to home
               </Link>
@@ -209,15 +208,11 @@ export default function RegisterPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="space-y-2"
             >
-              <Link href="/" className="block">
-                <Image 
-                  src="/logo.svg" 
-                  alt="Topchart" 
-                  width={140} 
-                  height={40} 
-                  className="h-10 w-auto object-contain mb-8"
-                  priority
-                />
+              <Link href="/" className="mb-8 block">
+                <span className="font-marketing-script text-4xl text-[color:var(--marketing-gold)]">Topchart</span>
+                <span className="ml-2 inline-block rounded-full bg-[color:var(--marketing-accent)]/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-widest text-[color:var(--marketing-accent)]">
+                  GH
+                </span>
               </Link>
               <h1 className="font-heading text-3xl font-normal tracking-tight text-foreground">Create account</h1>
               <p className="text-muted-foreground font-body">Join thousands of users enjoying instant connectivity.</p>
@@ -351,7 +346,7 @@ export default function RegisterPage() {
                       <div
                         key={i}
                         className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors ${
-                          req.met ? "bg-[#006994]/10 text-[#006994]" : "bg-muted text-muted-foreground"
+                          req.met ? "bg-[color:var(--marketing-accent)]/15 text-[color:var(--marketing-accent)]" : "bg-muted text-muted-foreground"
                         }`}
                       >
                         <Check className={`w-3 h-3 ${req.met ? "opacity-100" : "opacity-30"}`} />
@@ -407,9 +402,9 @@ export default function RegisterPage() {
                 />
                 <Label htmlFor="agreeToTerms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none">
                   I agree to the{" "}
-                  <Link href="/terms" className="text-[#006994] hover:text-[#004D6E] font-bold transition-all duration-300">Terms of Service</Link>
+                  <Link href="/terms" className="font-bold text-[color:var(--marketing-accent)] hover:opacity-90">Terms of Service</Link>
                   {" "}and{" "}
-                  <Link href="/privacy" className="text-[#006994] hover:text-[#004D6E] font-bold transition-all duration-300">Privacy Policy</Link>
+                  <Link href="/privacy" className="font-bold text-[color:var(--marketing-accent)] hover:opacity-90">Privacy Policy</Link>
                 </Label>
               </div>
 
@@ -427,11 +422,11 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full h-12 text-base font-medium bg-gradient-to-r from-[#006994] to-[#1A85B8] text-white hover:from-[#00567A] hover:to-[#006994] shadow-lg shadow-[#006994]/20 rounded-xl transition-all duration-300" 
+            <Button
+              type="submit"
+              className="h-12 w-full rounded-full text-base font-semibold text-white shadow-md transition-opacity hover:opacity-95 disabled:opacity-60"
+              style={{ backgroundColor: "var(--marketing-accent)" }}
               disabled={isLoading || !allRequirementsMet || !formData.agreeToTerms}
-              style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
             >
               {isLoading ? (
                 <>
@@ -453,7 +448,7 @@ export default function RegisterPage() {
                 <span className="w-full border-t border-border/50" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Already have an account?</span>
+                <span className="bg-[color:var(--marketing-cream-alt)] px-2 text-muted-foreground">Already have an account?</span>
               </div>
             </div>
 
@@ -467,101 +462,29 @@ export default function RegisterPage() {
       </main>
 
       {/* Right Side: Visual Content */}
-      <motion.aside 
+      <motion.aside
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6, delay: 0.2 }}
-        className="hidden lg:flex flex-col relative text-white p-16 overflow-hidden border-l border-white/5"
-        style={{ background: 'linear-gradient(135deg, #004D6E 0%, #006994 50%, #1A85B8 100%)' }}
+        className="relative hidden flex-col overflow-hidden border-l border-white/10 p-16 text-white lg:flex"
+        style={{ backgroundColor: "var(--marketing-hero-dark)" }}
       >
-        {/* Abstract background elements */}
+        <div className="pointer-events-none absolute inset-0 opacity-20">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-width='0.5' d='M40 200 Q100 80 200 200 T360 200'/%3E%3C/svg%3E")`,
+              backgroundSize: "380px 380px",
+            }}
+          />
+        </div>
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-[20%] right-[-10%] w-[50%] h-[50%] bg-[#722F37]/20 rounded-full blur-[120px]" />
-          <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#722F37]/10 rounded-full blur-[120px]" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px]" />
+          <div className="absolute right-[-10%] top-[20%] h-[50%] w-[50%] rounded-full bg-[color:var(--marketing-accent)]/20 blur-[120px]" />
+          <div className="absolute bottom-[-10%] left-[-10%] h-[40%] w-[40%] rounded-full bg-[color:var(--marketing-accent)]/10 blur-[120px]" />
         </div>
         
         <div className="relative z-10 flex flex-col h-full">
-          <div className="flex-1 flex flex-col justify-center">
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="inline-flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-[#FDF2F3] uppercase tracking-widest mb-8 w-fit"
-            >
-              Future-Ready Payments
-            </motion.div>
-            
-            <motion.h2 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="font-heading text-5xl xl:text-6xl font-normal tracking-tight mb-8 leading-[1.05]"
-            >
-              Join the standard <br />
-              for <span className="text-[#FDF2F3]">digital recharges</span>.
-            </motion.h2>
-            
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              className="text-white/60 text-lg leading-relaxed mb-12 max-w-md font-body"
-            >
-              Topchart provides the most reliable infrastructure for airtime and data across all major networks in Ghana.
-            </motion.p>
-
-            <div className="grid grid-cols-1 gap-8 max-w-md">
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.7 }}
-                whileHover={{ scale: 1.02 }}
-                className="p-6 rounded-2xl bg-white/[0.03] border border-white/5 backdrop-blur-sm"
-              >
-                <BadgePercent className="h-8 w-8 text-[#FDF2F3] mb-4" />
-                <h3 className="font-heading text-xl font-normal mb-2">Exclusive Rewards</h3>
-                <p className="text-white/60 text-sm leading-relaxed font-body">
-                  Get instant cashback and loyalty points on every single recharge you make.
-                </p>
-              </motion.div>
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.8 }}
-                whileHover={{ scale: 1.02 }}
-                className="p-6 rounded-2xl bg-white/[0.03] border border-white/5 backdrop-blur-sm"
-              >
-                <ShieldCheck className="h-8 w-8 text-[#FDF2F3] mb-4" />
-                <h3 className="font-heading text-xl font-normal mb-2">Secure by Design</h3>
-                <p className="text-white/60 text-sm leading-relaxed font-body">
-                  Your security is our priority. Every transaction is protected by bank-level encryption.
-                </p>
-              </motion.div>
-            </div>
-          </div>
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.9 }}
-            className="pt-16 mt-auto"
-          >
-            <div className="grid grid-cols-3 gap-8 p-8 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-sm">
-              {stats.map((stat, i) => (
-                <motion.div 
-                  key={i} 
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 1.0 + i * 0.1 }}
-                  className="text-center"
-                >
-                  <div className="font-heading text-2xl font-normal text-white mb-1">{stat.value}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-white/50 font-body">{stat.label}</div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
+          <div className="flex-1 flex flex-col justify-center"></div>
         </div>
       </motion.aside>
     </div>

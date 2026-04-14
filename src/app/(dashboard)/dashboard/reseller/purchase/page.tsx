@@ -241,7 +241,7 @@ export default function ResellerPurchasePage() {
     return (
       <div className="container mx-auto py-12 px-4">
         <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-[#006994]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#0052CC]" />
         </div>
       </div>
     );

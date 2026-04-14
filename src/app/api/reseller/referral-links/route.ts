@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { sql } from "@/lib/db";
+import { sql, isPgMissingRelation } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,6 +54,9 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
+    if (isPgMissingRelation(error)) {
+      return NextResponse.json({ success: true, links: [] });
+    }
     console.error("Error fetching referral links:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
@@ -123,6 +126,12 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
+    if (isPgMissingRelation(error)) {
+      return NextResponse.json(
+        { success: false, error: "Referral links require a database migration" },
+        { status: 503 }
+      );
+    }
     console.error("Error creating referral link:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },

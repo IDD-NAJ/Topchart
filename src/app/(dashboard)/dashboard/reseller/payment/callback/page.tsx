@@ -61,10 +61,10 @@ export default function PaymentCallbackPage() {
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">
             {status === "loading" && (
-              <Loader2 className="h-12 w-12 animate-spin text-[#006994] mx-auto" />
+              <Loader2 className="h-12 w-12 animate-spin text-[#0052CC] mx-auto" />
             )}
             {status === "success" && (
-              <Loader2 className="h-12 w-12 animate-spin text-[#006994] mx-auto" />
+              <Loader2 className="h-12 w-12 animate-spin text-[#0052CC] mx-auto" />
             )}
             {status === "failed" && (
               <XCircle className="h-12 w-12 text-red-500 mx-auto" />

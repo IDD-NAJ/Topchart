@@ -10,10 +10,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-background selection:bg-[#006994]/15 selection:text-foreground">
+    <div className="flex min-h-screen flex-col bg-[color:var(--marketing-cream)] selection:bg-[color:var(--marketing-accent)]/15">
       <Header />
-      
-      <main className="flex-1 pt-32 pb-12 px-4">
+
+      <main className="flex-1 px-4 pb-12 pt-[calc(72px+1.5rem)]">
         <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
           {/* Header */}
           <div className="flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500 delay-100">
@@ -30,10 +30,10 @@ export default function TermsPage() {
           </div>
 
         {/* Introduction */}
-        <Card className="animate-fade-in border-border/50 hover:border-[#006994]/20 transition-all duration-300" style={{ transitionTimingFunction: 'var(--ease-out-expo)', animationDelay: '200ms' }}>
+        <Card className="animate-fade-in border-border/50 hover:border-[color:var(--marketing-accent)]/20 transition-all duration-300" style={{ transitionTimingFunction: 'var(--ease-out-expo)', animationDelay: '200ms' }}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-heading text-xl font-normal">
-              <Shield className="w-5 h-5 text-[#006994]" />
+              <Shield className="w-5 h-5 text-[color:var(--marketing-accent)]" />
               Welcome to Topchart
             </CardTitle>
             <CardDescription className="font-body">
@@ -52,10 +52,10 @@ export default function TermsPage() {
 
         {/* Key Terms */}
         <div className="grid gap-6 md:grid-cols-2 animate-fade-in" style={{ animationDelay: '300ms' }}>
-          <Card className="animate-fade-in border-border/50 hover:border-[#006994]/20 transition-all duration-300" style={{ animationDelay: '400ms', transitionTimingFunction: 'var(--ease-out-expo)' }}>
+          <Card className="animate-fade-in border-border/50 hover:border-[color:var(--marketing-accent)]/20 transition-all duration-300" style={{ animationDelay: '400ms', transitionTimingFunction: 'var(--ease-out-expo)' }}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-heading text-lg font-normal">
-                <Users className="w-5 h-5 text-[#006994]" />
+                <Users className="w-5 h-5 text-[color:var(--marketing-accent)]" />
                 User Accounts
               </CardTitle>
             </CardHeader>

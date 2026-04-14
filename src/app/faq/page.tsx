@@ -13,7 +13,7 @@ import {
 import { MessageSquare, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
-import { PageTransition } from "@/components/animations"
+import { PageTransition, StaggerReveal, StaggerRevealItem } from "@/components/animations"
 
 interface FAQ {
   id: string
@@ -56,19 +56,19 @@ export default function FAQPage() {
   }, [])
 
   return (
-    <PageTransition className="min-h-screen flex flex-col bg-[#F5F4F1]">
+    <PageTransition className="flex min-h-screen flex-col bg-[color:var(--marketing-cream)]">
       <Header />
 
       {/* ── PAGE HERO ── */}
-      <section className="pt-40 pb-20 bg-[#0B1F3A] relative overflow-hidden">
+      <section className="relative overflow-hidden bg-[color:var(--marketing-hero-dark)] pb-20 pt-[calc(72px+3rem)] sm:pt-[calc(72px+4rem)]">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:56px_56px]" />
-        <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-[#F5F4F1] to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[color:var(--marketing-cream)] to-transparent" />
         <div className="relative z-10 container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/15 bg-white/8 text-white/60 text-xs font-semibold uppercase tracking-widest mb-8"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#7EB8D4]" /> Help Centre
+            <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--marketing-accent)]" /> Help Centre
           </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
@@ -102,43 +102,49 @@ export default function FAQPage() {
         <div className="container mx-auto px-4 max-w-3xl">
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-7 w-7 animate-spin text-[#006994]" />
+              <Loader2 className="h-7 w-7 animate-spin text-[color:var(--marketing-accent)]" />
             </div>
           ) : error ? (
             <div className="text-center py-20 text-[#6B7280] text-sm">{error}</div>
           ) : faqs.length === 0 ? (
             <div className="text-center py-20 text-[#6B7280] text-sm">No FAQs available at the moment.</div>
           ) : (
-            <Accordion type="single" collapsible className="space-y-3">
-              {faqs.map((faq, index) => (
-                <AccordionItem
-                  key={faq.id}
-                  value={`item-${index}`}
-                  className="border border-[#E2E1DC] rounded-2xl px-6 bg-white data-[state=open]:border-[#006994]/25 data-[state=open]:bg-white transition-all duration-300"
-                >
-                  <AccordionTrigger className="hover:no-underline py-5 text-left">
-                    <span className="font-heading text-base font-normal text-[#0B1F3A] pr-4">{faq.question}</span>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-sm text-[#6B7280] leading-relaxed pb-5 font-body">
-                    {faq.answer}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+            <StaggerReveal className="space-y-3">
+              <Accordion type="single" collapsible className="space-y-3">
+                {faqs.map((faq, index) => (
+                  <StaggerRevealItem key={faq.id}>
+                    <AccordionItem
+                      value={`item-${index}`}
+                      className="rounded-2xl border border-neutral-200 bg-white px-6 transition-all duration-300 data-[state=open]:border-[color:var(--marketing-accent)]/30 data-[state=open]:bg-white overflow-hidden"
+                    >
+                      <AccordionTrigger className="hover:no-underline py-5 text-left transition-colors hover:text-primary">
+                        <span className="font-heading pr-4 text-base font-normal text-neutral-900">{faq.question}</span>
+                      </AccordionTrigger>
+                      <AccordionContent className="text-sm text-[#6B7280] leading-relaxed pb-5 font-body">
+                        {faq.answer}
+                      </AccordionContent>
+                    </AccordionItem>
+                  </StaggerRevealItem>
+                ))}
+              </Accordion>
+            </StaggerReveal>
           )}
 
           {/* Contact CTA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="mt-12 p-8 rounded-2xl bg-[#0B1F3A] text-center"
+            className="mt-12 rounded-2xl bg-[color:var(--marketing-hero-dark)] p-8 text-center"
           >
-            <MessageSquare className="h-8 w-8 text-[#7EB8D4] mx-auto mb-4" />
+            <MessageSquare className="mx-auto mb-4 h-8 w-8 text-[color:var(--marketing-accent)]" />
             <h3 className="font-heading text-xl font-normal text-white mb-2">Still have questions?</h3>
             <p className="text-sm text-white/45 mb-6 font-body">
               Our support team is available 24/7 to help with anything.
             </p>
-            <Button asChild className="h-10 px-6 rounded-xl bg-white text-[#0B1F3A] hover:bg-[#EFF6FA] font-semibold transition-all duration-200">
+            <Button
+              asChild
+              className="h-10 rounded-xl bg-white px-6 font-semibold text-neutral-900 transition-all duration-200 hover:bg-[color:var(--marketing-cream-alt)]"
+            >
               <Link href="/dashboard/tickets">Open a support ticket</Link>
             </Button>
           </motion.div>

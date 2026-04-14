@@ -158,9 +158,11 @@ export default function ResultCheckersPage() {
         setActiveTab("history");
       } else {
         toast.error(data.error || "Purchase failed");
+        refreshUser();
       }
     } catch (error) {
       toast.error("Network error");
+      refreshUser();
     } finally {
       setPurchasing(null);
     }
@@ -202,9 +204,9 @@ export default function ResultCheckersPage() {
           <p className="text-muted-foreground mt-1">Purchase exam result checker cards instantly</p>
         </div>
         <div className="flex items-center gap-3">
-          <Card className="bg-[#006994]/5">
+          <Card className="bg-[#0052CC]/5">
             <CardContent className="py-2 px-4 flex items-center gap-2">
-              <Wallet className="h-4 w-4 text-[#006994]" />
+              <Wallet className="h-4 w-4 text-[#0052CC]" />
               <span className="font-medium">{formatCurrency(user?.walletBalance || 0)}</span>
             </CardContent>
           </Card>
@@ -291,12 +293,12 @@ export default function ResultCheckersPage() {
                           <ol className="space-y-2 text-sm">
                             {info.instructions.map((step, idx) => (
                               <li key={idx} className="flex items-start gap-2">
-                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[#006994]/10 text-[#006994] text-xs font-medium flex items-center justify-center">{idx + 1}</span>
+                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[#0052CC]/10 text-[#0052CC] text-xs font-medium flex items-center justify-center">{idx + 1}</span>
                                 <span className="text-muted-foreground">{step}</span>
                               </li>
                             ))}
                           </ol>
-                          <a href={info.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-[#006994] hover:underline">
+                          <a href={info.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-[#0052CC] hover:underline">
                             Visit Official Website <ExternalLink className="h-3 w-3" />
                           </a>
                         </div>
@@ -362,7 +364,7 @@ export default function ResultCheckersPage() {
                               )}
                             </div>
                             <div className="mt-4 pt-4 border-t flex items-center justify-between">
-                              <a href={info.url} target="_blank" rel="noopener noreferrer" className="text-sm text-[#006994] hover:underline flex items-center gap-1">
+                              <a href={info.url} target="_blank" rel="noopener noreferrer" className="text-sm text-[#0052CC] hover:underline flex items-center gap-1">
                                 Check Result Now <ExternalLink className="h-3 w-3" />
                               </a>
                               <Dialog>
@@ -376,7 +378,7 @@ export default function ResultCheckersPage() {
                                   <ol className="space-y-3 mt-4">
                                     {info.instructions.map((step, idx) => (
                                       <li key={idx} className="flex items-start gap-3">
-                                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#006994] text-white text-xs font-medium flex items-center justify-center">{idx + 1}</span>
+                                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#0052CC] text-white text-xs font-medium flex items-center justify-center">{idx + 1}</span>
                                         <span>{step}</span>
                                       </li>
                                     ))}

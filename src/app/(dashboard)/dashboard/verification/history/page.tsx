@@ -358,56 +358,59 @@ function HistoryRow({ record, onRefresh }: { record: VerificationRecord; onRefre
           </div>
 
           {/* Number row */}
-          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-            <div className="flex items-center gap-1.5">
-              <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <span className="font-mono text-sm font-semibold tracking-wider">{record.number}</span>
-            </div>
-            <button
-              onClick={copyNumber}
-              className={cn(
-                "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs transition-colors border",
-                copied
-                  ? "border-green-300 bg-green-50 text-green-700"
-                  : "border-border bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted"
-              )}
-              title="Copy number"
-            >
-              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-              {copied ? "Copied" : "Copy"}
-            </button>
-
-            {/* Active-only action buttons */}
-            {isActive && record.allow_flag && (
-              <>
-                {!confirmCancel ? (
-                  <button
-                    onClick={() => setConfirmCancel(true)}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                    title="Flag & cancel this number"
-                  >
-                    <Flag className="h-3 w-3" />
-                    Cancel
-                  </button>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 text-xs">
-                    <span className="text-red-600 font-medium">Confirm cancel?</span>
-                    <button
-                      onClick={handleCancel}
-                      disabled={cancelling}
-                      className="px-2 py-0.5 rounded bg-red-600 text-white text-xs hover:bg-red-700 disabled:opacity-60 transition-colors"
-                    >
-                      {cancelling ? <Loader2 className="h-3 w-3 animate-spin inline" /> : "Yes, cancel"}
-                    </button>
-                    <button
-                      onClick={() => setConfirmCancel(false)}
-                      className="px-2 py-0.5 rounded border text-xs hover:bg-muted transition-colors"
-                    >
-                      Keep
-                    </button>
-                  </span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="font-mono text-sm font-semibold tracking-wider break-all">{record.number}</span>
+              </div>
+              <button
+                onClick={copyNumber}
+                className={cn(
+                  "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs transition-colors border shrink-0",
+                  copied
+                    ? "border-green-300 bg-green-50 text-green-700"
+                    : "border-border bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
-              </>
+                title="Copy number"
+              >
+                {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                {copied ? "Copied" : "Copy"}
+              </button>
+
+              {/* Active-only action buttons */}
+              {isActive && record.allow_flag && !confirmCancel && (
+                <button
+                  onClick={() => setConfirmCancel(true)}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors shrink-0"
+                  title="Flag & cancel this number"
+                >
+                  <Flag className="h-3 w-3" />
+                  Cancel
+                </button>
+              )}
+            </div>
+
+            {/* Cancel confirmation - separate row on mobile */}
+            {isActive && record.allow_flag && confirmCancel && (
+              <div className="flex items-center gap-2 mt-1 sm:mt-0">
+                <span className="text-xs text-red-600 font-medium shrink-0">Confirm cancel?</span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={handleCancel}
+                    disabled={cancelling}
+                    className="px-2 py-0.5 rounded bg-red-600 text-white text-xs hover:bg-red-700 disabled:opacity-60 transition-colors"
+                  >
+                    {cancelling ? <Loader2 className="h-3 w-3 animate-spin inline" /> : "Yes"}
+                  </button>
+                  <button
+                    onClick={() => setConfirmCancel(false)}
+                    className="px-2 py-0.5 rounded border text-xs hover:bg-muted transition-colors"
+                  >
+                    Keep
+                  </button>
+                </div>
+              </div>
             )}
           </div>
 
@@ -533,27 +536,27 @@ export default function VerificationHistoryPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link href="/dashboard/verification">
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full shrink-0">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Verification History</h1>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Verification History</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               All your temporary number purchases and received SMS
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
           <Button variant="outline" size="sm" onClick={fetchHistory} disabled={loading} className="gap-2">
             <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
             <span className="hidden sm:inline">Refresh</span>
           </Button>
           <Link href="/dashboard/verification">
-            <Button size="sm" className="gap-2 bg-[#006994] hover:bg-[#005a7d]">
+            <Button size="sm" className="gap-2 bg-[color:var(--marketing-accent)] hover:bg-[color:var(--marketing-accent-hover)]">
               <PhoneCall className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Buy Number</span>
             </Button>
@@ -564,40 +567,40 @@ export default function VerificationHistoryPage() {
       {/* Stats */}
       {!loading && records.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <Card className="border-[#006994]/15">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <PhoneCall className="h-4 w-4 text-[#006994]" />
-                <span className="text-xs text-muted-foreground font-medium">Total Purchases</span>
+          <Card className="border-[color:var(--marketing-accent)]/15">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+                <PhoneCall className="h-3.5 w-3.5 shrink-0 text-[color:var(--marketing-accent)] sm:h-4 sm:w-4" />
+                <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">Total Purchases</span>
               </div>
-              <p className="text-2xl font-bold">{stats.total}</p>
+              <p className="text-lg sm:text-2xl font-bold">{stats.total}</p>
             </CardContent>
           </Card>
-          <Card className="border-[#006994]/15">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Wallet className="h-4 w-4 text-[#006994]" />
-                <span className="text-xs text-muted-foreground font-medium">Total Spent</span>
+          <Card className="border-[color:var(--marketing-accent)]/15">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+                <Wallet className="h-3.5 w-3.5 shrink-0 text-[color:var(--marketing-accent)] sm:h-4 sm:w-4" />
+                <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">Total Spent</span>
               </div>
-              <p className="text-2xl font-bold">{formatCurrency(stats.totalSpent)}</p>
+              <p className="text-lg sm:text-2xl font-bold">{formatCurrency(stats.totalSpent)}</p>
             </CardContent>
           </Card>
           <Card className="border-blue-200/60">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <CheckCircle2 className="h-4 w-4 text-blue-600" />
-                <span className="text-xs text-muted-foreground font-medium">Completed</span>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+                <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600 shrink-0" />
+                <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">Completed</span>
               </div>
-              <p className="text-2xl font-bold">{stats.completed}</p>
+              <p className="text-lg sm:text-2xl font-bold">{stats.completed}</p>
             </CardContent>
           </Card>
           <Card className="border-green-200/60">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="h-4 w-4 text-green-600" />
-                <span className="text-xs text-muted-foreground font-medium">Active Now</span>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+                <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 shrink-0" />
+                <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">Active Now</span>
               </div>
-              <p className="text-2xl font-bold">{stats.active}</p>
+              <p className="text-lg sm:text-2xl font-bold">{stats.active}</p>
             </CardContent>
           </Card>
         </div>
@@ -633,7 +636,7 @@ export default function VerificationHistoryPage() {
       {/* Content */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-[#006994]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[color:var(--marketing-accent)]" />
           <p className="text-sm text-muted-foreground">Loading history…</p>
         </div>
       ) : error ? (
@@ -666,7 +669,7 @@ export default function VerificationHistoryPage() {
             </div>
             {filter === "all" && !searchQuery && (
               <Link href="/dashboard/verification">
-                <Button className="bg-[#006994] hover:bg-[#005a7d] gap-2">
+                <Button className="gap-2 bg-[color:var(--marketing-accent)] hover:bg-[color:var(--marketing-accent-hover)]">
                   <PhoneCall className="h-4 w-4" />
                   Buy Your First Number
                 </Button>

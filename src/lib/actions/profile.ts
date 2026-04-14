@@ -13,27 +13,15 @@ export async function updateProfile(data: {
   if (!user) throw new Error("Unauthorized");
 
   const { firstName, lastName, phone } = data;
-  
-  const updates: string[] = [];
-  const values: any[] = [];
-  let paramIndex = 1;
 
-  if (firstName) {
-    updates.push(`first_name = ${firstName}`);
-  }
-  if (lastName) {
-    updates.push(`last_name = ${lastName}`);
-  }
   if (phone) {
-    // Basic phone validation
     const phoneRegex = /^0[2-5][0-9]\d{7}$/;
     if (!phoneRegex.test(phone)) {
       throw new Error("Please enter a valid Ghanaian phone number");
     }
-    updates.push(`phone = ${phone}`);
   }
 
-  if (updates.length === 0) return { success: true };
+  if (!firstName && !lastName && !phone) return { success: true };
 
   await sql`
     UPDATE users
@@ -51,25 +39,24 @@ export async function updatePassword(data: {
   newPassword?: string;
 }) {
   const user = await getCurrentUser();
-  if (!user) throw new Error("Unauthorized");
+  if (!user) return { success: false, error: "Unauthorized" };
 
   const { currentPassword, newPassword } = data;
   if (!currentPassword || !newPassword) {
-    throw new Error("Current and new passwords are required");
+    return { success: false, error: "Current and new passwords are required" };
   }
 
   if (newPassword.length < 8) {
-    throw new Error("New password must be at least 8 characters");
+    return { success: false, error: "New password must be at least 8 characters" };
   }
 
-  // Get current password hash
   const result = await sql`
     SELECT password_hash FROM users WHERE id = ${user.id}
   `;
-  if (result.length === 0) throw new Error("User not found");
+  if (result.length === 0) return { success: false, error: "User not found" };
 
   const isValid = await bcrypt.compare(currentPassword, result[0].password_hash);
-  if (!isValid) throw new Error("Incorrect current password");
+  if (!isValid) return { success: false, error: "Incorrect current password" };
 
   const newHash = await bcrypt.hash(newPassword, 10);
 

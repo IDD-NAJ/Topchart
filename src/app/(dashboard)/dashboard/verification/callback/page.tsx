@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
@@ -16,7 +16,7 @@ type State =
   | { phase: "refunded"; refund_amount: number; message: string }
   | { phase: "error"; message: string }
 
-export default function VerificationCallbackPage() {
+function CallbackContent() {
   const searchParams = useSearchParams()
   const reference = searchParams.get("reference")
 
@@ -179,5 +179,29 @@ export default function VerificationCallbackPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+function Fallback() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <Card className="w-full max-w-md">
+        <CardContent className="p-8">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <h2 className="text-xl font-semibold">Loading...</h2>
+            <p className="text-sm text-muted-foreground">Please wait</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+export default function VerificationCallbackPage() {
+  return (
+    <Suspense fallback={<Fallback />}>
+      <CallbackContent />
+    </Suspense>
   )
 }

@@ -23,7 +23,6 @@ export function Footer() {
         { href: "/dashboard/airtime", label: "Airtime" },
         { href: "/dashboard/data", label: "Data bundles" },
         { href: "/dashboard/verification", label: "Verification numbers" },
-        { href: "/dashboard/giftcards", label: "Gift cards" },
       ],
     },
   ]
@@ -64,7 +63,7 @@ export function Footer() {
                 </motion.span>
               </Link>
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-[#8a9ba8]">
-                Ghana&apos;s platform for airtime, data, verification numbers, exam results, gift cards, and reseller tools — fast, secure, and always on.
+                Ghana&apos;s platform for airtime, data, verification numbers, exam results, and reseller tools — fast, secure, and always on.
               </p>
               
               <div className="mt-8 flex items-center gap-4">

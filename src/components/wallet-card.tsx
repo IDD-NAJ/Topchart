@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { formatCurrency } from "@/lib/networks"
 import { Card, CardContent } from "@/components/ui/card"
@@ -9,15 +9,21 @@ import { Eye, EyeOff, Plus, Wallet } from "lucide-react"
 import { FundWalletModal } from "@/components/fund-wallet-modal"
 
 export function WalletCard() {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const [showBalance, setShowBalance] = useState(true)
   const [fundModalOpen, setFundModalOpen] = useState(false)
+
+  useEffect(() => {
+    if (!fundModalOpen && user) {
+      refreshUser()
+    }
+  }, [fundModalOpen])
 
   if (!user) return null
 
   return (
     <>
-      <Card className="bg-gradient-to-br from-[#006994] to-[#1A85B8] text-white overflow-hidden relative animate-in fade-in slide-in-from-left-4 duration-700 hover:shadow-xl transition-all">
+      <Card className="relative overflow-hidden bg-gradient-to-br from-[color:var(--marketing-accent)] to-[color:var(--marketing-accent-hover)] text-white animate-in fade-in slide-in-from-left-4 duration-700 transition-all hover:shadow-xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
         <CardContent className="p-6 relative z-10">

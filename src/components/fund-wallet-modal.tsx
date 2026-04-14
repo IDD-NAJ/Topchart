@@ -136,6 +136,7 @@ export function FundWalletModal({ open, onOpenChange, pendingReference }: FundWa
 
   const handleClose = () => {
     onOpenChange(false)
+    refreshUser()
     setTimeout(() => {
       setAmount("")
       setStep("amount")
@@ -200,7 +201,7 @@ export function FundWalletModal({ open, onOpenChange, pendingReference }: FundWa
                       </div>
                       <div className="flex justify-between text-sm font-bold border-t border-border pt-1 mt-1">
                         <span>Total to Pay:</span>
-                        <span className="text-[#006994]">{formatCurrency(Number(amount) * 1.04)}</span>
+                        <span className="text-[color:var(--marketing-accent)]">{formatCurrency(Number(amount) * 1.04)}</span>
                       </div>
                     </div>
                   )}
@@ -242,8 +243,8 @@ export function FundWalletModal({ open, onOpenChange, pendingReference }: FundWa
 
         {step === "redirecting" && (
           <div className="py-12 flex flex-col items-center justify-center text-center">
-            <div className="w-16 h-16 rounded-full bg-[#006994]/10 flex items-center justify-center mb-4">
-              <Loader2 className="w-8 h-8 text-[#006994] animate-spin" />
+            <div className="w-16 h-16 rounded-full bg-[color:var(--marketing-accent)]/10 flex items-center justify-center mb-4">
+              <Loader2 className="w-8 h-8 text-[color:var(--marketing-accent)] animate-spin" />
             </div>
             <DialogTitle className="text-lg font-semibold mb-2">
               Redirecting to Paystack
@@ -262,8 +263,8 @@ export function FundWalletModal({ open, onOpenChange, pendingReference }: FundWa
 
         {step === "verifying" && (
           <div className="py-12 flex flex-col items-center justify-center text-center">
-            <div className="w-16 h-16 rounded-full bg-[#006994]/10 flex items-center justify-center mb-4">
-              <Loader2 className="w-8 h-8 text-[#006994] animate-spin" />
+            <div className="w-16 h-16 rounded-full bg-[color:var(--marketing-accent)]/10 flex items-center justify-center mb-4">
+              <Loader2 className="w-8 h-8 text-[color:var(--marketing-accent)] animate-spin" />
             </div>
             <DialogTitle className="text-lg font-semibold mb-2">
               Verifying Payment

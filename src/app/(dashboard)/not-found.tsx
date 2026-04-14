@@ -5,7 +5,7 @@ import { Search, LayoutDashboard, Home, HelpCircle } from "lucide-react"
 export default function DashboardNotFound() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-      <div className="w-20 h-20 rounded-2xl bg-[#006994]/10 flex items-center justify-center text-[#006994] mb-6 animate-in fade-in zoom-in duration-500">
+      <div className="w-20 h-20 rounded-2xl bg-[#0052CC]/10 flex items-center justify-center text-[#0052CC] mb-6 animate-in fade-in zoom-in duration-500">
         <Search className="w-10 h-10" />
       </div>
       

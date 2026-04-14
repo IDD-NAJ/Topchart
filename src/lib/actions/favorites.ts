@@ -70,14 +70,13 @@ export async function addFavorite(data: {
   }
 }
 
-export async function removeFavorite(id: string) {
+export async function removeFavorite(id: string, userId: string) {
   try {
-    await sql`DELETE FROM favorites WHERE id = ${id}`;
+    const result = await sql`DELETE FROM favorites WHERE id = ${id} AND user_id = ${userId}`;
     revalidatePath("/dashboard/airtime");
     revalidatePath("/dashboard/data");
     return { success: true };
   } catch (error) {
-    console.error("Error removing favorite:", error);
     return { success: false, error: "Failed to remove favorite number" };
   }
 }

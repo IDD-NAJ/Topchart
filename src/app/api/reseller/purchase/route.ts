@@ -70,7 +70,7 @@ async function GETHandler(request: NextRequest) {
       resultCheckerCards: cardCounts,
       samplePricing: sampleCards,
       networks: [
-        { id: 'mtn', name: 'MTN', color: '#006994' },
+        { id: 'mtn', name: 'MTN', color: '#0052CC' },
         { id: 'vodafone', name: 'Vodafone', color: '#E60000' },
         { id: 'airteltigo', name: 'AirtelTigo', color: '#0099CC' }
       ],

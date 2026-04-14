@@ -88,19 +88,15 @@ export default async function PublicResellerPage({ params }: { params: Promise<{
     : `/reseller/${profile.reseller_code}`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#006994]/5 to-background">
-      {/* Header */}
-      <header className="border-b bg-background/80 backdrop-blur-sm">
+    <div className="min-h-screen bg-[color:var(--marketing-cream)]">
+      <header className="border-b border-white/10 bg-[color:var(--marketing-nav)] backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-[#006994] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">T</span>
-              </div>
-              <span className="font-bold text-lg text-[#006994]">Topchart</span>
+              <span className="font-marketing-script text-2xl text-[color:var(--marketing-gold)]">Topchart</span>
             </Link>
             <Link href="/dashboard">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="border-white/20 bg-transparent text-white hover:bg-white/10">
                 My Account
               </Button>
             </Link>
@@ -112,8 +108,8 @@ export default async function PublicResellerPage({ params }: { params: Promise<{
         {/* Profile Card */}
         <Card className="max-w-2xl mx-auto">
           <CardHeader className="text-center pb-8">
-            <div className="mx-auto w-24 h-24 bg-[#006994]/10 rounded-full flex items-center justify-center mb-4">
-              <Building2 className="h-12 w-12 text-[#006994]" />
+            <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-[color:var(--marketing-accent)]/10">
+              <Building2 className="h-12 w-12 text-[color:var(--marketing-accent)]" />
             </div>
             <CardTitle className="text-2xl">{profile.business_name}</CardTitle>
             <CardDescription className="flex items-center justify-center gap-2 mt-2">
@@ -129,7 +125,7 @@ export default async function PublicResellerPage({ params }: { params: Promise<{
             {/* Reseller Code */}
             <div className="bg-muted/50 rounded-lg p-4 text-center">
               <p className="text-sm text-muted-foreground mb-1">Reseller Code</p>
-              <code className="text-2xl font-bold text-[#006994] font-mono">
+              <code className="font-mono text-2xl font-bold text-[color:var(--marketing-accent)]">
                 {profile.reseller_code}
               </code>
               <p className="text-xs text-muted-foreground mt-2">
@@ -177,13 +173,13 @@ export default async function PublicResellerPage({ params }: { params: Promise<{
             {/* Stats */}
             <div className="grid grid-cols-2 gap-4 pt-4 border-t">
               <div className="text-center">
-                <p className="text-2xl font-bold text-[#006994]">
+                <p className="text-2xl font-bold text-[color:var(--marketing-accent)]">
                   GHS {Number(profile.total_sales || 0).toFixed(2)}
                 </p>
                 <p className="text-sm text-muted-foreground">Total Sales</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-[#006994]">
+                <p className="text-2xl font-bold text-[color:var(--marketing-accent)]">
                   {profile.commission_rate}%
                 </p>
                 <p className="text-sm text-muted-foreground">Commission Rate</p>
@@ -193,7 +189,11 @@ export default async function PublicResellerPage({ params }: { params: Promise<{
             {/* CTA Buttons */}
             <div className="space-y-3 pt-4">
               <Link href={`/register?ref=${profile.reseller_code}`} className="block">
-                <Button className="w-full bg-[#006994] hover:bg-[#005a7a]" size="lg">
+                <Button
+                  className="w-full rounded-full text-white hover:opacity-95"
+                  style={{ backgroundColor: "var(--marketing-accent)" }}
+                  size="lg"
+                >
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Shop with this Reseller
                 </Button>

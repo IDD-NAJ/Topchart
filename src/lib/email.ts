@@ -53,7 +53,7 @@ export async function sendResellerApprovalEmail(
     subject: "🎉 Your Topchart Reseller Application is Approved!",
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px">
-        <div style="background:#006994;padding:24px;border-radius:8px 8px 0 0;text-align:center">
+        <div style="background:#0052CC;padding:24px;border-radius:8px 8px 0 0;text-align:center">
           <h1 style="color:#fff;margin:0;font-size:24px">Topchart Ghana</h1>
         </div>
         <div style="background:#f9f9f9;padding:32px;border-radius:0 0 8px 8px;border:1px solid #e5e7eb">
@@ -64,13 +64,13 @@ export async function sendResellerApprovalEmail(
           </p>
           <div style="background:#fff;border:1px solid #d1fae5;border-radius:8px;padding:16px;margin:24px 0;text-align:center">
             <p style="color:#6b7280;margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.05em">Your Reseller Code</p>
-            <p style="color:#006994;font-size:28px;font-weight:700;font-family:monospace;margin:0">${resellerCode}</p>
+            <p style="color:#0052CC;font-size:28px;font-weight:700;font-family:monospace;margin:0">${resellerCode}</p>
           </div>
           <p style="color:#374151;line-height:1.6">
             Share your reseller code with customers to earn commissions on every purchase they make.
           </p>
           <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://topchart.gh"}/dashboard/reseller"
-             style="display:inline-block;background:#006994;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin-top:8px">
+             style="display:inline-block;background:#0052CC;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin-top:8px">
             Go to Reseller Dashboard
           </a>
           <p style="color:#9ca3af;font-size:12px;margin-top:32px">
@@ -92,7 +92,7 @@ export async function sendResellerRejectionEmail(
     subject: "Your Topchart Reseller Application Status",
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px">
-        <div style="background:#006994;padding:24px;border-radius:8px 8px 0 0;text-align:center">
+        <div style="background:#0052CC;padding:24px;border-radius:8px 8px 0 0;text-align:center">
           <h1 style="color:#fff;margin:0;font-size:24px">Topchart Ghana</h1>
         </div>
         <div style="background:#f9f9f9;padding:32px;border-radius:0 0 8px 8px;border:1px solid #e5e7eb">
@@ -108,7 +108,7 @@ export async function sendResellerRejectionEmail(
             You are welcome to address the above and reapply at any time from your dashboard.
           </p>
           <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://topchart.gh"}/dashboard/reseller/apply"
-             style="display:inline-block;background:#006994;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin-top:8px">
+             style="display:inline-block;background:#0052CC;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin-top:8px">
             Apply Again
           </a>
           <p style="color:#9ca3af;font-size:12px;margin-top:32px">

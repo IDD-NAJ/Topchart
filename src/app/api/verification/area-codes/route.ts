@@ -1,0 +1,378 @@
+import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { sql } from "@/lib/db";
+import { getAllAreaCodes, getPopularServiceAreaCodes, AreaCodeInfo } from "@/lib/pvadeals";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 300;
+
+const US_AREA_CODES = [
+  { code: "205", state: "Alabama" },
+  { code: "251", state: "Alabama" },
+  { code: "256", state: "Alabama" },
+  { code: "334", state: "Alabama" },
+  { code: "907", state: "Alaska" },
+  { code: "480", state: "Arizona" },
+  { code: "520", state: "Arizona" },
+  { code: "602", state: "Arizona" },
+  { code: "623", state: "Arizona" },
+  { code: "928", state: "Arizona" },
+  { code: "501", state: "Arkansas" },
+  { code: "870", state: "Arkansas" },
+  { code: "479", state: "Arkansas" },
+  { code: "209", state: "California" },
+  { code: "213", state: "California" },
+  { code: "310", state: "California" },
+  { code: "323", state: "California" },
+  { code: "408", state: "California" },
+  { code: "415", state: "California" },
+  { code: "424", state: "California" },
+  { code: "510", state: "California" },
+  { code: "530", state: "California" },
+  { code: "559", state: "California" },
+  { code: "562", state: "California" },
+  { code: "619", state: "California" },
+  { code: "626", state: "California" },
+  { code: "650", state: "California" },
+  { code: "657", state: "California" },
+  { code: "661", state: "California" },
+  { code: "669", state: "California" },
+  { code: "707", state: "California" },
+  { code: "714", state: "California" },
+  { code: "747", state: "California" },
+  { code: "752", state: "California" },
+  { code: "760", state: "California" },
+  { code: "805", state: "California" },
+  { code: "818", state: "California" },
+  { code: "831", state: "California" },
+  { code: "858", state: "California" },
+  { code: "909", state: "California" },
+  { code: "916", state: "California" },
+  { code: "925", state: "California" },
+  { code: "949", state: "California" },
+  { code: "951", state: "California" },
+  { code: "303", state: "Colorado" },
+  { code: "719", state: "Colorado" },
+  { code: "720", state: "Colorado" },
+  { code: "970", state: "Colorado" },
+  { code: "203", state: "Connecticut" },
+  { code: "475", state: "Connecticut" },
+  { code: "860", state: "Connecticut" },
+  { code: "202", state: "District of Columbia" },
+  { code: "302", state: "Delaware" },
+  { code: "239", state: "Florida" },
+  { code: "305", state: "Florida" },
+  { code: "321", state: "Florida" },
+  { code: "352", state: "Florida" },
+  { code: "386", state: "Florida" },
+  { code: "407", state: "Florida" },
+  { code: "561", state: "Florida" },
+  { code: "727", state: "Florida" },
+  { code: "754", state: "Florida" },
+  { code: "772", state: "Florida" },
+  { code: "786", state: "Florida" },
+  { code: "813", state: "Florida" },
+  { code: "850", state: "Florida" },
+  { code: "863", state: "Florida" },
+  { code: "904", state: "Florida" },
+  { code: "941", state: "Florida" },
+  { code: "954", state: "Florida" },
+  { code: "404", state: "Georgia" },
+  { code: "470", state: "Georgia" },
+  { code: "678", state: "Georgia" },
+  { code: "706", state: "Georgia" },
+  { code: "762", state: "Georgia" },
+  { code: "770", state: "Georgia" },
+  { code: "912", state: "Georgia" },
+  { code: "808", state: "Hawaii" },
+  { code: "208", state: "Idaho" },
+  { code: "217", state: "Illinois" },
+  { code: "224", state: "Illinois" },
+  { code: "309", state: "Illinois" },
+  { code: "312", state: "Illinois" },
+  { code: "331", state: "Illinois" },
+  { code: "618", state: "Illinois" },
+  { code: "630", state: "Illinois" },
+  { code: "708", state: "Illinois" },
+  { code: "773", state: "Illinois" },
+  { code: "779", state: "Illinois" },
+  { code: "815", state: "Illinois" },
+  { code: "847", state: "Illinois" },
+  { code: "872", state: "Illinois" },
+  { code: "219", state: "Indiana" },
+  { code: "260", state: "Indiana" },
+  { code: "317", state: "Indiana" },
+  { code: "463", state: "Indiana" },
+  { code: "574", state: "Indiana" },
+  { code: "765", state: "Indiana" },
+  { code: "812", state: "Indiana" },
+  { code: "319", state: "Iowa" },
+  { code: "515", state: "Iowa" },
+  { code: "563", state: "Iowa" },
+  { code: "641", state: "Iowa" },
+  { code: "712", state: "Iowa" },
+  { code: "316", state: "Kansas" },
+  { code: "620", state: "Kansas" },
+  { code: "785", state: "Kansas" },
+  { code: "913", state: "Kansas" },
+  { code: "502", state: "Kentucky" },
+  { code: "606", state: "Kentucky" },
+  { code: "859", state: "Kentucky" },
+  { code: "225", state: "Louisiana" },
+  { code: "318", state: "Louisiana" },
+  { code: "337", state: "Louisiana" },
+  { code: "504", state: "Louisiana" },
+  { code: "985", state: "Louisiana" },
+  { code: "207", state: "Maine" },
+  { code: "240", state: "Maryland" },
+  { code: "301", state: "Maryland" },
+  { code: "410", state: "Maryland" },
+  { code: "443", state: "Maryland" },
+  { code: "339", state: "Massachusetts" },
+  { code: "351", state: "Massachusetts" },
+  { code: "413", state: "Massachusetts" },
+  { code: "508", state: "Massachusetts" },
+  { code: "617", state: "Massachusetts" },
+  { code: "774", state: "Massachusetts" },
+  { code: "781", state: "Massachusetts" },
+  { code: "857", state: "Massachusetts" },
+  { code: "978", state: "Massachusetts" },
+  { code: "231", state: "Michigan" },
+  { code: "248", state: "Michigan" },
+  { code: "269", state: "Michigan" },
+  { code: "313", state: "Michigan" },
+  { code: "517", state: "Michigan" },
+  { code: "586", state: "Michigan" },
+  { code: "616", state: "Michigan" },
+  { code: "734", state: "Michigan" },
+  { code: "810", state: "Michigan" },
+  { code: "906", state: "Michigan" },
+  { code: "989", state: "Michigan" },
+  { code: "218", state: "Minnesota" },
+  { code: "320", state: "Minnesota" },
+  { code: "507", state: "Minnesota" },
+  { code: "612", state: "Minnesota" },
+  { code: "651", state: "Minnesota" },
+  { code: "763", state: "Minnesota" },
+  { code: "952", state: "Minnesota" },
+  { code: "228", state: "Mississippi" },
+  { code: "601", state: "Mississippi" },
+  { code: "662", state: "Mississippi" },
+  { code: "769", state: "Mississippi" },
+  { code: "314", state: "Missouri" },
+  { code: "417", state: "Missouri" },
+  { code: "573", state: "Missouri" },
+  { code: "636", state: "Missouri" },
+  { code: "660", state: "Missouri" },
+  { code: "816", state: "Missouri" },
+  { code: "406", state: "Montana" },
+  { code: "308", state: "Nebraska" },
+  { code: "402", state: "Nebraska" },
+  { code: "531", state: "Nebraska" },
+  { code: "702", state: "Nevada" },
+  { code: "725", state: "Nevada" },
+  { code: "775", state: "Nevada" },
+  { code: "603", state: "New Hampshire" },
+  { code: "201", state: "New Jersey" },
+  { code: "551", state: "New Jersey" },
+  { code: "609", state: "New Jersey" },
+  { code: "732", state: "New Jersey" },
+  { code: "848", state: "New Jersey" },
+  { code: "856", state: "New Jersey" },
+  { code: "862", state: "New Jersey" },
+  { code: "908", state: "New Jersey" },
+  { code: "973", state: "New Jersey" },
+  { code: "505", state: "New Mexico" },
+  { code: "575", state: "New Mexico" },
+  { code: "212", state: "New York" },
+  { code: "315", state: "New York" },
+  { code: "332", state: "New York" },
+  { code: "347", state: "New York" },
+  { code: "516", state: "New York" },
+  { code: "518", state: "New York" },
+  { code: "585", state: "New York" },
+  { code: "607", state: "New York" },
+  { code: "631", state: "New York" },
+  { code: "646", state: "New York" },
+  { code: "716", state: "New York" },
+  { code: "718", state: "New York" },
+  { code: "845", state: "New York" },
+  { code: "914", state: "New York" },
+  { code: "917", state: "New York" },
+  { code: "929", state: "New York" },
+  { code: "934", state: "New York" },
+  { code: "704", state: "North Carolina" },
+  { code: "828", state: "North Carolina" },
+  { code: "910", state: "North Carolina" },
+  { code: "919", state: "North Carolina" },
+  { code: "980", state: "North Carolina" },
+  { code: "984", state: "North Carolina" },
+  { code: "701", state: "North Dakota" },
+  { code: "216", state: "Ohio" },
+  { code: "220", state: "Ohio" },
+  { code: "234", state: "Ohio" },
+  { code: "330", state: "Ohio" },
+  { code: "380", state: "Ohio" },
+  { code: "419", state: "Ohio" },
+  { code: "440", state: "Ohio" },
+  { code: "513", state: "Ohio" },
+  { code: "567", state: "Ohio" },
+  { code: "614", state: "Ohio" },
+  { code: "740", state: "Ohio" },
+  { code: "937", state: "Ohio" },
+  { code: "405", state: "Oklahoma" },
+  { code: "539", state: "Oklahoma" },
+  { code: "580", state: "Oklahoma" },
+  { code: "918", state: "Oklahoma" },
+  { code: "458", state: "Oregon" },
+  { code: "503", state: "Oregon" },
+  { code: "541", state: "Oregon" },
+  { code: "971", state: "Oregon" },
+  { code: "215", state: "Pennsylvania" },
+  { code: "267", state: "Pennsylvania" },
+  { code: "272", state: "Pennsylvania" },
+  { code: "412", state: "Pennsylvania" },
+  { code: "484", state: "Pennsylvania" },
+  { code: "570", state: "Pennsylvania" },
+  { code: "610", state: "Pennsylvania" },
+  { code: "717", state: "Pennsylvania" },
+  { code: "724", state: "Pennsylvania" },
+  { code: "814", state: "Pennsylvania" },
+  { code: "878", state: "Pennsylvania" },
+  { code: "401", state: "Rhode Island" },
+  { code: "803", state: "South Carolina" },
+  { code: "839", state: "South Carolina" },
+  { code: "843", state: "South Carolina" },
+  { code: "864", state: "South Carolina" },
+  { code: "605", state: "South Dakota" },
+  { code: "423", state: "Tennessee" },
+  { code: "615", state: "Tennessee" },
+  { code: "629", state: "Tennessee" },
+  { code: "731", state: "Tennessee" },
+  { code: "865", state: "Tennessee" },
+  { code: "901", state: "Tennessee" },
+  { code: "931", state: "Tennessee" },
+  { code: "210", state: "Texas" },
+  { code: "214", state: "Texas" },
+  { code: "254", state: "Texas" },
+  { code: "281", state: "Texas" },
+  { code: "325", state: "Texas" },
+  { code: "346", state: "Texas" },
+  { code: "361", state: "Texas" },
+  { code: "409", state: "Texas" },
+  { code: "430", state: "Texas" },
+  { code: "432", state: "Texas" },
+  { code: "469", state: "Texas" },
+  { code: "512", state: "Texas" },
+  { code: "682", state: "Texas" },
+  { code: "713", state: "Texas" },
+  { code: "737", state: "Texas" },
+  { code: "806", state: "Texas" },
+  { code: "817", state: "Texas" },
+  { code: "830", state: "Texas" },
+  { code: "832", state: "Texas" },
+  { code: "903", state: "Texas" },
+  { code: "915", state: "Texas" },
+  { code: "936", state: "Texas" },
+  { code: "940", state: "Texas" },
+  { code: "956", state: "Texas" },
+  { code: "972", state: "Texas" },
+  { code: "979", state: "Texas" },
+  { code: "435", state: "Utah" },
+  { code: "801", state: "Utah" },
+  { code: "385", state: "Utah" },
+  { code: "802", state: "Vermont" },
+  { code: "276", state: "North Carolina" },
+  { code: "703", state: "Virginia" },
+  { code: "434", state: "Virginia" },
+  { code: "540", state: "Virginia" },
+  { code: "571", state: "Virginia" },
+  { code: "757", state: "Virginia" },
+  { code: "804", state: "Virginia" },
+  { code: "206", state: "Washington" },
+  { code: "253", state: "Washington" },
+  { code: "360", state: "Washington" },
+  { code: "425", state: "Washington" },
+  { code: "509", state: "Washington" },
+  { code: "564", state: "Washington" },
+  { code: "269", state: "West Virginia" },
+  { code: "304", state: "West Virginia" },
+  { code: "262", state: "Wisconsin" },
+  { code: "414", state: "Wisconsin" },
+  { code: "534", state: "Wisconsin" },
+  { code: "608", state: "Wisconsin" },
+  { code: "715", state: "Wisconsin" },
+  { code: "920", state: "Wisconsin" },
+  { code: "307", state: "Wyoming" },
+];
+
+export async function GET() {
+  try {
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get("session_token")?.value;
+
+    if (!sessionToken) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const sessions = await sql`
+      SELECT s.user_id FROM auth_sessions s
+      WHERE s.token = ${sessionToken} AND s.expires_at > NOW()
+    `;
+
+    if (sessions.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "Session expired" },
+        { status: 401 }
+      );
+    }
+
+    let areaCodes: AreaCodeInfo[] = [];
+    let fallback = false;
+    let message = "Area codes loaded from PVA API";
+
+    try {
+      const globalResult = await getAllAreaCodes();
+      if (globalResult.success && globalResult.data?.areaCodes && globalResult.data.areaCodes.length > 0) {
+        areaCodes = globalResult.data.areaCodes;
+        message = "Area codes loaded from PVA API (global endpoint)";
+      } else {
+        throw new Error("Global endpoint returned no data");
+      }
+    } catch (globalError) {
+      console.log("Global area codes endpoint failed, trying popular services:", globalError);
+
+      try {
+        const popularResult = await getPopularServiceAreaCodes();
+        if (popularResult.success && popularResult.data?.areaCodes && popularResult.data.areaCodes.length > 0) {
+          areaCodes = popularResult.data.areaCodes;
+          message = "Area codes loaded from PVA API (popular services)";
+        } else {
+          throw new Error("Popular services returned no data");
+        }
+      } catch (popularError) {
+        console.log("Popular services endpoint failed, using hardcoded fallback:", popularError);
+        areaCodes = US_AREA_CODES.map(ac => ({ code: ac.code, state: ac.state, available: true }));
+        fallback = true;
+        message = "Area codes loaded from hardcoded fallback";
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: { areaCodes },
+      fallback,
+      message,
+    });
+  } catch (error) {
+    console.error("Area codes fetch error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch area codes" },
+      { status: 500 }
+    );
+  }
+}

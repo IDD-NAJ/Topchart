@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { motion, AnimatePresence } from "framer-motion"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import {
   MessageCircle,
   CreditCard,
@@ -24,7 +26,6 @@ import {
   Check,
   RefreshCw,
   Copy,
-  Search,
   Wallet,
   ExternalLink,
   History,
@@ -32,15 +33,20 @@ import {
   Save,
   ChevronDown,
   ChevronUp,
+  SlidersHorizontal,
+  ArrowUpDown,
+  Globe,
+  Filter,
+  Search,
 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
 
 const CATEGORIES = [
-  { id: "social_media", name: "Social Media", icon: MessageCircle, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/40" },
-  { id: "ecommerce_financial", name: "E-Commerce & Financial", icon: CreditCard, color: "text-green-600 bg-green-50 dark:bg-green-950/40" },
-  { id: "professional_tools", name: "Professional Tools", icon: Briefcase, color: "text-purple-600 bg-purple-50 dark:bg-purple-950/40" },
-  { id: "streaming_entertainment", name: "Streaming & Entertainment", icon: Play, color: "text-red-600 bg-red-50 dark:bg-red-950/40" },
+  { id: "social_media", name: "Social Media", shortName: "Social", icon: MessageCircle, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/40" },
+  { id: "ecommerce_financial", name: "E-Commerce & Financial", shortName: "E-Commerce", icon: CreditCard, color: "text-green-600 bg-green-50 dark:bg-green-950/40" },
+  { id: "professional_tools", name: "Professional Tools", shortName: "Professional", icon: Briefcase, color: "text-purple-600 bg-purple-50 dark:bg-purple-950/40" },
+  { id: "streaming_entertainment", name: "Streaming & Entertainment", shortName: "Streaming", icon: Play, color: "text-red-600 bg-red-50 dark:bg-red-950/40" },
 ]
 
 const LTR_OPTIONS = [
@@ -50,58 +56,7 @@ const LTR_OPTIONS = [
   { days: 30, label: "30 Days" },
 ]
 
-const US_STATES = [
-  { state: "Alabama", code: "205" },
-  { state: "Alaska", code: "907" },
-  { state: "Arizona", code: "480" },
-  { state: "Arkansas", code: "501" },
-  { state: "California", code: "213" },
-  { state: "Colorado", code: "303" },
-  { state: "Connecticut", code: "203" },
-  { state: "Delaware", code: "302" },
-  { state: "Florida", code: "305" },
-  { state: "Georgia", code: "404" },
-  { state: "Hawaii", code: "808" },
-  { state: "Idaho", code: "208" },
-  { state: "Illinois", code: "312" },
-  { state: "Indiana", code: "317" },
-  { state: "Iowa", code: "319" },
-  { state: "Kansas", code: "316" },
-  { state: "Kentucky", code: "502" },
-  { state: "Louisiana", code: "504" },
-  { state: "Maine", code: "207" },
-  { state: "Maryland", code: "301" },
-  { state: "Massachusetts", code: "617" },
-  { state: "Michigan", code: "313" },
-  { state: "Minnesota", code: "612" },
-  { state: "Mississippi", code: "601" },
-  { state: "Missouri", code: "314" },
-  { state: "Montana", code: "406" },
-  { state: "Nebraska", code: "402" },
-  { state: "Nevada", code: "702" },
-  { state: "New Hampshire", code: "603" },
-  { state: "New Jersey", code: "201" },
-  { state: "New Mexico", code: "505" },
-  { state: "New York", code: "212" },
-  { state: "North Carolina", code: "704" },
-  { state: "North Dakota", code: "701" },
-  { state: "Ohio", code: "216" },
-  { state: "Oklahoma", code: "405" },
-  { state: "Oregon", code: "503" },
-  { state: "Pennsylvania", code: "215" },
-  { state: "Rhode Island", code: "401" },
-  { state: "South Carolina", code: "803" },
-  { state: "South Dakota", code: "605" },
-  { state: "Tennessee", code: "615" },
-  { state: "Texas", code: "214" },
-  { state: "Utah", code: "801" },
-  { state: "Vermont", code: "802" },
-  { state: "Virginia", code: "703" },
-  { state: "Washington", code: "206" },
-  { state: "West Virginia", code: "304" },
-  { state: "Wisconsin", code: "414" },
-  { state: "Wyoming", code: "307" },
-]
+
 
 interface Service {
   id: string
@@ -163,6 +118,9 @@ export default function VerificationPage() {
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [sortBy, setSortBy] = useState<"name" | "price_asc" | "price_desc">("name")
+  const [countryFilter, setCountryFilter] = useState<string>("all")
+  const [typeFilter, setTypeFilter] = useState<"all" | "str" | "ltr">("all")
 
   // Admin pricing panel state
   const [adminPanelOpen, setAdminPanelOpen] = useState(false)
@@ -183,33 +141,79 @@ export default function VerificationPage() {
   })
   const [areaCodesLoading, setAreaCodesLoading] = useState(false)
   const [areaCodes, setAreaCodes] = useState<{ code: string; state: string }[]>([])
-  const [areaCodeSearch, setAreaCodeSearch] = useState("")
+  const [areaCodeFallback, setAreaCodeFallback] = useState(false)
+  const [globalAreaCodes, setGlobalAreaCodes] = useState<{ code: string; state: string }[]>([])
+  const [apiError, setApiError] = useState<string | null>(null)
+
+  // Fetch global area codes on mount
+  useEffect(() => {
+    const fetchGlobalAreaCodes = async () => {
+      try {
+        console.log("Fetching global area codes from API");
+        const res = await fetch("/api/verification/area-codes")
+        const data = await res.json()
+        console.log("Global area codes response:", data);
+        if (data.success && data.data?.areaCodes?.length > 0) {
+          setGlobalAreaCodes(data.data.areaCodes)
+          console.log(`Set ${data.data.areaCodes.length} global area codes`);
+          setApiError(null)
+        } else {
+          console.log("No global area codes found in response, message:", data.message);
+          setApiError(data.message || "No area codes available")
+        }
+      } catch (error) {
+        console.error("Failed to fetch global area codes:", error);
+        setApiError(error instanceof Error ? error.message : "Failed to fetch area codes")
+      }
+    }
+    fetchGlobalAreaCodes()
+  }, [])
 
   // Fetch area codes when modal opens with a service
   useEffect(() => {
     if (!modal.service) return
-    
+
     const fetchAreaCodes = async () => {
       setAreaCodesLoading(true)
+      setAreaCodeFallback(false)
+
       try {
+        console.log(`Fetching area codes for service: ${modal.service?.pvadeals_service_id}`);
         const res = await fetch(`/api/verification/area-codes/${modal.service?.pvadeals_service_id}`)
         const data = await res.json()
-        
+        console.log(`Area codes response:`, data);
+
         if (data.success && data.data?.areaCodes?.length > 0) {
           setAreaCodes(data.data.areaCodes)
+          setAreaCodeFallback(data.fallback || false)
+          console.log(`Set ${data.data.areaCodes.length} area codes for service`);
+        } else if (globalAreaCodes.length > 0) {
+          setAreaCodes(globalAreaCodes)
+          setAreaCodeFallback(true)
+          console.log(`Using ${globalAreaCodes.length} global area codes as fallback`);
         } else {
-          // Fall back to hardcoded list
-          setAreaCodes(US_STATES)
+          setAreaCodes([])
+          setAreaCodeFallback(true)
+          console.log("No area codes available - user can leave field empty");
         }
-      } catch {
-        setAreaCodes(US_STATES)
+      } catch (error) {
+        console.error("Error fetching area codes:", error);
+        if (globalAreaCodes.length > 0) {
+          setAreaCodes(globalAreaCodes)
+          setAreaCodeFallback(true)
+          console.log(`Using ${globalAreaCodes.length} global area codes as fallback after error`);
+        } else {
+          setAreaCodes([])
+          setAreaCodeFallback(true)
+          console.log("No area codes available after error - user can leave field empty");
+        }
       } finally {
         setAreaCodesLoading(false)
       }
     }
-    
+
     fetchAreaCodes()
-  }, [modal.service])
+  }, [modal.service, globalAreaCodes])
 
   const fetchServices = useCallback(async () => {
     try {
@@ -356,7 +360,18 @@ export default function VerificationPage() {
         }))
         fetchActiveNumbers()
       } else {
-        setModal(m => ({ ...m, purchasing: false, error: data.error || "Purchase failed" }))
+        // Map structured error codes to user-friendly messages
+        let errorMsg = data.error || "Purchase failed"
+        if (res.status === 502) {
+          if (data.code === "PROVIDER_SERVICES") {
+            errorMsg = "Verification provider unavailable — check API configuration or try again later"
+          } else if (data.code === "PROVIDER_PURCHASE") {
+            errorMsg = data.error || "Provider purchase failed — please try again shortly"
+          } else if (data.code === "INSUFFICIENT_CREDITS") {
+            errorMsg = data.error || "Provider temporarily out of credits — try again in a few minutes"
+          }
+        }
+        setModal(m => ({ ...m, purchasing: false, error: errorMsg }))
       }
     } catch {
       setModal(m => ({ ...m, purchasing: false, error: "Network error. Please try again." }))
@@ -371,10 +386,40 @@ export default function VerificationPage() {
   }
 
   const searchActive = searchQuery.trim().length > 0
-  const filteredServices = searchActive
-    ? services.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : services.filter(s => s.category === selectedCategory)
+
+  // Get unique countries for filter
+  const availableCountries = Array.from(new Set(services.map(s => s.country || "US").filter(Boolean)))
+
+  // Apply all filters and sorting
+  const filteredServices = services
+    .filter(s => {
+      // Category filter (when not searching)
+      if (!searchActive && s.category !== selectedCategory) return false
+      // Search filter
+      if (searchActive && !s.name.toLowerCase().includes(searchQuery.toLowerCase())) return false
+      // Country filter
+      if (countryFilter !== "all" && (s.country || "US") !== countryFilter) return false
+      // Type filter (price-based)
+      if (typeFilter === "str" && s.str_price === 0) return false
+      if (typeFilter === "ltr" && s.ltr3_price === 0) return false
+      return true
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name)
+        case "price_asc":
+          return a.str_price - b.str_price
+        case "price_desc":
+          return b.str_price - a.str_price
+        default:
+          return 0
+      }
+    })
+
   const getCatMeta = (id: string) => CATEGORIES.find(c => c.id === id) ?? CATEGORIES[0]
+  const hasActiveFilters = countryFilter !== "all" || typeFilter !== "all" || sortBy !== "name"
+  const activeFilterCount = (countryFilter !== "all" ? 1 : 0) + (typeFilter !== "all" ? 1 : 0) + (sortBy !== "name" ? 1 : 0)
 
   const selectedPrice = modal.service
     ? modal.type === "STR"
@@ -391,18 +436,18 @@ export default function VerificationPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Number Verification</h1>
-          <p className="text-muted-foreground mt-2">
+    <div className="space-y-6 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Number Verification</h1>
+          <p className="text-muted-foreground mt-1.5 text-xs sm:text-sm leading-relaxed">
             Get temporary US phone numbers for SMS verification on any app or website.
           </p>
         </div>
-        <Link href="/dashboard/verification/history" className="shrink-0">
-          <Button variant="outline" size="sm" className="gap-2 mt-1">
+        <Link href="/dashboard/verification/history" className="shrink-0 self-start">
+          <Button variant="outline" size="sm" className="gap-2 whitespace-nowrap">
             <History className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">View History</span>
+            <span className="hidden min-[480px]:inline">View History</span>
           </Button>
         </Link>
       </div>
@@ -432,11 +477,11 @@ export default function VerificationPage() {
 
             {adminPanelOpen && (
               <div className="px-4 pb-4 space-y-3">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <p className="text-xs text-muted-foreground">
                     Edit markup percentages and toggle service availability. Changes reflect immediately for all users.
                   </p>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
@@ -465,16 +510,82 @@ export default function VerificationPage() {
                     <p className="text-sm text-muted-foreground">No services found. Sync from PVADeals to populate.</p>
                   </div>
                 ) : (
-                  <div className="rounded-lg border overflow-hidden overflow-x-auto">
-                    <table className="w-full text-xs min-w-[600px]">
+                  <>
+                  <div className="space-y-3 sm:hidden">
+                    {adminServices.map((svc) => {
+                      const markup = adminEdits[svc.id]?.markup_percentage ?? svc.markup_percentage
+                      const isActive = adminEdits[svc.id]?.is_active ?? svc.is_active
+                      const isDirty = !!adminEdits[svc.id]
+                      const isSaving = adminSaving === svc.id
+                      const strGhs = svc.str_price ? (svc.str_price * 15.5 * (1 + (markup || 0) / 100)).toFixed(2) : "---"
+                      return (
+                        <Card key={svc.id} className={isDirty ? "border-amber-300/60 bg-amber-50/40" : ""}>
+                          <CardContent className="space-y-3 p-4">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex min-w-0 items-center gap-2">
+                                {svc.picture_url && (
+                                  <img src={svc.picture_url} alt={svc.name} className="h-8 w-8 rounded object-contain" />
+                                )}
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-medium">{svc.name}</p>
+                                  <p className="text-xs capitalize text-muted-foreground">{svc.category.replace(/_/g, " ")}</p>
+                                </div>
+                              </div>
+                              <Switch
+                                checked={isActive}
+                                onCheckedChange={(val) =>
+                                  setAdminEdits((prev) => ({ ...prev, [svc.id]: { ...prev[svc.id], is_active: val } }))
+                                }
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <p className="text-muted-foreground">Markup %</p>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  value={markup}
+                                  onChange={(e) =>
+                                    setAdminEdits((prev) => ({
+                                      ...prev,
+                                      [svc.id]: { ...prev[svc.id], markup_percentage: parseFloat(e.target.value) || 0 },
+                                    }))
+                                  }
+                                  className="mt-1 h-9"
+                                />
+                              </div>
+                              <div className="text-right">
+                                <p className="text-muted-foreground">STR (GHS)</p>
+                                <p className="mt-1 font-mono font-medium">GH₵{strGhs}</p>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant={isDirty ? "default" : "outline"}
+                              className="inline-flex w-full justify-center gap-2"
+                              disabled={!isDirty || isSaving}
+                              onClick={() => handleAdminSave(svc.id)}
+                            >
+                              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                              Save
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+                  </div>
+                  <div className="-mx-4 hidden overflow-hidden rounded-lg border sm:mx-0 sm:block">
+                    <div className="overflow-x-auto max-w-[calc(100vw-2rem)]">
+                      <table className="w-full min-w-[540px] text-[10px] sm:min-w-0 sm:text-xs">
                       <thead className="bg-muted/60">
                         <tr>
-                          <th className="px-3 py-2 text-left font-medium text-muted-foreground">Service</th>
-                          <th className="px-3 py-2 text-left font-medium text-muted-foreground hidden sm:table-cell">Category</th>
-                          <th className="px-3 py-2 text-center font-medium text-muted-foreground">Active</th>
-                          <th className="px-3 py-2 text-right font-medium text-muted-foreground">Markup %</th>
-                          <th className="px-3 py-2 text-right font-medium text-muted-foreground">STR (GHS)</th>
-                          <th className="px-3 py-2 text-right font-medium text-muted-foreground">Action</th>
+                          <th className="px-2 sm:px-3 py-2 text-left font-medium text-muted-foreground">Service</th>
+                          <th className="px-2 sm:px-3 py-2 text-left font-medium text-muted-foreground hidden sm:table-cell">Category</th>
+                          <th className="px-2 sm:px-3 py-2 text-center font-medium text-muted-foreground">Active</th>
+                          <th className="px-2 sm:px-3 py-2 text-right font-medium text-muted-foreground">Markup %</th>
+                          <th className="px-2 sm:px-3 py-2 text-right font-medium text-muted-foreground hidden sm:table-cell">STR (GHS)</th>
+                          <th className="px-2 sm:px-3 py-2 text-right font-medium text-muted-foreground">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y">
@@ -486,40 +597,40 @@ export default function VerificationPage() {
                           const strGhs = svc.str_price ? (svc.str_price * 15.5 * (1 + (markup || 0) / 100)).toFixed(2) : '---'
                           return (
                             <tr key={svc.id} className={isDirty ? "bg-amber-50/60 dark:bg-amber-950/20" : "bg-background"}>
-                              <td className="px-3 py-2">
+                              <td className="px-2 sm:px-3 py-2">
                                 <div className="flex items-center gap-2">
                                   {svc.picture_url && (
-                                    <img src={svc.picture_url} alt={svc.name} className="h-5 w-5 rounded object-contain" />
+                                    <img src={svc.picture_url} alt={svc.name} className="h-4 w-4 sm:h-5 sm:w-5 rounded object-contain" />
                                   )}
-                                  <span className="font-medium truncate max-w-[120px]">{svc.name}</span>
+                                  <span className="font-medium truncate max-w-[80px] sm:max-w-[120px]">{svc.name}</span>
                                 </div>
                               </td>
-                              <td className="px-3 py-2 hidden sm:table-cell text-muted-foreground capitalize">
+                              <td className="px-2 sm:px-3 py-2 hidden sm:table-cell text-muted-foreground capitalize">
                                 {svc.category.replace(/_/g, ' ')}
                               </td>
-                              <td className="px-3 py-2 text-center">
+                              <td className="px-2 sm:px-3 py-2 text-center">
                                 <Switch
                                   checked={isActive}
                                   onCheckedChange={val => setAdminEdits(prev => ({ ...prev, [svc.id]: { ...prev[svc.id], is_active: val } }))}
                                   className="scale-75"
                                 />
                               </td>
-                              <td className="px-3 py-2 text-right">
+                              <td className="px-2 sm:px-3 py-2 text-right">
                                 <Input
                                   type="number"
                                   min="0"
                                   step="1"
                                   value={markup}
                                   onChange={e => setAdminEdits(prev => ({ ...prev, [svc.id]: { ...prev[svc.id], markup_percentage: parseFloat(e.target.value) || 0 } }))}
-                                  className="h-6 w-16 text-xs text-right ml-auto"
+                                  className="h-6 w-12 sm:w-16 text-[10px] sm:text-xs text-right ml-auto"
                                 />
                               </td>
-                              <td className="px-3 py-2 text-right font-mono text-muted-foreground">GH₵{strGhs}</td>
-                              <td className="px-3 py-2 text-right">
+                              <td className="px-2 sm:px-3 py-2 text-right font-mono text-muted-foreground hidden sm:table-cell">GH₵{strGhs}</td>
+                              <td className="px-2 sm:px-3 py-2 text-right">
                                 <Button
                                   size="sm"
                                   variant={isDirty ? "default" : "ghost"}
-                                  className="h-6 px-2 text-xs"
+                                  className="h-6 px-1.5 sm:px-2 text-[10px] sm:text-xs"
                                   disabled={!isDirty || isSaving}
                                   onClick={() => handleAdminSave(svc.id)}
                                 >
@@ -530,8 +641,10 @@ export default function VerificationPage() {
                           )
                         })}
                       </tbody>
-                    </table>
+                      </table>
+                    </div>
                   </div>
+                  </>
                 )}
               </div>
             )}
@@ -563,10 +676,10 @@ export default function VerificationPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <p className="font-mono text-base font-semibold flex-1">{num.number}</p>
+                      <p className="font-mono text-sm sm:text-base font-semibold flex-1 break-all">{num.number}</p>
                       <button
                         onClick={() => copyNumber(num.number)}
-                        className="p-1 rounded hover:bg-muted transition-colors"
+                        className="p-2 rounded hover:bg-muted transition-colors shrink-0 sm:p-1"
                       >
                         {copied === num.number ? (
                           <Check className="h-3.5 w-3.5 text-green-600" />
@@ -607,23 +720,107 @@ export default function VerificationPage() {
         </Card>
       )}
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search services… (e.g. WhatsApp, Netflix)"
-          className="pl-9 pr-9"
-        />
-        {searchActive && (
-          <button
-            onClick={() => setSearchQuery("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
+      {/* Search and Filters */}
+      <div className="space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search services… (e.g. WhatsApp, Netflix)"
+            className="pl-9 pr-9"
+          />
+          {searchActive && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Filter Bar */}
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+            {/* Sort Dropdown */}
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+              <SelectTrigger className="h-9 text-xs sm:h-8 sm:w-[140px]">
+                <ArrowUpDown className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name (A-Z)</SelectItem>
+                <SelectItem value="price_asc">Price: Low to High</SelectItem>
+                <SelectItem value="price_desc">Price: High to Low</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Type Filter */}
+            <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as typeof typeFilter)}>
+              <SelectTrigger className="h-9 text-xs sm:h-8 sm:w-[110px]">
+                <Filter className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="str">STR Only</SelectItem>
+                <SelectItem value="ltr">LTR Only</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Country Filter */}
+            {availableCountries.length > 1 && (
+              <Select value={countryFilter} onValueChange={setCountryFilter}>
+                <SelectTrigger className="h-9 text-xs sm:h-8 sm:w-[110px]">
+                  <Globe className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                  <SelectValue placeholder="Country" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Countries</SelectItem>
+                  {availableCountries.map((country) => (
+                    <SelectItem key={country} value={country}>{country}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {/* Refresh Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 gap-1.5 px-3 text-xs sm:h-8 sm:w-auto col-span-1"
+              onClick={() => {
+                fetchServices()
+                fetchActiveNumbers()
+                toast({ title: "Refreshed", description: "Services updated" })
+              }}
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span>Refresh</span>
+            </Button>
+
+            {/* Clear All Filters */}
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground sm:h-8 sm:w-auto"
+                onClick={() => {
+                  setSortBy("name")
+                  setCountryFilter("all")
+                  setTypeFilter("all")
+                }}
+              >
+                <X className="h-3.5 w-3.5" />
+                Clear {activeFilterCount > 0 && `(${activeFilterCount})`}
+              </Button>
+            )}
+          </div>
+          <span className="block text-xs text-muted-foreground">
+            {filteredServices.length} service{filteredServices.length !== 1 ? "s" : ""}
+          </span>
+        </div>
       </div>
 
       {/* Service Tabs */}
@@ -632,38 +829,53 @@ export default function VerificationPage() {
           {filteredServices.length === 0 ? (
             <div className="text-center py-16">
               <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground text-sm">No services match &ldquo;{searchQuery}&rdquo;</p>
+              <p className="text-muted-foreground text-sm">
+                {hasActiveFilters ? "No services match your filters" : `No services match "${searchQuery}"`}
+              </p>
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => {
+                    setSortBy("name")
+                    setCountryFilter("all")
+                    setTypeFilter("all")
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              )}
             </div>
           ) : (
             <>
-              <p className="text-xs text-muted-foreground mb-3">{filteredServices.length} result{filteredServices.length !== 1 ? "s" : ""}</p>
-              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-2 sm:gap-4 lg:gap-5 grid-cols-1 min-[380px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                 {filteredServices.map((svc) => {
                   const catMeta = getCatMeta(svc.category)
                   const CatIcon = catMeta.icon
                   return (
                     <motion.div key={svc.id} whileHover={{ y: -2 }} className="group cursor-pointer" onClick={() => openModal(svc)}>
                       <Card className="h-full hover:border-primary/40 transition-all hover:shadow-sm">
-                        <CardContent className="p-5">
-                          <div className="flex items-center gap-3 mb-3">
+                        <CardContent className="p-3 sm:p-5">
+                          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                             {svc.picture_url ? (
                               <img
                                 src={svc.picture_url}
                                 alt={svc.name}
-                                className="h-10 w-10 rounded-lg object-contain bg-muted p-1"
+                                className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg object-contain bg-muted p-1"
                                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
                               />
                             ) : (
-                              <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${catMeta.color}`}>
-                                <CatIcon className="h-5 w-5" />
+                              <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-lg flex items-center justify-center ${catMeta.color}`}>
+                                <CatIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-sm truncate">{svc.name}</h3>
-                              <p className="text-xs text-muted-foreground">{svc.country ?? "US"}</p>
+                              <h3 className="font-semibold text-xs sm:text-sm truncate">{svc.name}</h3>
+                              <p className="text-[10px] sm:text-xs text-muted-foreground">{svc.country ?? "US"}</p>
                             </div>
                           </div>
-                          <div className="space-y-1.5 text-xs">
+                          <div className="space-y-1.5 text-xs w-full">
                             <div className="flex items-center justify-between py-1 border-b border-border/50">
                               <span className="text-muted-foreground font-medium">STR <span className="font-normal">(20 min)</span></span>
                               <span className="font-semibold text-primary">{formatCurrency(svc.str_price)}</span>
@@ -684,13 +896,13 @@ export default function VerificationPage() {
         </div>
       ) : (
       <Tabs defaultValue="social_media" onValueChange={setSelectedCategory}>
-        <TabsList className="flex w-full overflow-x-auto h-auto gap-1 p-1 scrollbar-hide">
+        <TabsList className="flex w-full overflow-x-auto h-auto gap-0.5 p-1 scrollbar-hide snap-x snap-mandatory">
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon
             return (
-              <TabsTrigger key={cat.id} value={cat.id} className="flex shrink-0 items-center gap-1.5 py-2 px-3">
+              <TabsTrigger key={cat.id} value={cat.id} className="flex flex-1 shrink-0 snap-start items-center justify-center gap-1 py-2 px-1.5 sm:px-3 min-w-0">
                 <Icon className="h-3.5 w-3.5 shrink-0" />
-                <span className="text-xs whitespace-nowrap">{cat.name}</span>
+                <span className="text-[10px] min-[480px]:text-xs whitespace-nowrap truncate">{cat.shortName}</span>
               </TabsTrigger>
             )
           })}
@@ -701,37 +913,53 @@ export default function VerificationPage() {
             {filteredServices.length === 0 ? (
               <div className="text-center py-16">
                 <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground text-sm">No services available in this category</p>
+                <p className="text-muted-foreground text-sm">
+                  {hasActiveFilters ? "No services match your filters in this category" : "No services available in this category"}
+                </p>
+                {hasActiveFilters && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => {
+                      setSortBy("name")
+                      setCountryFilter("all")
+                      setTypeFilter("all")
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
+                )}
               </div>
             ) : (
-              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-2 sm:gap-4 lg:gap-5 grid-cols-1 min-[380px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                 {filteredServices.map((svc) => {
                   const catMeta = getCatMeta(svc.category)
                   const CatIcon = catMeta.icon
                   return (
                     <motion.div key={svc.id} whileHover={{ y: -2 }} className="group cursor-pointer" onClick={() => openModal(svc)}>
                       <Card className="h-full hover:border-primary/40 transition-all hover:shadow-sm">
-                        <CardContent className="p-5">
-                          <div className="flex items-center gap-3 mb-3">
+                        <CardContent className="p-3 sm:p-5">
+                          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                             {svc.picture_url ? (
                               <img
                                 src={svc.picture_url}
                                 alt={svc.name}
-                                className="h-10 w-10 rounded-lg object-contain bg-muted p-1"
+                                className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg object-contain bg-muted p-1"
                                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
                               />
                             ) : (
-                              <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${catMeta.color}`}>
-                                <CatIcon className="h-5 w-5" />
+                              <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-lg flex items-center justify-center ${catMeta.color}`}>
+                                <CatIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-sm truncate">{svc.name}</h3>
-                              <p className="text-xs text-muted-foreground">{svc.country ?? "US"}</p>
+                              <h3 className="font-semibold text-xs sm:text-sm truncate">{svc.name}</h3>
+                              <p className="text-[10px] sm:text-xs text-muted-foreground">{svc.country ?? "US"}</p>
                             </div>
                           </div>
 
-                          <div className="space-y-1.5 text-xs">
+                          <div className="space-y-1.5 text-xs w-full">
                             <div className="flex items-center justify-between py-1 border-b border-border/50">
                               <span className="text-muted-foreground font-medium">STR <span className="font-normal">(20 min)</span></span>
                               <span className="font-semibold text-primary">{formatCurrency(svc.str_price)}</span>
@@ -754,13 +982,13 @@ export default function VerificationPage() {
       )}
 
       {/* How it works */}
-      <Card className="bg-muted/30">
-        <CardContent className="p-5">
+      <Card className="bg-muted/30 mb-8">
+        <CardContent className="p-4 sm:p-5">
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-lg bg-primary/10 shrink-0">
               <Shield className="h-4 w-4 text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h4 className="font-medium text-sm mb-1.5">How it works</h4>
               <ul className="text-xs text-muted-foreground space-y-1">
                 <li>• Select a service and choose <strong>STR</strong> (20-min) or <strong>LTR</strong> (3–30 days)</li>
@@ -781,35 +1009,37 @@ export default function VerificationPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
             onClick={(e) => { if (e.target === e.currentTarget) closeModal() }}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-background rounded-xl border shadow-xl w-full max-w-md"
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="mx-auto flex max-h-[90dvh] w-full flex-col rounded-xl border bg-background shadow-xl sm:max-w-md"
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between p-5 border-b">
-                <div>
-                  <h2 className="font-semibold text-base">{modal.service.name}</h2>
+              <div className="flex items-center justify-between border-b p-4 sm:p-5">
+                <div className="min-w-0 mr-2">
+                  <h2 className="font-semibold text-sm sm:text-base truncate">{modal.service.name}</h2>
                   <p className="text-xs text-muted-foreground">Select purchase type</p>
                 </div>
-                <button onClick={closeModal} className="p-1 rounded hover:bg-muted transition-colors">
+                <button onClick={closeModal} className="p-2 rounded hover:bg-muted transition-colors shrink-0 sm:p-1">
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               {modal.result ? (
-                <div className="p-5 space-y-4">
+                <>
+                <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
                   <div className="flex items-center gap-2 text-green-600">
-                    <Check className="h-5 w-5" />
-                    <span className="font-semibold">Number purchased!</span>
+                    <Check className="h-5 w-5 shrink-0" />
+                    <span className="font-semibold text-sm">Number purchased!</span>
                   </div>
-                  <div className="bg-muted rounded-lg p-4 space-y-2">
+                  <div className="bg-muted rounded-lg p-3 sm:p-4 space-y-2">
                     <div className="flex items-center gap-2">
-                      <p className="font-mono text-xl font-bold flex-1">{modal.result.number}</p>
-                      <button onClick={() => copyNumber(modal.result!.number)} className="p-1.5 rounded hover:bg-background transition-colors">
+                      <p className="font-mono text-lg sm:text-xl font-bold flex-1 break-all">{modal.result.number}</p>
+                      <button onClick={() => copyNumber(modal.result!.number)} className="p-1.5 rounded hover:bg-background transition-colors shrink-0">
                         {copied === modal.result.number ? (
                           <Check className="h-4 w-4 text-green-600" />
                         ) : (
@@ -822,10 +1052,14 @@ export default function VerificationPage() {
                     </p>
                     <p className="text-xs font-medium">Charged: {formatCurrency(modal.result.price)}</p>
                   </div>
+                </div>
+                <div className="shrink-0 border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5">
                   <Button className="w-full" onClick={closeModal}>Done</Button>
                 </div>
+                </>
               ) : (
-                <div className="p-5 space-y-4">
+                <>
+                <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
                   {/* Type selector */}
                   <div className="grid grid-cols-2 gap-2">
                     {(["STR", "LTR"] as const).map((t) => (
@@ -867,7 +1101,7 @@ export default function VerificationPage() {
                             }`}
                           >
                             <p className="text-xs font-semibold">{opt.label}</p>
-                            <p className="text-xs text-primary font-medium mt-0.5">
+                            <p className="text-[10px] sm:text-xs text-primary font-medium mt-0.5">
                               {formatCurrency(getLtrPrice(modal.service!, opt.days))}
                             </p>
                           </button>
@@ -881,68 +1115,86 @@ export default function VerificationPage() {
                     <p className="text-xs font-medium text-muted-foreground">
                       State / Area code <span className="font-normal">(optional)</span>
                     </p>
-                    <div className="relative">
-                      <Select
-                        value={modal.areaCode || "any"}
-                        onValueChange={(v) => {
-                          setModal(m => ({ ...m, areaCode: v === "any" ? "" : v, error: null }))
-                          setAreaCodeSearch("")
-                        }}
-                        disabled={areaCodesLoading}
-                      >
-                        <SelectTrigger className="h-9 text-sm w-full">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          disabled={areaCodesLoading}
+                          className="h-9 text-sm w-full justify-between font-normal"
+                        >
                           {areaCodesLoading ? (
                             <span className="flex items-center gap-2 text-muted-foreground">
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
                               Loading area codes...
                             </span>
+                          ) : modal.areaCode ? (
+                            <span className="truncate">
+                              {areaCodes.find((s) => s.code === modal.areaCode)?.state || "Unknown"} ({modal.areaCode})
+                            </span>
                           ) : (
-                            <SelectValue placeholder="Any state / area code" />
+                            <span className="text-muted-foreground">Any state / area code</span>
                           )}
-                        </SelectTrigger>
-                        <SelectContent className="max-h-72 w-[280px] sm:w-[320px]">
-                          {/* Search input */}
-                          <div className="sticky top-0 bg-background p-2 border-b z-10">
-                            <div className="relative">
-                              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                              <Input
-                                placeholder="Search state or code..."
-                                value={areaCodeSearch}
-                                onChange={(e) => setAreaCodeSearch(e.target.value)}
-                                className="h-8 pl-7 text-sm"
-                                onKeyDown={(e) => e.stopPropagation()}
-                              />
-                            </div>
-                          </div>
-                          
-                          <div className="max-h-48 overflow-y-auto">
-                            <SelectItem value="any" className="text-sm">
-                              <span className="font-medium">Any state</span>
-                              <span className="text-muted-foreground ml-2 text-xs">(No preference)</span>
-                            </SelectItem>
-                            
-                            {areaCodes
-                              .filter((s) => {
-                                if (!areaCodeSearch) return true
-                                const search = areaCodeSearch.toLowerCase()
-                                return (
-                                  s.state.toLowerCase().includes(search) ||
-                                  s.code.includes(search)
-                                )
-                              })
-                              .map((s) => (
-                                <SelectItem key={s.code} value={s.code} className="text-sm">
+                          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[min(calc(100vw-2rem),320px)] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search state or code..." className="h-9" />
+                          <CommandList className="max-h-48 sm:max-h-64">
+                            <CommandEmpty>No area code found.</CommandEmpty>
+                            <CommandGroup>
+                              <CommandItem
+                                key="any"
+                                value="any"
+                                onSelect={() => {
+                                  setModal(m => ({ ...m, areaCode: "", error: null }))
+                                }}
+                              >
+                                <span className="font-medium">Any state</span>
+                                <span className="text-muted-foreground ml-2 text-xs">(No preference)</span>
+                                {modal.areaCode === "" && (
+                                  <Check className="ml-auto h-4 w-4 text-primary" />
+                                )}
+                              </CommandItem>
+                              {areaCodes.map((s) => (
+                                <CommandItem
+                                  key={`${s.code}-${s.state}`}
+                                  value={`${s.state} ${s.code}`}
+                                  onSelect={() => {
+                                    setModal(m => ({ ...m, areaCode: s.code, error: null }))
+                                  }}
+                                >
                                   <span className="font-medium">{s.state}</span>
                                   <span className="text-muted-foreground ml-2">({s.code})</span>
-                                </SelectItem>
+                                  {modal.areaCode === s.code && (
+                                    <Check className="ml-auto h-4 w-4 text-primary" />
+                                  )}
+                                </CommandItem>
                               ))}
-                          </div>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     <p className="text-[10px] text-muted-foreground">
                       Select a state to get a number from that area code
                     </p>
+                    {areaCodeFallback && areaCodes.length > 0 && (
+                      <p className="text-[10px] text-muted-foreground/70 bg-muted px-2 py-1 rounded">
+                        Using standard area codes — select any or leave empty for random assignment
+                      </p>
+                    )}
+                    {areaCodeFallback && areaCodes.length === 0 && (
+                      <p className="text-[10px] text-muted-foreground/70 bg-muted px-2 py-1 rounded">
+                        No area codes available — leave empty for random assignment
+                      </p>
+                    )}
+                    {apiError && (
+                      <p className="text-[10px] text-red-500/70 bg-red-500/10 px-2 py-1 rounded">
+                        API Error: {apiError}
+                      </p>
+                    )}
                   </div>
 
                   {/* Payment method */}
@@ -951,33 +1203,33 @@ export default function VerificationPage() {
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => setModal(m => ({ ...m, paymentMethod: "wallet", error: null }))}
-                        className={`p-3 rounded-lg border text-left transition-all ${
+                        className={`w-full p-3 rounded-lg border text-left transition-all ${
                           modal.paymentMethod === "wallet"
                             ? "border-primary bg-primary/5"
                             : "border-border hover:border-primary/40"
                         }`}
                       >
                         <div className="flex items-center gap-1.5 mb-0.5">
-                          <Wallet className="h-3.5 w-3.5 text-primary" />
+                          <Wallet className="h-3.5 w-3.5 text-primary shrink-0" />
                           <p className="font-semibold text-sm">Wallet</p>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          Balance: {formatCurrency(user?.walletBalance ?? 0)}
+                        <p className="text-xs text-muted-foreground truncate">
+                          Bal: {formatCurrency(user?.walletBalance ?? 0)}
                         </p>
                       </button>
                       <button
                         onClick={() => setModal(m => ({ ...m, paymentMethod: "paystack", error: null }))}
-                        className={`p-3 rounded-lg border text-left transition-all ${
+                        className={`w-full p-3 rounded-lg border text-left transition-all ${
                           modal.paymentMethod === "paystack"
                             ? "border-primary bg-primary/5"
                             : "border-border hover:border-primary/40"
                         }`}
                       >
                         <div className="flex items-center gap-1.5 mb-0.5">
-                          <ExternalLink className="h-3.5 w-3.5 text-primary" />
+                          <ExternalLink className="h-3.5 w-3.5 text-primary shrink-0" />
                           <p className="font-semibold text-sm">Paystack</p>
                         </div>
-                        <p className="text-xs text-muted-foreground">Pay as you go (+4% fee)</p>
+                        <p className="text-xs text-muted-foreground">+4% fee</p>
                       </button>
                     </div>
                   </div>
@@ -989,9 +1241,11 @@ export default function VerificationPage() {
                       <p className="text-xs">{modal.error}</p>
                     </div>
                   )}
+                </div>
 
-                  {/* Summary row */}
-                  <div className="border-t pt-3 space-y-1">
+                {/* Sticky footer with summary + purchase button */}
+                <div className="shrink-0 border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5 space-y-3">
+                  <div className="space-y-1">
                     {modal.paymentMethod === "wallet" ? (
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Wallet balance</span>
@@ -1001,12 +1255,12 @@ export default function VerificationPage() {
                       </div>
                     ) : (
                       <>
-                        <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">Price</span>
                           <span>{formatCurrency(selectedPrice)}</span>
                         </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Paystack fee (4%)</span>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Fee (4%)</span>
                           <span>{formatCurrency(Number((selectedPrice * 0.04).toFixed(2)))}</span>
                         </div>
                         <div className="flex items-center justify-between text-sm font-semibold">
@@ -1016,9 +1270,8 @@ export default function VerificationPage() {
                       </>
                     )}
                   </div>
-
                   <Button
-                    className="w-full"
+                    className="w-full whitespace-nowrap"
                     onClick={handlePurchase}
                     disabled={
                       modal.purchasing ||
@@ -1028,12 +1281,13 @@ export default function VerificationPage() {
                     {modal.purchasing ? (
                       <><Loader2 className="h-4 w-4 animate-spin mr-2" />{modal.paymentMethod === "paystack" ? "Redirecting…" : "Purchasing…"}</>
                     ) : modal.paymentMethod === "paystack" ? (
-                      <><ExternalLink className="h-4 w-4 mr-2" />Pay {formatCurrency(Number((selectedPrice * 1.04).toFixed(2)))} with Paystack</>
+                      <><ExternalLink className="h-4 w-4 mr-2" />Pay {formatCurrency(Number((selectedPrice * 1.04).toFixed(2)))}</>
                     ) : (
                       <>Purchase for {formatCurrency(selectedPrice)}</>
                     )}
                   </Button>
                 </div>
+                </>
               )}
             </motion.div>
           </motion.div>

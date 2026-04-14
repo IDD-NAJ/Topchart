@@ -7,6 +7,8 @@ const envSchema = z.object({
   PVADEALS_API_KEY: z.string().optional(),
   PVADEALS_BASE_URL: z.string().url().optional(),
   PVADEALS_MARKUP_PERCENT: z.string().optional(),
+  DATAMART_API_KEY: z.string().optional(),
+  DATAMART_BASE_URL: z.string().url().optional(),
   USD_TO_GHS_RATE: z.string().optional(),
   TEXTVERIFIED_API_KEY: z.string().optional(),
   TEXTVERIFIED_API_URL: z.string().url().optional(),
@@ -18,8 +20,14 @@ const envSchema = z.object({
 });
 
 type ServerEnv = z.infer<typeof envSchema>;
+const datamartEnvSchema = z.object({
+  DATAMART_API_KEY: z.string().min(1, "DATAMART_API_KEY is required"),
+  DATAMART_BASE_URL: z.string().url().optional(),
+});
+type DatamartEnv = z.infer<typeof datamartEnvSchema>;
 
 let cachedEnv: ServerEnv | null = null;
+let cachedDatamartEnv: DatamartEnv | null = null;
 
 export function getServerEnv(): ServerEnv {
   if (cachedEnv) {
@@ -34,4 +42,19 @@ export function getServerEnv(): ServerEnv {
 
   cachedEnv = parsed.data;
   return cachedEnv;
+}
+
+export function getDatamartEnv(): DatamartEnv {
+  if (cachedDatamartEnv) {
+    return cachedDatamartEnv;
+  }
+
+  const parsed = datamartEnvSchema.safeParse(process.env);
+  if (!parsed.success) {
+    const errors = parsed.error.issues.map((issue) => issue.message).join(", ");
+    throw new Error(`Invalid DataMart environment: ${errors}`);
+  }
+
+  cachedDatamartEnv = parsed.data;
+  return cachedDatamartEnv;
 }
