@@ -42,7 +42,7 @@ export const registerSchema = z.object({
   password: passwordSchema,
   first_name: nameSchema,
   last_name: nameSchema,
-  phone: phoneSchema.optional(),
+  phone: phoneSchema,
 });
 
 export const forgotPasswordSchema = z.object({
