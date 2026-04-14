@@ -47,23 +47,24 @@ const SERVICES_OFFERED = [
 
 export default function AboutPage() {
   return (
-    <PageTransition className="min-h-screen flex flex-col bg-[#F5F4F1]">
+    <PageTransition className="min-h-screen flex flex-col bg-[color:var(--marketing-cream)]">
       <Header />
 
       <main className="flex-1">
 
         {/* ── HERO ── */}
-        <section className="relative pt-40 pb-28 overflow-hidden bg-[#0B1F3A]">
-          <Image
-            src="https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=1600"
-            alt=""
-            fill
-            priority
-            className="object-cover opacity-15"
-            sizes="100vw"
-          />
+        <section className="relative overflow-hidden bg-[color:var(--marketing-hero-dark)] pb-28 pt-[calc(72px+3rem)] sm:pt-[calc(72px+4rem)]">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 h-full w-full object-cover opacity-20"
+          >
+            <source src="/7490425-uhd_3840_2160_25fps.mp4" type="video/mp4" />
+          </video>
           <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:56px_56px]" />
-          <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-[#F5F4F1] to-transparent" />
+          <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-[color:var(--marketing-cream)] to-transparent" />
 
           <div className="relative z-10 container mx-auto px-4 text-center">
             <motion.div
@@ -72,7 +73,7 @@ export default function AboutPage() {
               transition={{ duration: 0.5 }}
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/15 bg-white/8 text-white/60 text-xs font-semibold uppercase tracking-widest mb-8"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#7EB8D4]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--marketing-accent)]" />
               Est. 2023 · Accra, Ghana
             </motion.div>
             <motion.h1
@@ -95,7 +96,7 @@ export default function AboutPage() {
         </section>
 
         {/* ── STATS ── */}
-        <section className="py-20 bg-white border-b border-[#E2E1DC]">
+        <section className="py-20 bg-white border-b border-neutral-200/90">
           <div className="container mx-auto px-4">
             <StaggerReveal className="grid grid-cols-2 md:grid-cols-4 gap-10 max-w-4xl mx-auto">
               {[
@@ -106,7 +107,7 @@ export default function AboutPage() {
               ].map((s) => (
                 <StaggerRevealItem key={s.label}>
                   <div className="text-center">
-                    <p className="font-heading text-4xl font-normal text-[#0B1F3A] mb-1">{s.value}</p>
+                    <p className="font-heading text-4xl font-normal text-neutral-900 mb-1">{s.value}</p>
                     <p className="text-xs font-semibold uppercase tracking-widest text-[#6B7280]">{s.label}</p>
                   </div>
                 </StaggerRevealItem>
@@ -116,12 +117,12 @@ export default function AboutPage() {
         </section>
 
         {/* ── MISSION ── */}
-        <section className="py-28 bg-[#F5F4F1]">
+        <section className="py-28 bg-[color:var(--marketing-cream)]">
           <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
               <ScrollReveal>
-                <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#722F37] mb-4">Our Mission</p>
-                <h2 className="font-heading text-4xl lg:text-5xl font-normal text-[#0B1F3A] tracking-tight mb-8 text-balance">
+                <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#FF5630] mb-4">Our Mission</p>
+                <h2 className="font-heading text-4xl lg:text-5xl font-normal text-neutral-900 tracking-tight mb-8 text-balance">
                   Eliminating friction in digital services across Ghana.
                 </h2>
                 <p className="text-base text-[#6B7280] leading-relaxed mb-8 font-body">
@@ -130,7 +131,7 @@ export default function AboutPage() {
                 <ul className="space-y-4">
                   {SERVICES_OFFERED.map((item) => (
                     <li key={item} className="flex items-start gap-3 text-sm text-[#374151]">
-                      <CheckCircle2 className="h-4 w-4 text-[#006994] shrink-0 mt-0.5" />
+                      <CheckCircle2 className="h-4 w-4 text-[color:var(--marketing-accent)] shrink-0 mt-0.5" />
                       {item}
                     </li>
                   ))}
@@ -138,38 +139,40 @@ export default function AboutPage() {
               </ScrollReveal>
 
               <ScrollReveal className="relative">
-                <div className="rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl shadow-[#0B1F3A]/12">
+                <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.5 }} className="rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl shadow-neutral-900/10">
                   <Image
-                    src="https://images.pexels.com/photos/5926393/pexels-photo-5926393.jpeg?auto=compress&cs=tinysrgb&w=900"
+                    src="/images/about-team-2.jpg"
                     alt="Team working on fintech platform"
                     fill
-                    className="object-cover"
+                    className="object-cover transition-transform duration-700 hover:scale-105"
                     sizes="(max-width: 1024px) 100vw, 50vw"
                   />
-                </div>
+                </motion.div>
               </ScrollReveal>
             </div>
           </div>
         </section>
 
         {/* ── VALUES ── */}
-        <section className="py-28 bg-white border-y border-[#E2E1DC]">
+        <section className="py-28 bg-white border-y border-neutral-200/90">
           <div className="container mx-auto px-4">
             <ScrollReveal className="text-center mb-16">
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#006994] mb-4">What drives us</p>
-              <h2 className="font-heading text-4xl lg:text-5xl font-normal text-[#0B1F3A] tracking-tight">
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[color:var(--marketing-accent)] mb-4">What drives us</p>
+              <h2 className="font-heading text-4xl lg:text-5xl font-normal text-neutral-900 tracking-tight">
                 Our core values
               </h2>
             </ScrollReveal>
 
             <StaggerReveal className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
               {VALUES.map((v) => (
-                <StaggerRevealItem key={v.title}>
-                  <div className="p-7 rounded-2xl bg-[#F5F4F1] border border-[#E2E1DC] hover:border-[#006994]/25 hover:bg-white transition-all duration-300">
-                    <div className="w-8 h-0.5 bg-[#006994] mb-5" />
-                    <h3 className="font-heading text-xl font-normal text-[#0B1F3A] mb-3">{v.title}</h3>
-                    <p className="text-sm text-[#6B7280] leading-relaxed font-body">{v.body}</p>
-                  </div>
+                <StaggerRevealItem key={v.title} className="h-full">
+                  <motion.div whileHover={{ y: -8 }} transition={{ duration: 0.3 }} className="h-full">
+                    <div className="h-full p-7 rounded-2xl bg-[color:var(--marketing-cream)] border border-neutral-200/90 shadow-sm hover:shadow-xl hover:border-[color:var(--marketing-accent)]/50 hover:bg-white transition-all duration-300">
+                      <div className="w-8 h-0.5 bg-[color:var(--marketing-accent)] mb-5" />
+                      <h3 className="font-heading text-xl font-normal text-neutral-900 mb-3">{v.title}</h3>
+                      <p className="text-sm text-[#6B7280] leading-relaxed font-body">{v.body}</p>
+                    </div>
+                  </motion.div>
                 </StaggerRevealItem>
               ))}
             </StaggerReveal>
@@ -177,24 +180,24 @@ export default function AboutPage() {
         </section>
 
         {/* ── TEAM ── */}
-        <section className="py-28 bg-[#F5F4F1]">
+        <section className="py-28 bg-[color:var(--marketing-cream)]">
           <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
               <ScrollReveal className="relative order-2 lg:order-1">
-                <div className="rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl shadow-[#0B1F3A]/12">
+                <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.5 }} className="rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl shadow-neutral-900/10">
                   <Image
-                    src="https://images.pexels.com/photos/3182812/pexels-photo-3182812.jpeg?auto=compress&cs=tinysrgb&w=900"
+                    src="/josepmonter-dad-7140255.jpg"
                     alt="Team collaboration"
                     fill
-                    className="object-cover"
+                    className="object-cover transition-transform duration-700 hover:scale-105"
                     sizes="(max-width: 1024px) 100vw, 50vw"
                   />
-                </div>
+                </motion.div>
               </ScrollReveal>
 
               <ScrollReveal className="order-1 lg:order-2">
-                <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#722F37] mb-4">Our Team</p>
-                <h2 className="font-heading text-4xl lg:text-5xl font-normal text-[#0B1F3A] tracking-tight mb-8 text-balance">
+                <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#FF5630] mb-4">Our Team</p>
+                <h2 className="font-heading text-4xl lg:text-5xl font-normal text-neutral-900 tracking-tight mb-8 text-balance">
                   Built by Ghanaians, for Ghana.
                 </h2>
                 <p className="text-base text-[#6B7280] leading-relaxed mb-8 font-body">
@@ -207,8 +210,8 @@ export default function AboutPage() {
                     { role: "Operations", count: "3+" },
                     { role: "Support", count: "4+" },
                   ].map((d) => (
-                    <div key={d.role} className="p-5 rounded-xl bg-white border border-[#E2E1DC]">
-                      <p className="font-heading text-3xl font-normal text-[#0B1F3A] mb-1">{d.count}</p>
+                    <div key={d.role} className="p-5 rounded-xl bg-white border border-neutral-200/90">
+                      <p className="font-heading text-3xl font-normal text-neutral-900 mb-1">{d.count}</p>
                       <p className="text-xs font-semibold uppercase tracking-wider text-[#6B7280]">{d.role}</p>
                     </div>
                   ))}
@@ -219,7 +222,7 @@ export default function AboutPage() {
         </section>
 
         {/* ── CTA ── */}
-        <section className="py-28 bg-[#0B1F3A] relative overflow-hidden">
+        <section className="py-28 bg-[color:var(--marketing-hero-dark)] relative overflow-hidden">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:48px_48px]" />
           <div className="relative z-10 container mx-auto px-4 text-center">
             <ScrollReveal>
@@ -231,7 +234,7 @@ export default function AboutPage() {
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button asChild size="lg"
-                  className="h-12 px-8 rounded-xl bg-white text-[#0B1F3A] hover:bg-[#EFF6FA] font-semibold transition-all duration-200 active:scale-[0.98]">
+                  className="h-12 px-8 rounded-xl bg-white text-neutral-900 hover:bg-[color:var(--marketing-cream-alt)] font-semibold transition-all duration-200 active:scale-[0.98]">
                   <Link href="/register">Create free account <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
                 <Button asChild size="lg" variant="ghost"

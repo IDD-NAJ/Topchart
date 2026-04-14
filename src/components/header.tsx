@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
@@ -8,443 +8,494 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import {
   Menu,
-  CreditCard,
+  ArrowRight,
   User,
-  Home,
-  Building2,
-  Newspaper,
-  Briefcase,
-  Phone,
-  PhoneCall,
-  Wifi,
-  History,
-  Store,
-  Shield,
-  Trophy,
-  Megaphone,
-  BarChart3,
   ChevronDown,
-  Zap,
-  Signal,
-  Grid3X3,
-  Info,
-  LifeBuoy,
-  MessageSquare,
-  FileText,
-  HelpCircle,
-  type LucideIcon
+  LayoutDashboard,
+  Phone,
+  Wifi,
+  PhoneCall,
+  GraduationCap,
+  Gift,
+  ShieldCheck,
+  Sparkles,
+  type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-interface NavItem {
-  href: string
-  label: string
-  icon: LucideIcon
-  description?: string
-  showOn: ('mobile' | 'desktop')[]
-  auth?: 'authenticated' | 'unauthenticated' | 'all'
-}
-
-const navConfig: NavItem[] = [
-  { href: "/", label: "Home", icon: Home, showOn: ['mobile', 'desktop'], auth: 'all' },
-  { href: "/dashboard", label: "Services", icon: Grid3X3, showOn: ['mobile', 'desktop'], auth: 'all' },
-  { href: "/about", label: "Company", icon: Building2, showOn: ['mobile', 'desktop'], auth: 'all' },
-  { href: "/faq", label: "Support", icon: LifeBuoy, showOn: ['mobile', 'desktop'], auth: 'all' },
-]
-
-const servicesConfig: NavItem[] = [
-  { href: "/dashboard/airtime", label: "Airtime", icon: Phone, description: "Instant top-up for all networks", showOn: ['mobile'], auth: 'all' },
-  { href: "/dashboard/data", label: "Data Bundles", icon: Wifi, description: "Affordable data packages", showOn: ['mobile'], auth: 'all' },
-  { href: "/dashboard/verification", label: "Verification Numbers", icon: PhoneCall, description: "Temporary phone numbers for OTPs", showOn: ['mobile'], auth: 'all' },
-  { href: "/dashboard/result-checkers", label: "Result Checkers", icon: CreditCard, description: "WAEC, BECE, NOVDEC results", showOn: ['mobile'], auth: 'all' },
-  { href: "/dashboard/reseller", label: "Reseller Program", icon: Store, description: "Earn commissions as a reseller", showOn: ['mobile'], auth: 'all' },
-  { href: "/#networks", label: "Networks", icon: Signal, description: "MTN, Telecel, AirtelTigo", showOn: ['mobile'], auth: 'all' },
-]
-
-const companyConfig: NavItem[] = [
-  { href: "/about", label: "About Us", icon: Info, description: "Our story and mission", showOn: ['mobile'], auth: 'all' },
-  { href: "/blog", label: "Blog", icon: Newspaper, description: "News and updates", showOn: ['mobile'], auth: 'all' },
-  { href: "/careers", label: "Careers", icon: Briefcase, description: "Join our team", showOn: ['mobile'], auth: 'all' },
-]
-
-const supportConfig: NavItem[] = [
-  { href: "/faq", label: "FAQ", icon: HelpCircle, description: "Common questions", showOn: ['mobile'], auth: 'all' },
-  { href: "/contact", label: "Contact", icon: MessageSquare, description: "Get in touch", showOn: ['mobile'], auth: 'all' },
-  { href: "/terms", label: "Terms", icon: FileText, description: "Terms of service", showOn: ['mobile'], auth: 'all' },
-]
-
-const dashboardConfig: NavItem[] = [
-  { href: "/dashboard/history", label: "History", icon: History, showOn: ['mobile', 'desktop'], auth: 'authenticated' },
-  { href: "/dashboard/reseller", label: "Reseller", icon: Store, showOn: ['mobile', 'desktop'], auth: 'authenticated' },
-  { href: "/dashboard/reseller/security", label: "Security", icon: Shield, showOn: ['mobile', 'desktop'], auth: 'authenticated' },
-  { href: "/dashboard/reseller/tiers", label: "Tiers", icon: Trophy, showOn: ['mobile', 'desktop'], auth: 'authenticated' },
-  { href: "/dashboard/reseller/marketing", label: "Marketing", icon: Megaphone, showOn: ['mobile', 'desktop'], auth: 'authenticated' },
-  { href: "/dashboard/reseller/analytics", label: "Analytics", icon: BarChart3, showOn: ['mobile', 'desktop'], auth: 'authenticated' },
-]
-
-function filterNavItems(items: NavItem[], device: 'mobile' | 'desktop', isAuthenticated: boolean): NavItem[] {
-  return items.filter(item => {
-    const deviceMatch = item.showOn.includes(device)
-    const authMatch = item.auth === 'all' ||
-      (item.auth === 'authenticated' && isAuthenticated) ||
-      (item.auth === 'unauthenticated' && !isAuthenticated)
-    return deviceMatch && authMatch
-  })
-}
-
-function NavLink({ href, children, onClick }: { href: string; children: React.ReactNode; onClick?: () => void }) {
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className="relative group px-3 py-2 text-sm font-semibold text-slate-800 hover:text-[#006994] transition-colors duration-200"
-    >
-      {children}
-      <span className="absolute bottom-0.5 left-3 right-3 h-[2px] bg-[#006994] origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-200 ease-out rounded-full" />
-    </Link>
-  )
-}
-
-const dropdownVariants = {
-  hidden: { opacity: 0, y: -8, scale: 0.97 },
-  visible: {
-    opacity: 1, y: 0, scale: 1,
-    transition: { type: "spring" as const, stiffness: 420, damping: 26 },
+const serviceLinks: { href: string; label: string; description: string; icon: LucideIcon }[] = [
+  {
+    href: "/dashboard",
+    label: "Overview",
+    description: "Balances, referrals, and activity",
+    icon: LayoutDashboard,
   },
-  exit: { opacity: 0, y: -6, scale: 0.97, transition: { duration: 0.13 } },
-}
+  {
+    href: "/dashboard/airtime",
+    label: "Airtime",
+    description: "Instant top-ups for all networks",
+    icon: Phone,
+  },
+  {
+    href: "/dashboard/data",
+    label: "Data bundles",
+    description: "Plans for every need",
+    icon: Wifi,
+  },
+  {
+    href: "/dashboard/verification",
+    label: "Verification numbers",
+    description: "Temporary numbers for SMS codes",
+    icon: PhoneCall,
+  },
+  {
+    href: "/dashboard/result-checkers",
+    label: "Result checkers",
+    description: "Exam results and PINs",
+    icon: GraduationCap,
+  },
+  {
+    href: "/dashboard/giftcards",
+    label: "Gift cards",
+    description: "Digital brands and denominations",
+    icon: Gift,
+  },
+]
+
+const topLinks = [
+  { href: "/", label: "Home" },
+  { href: "/about", label: "About us" },
+  { href: "/faq", label: "Support" },
+] as const
 
 export function Header() {
   const { user } = useAuth()
-  const isAuthenticated = !!user
   const [isOpen, setIsOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
   const [servicesOpen, setServicesOpen] = useState(false)
-  const [servicesExpanded, setServicesExpanded] = useState(false)
-  const servicesDropdownRef = useRef<HTMLDivElement>(null)
+  const [scrolled, setScrolled] = useState(false)
+  const [logoHovered, setLogoHovered] = useState(false)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (servicesDropdownRef.current && !servicesDropdownRef.current.contains(e.target as Node)) {
-        setServicesOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    const onScroll = () => setScrolled(window.scrollY > 10)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
   return (
     <motion.header
-      initial={{ y: -72, opacity: 0 }}
+      initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ type: "spring", stiffness: 280, damping: 26 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 bg-white transition-all duration-300",
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-[#1C252C]",
         scrolled
-          ? "border-b border-slate-200 shadow-[0_1px_16px_0_rgba(0,0,0,0.08)] py-2"
-          : "border-b border-slate-100 py-3"
+          ? "border-b border-white/10 shadow-lg backdrop-blur-xl bg-[#1C252C]/95"
+          : "border-b border-white/5"
       )}
     >
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{
+            opacity: scrolled ? 0.3 : 0,
+            scale: scrolled ? 1 : 1.2,
+          }}
+          transition={{ duration: 0.5 }}
+          className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10"
+        />
+        <motion.div
+          animate={{
+            x: [0, 100, 0],
+            opacity: [0, 0.5, 0],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+          className="absolute -left-20 top-0 h-full w-64 bg-gradient-to-r from-primary/20 to-transparent blur-3xl"
+        />
+        <motion.div
+          animate={{
+            x: [0, -100, 0],
+            opacity: [0, 0.5, 0],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "linear",
+            delay: 4,
+          }}
+          className="absolute -right-20 top-0 h-full w-64 bg-gradient-to-l from-primary/20 to-transparent blur-3xl"
+        />
+      </div>
 
-          {/* Logo + Desktop Nav */}
-          <div className="flex items-center gap-6 lg:gap-8">
-            <motion.div whileHover={{ scale: 1.03 }} transition={{ type: "spring", stiffness: 400, damping: 22 }}>
-              <Link href="/" className="flex items-center gap-2">
-                <span className="font-bold text-xl lg:text-[1.35rem] tracking-tight text-slate-900">
-                  Topchart
-                </span>
-                <span className="text-[9px] font-extrabold uppercase tracking-widest text-white bg-[#006994] px-2 py-0.5 rounded-full">
-                  GH
-                </span>
-              </Link>
-            </motion.div>
+      <div className="relative mx-auto flex h-[72px] max-w-[1200px] items-center justify-between gap-4 px-4 sm:px-6">
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          onHoverStart={() => setLogoHovered(true)}
+          onHoverEnd={() => setLogoHovered(false)}
+        >
+          <Link href="/" className="shrink-0 flex items-center gap-2 group">
+            <motion.span
+              className="font-sans text-xl font-bold tracking-tight text-white relative"
+              animate={{
+                textShadow: logoHovered ? "0 0 20px rgba(var(--primary-rgb), 0.5)" : "none",
+              }}
+              transition={{ duration: 0.3 }}
+            >
+              Topchart
+              <motion.span
+                className="absolute -top-1 -right-2"
+                animate={{
+                  rotate: logoHovered ? 360 : 0,
+                  scale: logoHovered ? 1 : 0,
+                }}
+                transition={{ duration: 0.5 }}
+              >
+                <Sparkles className="h-4 w-4 text-primary" />
+              </motion.span>
+            </motion.span>
+          </Link>
+        </motion.div>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden xl:flex items-center gap-0.5">
-              <NavLink href="/">Home</NavLink>
-
-              {/* Services Dropdown */}
-              <div ref={servicesDropdownRef} className="relative z-50">
-                <button
-                  onClick={() => setServicesOpen(!servicesOpen)}
-                  className={cn(
-                    "relative group flex items-center gap-1.5 px-3 py-2 text-sm font-semibold transition-colors duration-200",
-                    servicesOpen ? "text-[#006994]" : "text-slate-800 hover:text-[#006994]"
-                  )}
-                >
-                  Services
-                  <motion.span
-                    animate={{ rotate: servicesOpen ? 180 : 0 }}
-                    transition={{ duration: 0.2, ease: "easeInOut" }}
-                  >
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  </motion.span>
-                  <span className="absolute bottom-0.5 left-3 right-3 h-[2px] bg-[#006994] origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-200 ease-out rounded-full" />
-                </button>
-
-                <AnimatePresence>
-                  {servicesOpen && (
-                    <motion.div
-                      variants={dropdownVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      className="absolute top-full left-0 mt-2.5 w-[300px] bg-white rounded-xl shadow-xl shadow-slate-200/70 border border-slate-200 p-2 z-50"
-                    >
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5 px-3 pt-1">Our Services</p>
-                      <div className="grid gap-0.5">
-                        {servicesConfig.slice(0, 5).map((item) => {
-                          const Icon = item.icon
-                          return (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              onClick={() => setServicesOpen(false)}
-                              className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 transition-colors duration-150 group"
-                            >
-                              <div className="p-1.5 rounded-md bg-[#006994]/8 shrink-0">
-                                <Icon className="h-4 w-4 text-[#006994]" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-semibold text-slate-800 group-hover:text-[#006994] transition-colors duration-150">{item.label}</p>
-                                <p className="text-xs text-slate-400 leading-tight">{item.description}</p>
-                              </div>
-                            </Link>
-                          )
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              <NavLink href="/about">Company</NavLink>
-              <NavLink href="/faq">Support</NavLink>
-            </nav>
-          </div>
-
-          {/* Right Side Actions */}
-          <div className="flex items-center gap-2 lg:gap-3">
-            <div className="hidden lg:flex items-center gap-2">
-              {user ? (
-                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}>
-                  <Button
-                    variant="ghost"
-                    asChild
-                    className="h-9 rounded-lg px-4 font-semibold text-sm bg-[#006994] text-white hover:bg-[#00567A] shadow-sm transition-colors duration-200"
-                  >
-                    <Link href="/dashboard" className="flex items-center gap-1.5">
-                      <User className="h-4 w-4" />
-                      <span className="hidden xl:inline">Dashboard</span>
-                    </Link>
-                  </Button>
-                </motion.div>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="relative group hidden md:flex text-sm font-semibold text-slate-700 hover:text-[#006994] transition-colors duration-200 px-3 py-2"
-                  >
-                    Sign in
-                    <span className="absolute bottom-0.5 left-3 right-3 h-[2px] bg-[#006994] origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-200 ease-out rounded-full" />
-                  </Link>
-                  <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}>
-                    <Button
-                      asChild
-                      className="h-9 px-5 rounded-lg bg-[#006994] text-white hover:bg-[#00567A] font-semibold text-sm transition-colors duration-200 shadow-sm"
-                    >
-                      <Link href="/register" className="flex items-center gap-1.5">
-                        <Zap className="h-4 w-4 hidden sm:block" />
-                        <span className="hidden sm:inline">Get started</span>
-                        <span className="sm:hidden">Start</span>
-                      </Link>
-                    </Button>
-                  </motion.div>
-                </>
-              )}
-            </div>
-
-            {/* Mobile Menu Trigger */}
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger asChild>
-                <motion.button
-                  whileTap={{ scale: 0.93 }}
-                  className="h-10 w-10 rounded-xl flex items-center justify-center hover:bg-slate-100 text-slate-700 hover:text-[#006994] transition-colors duration-200 xl:hidden"
-                >
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">Toggle menu</span>
-                </motion.button>
-              </SheetTrigger>
-
-              <SheetContent side="right" className="w-full sm:w-[400px] p-0 flex flex-col bg-white">
-                <SheetTitle className="sr-only">Menu</SheetTitle>
-
-                {/* Drawer Header */}
-                <div className="px-6 py-5 flex items-center border-b border-slate-200">
-                  <span className="font-bold text-xl tracking-tight text-slate-900">Topchart</span>
-                  <span className="ml-2 text-[9px] font-extrabold uppercase tracking-widest text-white bg-[#006994] px-2 py-0.5 rounded-full">GH</span>
-                </div>
-
-                <div className="flex-1 py-5 overflow-y-auto">
-                  {/* Main Nav */}
-                  <nav className="grid gap-0.5 px-4 mb-6">
-                    {filterNavItems(navConfig, 'mobile', isAuthenticated).map((link, index) => (
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 lg:flex">
+          <motion.div whileHover={{ y: -2 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
+            <Link
+              href="/"
+              className="relative text-sm font-medium text-white/70 transition-colors hover:text-white group"
+            >
+              <span className="relative z-10">Home</span>
+              <motion.span
+                className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary origin-left"
+                initial={{ scaleX: 0 }}
+                whileHover={{ scaleX: 1 }}
+                transition={{ duration: 0.3 }}
+              />
+              <motion.span
+                className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                initial={{ scale: 0.8, opacity: 0 }}
+                whileHover={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.2 }}
+                style={{ borderRadius: '4px' }}
+              />
+            </Link>
+          </motion.div>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="flex items-center gap-1.5 text-sm font-medium text-white/70 outline-none transition-colors hover:text-white data-[state=open]:text-white group"
+            >
+              <span className="relative z-10">Services</span>
+              <motion.div
+                animate={{ rotate: servicesOpen ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronDown className="h-3.5 w-3.5 opacity-70 group-hover:opacity-100" aria-hidden />
+              </motion.div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="center"
+              className="min-w-[320px] rounded border border-[#3A4B59] bg-[#27343E] p-3 text-white shadow-xl"
+            >
+              <div className="grid gap-1">
+                {serviceLinks.map((s, index) => {
+                  const Icon = s.icon
+                  return (
+                    <DropdownMenuItem key={s.href} asChild>
                       <motion.div
-                        key={link.label}
-                        custom={index}
-                        initial="hidden"
-                        animate="visible"
-                        variants={{
-                          hidden: { opacity: 0, x: 20 },
-                          visible: {
-                            opacity: 1, x: 0,
-                            transition: { delay: index * 0.05, type: "spring", stiffness: 380, damping: 30 }
-                          }
-                        }}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.2, delay: index * 0.05 }}
                       >
                         <Link
-                          href={link.href}
-                          onClick={() => setIsOpen(false)}
-                          className="flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-slate-50 transition-colors duration-200 text-base font-bold text-slate-800 hover:text-[#006994]"
+                          href={s.href}
+                          className="flex cursor-pointer items-start gap-3 rounded-lg px-3 py-2.5 outline-none transition-colors hover:bg-white/5 focus:bg-white/5 focus:text-white group relative overflow-hidden"
                         >
-                          <div className="p-2 rounded-lg bg-slate-100">
-                            <link.icon className="h-4 w-4 text-slate-600" />
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
+                          />
+                          <motion.div
+                            className="flex mt-0.5 h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white/5 text-white/70 group-hover:bg-primary/20 group-hover:text-primary transition-colors relative z-10"
+                            whileHover={{ scale: 1.1, rotate: 5 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                          >
+                            <Icon className="h-4 w-4" aria-hidden />
+                          </motion.div>
+                          <div className="flex flex-col gap-0.5 relative z-10">
+                            <span className="text-sm font-medium text-white/95 group-hover:text-white">
+                              {s.label}
+                            </span>
+                            <span className="text-xs text-white/50 leading-snug">
+                              {s.description}
+                            </span>
                           </div>
-                          {link.label}
                         </Link>
                       </motion.div>
-                    ))}
-                  </nav>
+                    </DropdownMenuItem>
+                  )
+                })}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {topLinks
+            .filter((l) => l.href !== "/")
+            .map((l) => (
+              <motion.div key={l.href} whileHover={{ y: -2 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
+                <Link
+                  href={l.href}
+                  className="relative text-sm font-medium text-white/70 transition-colors hover:text-white group"
+                >
+                  <span className="relative z-10">{l.label}</span>
+                  <motion.span
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary origin-left"
+                    initial={{ scaleX: 0 }}
+                    whileHover={{ scaleX: 1 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                  <motion.span
+                    className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    whileHover={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ borderRadius: '4px' }}
+                  />
+                </Link>
+              </motion.div>
+            ))}
+        </nav>
 
-                  {/* Services - Collapsible */}
-                  <div className="px-4 mb-6">
-                    <button
-                      onClick={() => setServicesExpanded(!servicesExpanded)}
-                      className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors duration-200"
+        <div className="flex shrink-0 items-center gap-4">
+          {user ? (
+             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
+               <Button
+                 asChild
+                 variant="ghost"
+                 className="h-10 rounded bg-white/5 border border-white/10 px-4 text-white hover:bg-white/10 hover:border-primary/30 sm:px-5 transition-all font-sans font-semibold tracking-wide uppercase text-xs group relative overflow-hidden"
+               >
+                 <Link href="/dashboard" className="flex items-center gap-2 relative z-10">
+                   <motion.div
+                     animate={{ rotate: [0, 10, -10, 0] }}
+                     transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                   >
+                     <User className="h-4 w-4" />
+                   </motion.div>
+                   <span className="hidden sm:inline">DASHBOARD</span>
+                 </Link>
+               </Button>
+             </motion.div>
+          ) : (
+            <div className="hidden md:flex items-center gap-4">
+              <motion.div whileHover={{ y: -2 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
+                <Link
+                  href="/login"
+                  className="relative text-sm font-semibold text-white/70 transition-colors hover:text-white uppercase tracking-wide group"
+                >
+                  <span className="relative z-10">Sign in</span>
+                  <motion.span
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary origin-left"
+                    initial={{ scaleX: 0 }}
+                    whileHover={{ scaleX: 1 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </Link>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
+                <Button asChild className="h-10 rounded bg-primary hover:bg-primary-dark text-primary-foreground font-bold px-6 border-none transition-all shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] hover:shadow-[0_0_30px_rgba(var(--primary-rgb),0.5)] uppercase tracking-widest text-xs relative overflow-hidden group">
+                  <Link href="/register" className="flex items-center gap-2 relative z-10">
+                    <motion.span
+                      className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/20 to-primary/0"
+                      animate={{ x: ['-100%', '100%'] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                    />
+                    <span className="relative z-10">Get Started</span>
+                    <motion.span
+                      animate={{ x: [0, 4, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}
+                      className="relative z-10"
                     >
-                      <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Services</span>
-                      <motion.span
-                        animate={{ rotate: servicesExpanded ? 180 : 0 }}
+                      <ArrowRight className="h-4 w-4" />
+                    </motion.span>
+                  </Link>
+                </Button>
+              </motion.div>
+            </div>
+          )}
+
+          <motion.div whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
+            <Sheet
+              open={isOpen}
+              onOpenChange={(open) => {
+                setIsOpen(open)
+                if (!open) setServicesOpen(false)
+              }}
+            >
+              <SheetTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-white/70 hover:bg-white/10 lg:hidden transition-colors"
+                  aria-label="Toggle menu"
+                >
+                  <Menu className="h-5 w-5" />
+                </button>
+              </SheetTrigger>
+              <SheetContent
+                side="right"
+                className="flex w-full sm:max-w-sm flex-col border-l border-[#3A4B59] bg-[#1C252C] p-0 text-white"
+              >
+                <SheetTitle className="sr-only">Navigation</SheetTitle>
+                <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-6 pt-12">
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Link
+                      href="/"
+                      onClick={() => setIsOpen(false)}
+                      className="rounded-lg px-4 py-3 text-base font-medium text-white/80 hover:bg-white/5 transition-colors"
+                    >
+                      Home
+                    </Link>
+                  </motion.div>
+                  <div className="rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setServicesOpen((o) => !o)}
+                      className="flex w-full items-center justify-between px-4 py-3 text-base font-medium text-white/80 hover:bg-white/5 transition-colors"
+                      aria-expanded={servicesOpen}
+                    >
+                      Services
+                      <motion.div
+                        animate={{ rotate: servicesOpen ? 180 : 0 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <ChevronDown className="h-4 w-4 text-slate-400" />
-                      </motion.span>
+                        <ChevronDown
+                          className={cn("h-4 w-4 shrink-0 transition-transform opacity-70", servicesOpen && "rotate-180")}
+                          aria-hidden
+                        />
+                      </motion.div>
                     </button>
-
                     <AnimatePresence>
-                      {servicesExpanded && (
-                        <motion.nav
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.22, ease: "easeInOut" }}
-                          className="grid gap-0.5 mt-1 overflow-hidden"
+                      {servicesOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
                         >
-                          {filterNavItems(servicesConfig, 'mobile', isAuthenticated).map((service) => {
-                            const Icon = service.icon
-                            return (
-                              <Link
-                                key={service.href}
-                                href={service.href}
-                                onClick={() => setIsOpen(false)}
-                                className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 transition-colors duration-150 text-sm font-semibold text-slate-700 hover:text-[#006994]"
-                              >
-                                <div className="p-1.5 rounded-md bg-[#006994]/8 shrink-0">
-                                  <Icon className="h-4 w-4 text-[#006994]" />
-                                </div>
-                                <div>
-                                  <p className="font-semibold">{service.label}</p>
-                                  <p className="text-xs text-slate-400 font-normal">{service.description}</p>
-                                </div>
-                              </Link>
-                            )
-                          })}
-                        </motion.nav>
+                          <div className="border-l border-white/10 ml-6 pl-2 py-2 mt-1 space-y-1">
+                            {serviceLinks.map((s, index) => {
+                              const Icon = s.icon
+                              return (
+                                <motion.div
+                                  key={s.href}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ duration: 0.2, delay: index * 0.05 }}
+                                >
+                                  <Link
+                                    href={s.href}
+                                    onClick={() => {
+                                      setIsOpen(false)
+                                      setServicesOpen(false)
+                                    }}
+                                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-white/70 hover:bg-white/5 hover:text-white transition-colors"
+                                  >
+                                    <Icon className="h-4 w-4 shrink-0" aria-hidden />
+                                    <span className="text-sm font-medium">{s.label}</span>
+                                  </Link>
+                                </motion.div>
+                              )
+                            })}
+                          </div>
+                        </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
-
-                  {/* Dashboard Quick Links */}
-                  {user && (
-                    <div className="px-4">
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2 px-4">Dashboard</p>
-                      <nav className="grid grid-cols-2 gap-1.5">
-                        {filterNavItems(dashboardConfig, 'mobile', isAuthenticated).map((item, index) => {
-                          const Icon = item.icon
-                          return (
-                            <motion.div
-                              key={item.href}
-                              initial={{ opacity: 0, scale: 0.95 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ delay: 0.3 + index * 0.04, type: "spring", stiffness: 380, damping: 28 }}
-                            >
-                              <Link
-                                href={item.href}
-                                onClick={() => setIsOpen(false)}
-                                className="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors duration-150 text-sm font-semibold text-slate-700 hover:text-[#006994]"
-                              >
-                                <Icon className="h-4 w-4 text-slate-400" />
-                                {item.label}
-                              </Link>
-                            </motion.div>
-                          )
-                        })}
-                      </nav>
-                    </div>
+                  {topLinks
+                    .filter((l) => l.href !== "/")
+                    .map((l, index) => (
+                      <motion.div
+                        key={l.href}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
+                      >
+                        <Link
+                          href={l.href}
+                          onClick={() => setIsOpen(false)}
+                          className="rounded-lg px-4 py-3 text-base font-medium text-white/80 hover:bg-white/5 transition-colors"
+                        >
+                          {l.label}
+                        </Link>
+                      </motion.div>
+                    ))}
+                  {!user && (
+                     <motion.div
+                       initial={{ opacity: 0, x: 20 }}
+                       animate={{ opacity: 1, x: 0 }}
+                       transition={{ duration: 0.3, delay: 0.3 }}
+                     >
+                       <Link
+                         href="/login"
+                         onClick={() => setIsOpen(false)}
+                         className="rounded-lg px-4 py-3 text-base font-medium text-white/80 hover:bg-white/5 transition-colors md:hidden"
+                       >
+                         Sign in
+                       </Link>
+                     </motion.div>
                   )}
                 </div>
-
-                {/* Drawer Footer CTAs */}
-                <div className="p-5 border-t border-slate-100">
+                <div className="border-t border-[#3A4B59] p-6 bg-[#131A1F]">
                   {user ? (
-                    <motion.div whileTap={{ scale: 0.98 }}>
-                      <Button
-                        asChild
-                        onClick={() => setIsOpen(false)}
-                        className="w-full h-12 rounded-xl bg-[#006994] text-white font-bold hover:bg-[#00567A] transition-colors duration-200 shadow-sm"
-                      >
-                        <Link href="/dashboard" className="flex items-center justify-center gap-2">
-                          <User className="h-5 w-5" />
-                          Go to Dashboard
-                        </Link>
-                      </Button>
-                    </motion.div>
+                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
+                       <Button
+                         asChild
+                         className="w-full h-11 rounded bg-primary hover:bg-primary-dark text-primary-foreground font-bold uppercase tracking-widest text-xs shadow-none"
+                       >
+                         <Link href="/dashboard" onClick={() => setIsOpen(false)}>
+                           Go to Dashboard
+                         </Link>
+                       </Button>
+                     </motion.div>
                   ) : (
-                    <div className="grid gap-2.5">
-                      <Button
-                        asChild
-                        onClick={() => setIsOpen(false)}
-                        variant="outline"
-                        className="w-full h-12 rounded-xl border-slate-200 font-bold text-slate-800 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
-                      >
-                        <Link href="/login">Sign in</Link>
-                      </Button>
-                      <motion.div whileTap={{ scale: 0.98 }}>
-                        <Button
-                          asChild
-                          onClick={() => setIsOpen(false)}
-                          className="w-full h-12 rounded-xl bg-[#006994] text-white font-bold hover:bg-[#00567A] transition-colors duration-200 shadow-sm"
-                        >
-                          <Link href="/register">Create account</Link>
-                        </Button>
-                      </motion.div>
-                    </div>
+                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
+                       <Button
+                         asChild
+                         className="w-full h-11 rounded bg-primary hover:bg-primary-dark text-primary-foreground font-bold uppercase tracking-widest text-xs shadow-none"
+                       >
+                         <Link href="/register" onClick={() => setIsOpen(false)}>
+                           Get Started
+                         </Link>
+                       </Button>
+                     </motion.div>
                   )}
+
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                    className="mt-6 flex items-center justify-center gap-2 text-xs text-white/40"
+                  >
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+                    </motion.div>
+                    <span>Secure & Encrypted Platform</span>
+                  </motion.div>
                 </div>
               </SheetContent>
             </Sheet>
-          </div>
+          </motion.div>
         </div>
       </div>
     </motion.header>
   )
 }
-

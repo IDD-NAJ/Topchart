@@ -4,7 +4,6 @@ import Link from "next/link"
 import Image from "next/image"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { Button } from "@/components/ui/button"
 import {
   Accordion,
   AccordionContent,
@@ -13,16 +12,25 @@ import {
 } from "@/components/ui/accordion"
 import {
   ArrowRight,
-  CheckCircle2,
   Phone,
   Wifi,
   PhoneCall,
   Store,
   GraduationCap,
-  ChevronRight,
+  Gift,
+  Play,
+  Fingerprint,
+  CreditCard,
+  Ticket,
+  ChevronDown,
+  LayoutDashboard,
+  Server,
+  Activity,
+  Terminal,
 } from "lucide-react"
 import { motion } from "framer-motion"
 import { ScrollReveal, StaggerReveal, StaggerRevealItem, PageTransition } from "@/components/animations"
+import { TestimonialCarousel, type Testimonial } from "@/components/marketing/testimonial-carousel"
 
 const SERVICES = [
   {
@@ -42,361 +50,697 @@ const SERVICES = [
   {
     icon: PhoneCall,
     title: "Verification Numbers",
-    description: "Temporary virtual phone numbers for OTP verification on any platform.",
+    description: "Temporary virtual numbers for OTP verification on any platform.",
     href: "/dashboard/verification",
     label: "Get a number",
   },
   {
     icon: GraduationCap,
     title: "Result Checkers",
-    description: "Access WAEC, BECE, and NOVDEC results instantly with your index number.",
+    description: "WAEC, BECE, and NOVDEC results with your index number.",
     href: "/dashboard/result-checkers",
     label: "Check results",
   },
   {
     icon: Store,
     title: "Reseller Program",
-    description: "Earn recurring commissions reselling our services under your own brand.",
+    description: "Earn commissions reselling our services under your own brand.",
     href: "/dashboard/reseller",
     label: "Become a reseller",
   },
-]
-
-const STATS = [
-  { value: "2M+", label: "Transactions Processed" },
-  { value: "500K+", label: "Registered Users" },
-  { value: "99.9%", label: "Platform Uptime" },
-  { value: "5", label: "Core Services" },
-]
-
-const STEPS = [
-  { step: "01", title: "Create Account", body: "Sign up free in under 60 seconds with your email and phone number." },
-  { step: "02", title: "Fund Your Wallet", body: "Add funds via Mobile Money, Visa, or Mastercard securely through Paystack." },
-  { step: "03", title: "Use Any Service", body: "Buy airtime, data, verification numbers, result checkers, or join the reseller programme." },
+  {
+    icon: Gift,
+    title: "Gift Cards",
+    description: "Digital gift cards from global brands, delivered to your wallet or inbox.",
+    href: "/dashboard/giftcards",
+    label: "Shop gift cards",
+  },
 ]
 
 const FAQS = [
   {
     q: "How fast is airtime and data delivery?",
-    a: "Most orders complete within 5 seconds. In rare cases of network congestion it may take up to 2 minutes.",
+    a: "Most orders complete within seconds. Network congestion may occasionally add a short delay.",
   },
   {
     q: "What payment methods are supported?",
-    a: "MTN MoMo, Telecel Cash, AirtelTigo Money, Visa, Mastercard, and wallet balance.",
+    a: "MTN MoMo, Telecel Cash, AirtelTigo Money, Visa, Mastercard, and wallet balance via Paystack.",
   },
   {
     q: "How do verification numbers work?",
-    a: "You rent a temporary Ghanaian or international number. Any OTP SMS sent to it appears in your dashboard in real time.",
-  },
-  {
-    q: "Can I resell Topchart services?",
-    a: "Yes. Our Reseller Programme gives you a branded storefront, commission on every transaction, and dedicated support.",
-  },
-  {
-    q: "What happens if a transaction fails?",
-    a: "Your wallet is refunded automatically within seconds. You can also raise a dispute from the dashboard.",
-  },
-  {
-    q: "Which exam results can I check?",
-    a: "WAEC WASSCE, BECE, NOVDEC, and selected university admission results.",
+    a: "You rent a temporary number; OTP SMS appears in your dashboard in real time.",
   },
 ]
 
+const TESTIMONIALS: Testimonial[] = [
+  {
+    brand: "North Ridge Fintech",
+    quote:
+      "Topchart cut our recharge turnaround to seconds. Wallet funding and reporting are exactly what we needed for ops.",
+    name: "Kwame A.",
+    role: "Head of Operations",
+  },
+  {
+    brand: "Campus Hub GH",
+    quote:
+      "We sell data and airtime to students daily. Reliability and the reseller tools have been excellent.",
+    name: "Ama O.",
+    role: "Product Lead",
+  },
+  {
+    brand: "VerifyPro Labs",
+    quote:
+      "Verification numbers for QA saved us from juggling personal SIMs. Support is responsive.",
+    name: "Kofi M.",
+    role: "Engineering Manager",
+  },
+  {
+    brand: "Retail Collective",
+    quote:
+      "Gift cards and airtime in one dashboard simplified payouts for our field teams.",
+    name: "Esi T.",
+    role: "Finance Director",
+  },
+]
+
+function TopographicBg() {
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 opacity-[0.14]"
+      style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-width='0.6' d='M40 200 Q100 80 200 200 T360 200'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-width='0.5' d='M0 120 Q140 40 280 140 T400 100'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-width='0.5' d='M20 320 Q180 240 340 300'/%3E%3C/svg%3E")`,
+        backgroundSize: "420px 420px",
+      }}
+      aria-hidden
+    />
+  )
+}
+
+function ConnectionsGrid() {
+  return (
+    <div className="absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
+      <svg
+        className="absolute left-[50%] top-0 h-[48rem] max-w-none -translate-x-[50%] stroke-white/10 [mask-image:radial-gradient(64rem_34rem_at_center,white,transparent)]"
+        aria-hidden="true"
+        width="100%"
+        height="100%"
+      >
+        <defs>
+          <pattern
+            id="e813992c-7d03-4cc4-a2bd-151760b470a0"
+            width="100"
+            height="100"
+            x="50%"
+            y="-1"
+            patternUnits="userSpaceOnUse"
+          >
+            <path d="M100 200V.5M.5 .5H200" fill="none" />
+          </pattern>
+        </defs>
+        <svg x="50%" y="-1" className="overflow-visible fill-[#0a1128]/50">
+          <path
+            d="M-100.5 0h201v201h-201Z M699.5 0h201v201h-201Z M499.5 400h201v201h-201Z M-300.5 600h201v201h-201Z"
+            strokeWidth="0"
+          />
+        </svg>
+        <rect
+          width="100%"
+          height="100%"
+          strokeWidth="0"
+          fill="url(#e813992c-7d03-4cc4-a2bd-151760b470a0)"
+        />
+        <g strokeWidth="2" stroke="url(#gradient-pulse)" className="opacity-40">
+          <path d="M-100 100 L100 100 L100 300 L300 300" fill="none" strokeDasharray="4 4">
+            <animate attributeName="stroke-dashoffset" values="8;0" dur="1s" repeatCount="indefinite" />
+          </path>
+          <path d="M500 100 L300 100 L300 500 L100 500" fill="none" strokeDasharray="4 4" className="opacity-50">
+            <animate attributeName="stroke-dashoffset" values="0;8" dur="1.5s" repeatCount="indefinite" />
+          </path>
+        </g>
+        <defs>
+          <linearGradient id="gradient-pulse" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="var(--primary)" stopOpacity="0" />
+            <stop offset="50%" stopColor="var(--primary)" stopOpacity="1" />
+            <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      {/* Central glowing core */}
+      <div
+        className="absolute left-[50%] top-[40%] -translate-x-[50%] -translate-y-[50%] h-[600px] w-[600px] rounded-full opacity-30 blur-[120px] mix-blend-screen pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(74, 154, 200, 1) 0%, transparent 60%)' }}
+      />
+    </div>
+  )
+}
+
+function FloatingCard({ className, delay, children }: { className?: string; delay?: number; children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20, rotate: -5 }}
+      animate={{ 
+        opacity: [0.3, 0.5, 0.3],
+        y: [0, -20, 0],
+        rotate: [-5, 5, -5]
+      }}
+      transition={{ 
+        duration: 6, 
+        repeat: Infinity, 
+        ease: "easeInOut",
+        delay: delay || 0 
+      }}
+      className={`absolute rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm pointer-events-none ${className || ""}`}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+function FloatingCards() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+      <FloatingCard delay={0} className="left-[5%] top-[15%] w-32 h-24 hidden lg:block">
+        <div className="p-3 space-y-2">
+          <div className="h-2 w-16 rounded bg-white/20" />
+          <div className="h-2 w-12 rounded bg-white/15" />
+        </div>
+      </FloatingCard>
+
+      <FloatingCard delay={1.5} className="right-[8%] top-[20%] w-28 h-28 hidden lg:block">
+        <div className="p-3 flex items-center justify-center h-full">
+          <Phone className="h-8 w-8 text-white/30" />
+        </div>
+      </FloatingCard>
+
+      <FloatingCard delay={0.5} className="left-[10%] bottom-[25%] w-36 h-20 hidden md:block">
+        <div className="p-3 flex items-center gap-2">
+          <div className="h-8 w-8 rounded-full bg-primary/20" />
+          <div className="flex-1 space-y-1">
+            <div className="h-2 w-full rounded bg-white/20" />
+            <div className="h-2 w-2/3 rounded bg-white/15" />
+          </div>
+        </div>
+      </FloatingCard>
+
+      <FloatingCard delay={2} className="right-[12%] bottom-[30%] w-40 h-24 hidden lg:block">
+        <div className="p-3 space-y-2">
+          <div className="flex gap-2">
+            <div className="h-6 w-6 rounded bg-white/20" />
+            <div className="h-6 w-6 rounded bg-white/15" />
+          </div>
+          <div className="h-2 w-full rounded bg-white/20" />
+        </div>
+      </FloatingCard>
+
+      <FloatingCard delay={1} className="left-[20%] top-[35%] w-24 h-24 hidden xl:block">
+        <div className="p-3 flex items-center justify-center h-full">
+          <Wifi className="h-10 w-10 text-white/25" />
+        </div>
+      </FloatingCard>
+
+      <FloatingCard delay={2.5} className="right-[20%] top-[40%] w-20 h-32 hidden xl:block">
+        <div className="p-2 space-y-2">
+          <div className="h-2 w-full rounded bg-white/20" />
+          <div className="h-2 w-3/4 rounded bg-white/15" />
+          <div className="h-2 w-full rounded bg-white/20" />
+        </div>
+      </FloatingCard>
+    </div>
+  )
+}
+
+function DotGridCorner({ className }: { className?: string }) {
+  const dots = [
+    1, 0, 1, 0,
+    0, 1, 0, 1,
+    1, 0, 1, 0,
+    0, 1, 0, 1,
+  ]
+  return (
+    <div className={`grid grid-cols-4 gap-1.5 ${className ?? ""}`} aria-hidden>
+      {dots.map((filled, i) => (
+        <span
+          key={i}
+          className={`h-1.5 w-1.5 rounded-full ${filled ? "bg-neutral-800" : "border border-amber-800/40 bg-transparent"}`}
+        />
+      ))}
+    </div>
+  )
+}
+
+function GoldDotCluster({ className }: { className?: string }) {
+  return (
+    <div className={`grid grid-cols-3 gap-1 ${className ?? ""}`} aria-hidden>
+      {Array.from({ length: 9 }).map((_, i) => (
+        <span key={i} className="h-1 w-1 rounded-full bg-[color:var(--marketing-gold)] opacity-80" />
+      ))}
+    </div>
+  )
+}
+
+function PrimaryLink({
+  href,
+  children,
+  className,
+  variant = "solid",
+}: {
+  href: string
+  children: React.ReactNode
+  className?: string
+  variant?: "solid" | "light"
+}) {
+  if (variant === "light") {
+    return (
+      <Link
+        href={href}
+        className={`inline-flex items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-6 py-3 text-sm font-semibold text-neutral-900 shadow-sm transition-opacity hover:opacity-90 ${className ?? ""}`}
+      >
+        {children}
+        <ArrowRight className="h-4 w-4" />
+      </Link>
+    )
+  }
+  return (
+    <Link
+      href={href}
+      className={`inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:scale-[1.02] shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] hover:shadow-[0_0_30px_rgba(var(--primary-rgb),0.5)] ${className ?? ""}`}
+      style={{ backgroundColor: "var(--primary)" }}
+    >
+      {children}
+      <ArrowRight className="h-4 w-4" />
+    </Link>
+  )
+}
+
 export default function HomePage() {
   return (
-    <PageTransition className="min-h-screen flex flex-col bg-[#F5F4F1]">
+    <PageTransition className="min-h-screen flex flex-col bg-[color:var(--marketing-cream)]">
       <Header />
 
-      <main className="flex-1">
+      <main className="flex-1 pt-[72px]">
+        <section
+          className="relative overflow-hidden px-4 pb-32 pt-20 sm:px-6 sm:pb-40 sm:pt-28 lg:pt-36 selection:bg-primary/30 selection:text-white flex min-h-[85vh] flex-col items-center justify-center bg-[#0d1627]"
+        >
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 h-full w-full object-cover opacity-40"
+          >
+            <source src="/13046977_3840_2160_30fps.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0d1627]/80 via-[#0d1627]/60 to-[#0d1627] pointer-events-none" />
+          <ConnectionsGrid />
+          <FloatingCards />
+          
+          {/* Bottom fade blending into the next white section */}
+          <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-white to-transparent pointer-events-none z-10" />
 
-        {/* ── HERO ── */}
-        <section className="relative min-h-[92vh] flex items-center overflow-hidden bg-[#0B1F3A]">
-          {/* Pexels background */}
-          <Image
-            src="https://images.pexels.com/photos/8370752/pexels-photo-8370752.jpeg?auto=compress&cs=tinysrgb&w=1600"
-            alt=""
-            fill
-            priority
-            className="object-cover opacity-20"
-            sizes="100vw"
-          />
-          {/* grid overlay */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:56px_56px]" />
-          {/* bottom fade */}
-          <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#F5F4F1] to-transparent" />
+          <div className="relative z-[2] mx-auto flex max-w-4xl flex-col items-center text-center">
 
-          <div className="relative z-10 container mx-auto px-4 pt-32 pb-24">
-            <div className="max-w-4xl mx-auto text-center">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/15 bg-white/8 text-white/70 text-xs font-semibold uppercase tracking-widest mb-8"
+            <motion.h1
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="font-serif text-balance text-5xl leading-[1.1] tracking-tight text-white sm:text-6xl lg:text-[5.5rem]"
+            >
+              Ghana&apos;s Complete <br className="hidden md:block" />
+              <motion.span
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className="text-sky-200 inline-block"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                All systems operational · 99.9% uptime
-              </motion.div>
+                Digital Services
+              </motion.span>{" "}
+              Platform
+            </motion.h1>
 
-              <motion.h1
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                className="font-heading text-5xl sm:text-6xl lg:text-7xl font-normal text-white leading-[1.02] tracking-tight text-balance"
-              >
-                Ghana&apos;s Complete<br className="hidden md:block" />{" "}
-                <span className="text-[#7EB8D4]">Digital Services</span> Platform
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-7 text-lg text-white/55 leading-relaxed max-w-2xl mx-auto font-body"
-              >
-                Airtime, data bundles, verification numbers, exam results, and a full reseller programme — all in one secure platform.
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
-              >
-                <Button asChild size="lg"
-                  className="h-13 px-9 text-base rounded-xl bg-white text-[#0B1F3A] hover:bg-[#EFF6FA] font-semibold shadow-lg transition-all duration-200 active:scale-[0.98]">
-                  <Link href="/register">Get started free <ArrowRight className="ml-2 h-4 w-4" /></Link>
-                </Button>
-                <Button asChild size="lg" variant="ghost"
-                  className="h-13 px-9 text-base rounded-xl border border-white/20 text-white hover:bg-white/8 font-medium transition-all duration-200">
-                  <Link href="/login">Sign in to dashboard</Link>
-                </Button>
-              </motion.div>
-            </div>
-
-            {/* Network badges */}
-            <motion.div
-              initial={{ opacity: 0, y: 32 }}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.5 }}
-              className="mt-20 flex flex-wrap items-center justify-center gap-6"
+              transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-6 max-w-2xl text-[15px] sm:text-base leading-relaxed text-[#8a9ba8]"
+            >
+              Airtime, data bundles, verification numbers, exam results, and a full reseller programme — all in one secure platform.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
+            >
+              <motion.div
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <Link
+                  href="/register"
+                  className="inline-flex h-12 items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-[#0d1627] transition-all hover:bg-neutral-100 shadow-xl group"
+                >
+                  Get started free
+                  <motion.span
+                    initial={{ x: 0 }}
+                    whileHover={{ x: 4 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  >
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </motion.span>
+                </Link>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <Link
+                  href="/login"
+                  className="inline-flex h-12 items-center justify-center rounded-full border border-white/20 bg-transparent px-8 text-sm font-semibold text-white transition-all hover:bg-white/10"
+                >
+                  Sign in to dashboard
+                </Link>
+              </motion.div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-16 flex flex-wrap items-center justify-center gap-3 sm:gap-4"
             >
               {[
-                { label: "MTN", color: "#FFCC00", text: "#000" },
-                { label: "Telecel", color: "#E40046", text: "#fff" },
-                { label: "AirtelTigo", color: "#E60000", text: "#fff" },
-              ].map((n) => (
-                <div key={n.label} className="flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-white/8 border border-white/12 backdrop-blur-sm">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: n.color }} />
-                  <span className="text-xs font-bold text-white/80 tracking-wider">{n.label}</span>
-                  <span className="text-[10px] text-emerald-400 font-semibold uppercase tracking-widest">Live</span>
-                </div>
+                { name: "MTN", color: "bg-yellow-400" },
+                { name: "Telecel", color: "bg-red-500" },
+                { name: "AirtelTigo", color: "bg-red-600" },
+              ].map((network, index) => (
+                <motion.div
+                  key={network.name}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, delay: 0.7 + index * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                  whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.1)" }}
+                  className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 backdrop-blur-sm cursor-default"
+                >
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, delay: index * 0.3 }}
+                    className={`h-2 w-2 rounded-full ${network.color}`}
+                  ></motion.div>
+                  <span className="text-xs font-semibold text-white/90">{network.name}</span>
+                  <span className="text-[10px] font-bold text-emerald-400 tracking-wider">LIVE</span>
+                </motion.div>
               ))}
             </motion.div>
           </div>
         </section>
 
-        {/* ── SERVICES GRID ── */}
-        <section id="services" className="py-28 bg-[#F5F4F1]">
-          <div className="container mx-auto px-4">
-            <ScrollReveal className="text-center mb-16">
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#006994] mb-4">What we offer</p>
-              <h2 className="font-heading text-4xl lg:text-5xl font-normal text-[#0B1F3A] tracking-tight text-balance">
-                Five services, one platform
-              </h2>
-            </ScrollReveal>
-
-            <StaggerReveal className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {SERVICES.map((s) => (
-                <StaggerRevealItem key={s.title}>
-                  <Link href={s.href}
-                    className="group flex flex-col h-full p-8 rounded-2xl bg-white border border-[#E2E1DC] hover:border-[#006994]/30 hover:shadow-lg hover:shadow-[#006994]/6 transition-all duration-300">
-                    <div className="mb-5 w-11 h-11 rounded-xl bg-[#EFF6FA] flex items-center justify-center text-[#006994] group-hover:bg-[#006994] group-hover:text-white transition-all duration-300">
-                      <s.icon className="h-5 w-5" />
-                    </div>
-                    <h3 className="font-heading text-xl font-normal text-[#0B1F3A] mb-2">{s.title}</h3>
-                    <p className="text-sm text-[#6B7280] leading-relaxed mb-6 flex-1">{s.description}</p>
-                    <span className="inline-flex items-center text-xs font-semibold text-[#006994] group-hover:gap-2 gap-1.5 transition-all duration-200">
-                      {s.label} <ChevronRight className="h-3.5 w-3.5" />
-                    </span>
-                  </Link>
-                </StaggerRevealItem>
-              ))}
-            </StaggerReveal>
-          </div>
-        </section>
-
-        {/* ── HOW IT WORKS ── */}
-        <section className="py-28 bg-white border-y border-[#E2E1DC]">
-          <div className="container mx-auto px-4">
-            <ScrollReveal className="text-center mb-16">
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#722F37] mb-4">Simple by design</p>
-              <h2 className="font-heading text-4xl lg:text-5xl font-normal text-[#0B1F3A] tracking-tight">
-                Up and running in 3 steps
-              </h2>
-            </ScrollReveal>
-
-            <StaggerReveal className="grid gap-8 md:grid-cols-3 max-w-4xl mx-auto">
-              {STEPS.map((s, i) => (
-                <StaggerRevealItem key={s.step}>
-                  <div className="flex flex-col items-start">
-                    <span className="font-heading text-6xl font-normal text-[#0B1F3A]/8 mb-4 leading-none">{s.step}</span>
-                    <div className="w-8 h-0.5 bg-[#006994] mb-5" />
-                    <h3 className="font-heading text-xl font-normal text-[#0B1F3A] mb-3">{s.title}</h3>
-                    <p className="text-sm text-[#6B7280] leading-relaxed">{s.body}</p>
-                  </div>
-                </StaggerRevealItem>
-              ))}
-            </StaggerReveal>
-          </div>
-        </section>
-
-        {/* ── STATS ── */}
-        <section className="py-24 bg-[#0B1F3A] relative overflow-hidden">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:48px_48px]" />
-          <div className="container mx-auto px-4 relative z-10">
-            <StaggerReveal className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 md:gap-12">
-              {STATS.map((s) => (
-                <StaggerRevealItem key={s.label}>
-                  <div className="text-center px-1">
-                    <p className="font-heading text-3xl sm:text-4xl md:text-5xl font-normal text-white mb-2 tracking-tight">{s.value}</p>
-                    <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider md:tracking-widest text-white/40 leading-snug">{s.label}</p>
-                  </div>
-                </StaggerRevealItem>
-              ))}
-            </StaggerReveal>
-          </div>
-        </section>
-
-        {/* ── PEXELS FEATURE IMAGE ── */}
-        <section className="py-28 bg-[#F5F4F1]">
-          <div className="container mx-auto px-4">
-            <div className="grid lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
-              <ScrollReveal>
-                <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#006994] mb-4">Why Topchart</p>
-                <h2 className="font-heading text-4xl lg:text-5xl font-normal text-[#0B1F3A] tracking-tight mb-8 text-balance">
-                  Built for Ghana. <br />Trusted by thousands.
+        <section
+          id="capacity"
+          className="relative border-b border-neutral-200/60 bg-white px-4 py-20 sm:px-6"
+        >
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 h-32 w-[min(90%,720px)] -translate-x-1/2 -translate-y-1/2 opacity-30"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 2px 2px, rgba(242,141,97,0.35) 1px, transparent 0)",
+              backgroundSize: "18px 18px",
+            }}
+            aria-hidden
+          />
+          <div className="relative z-[1] mx-auto max-w-[1200px]">
+            <ScrollReveal
+              once={false}
+              amount={0.22}
+              className="flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-end"
+            >
+              <div className="max-w-3xl border-l-[3px] border-primary pl-6">
+                <h2 className="text-balance text-3xl font-bold leading-tight sm:text-4xl">
+                  API-First Infrastructure for<br/>
+                  <span className="text-primary">African scale.</span>
                 </h2>
-                <ul className="space-y-5">
-                  {[
-                    "Bank-grade encryption on every transaction",
-                    "PCI DSS Level 1 compliant payment processing",
-                    "Instant delivery — average 3 seconds",
-                    "24 / 7 support via live chat and tickets",
-                    "Wallet, Mobile Money, and card payments accepted",
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-3 text-sm text-[#374151]">
-                      <CheckCircle2 className="h-4 w-4 text-[#006994] shrink-0 mt-0.5" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-10">
-                  <Button asChild size="lg"
-                    className="h-12 px-8 rounded-xl bg-[#0B1F3A] text-white hover:bg-[#1C3558] font-semibold transition-all duration-200">
-                    <Link href="/register">Create free account <ArrowRight className="ml-2 h-4 w-4" /></Link>
-                  </Button>
-                </div>
-              </ScrollReveal>
-
-              <ScrollReveal className="relative">
-                <div className="rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl shadow-[#0B1F3A]/15">
-                  <Image
-                    src="https://images.pexels.com/photos/5926393/pexels-photo-5926393.jpeg?auto=compress&cs=tinysrgb&w=900"
-                    alt="Mobile fintech in Ghana"
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                  />
-                </div>
-                <div className="absolute -bottom-5 -left-5 bg-white rounded-2xl border border-[#E2E1DC] shadow-lg px-5 py-4">
-                  <p className="text-2xl font-heading text-[#0B1F3A] mb-0.5">99.9%</p>
-                  <p className="text-xs text-[#6B7280] font-semibold uppercase tracking-wider">Platform Uptime</p>
-                </div>
-              </ScrollReveal>
-            </div>
-          </div>
-        </section>
-
-        {/* ── FAQ ── */}
-        <section id="faq" className="py-28 bg-white border-t border-[#E2E1DC]">
-          <div className="container mx-auto px-4 max-w-3xl">
-            <ScrollReveal className="text-center mb-16">
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#722F37] mb-4">FAQ</p>
-              <h2 className="font-heading text-4xl lg:text-5xl font-normal text-[#0B1F3A] tracking-tight">
-                Common questions
-              </h2>
+                <p className="mt-4 text-lg text-neutral-600">
+                  Engineered for developers, startups, and enterprises. Integrate powerful communication and payments APIs in minutes.
+                </p>
+              </div>
+              <PrimaryLink href="/login" className="shrink-0 rounded font-sans uppercase tracking-widest">
+                Start Building
+              </PrimaryLink>
             </ScrollReveal>
-
-            <StaggerReveal>
-              <Accordion type="single" collapsible className="space-y-3">
-                {FAQS.map((faq, i) => (
-                  <StaggerRevealItem key={i}>
-                    <AccordionItem
-                      value={`faq-${i}`}
-                      className="border border-[#E2E1DC] rounded-2xl px-6 bg-[#F5F4F1]/60 data-[state=open]:bg-white data-[state=open]:border-[#006994]/25 transition-all duration-300"
-                    >
-                      <AccordionTrigger className="hover:no-underline py-5 text-left">
-                        <span className="font-heading text-base font-normal text-[#0B1F3A] pr-4">{faq.q}</span>
-                      </AccordionTrigger>
-                      <AccordionContent className="text-sm text-[#6B7280] leading-relaxed pb-5 font-body">
-                        {faq.a}
-                      </AccordionContent>
-                    </AccordionItem>
-                  </StaggerRevealItem>
-                ))}
-              </Accordion>
-            </StaggerReveal>
           </div>
         </section>
 
-        {/* ── CTA ── */}
-        <section className="py-28 bg-[#F5F4F1]">
-          <div className="container mx-auto px-4">
-            <ScrollReveal>
-              <div className="relative rounded-3xl overflow-hidden bg-[#0B1F3A] px-8 py-20 text-center md:px-20">
-                <Image
-                  src="https://images.pexels.com/photos/3760067/pexels-photo-3760067.jpeg?auto=compress&cs=tinysrgb&w=1600"
-                  alt=""
-                  fill
-                  className="object-cover opacity-10"
-                  sizes="100vw"
-                />
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:48px_48px]" />
-                <div className="relative z-10 max-w-2xl mx-auto">
-                  <motion.h2
-                    initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                    className="font-heading text-4xl sm:text-5xl font-normal text-white tracking-tight mb-6 text-balance"
-                  >
-                    Start using Topchart today — it&apos;s free
-                  </motion.h2>
-                  <motion.p
-                    initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.1 }}
-                    className="text-white/50 text-base mb-10 leading-relaxed font-body"
-                  >
-                    Join 500,000+ Ghanaians already using our platform. No subscription fees — pay only for what you use.
-                  </motion.p>
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.2 }}
-                    className="flex flex-col sm:flex-row items-center justify-center gap-4"
-                  >
-                    <Button asChild size="lg"
-                      className="h-12 px-8 w-full sm:w-auto rounded-xl bg-white text-[#0B1F3A] hover:bg-[#EFF6FA] font-semibold transition-all duration-200 active:scale-[0.98]">
-                      <Link href="/register">Create free account</Link>
-                    </Button>
-                    <Button asChild size="lg" variant="ghost"
-                      className="h-12 px-8 w-full sm:w-auto rounded-xl border border-white/20 text-white hover:bg-white/8 font-medium transition-all duration-200">
-                      <Link href="/login">Sign in</Link>
-                    </Button>
-                  </motion.div>
-                </div>
+        <section
+          className="border-b border-neutral-200/40 px-4 py-20 sm:px-6"
+          style={{ backgroundColor: "var(--marketing-cream-alt)" }}
+        >
+          <div className="mx-auto grid max-w-[1200px] gap-12 lg:grid-cols-2 lg:items-center">
+            <ScrollReveal once={false} amount={0.22} className="relative pl-5">
+              <div
+                className="absolute left-0 top-2 bottom-2 w-1 bg-primary"
+              />
+              <h2 className="text-balance text-3xl font-bold text-neutral-900 sm:text-4xl">
+                Scale With Confidence
+              </h2>
+              <p className="mt-6 max-w-lg text-neutral-600 leading-relaxed">
+                One wallet, transparent pricing, and support when you need it — whether you are topping up, verifying, or scaling as a reseller.
+              </p>
+            </ScrollReveal>
+            <ScrollReveal once={false} amount={0.22}>
+              <div className="relative aspect-video overflow-hidden rounded-3xl bg-neutral-200/80 shadow-lg">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="absolute inset-0 h-full w-full object-cover"
+                >
+                  <source src="/7490425-uhd_3840_2160_25fps.mp4" type="video/mp4" />
+                </video>
               </div>
             </ScrollReveal>
           </div>
         </section>
 
+        <section
+          id="what-we-offer"
+          className="relative overflow-hidden border-b border-neutral-200/40 px-4 py-20 sm:px-6"
+          style={{ backgroundColor: "var(--marketing-cream-alt)" }}
+        >
+          <DotGridCorner className="absolute bottom-8 right-8 opacity-80" />
+          <div className="relative z-[1] mx-auto max-w-[1200px]">
+            <ScrollReveal once={false} amount={0.2}>
+              <h2 className="text-3xl font-bold text-neutral-900 sm:text-4xl border-b-2 border-primary pb-4 inline-block">
+                Our Products
+              </h2>
+            </ScrollReveal>
+            <StaggerReveal
+              className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+              stagger={0.09}
+              once={false}
+              stack
+              amount={0.12}
+            >
+              {SERVICES.map((s, i) => (
+                <StaggerRevealItem key={s.title} index={i} stack>
+                  <motion.div whileHover={{ y: -8, transition: { duration: 0.3 } }} className="h-full">
+                    <Link
+                      href={s.href}
+                      className="group flex h-full flex-col rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/50 relative overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      <div
+                        className="mb-6 flex h-12 w-12 items-center justify-center bg-transparent text-primary transition-transform duration-300 group-hover:scale-110"
+                      >
+                        <s.icon className="h-8 w-8" strokeWidth={1.5} />
+                      </div>
+                      <h3 className="text-xl font-bold text-neutral-900 z-10">{s.title}</h3>
+                      <p className="mt-3 flex-1 text-[15px] leading-relaxed text-neutral-600 z-10">{s.description}</p>
+                      <span className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-primary uppercase tracking-wide z-10">
+                        {s.label}
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </span>
+                    </Link>
+                  </motion.div>
+                </StaggerRevealItem>
+              ))}
+            </StaggerReveal>
+          </div>
+        </section>
+
+        <section className="bg-white px-4 py-20 sm:px-6">
+          <div className="mx-auto grid max-w-[1200px] gap-12 lg:grid-cols-2 lg:items-center">
+            <ScrollReveal once={false} amount={0.22} className="relative pl-5">
+              <div
+                className="absolute left-0 top-2 bottom-2 w-1 bg-primary"
+              />
+              <h2 className="text-3xl font-bold text-neutral-900 sm:text-4xl">
+                Developer Community
+              </h2>
+              <p className="mt-6 text-neutral-600 leading-relaxed">
+                Banks, fintechs, and growing brands use Topchart to deliver airtime, data, and adjacent services without rebuilding telco integrations. We handle compliance-minded flows, wallet logic, and operational tooling.
+              </p>
+            </ScrollReveal>
+            <ScrollReveal once={false} amount={0.22} className="relative">
+              <div className="relative aspect-[4/3] overflow-hidden rounded bg-neutral-900">
+                <Image
+                  src="/images/technical-partnership.jpg"
+                  alt="A user looking at code metrics"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
+              </div>
+              <Link
+                href="/about"
+                className="absolute -bottom-4 left-4 inline-flex items-center gap-2 rounded px-6 py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground sm:left-8 bg-primary transition-transform hover:-translate-y-1"
+              >
+                Learn how
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        <section
+          className="relative overflow-hidden px-4 py-24 sm:px-6"
+          style={{ backgroundColor: "var(--marketing-hero-dark)" }}
+        >
+          <TopographicBg />
+          <div className="pointer-events-none absolute bottom-10 left-8">
+            <GoldDotCluster />
+          </div>
+          <div className="relative z-[1] mx-auto max-w-[820px] text-center">
+            <ScrollReveal once={false} amount={0.25} direction="up" className="text-center">
+              <h2 className="text-balance text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl">
+                Full white-label solution
+              </h2>
+              <p className="mx-auto mt-6 max-w-xl text-sm leading-relaxed text-white/65 sm:text-base">
+                Launch your own branded storefront, wallet, and service catalogue on top of Topchart infrastructure — with commissions, analytics, and support built in.
+              </p>
+              <div className="mt-10 flex flex-col items-center gap-2">
+                <PrimaryLink href="/login">Login</PrimaryLink>
+                <p className="text-xs text-white/50">Sign in to access your dashboard and reseller tools.</p>
+              </div>
+            </ScrollReveal>
+          </div>
+
+          <StaggerReveal
+            className="relative z-[1] mx-auto mt-16 flex max-w-[1000px] flex-wrap justify-center gap-4 pb-4 sm:flex-nowrap sm:gap-6"
+            once={false}
+            stack
+            stagger={0.12}
+            amount={0.14}
+          >
+            <StaggerRevealItem
+              index={0}
+              stack
+              className="relative mt-8 h-[200px] w-[100px] shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/40 shadow-xl sm:h-[240px] sm:w-[120px]"
+            >
+              <div className="space-y-2 p-2 pt-4">
+                <div className="h-2 w-full rounded bg-white/20" />
+                <div className="h-2 w-[80%] rounded bg-white/10" />
+                <div className="h-2 w-full rounded bg-white/15" />
+              </div>
+            </StaggerRevealItem>
+            <StaggerRevealItem
+              index={1}
+              stack
+              className="relative z-[2] -mt-4 h-[220px] w-[min(100%,380px)] overflow-hidden rounded-2xl border border-white/15 bg-white shadow-2xl sm:h-[280px]"
+            >
+              <div className="flex h-10 items-center border-b border-neutral-200 bg-neutral-50 px-3 text-xs font-bold text-neutral-700">
+                Wallet
+              </div>
+              <div className="space-y-2 p-4">
+                <div className="flex gap-2">
+                  <div className="h-8 flex-1 rounded-lg bg-primary/20 text-center text-[10px] font-semibold leading-8 text-primary">
+                    Fund
+                  </div>
+                  <div className="h-8 flex-1 rounded-lg bg-neutral-100 text-center text-[10px] font-semibold leading-8 text-neutral-600">
+                    History
+                  </div>
+                </div>
+                <div className="h-24 rounded-xl border border-neutral-100 bg-neutral-50/80" />
+                <div className="h-8 rounded-lg bg-neutral-100" />
+                <div className="h-8 rounded-lg bg-neutral-100" />
+              </div>
+            </StaggerRevealItem>
+            <StaggerRevealItem
+              index={2}
+              stack
+              className="relative mt-8 h-[200px] w-[100px] shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/40 shadow-xl sm:h-[240px] sm:w-[120px]"
+            >
+              <div className="p-2 pt-6 text-center text-[10px] font-bold text-white/70">Terminal</div>
+              <div className="mx-2 mt-2 h-16 rounded-lg bg-white/10" />
+            </StaggerRevealItem>
+          </StaggerReveal>
+        </section>
+
+        <section
+          className="border-b border-neutral-200/60 px-4 py-20 sm:px-6"
+          style={{ backgroundColor: "var(--marketing-cream)" }}
+        >
+          <div className="mx-auto max-w-[1200px]">
+            <ScrollReveal
+              once={false}
+              amount={0.2}
+              className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+            >
+              <h2 className="text-3xl font-extrabold tracking-tight text-neutral-900 sm:text-4xl">
+                What people are saying
+              </h2>
+            </ScrollReveal>
+            <TestimonialCarousel items={TESTIMONIALS} />
+          </div>
+        </section>
+
+        <section className="px-4 py-16 sm:px-6" style={{ backgroundColor: "var(--marketing-cream)" }}>
+          <div className="mx-auto max-w-[1200px]">
+            <ScrollReveal once={false} amount={0.22}>
+              <div
+                className="flex flex-col items-stretch gap-8 rounded-3xl px-6 py-12 shadow-xl sm:flex-row sm:items-center sm:justify-between sm:px-10 sm:py-14"
+                style={{ backgroundColor: "var(--marketing-nav)" }}
+              >
+                <div className="flex flex-1 flex-col gap-6 sm:flex-row sm:items-center">
+                  <DotGridCorner className="shrink-0 opacity-50 invert" />
+                  <h2 className="text-balance text-2xl font-extrabold leading-tight text-[color:var(--marketing-cream-text)] sm:text-3xl">
+                    Enjoy the best of airtime, data, and digital services
+                  </h2>
+                </div>
+                <PrimaryLink href="/register" className="shrink-0 self-start sm:self-center">
+                  Get Started
+                </PrimaryLink>
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        <section id="faq" className="border-t border-neutral-200/60 bg-white px-4 py-20 sm:px-6">
+          <div className="mx-auto max-w-2xl">
+            <ScrollReveal once={false} amount={0.25} className="mb-10 text-center">
+              <h2 className="text-3xl font-extrabold tracking-tight text-neutral-900">Common questions</h2>
+            </ScrollReveal>
+            <Accordion type="single" collapsible className="space-y-2">
+              {FAQS.map((faq, i) => (
+                <AccordionItem
+                  key={faq.q}
+                  value={`faq-${i}`}
+                  className="rounded-2xl border border-neutral-200 bg-[color:var(--marketing-cream)] px-4 data-[state=open]:shadow-sm"
+                >
+                  <AccordionTrigger className="py-4 text-left font-semibold text-neutral-900 hover:no-underline">
+                    {faq.q}
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4 text-sm leading-relaxed text-neutral-600">
+                    {faq.a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </section>
       </main>
 
       <Footer />
