@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDataPlans, getNetworks, getAccountInfo } from "@/lib/datamart";
 import { requireAdmin } from "@/lib/admin-auth";
+import { sql } from "@/lib/db";
 
 export const revalidate = 300;
 export const runtime = "nodejs";
@@ -14,6 +15,61 @@ const globalCache = globalThis as unknown as {
   datamartPlansCache?: PlansCacheEntry;
   datamartNetworksCache?: PlansCacheEntry;
 };
+
+async function fetchPlansFromDatabase(network?: string) {
+  try {
+    let query = sql`
+      SELECT 
+        id,
+        network_id as "networkId",
+        network,
+        name,
+        validity,
+        validity_hours as "validityHours",
+        validity_days as "validityDays",
+        price,
+        is_popular as "isPopular",
+        is_active as "isActive",
+        datamart_plan_id as "datamartPlanId",
+        datamart_plan_type as "datamartPlanType",
+        synced_at as "syncedAt"
+      FROM data_bundles
+      WHERE is_active = true
+    `;
+    
+    if (network) {
+      query = sql`
+        SELECT 
+          id,
+          network_id as "networkId",
+          network,
+          name,
+          validity,
+          validity_hours as "validityHours",
+          validity_days as "validityDays",
+          price,
+          is_popular as "isPopular",
+          is_active as "isActive",
+          datamart_plan_id as "datamartPlanId",
+          datamart_plan_type as "datamartPlanType",
+          synced_at as "syncedAt"
+        FROM data_bundles
+        WHERE is_active = true AND network = ${network}
+      `;
+    }
+
+    const plans = await query;
+    
+    if (plans.length > 0) {
+      return { success: true, data: plans, fromDatabase: true };
+    }
+    
+    return { success: false, error: "No plans found in database" };
+  } catch (error) {
+    console.error("Database fetch error:", error);
+    return { success: false, error: "Failed to fetch from database" };
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -60,6 +116,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const dbResult = await fetchPlansFromDatabase(network || undefined);
+    
+    if (dbResult.success) {
+      return NextResponse.json({
+        success: true,
+        data: dbResult.data,
+        stale: false,
+        fromDatabase: true,
+        fetchedAt: new Date().toISOString(),
+      });
+    }
+
     const result = await getDataPlans(network || undefined);
     if (!result.success) {
       if (globalCache.datamartPlansCache) {
@@ -89,6 +157,7 @@ export async function GET(request: NextRequest) {
       stale: false,
       fetchedAt: globalCache.datamartPlansCache.fetchedAt,
       attempts: result.attempts || 1,
+      fromDatabase: false,
     });
   } catch (err) {
     return NextResponse.json(
