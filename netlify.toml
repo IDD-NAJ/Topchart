@@ -18,9 +18,6 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-[plugins.inputs]
-  "nextjs-server" = true
-
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
@@ -28,7 +25,12 @@
   NETLIFY_NEXT_PLUGIN_SKIP = "false"
 
 # Redirects for Next.js
-# Netlify Next.js plugin handles routing automatically - no manual redirects needed
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
+  conditions = {Role = ["anon"]}
 
 # Headers for security and caching
 [[headers]]
