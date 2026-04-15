@@ -25,18 +25,12 @@
   NETLIFY_NEXT_PLUGIN_SKIP = "false"
 
 # Redirects for Next.js
-# SPA fallback - only for client-side routes, not for API routes or static files
 [[redirects]]
-  from = "/dashboard/*"
+  from = "/*"
   to = "/index.html"
   status = 200
   force = false
-
-[[redirects]]
-  from = "/admin/*"
-  to = "/index.html"
-  status = 200
-  force = false
+  conditions = {Role = ["anon"]}
 
 # Headers for security and caching
 [[headers]]
