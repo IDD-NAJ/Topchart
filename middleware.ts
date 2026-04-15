@@ -27,43 +27,8 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionToken = request.cookies.get("session_token")?.value;
 
-  // Skip middleware for Server Actions (they have next-action header)
   const isServerAction = request.headers.get("next-action");
   if (isServerAction) {
-    // For server actions, just check auth without applying security headers
-    // that might interfere with the action processing
-    if (pathname.startsWith("/dashboard") || 
-        (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login"))) {
-      if (!sessionToken) {
-        return NextResponse.redirect(new URL(LOGIN, request.url));
-      }
-    }
-    
-    // Fix forwarded headers mismatch for browser preview proxy
-    const forwardedHost = request.headers.get("x-forwarded-host");
-    const origin = request.headers.get("origin");
-    
-    if (forwardedHost && origin && forwardedHost !== origin) {
-      // Clone the request and modify the origin header
-      const requestHeaders = new Headers(request.headers);
-      requestHeaders.set("origin", forwardedHost);
-      const newRequest = new Request(request.url, {
-        method: request.method,
-        headers: requestHeaders,
-        body: request.body,
-        cache: request.cache,
-        credentials: request.credentials,
-        integrity: request.integrity,
-        keepalive: request.keepalive,
-        mode: request.mode,
-        redirect: request.redirect,
-        referrer: request.referrer,
-        referrerPolicy: request.referrerPolicy,
-        signal: request.signal,
-      });
-      return NextResponse.next({ request: newRequest });
-    }
-    
     return NextResponse.next();
   }
 

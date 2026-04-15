@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: [
+        "*.orchids.cloud",
+        "*.daytona.works",
+        "*.proxy.daytona.works",
+        "topchart.gh",
+        "www.topchart.gh",
         "127.0.0.1:53869",
         "127.0.0.1",
         "localhost:3000",
