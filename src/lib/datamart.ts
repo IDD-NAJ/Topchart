@@ -106,7 +106,7 @@ async function datamartRequest<T>(
     retries: 2,
     retryDelayMs: 500,
     headers: {
-      Authorization: `Token ${config.apiKey}`,
+      "X-API-Key": config.apiKey,
       "Content-Type": "application/json",
       ...options.headers,
     },
