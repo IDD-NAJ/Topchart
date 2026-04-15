@@ -3,11 +3,30 @@ import crypto from "crypto";
 import { sql } from "@/lib/db";
 import { finalizeResellerApplicationPayment } from "@/lib/reseller-payment";
 
-const REFERRAL_REWARD = 0.15;
-const MIN_DEPOSIT_FOR_REFERRAL = 15;
+async function getReferralSettings() {
+  const rows = await sql`
+    SELECT key, value FROM app_settings
+    WHERE key IN ('referral_reward_amount', 'referral_min_invites')
+  `
+  
+  const settings: Record<string, string> = {}
+  for (const row of rows) {
+    settings[row.key] = row.value
+  }
+  
+  return {
+    rewardAmount: parseFloat(settings["referral_reward_amount"] || "5.00"),
+    minInvites: parseInt(settings["referral_min_invites"] || "10"),
+  }
+}
+
+const MIN_DEPOSIT_FOR_REFERRAL = 10;
 
 async function checkAndCreditReferrer(userId: string, depositAmount: number) {
   try {
+    const settings = await getReferralSettings();
+    const referralReward = settings.rewardAmount;
+
     const user = await sql`
       SELECT id, referred_by, total_deposits FROM users WHERE id = ${userId}
     `;
@@ -21,15 +40,16 @@ async function checkAndCreditReferrer(userId: string, depositAmount: number) {
     if (currentTotalDeposits < MIN_DEPOSIT_FOR_REFERRAL && newTotalDeposits >= MIN_DEPOSIT_FOR_REFERRAL) {
       await sql`
         UPDATE users 
-        SET wallet_balance = wallet_balance + ${REFERRAL_REWARD},
-            referral_earnings = referral_earnings + ${REFERRAL_REWARD}
+        SET referral_reward_balance = COALESCE(referral_reward_balance, 0) + ${referralReward},
+            referral_earnings = COALESCE(referral_earnings, 0) + ${referralReward},
+            qualified_referral_count = COALESCE(qualified_referral_count, 0) + 1
         WHERE id = ${referrerId}
       `;
       
       try {
         await sql`
           INSERT INTO referral_visits (referrer_id, referred_user_id, credited, amount_credited, deposit_qualified)
-          VALUES (${referrerId}, ${userId}, true, ${REFERRAL_REWARD}, true)
+          VALUES (${referrerId}, ${userId}, true, ${referralReward}, true)
         `;
       } catch (err) {
         console.error("Referral visit log error:", err);

@@ -52,9 +52,9 @@ export async function POST(request: NextRequest) {
     const { amount } = body;
 
     // Validate amount
-    if (!amount || typeof amount !== "number" || amount < 1) {
+    if (!amount || typeof amount !== "number" || amount < 10) {
       return NextResponse.json(
-        { success: false, error: "Invalid amount - minimum is GH₵1" },
+        { success: false, error: "Invalid amount - minimum is GH₵10" },
         { status: 400 }
       );
     }

@@ -123,6 +123,7 @@ const navItems: NavItem[] = [
       { title: "Referrals", href: "/admin/referrals", icon: Users },
       { title: "Referral Rewards", href: "/admin/referral-rewards", icon: Award },
       { title: "Referral Visits", href: "/admin/referral-visits", icon: Eye },
+      { title: "Referral Settings", href: "/admin/referral-settings", icon: Settings },
       { title: "Promo Codes", href: "/admin/promo-codes", icon: Tag },
       { title: "Promo Redemptions", href: "/admin/promo-redemptions", icon: Gift },
     ]
