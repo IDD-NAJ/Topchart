@@ -64,6 +64,7 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  showPreload: boolean;
   /** True when user.role === 'ADMIN' */
   isAdmin: boolean;
   /** True when user.role === 'USER' or unset */
@@ -103,9 +104,12 @@ function mapServerUser(serverUser: ServerUser): User {
   };
 }
 
+const MIN_PRELOAD_DURATION = 2500;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showPreload, setShowPreload] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(30);
   const router = useRouter();
@@ -115,6 +119,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const warningTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
+  const preloadTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const authCompleteRef = useRef(false);
 
   const refreshUser = useCallback(async () => {
     try {
@@ -154,13 +160,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Only refresh user on mount, not on every render
     let mounted = true;
     
+    // Show preload on initial load
+    setShowPreload(true);
+    authCompleteRef.current = false;
+
     refreshUser().then(() => {
       if (mounted) {
         setIsLoading(false);
+        authCompleteRef.current = true;
+        
+        // Hide preload after minimum duration
+        setTimeout(() => {
+          setShowPreload(false);
+        }, MIN_PRELOAD_DURATION);
       }
     }).catch(() => {
       if (mounted) {
         setIsLoading(false);
+        authCompleteRef.current = true;
+        
+        // Hide preload after minimum duration even on error
+        setTimeout(() => {
+          setShowPreload(false);
+        }, MIN_PRELOAD_DURATION);
       }
     });
     
@@ -359,6 +381,7 @@ const register = async (
       value={{
         user,
         isLoading,
+        showPreload,
         isAdmin,
         isUser,
         login,

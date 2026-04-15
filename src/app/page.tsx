@@ -698,7 +698,7 @@ export default function HomePage() {
               >
                 <div className="flex flex-1 flex-col gap-6 sm:flex-row sm:items-center">
                   <DotGridCorner className="shrink-0 opacity-50 invert" />
-                  <h2 className="text-balance text-2xl font-extrabold leading-tight text-[color:var(--marketing-cream-text)] sm:text-3xl">
+                  <h2 className="text-balance text-2xl font-extrabold leading-tight text-foreground sm:text-3xl">
                     Enjoy the best of airtime, data, and digital services
                   </h2>
                 </div>

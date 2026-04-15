@@ -5,7 +5,14 @@ import { Phone } from "lucide-react"
 
 const EXPO = [0.16, 1, 0.3, 1] as const
 
-export default function PreloadPage() {
+interface PreloadOverlayProps {
+  isVisible: boolean
+  message?: string
+}
+
+export function PreloadOverlay({ isVisible, message }: PreloadOverlayProps) {
+  if (!isVisible) return null
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
       <div className="relative flex flex-col items-center gap-8">
@@ -83,7 +90,7 @@ export default function PreloadPage() {
           transition={{ duration: 0.5, delay: 0.2, ease: EXPO }}
         >
           <p className="text-lg font-semibold text-foreground">
-            Connecting...
+            {message || "Connecting..."}
           </p>
           <p className="text-sm text-muted-foreground">
             Please wait while we get things ready
