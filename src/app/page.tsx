@@ -422,28 +422,39 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-16 flex flex-wrap items-center justify-center gap-3 sm:gap-4"
+              className="mt-16 flex flex-wrap items-center justify-center gap-4 sm:gap-6"
             >
               {[
-                { name: "MTN", color: "bg-yellow-400" },
-                { name: "Telecel", color: "bg-red-500" },
-                { name: "AirtelTigo", color: "bg-red-600" },
+                { name: "MTN", image: "/images/mtn-logo.png" },
+                { name: "Telecel", image: "/images/telecel-logo.png" },
+                { name: "AirtelTigo", image: "/images/airteltigo-logo.png" },
               ].map((network, index) => (
                 <motion.div
                   key={network.name}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.4, delay: 0.7 + index * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.1)" }}
-                  className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 backdrop-blur-sm cursor-default"
+                  whileHover={{ scale: 1.05 }}
+                  className="relative flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-sm"
                 >
+                  <div className="relative h-8 w-8">
+                    <Image
+                      src={network.image}
+                      alt={network.name}
+                      fill
+                      className="object-contain"
+                      sizes="32px"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                  <span className="text-xs font-semibold text-white/90">{network.name}</span>
                   <motion.div
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{ duration: 2, repeat: Infinity, delay: index * 0.3 }}
-                    className={`h-2 w-2 rounded-full ${network.color}`}
+                    className="h-2 w-2 rounded-full bg-emerald-400"
                   ></motion.div>
-                  <span className="text-xs font-semibold text-white/90">{network.name}</span>
-                  <span className="text-[10px] font-bold text-emerald-400 tracking-wider">LIVE</span>
                 </motion.div>
               ))}
             </motion.div>
