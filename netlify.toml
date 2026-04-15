@@ -25,12 +25,7 @@
   NETLIFY_NEXT_PLUGIN_SKIP = "false"
 
 # Redirects for Next.js
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  force = false
-  conditions = {Role = ["anon"]}
+# Netlify Next.js plugin handles routing automatically - no manual redirects needed
 
 # Headers for security and caching
 [[headers]]
