@@ -136,23 +136,14 @@ export async function getAccountInfo(): Promise<ApiResponse<DatamartUserInfo>> {
 }
 
 export async function getNetworks(): Promise<ApiResponse<DatamartNetwork[]>> {
-  // DataMart API no longer provides network endpoint - service discontinued or restructured
-  return {
-    success: false,
-    error: "DataMart network service unavailable. The provider has discontinued or restructured their API. Please contact support.",
-    errorCode: "PROVIDER_BAD_RESPONSE",
-  };
+  return datamartRequest<DatamartNetwork[]>("/api/v1/networks/");
 }
 
 export async function getDataPlans(
   network?: string
 ): Promise<ApiResponse<DatamartDataPlan[]>> {
-  // DataMart API no longer provides data plans endpoint - service discontinued or restructured
-  return {
-    success: false,
-    error: "DataMart data plans service unavailable. The provider has discontinued or restructured their API. Please contact support.",
-    errorCode: "PROVIDER_BAD_RESPONSE",
-  };
+  const endpoint = network ? `/api/v1/data-plans/?network=${network}` : "/api/v1/data-plans/";
+  return datamartRequest<DatamartDataPlan[]>(endpoint);
 }
 
 export async function purchaseDataBundle(params: {
@@ -161,12 +152,15 @@ export async function purchaseDataBundle(params: {
   planId: string;
   bypassPortedNumber?: boolean;
 }): Promise<ApiResponse<DatamartOrderResult>> {
-  // DataMart API no longer provides data purchase endpoint - service discontinued or restructured
-  return {
-    success: false,
-    error: "DataMart data purchase service unavailable. The provider has discontinued or restructured their API. Please contact support.",
-    errorCode: "PROVIDER_BAD_RESPONSE",
-  };
+  return datamartRequest<DatamartOrderResult>("/api/v1/data/", {
+    method: "POST",
+    body: JSON.stringify({
+      network: params.networkCode,
+      mobile_number: params.phoneNumber,
+      plan_id: params.planId,
+      bypass_ported_number: params.bypassPortedNumber || false,
+    }),
+  });
 }
 
 export async function purchaseAirtime(params: {
@@ -175,23 +169,21 @@ export async function purchaseAirtime(params: {
   amount: number;
   bypassPortedNumber?: boolean;
 }): Promise<ApiResponse<DatamartAirtimeResult>> {
-  // DataMart API no longer provides airtime purchase endpoint - service discontinued or restructured
-  return {
-    success: false,
-    error: "DataMart airtime service unavailable. The provider has discontinued or restructured their API. Please contact support.",
-    errorCode: "PROVIDER_BAD_RESPONSE",
-  };
+  return datamartRequest<DatamartAirtimeResult>("/api/v1/airtime/", {
+    method: "POST",
+    body: JSON.stringify({
+      network: params.networkCode,
+      mobile_number: params.phoneNumber,
+      amount: params.amount,
+      bypass_ported_number: params.bypassPortedNumber || false,
+    }),
+  });
 }
 
 export async function getDataOrderStatus(
   orderId: string | number
 ): Promise<ApiResponse<DatamartOrderResult>> {
-  // DataMart API no longer provides order status endpoint - service discontinued or restructured
-  return {
-    success: false,
-    error: "DataMart order status service unavailable. The provider has discontinued or restructured their API. Please contact support.",
-    errorCode: "PROVIDER_BAD_RESPONSE",
-  };
+  return datamartRequest<DatamartOrderResult>(`/api/v1/data/${orderId}/`);
 }
 
 export function resolveNetworkCode(internalId: string): string {
