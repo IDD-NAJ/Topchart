@@ -128,7 +128,7 @@ export function DataTable({
       const res = await fetch(`/api/admin/tables?${params}`, {
         credentials: "include",
       })
-      const json = await res.json()
+      const json = await res.json().catch(() => ({ success: false, error: "Invalid response" }))
       if (json.success) {
         setData(json.data || [])
         setTotalPages(json.totalPages || 1)

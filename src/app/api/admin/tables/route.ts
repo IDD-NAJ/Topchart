@@ -112,7 +112,18 @@ export async function GET(req: NextRequest) {
     })
   } catch (error) {
     console.error("Table fetch error:", error)
-    return NextResponse.json({ success: false, error: "Database error" }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : "Database error"
+    if (errorMessage.includes('relation') && errorMessage.includes('does not exist')) {
+      return NextResponse.json({
+        success: true,
+        data: [],
+        totalRows: 0,
+        totalPages: 0,
+        page,
+        pageSize,
+      })
+    }
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }
 
