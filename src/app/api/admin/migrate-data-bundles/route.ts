@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sql } from "@/lib/db";
+import { sqlUnsafe } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       'utf8'
     );
 
-    await sql.query(sqlContent);
+    await sqlUnsafe(sqlContent);
 
     return NextResponse.json({
       success: true,
