@@ -54,7 +54,7 @@ export default function DataBundlesPage() {
           { key: "is_active", label: "Active", type: "boolean", bulkEditable: true },
         ]}
         searchableColumns={["name", "network"]}
-        defaultOrderBy="created_at"
+        defaultOrderBy="id"
       />
     </div>
   )
