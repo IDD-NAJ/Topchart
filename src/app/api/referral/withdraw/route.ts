@@ -23,11 +23,14 @@ export async function POST() {
     const qualifiedCount = parseInt(userRows[0].qualified_referral_count ?? 0)
     const rewardBalance = parseFloat(userRows[0].referral_reward_balance ?? "0")
 
-    if (qualifiedCount < 10) {
+    const settingsRows = await sql`SELECT value FROM app_settings WHERE key = 'referral_min_invites'`
+    const minInvites = settingsRows.length ? parseInt(settingsRows[0].value) : 10
+
+    if (qualifiedCount < minInvites) {
       return NextResponse.json(
         {
           success: false,
-          error: `You need ${10 - qualifiedCount} more qualified referral(s) to withdraw. You have ${qualifiedCount}/10.`,
+          error: `You need ${minInvites - qualifiedCount} more qualified referral(s) to withdraw. You have ${qualifiedCount}/${minInvites}.`,
         },
         { status: 400 }
       )

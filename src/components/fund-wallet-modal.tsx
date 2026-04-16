@@ -56,8 +56,8 @@ export function FundWalletModal({ open, onOpenChange, pendingReference }: FundWa
   const handleProceed = async () => {
     const numAmount = Number.parseInt(amount, 10)
     
-    if (!numAmount || numAmount < 1) {
-      setError("Minimum amount is GH₵1")
+    if (!numAmount || numAmount < 10) {
+      setError("Minimum amount is GH₵10")
       return
     }
     
