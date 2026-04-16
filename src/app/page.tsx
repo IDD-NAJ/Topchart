@@ -425,9 +425,9 @@ export default function HomePage() {
               className="mt-16 flex flex-wrap items-center justify-center gap-4 sm:gap-6"
             >
               {[
-                { name: "MTN", image: "/images/mtn-logo.png" },
-                { name: "Telecel", image: "/images/telecel-logo.png" },
-                { name: "AirtelTigo", image: "/images/airteltigo-logo.png" },
+                { name: "MTN", image: "/images/mtn-logo.png", color: "bg-yellow-400" },
+                { name: "Telecel", image: "/images/telecel-logo.png", color: "bg-red-500" },
+                { name: "AirtelTigo", image: "/images/airteltigo-logo.png", color: "bg-red-600" },
               ].map((network, index) => (
                 <motion.div
                   key={network.name}
@@ -445,9 +445,15 @@ export default function HomePage() {
                       className="object-contain"
                       sizes="32px"
                       onError={(e) => {
-                        e.currentTarget.style.display = 'none';
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const fallback = target.parentElement?.querySelector('.fallback-dot') as HTMLElement;
+                        if (fallback) fallback.style.display = 'flex';
                       }}
                     />
+                    <div className="fallback-dot hidden h-8 w-8 items-center justify-center">
+                      <div className={`h-3 w-3 rounded-full ${network.color}`} />
+                    </div>
                   </div>
                   <span className="text-xs font-semibold text-white/90">{network.name}</span>
                   <motion.div
