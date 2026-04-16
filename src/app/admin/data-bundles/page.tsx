@@ -52,10 +52,9 @@ export default function DataBundlesPage() {
           { key: "price", label: "Price", type: "number" },
           { key: "is_popular", label: "Popular", type: "boolean", bulkEditable: true },
           { key: "is_active", label: "Active", type: "boolean", bulkEditable: true },
-          { key: "synced_at", label: "Synced", type: "date" },
         ]}
         searchableColumns={["name", "network"]}
-        defaultOrderBy="synced_at"
+        defaultOrderBy="created_at"
       />
     </div>
   )
