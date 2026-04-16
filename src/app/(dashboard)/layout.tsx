@@ -64,13 +64,16 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-[color:var(--marketing-cream)]">
-      <Script
-        src="https://api.datamartgh.shop/widgets/delivery-tracker.js"
-        data-api-key={process.env.NEXT_PUBLIC_DATAMART_API_KEY || ""}
-        data-theme="dark"
-        data-position="bottom-right"
-        strategy="afterInteractive"
-      />
+      {process.env.NEXT_PUBLIC_DATAMART_API_KEY && (
+        <Script
+          src="https://api.datamartgh.shop/widgets/delivery-tracker.js"
+          data-api-key={process.env.NEXT_PUBLIC_DATAMART_API_KEY}
+          data-theme="dark"
+          data-position="bottom-right"
+          strategy="afterInteractive"
+          onError={() => console.error('Failed to load DataMart delivery tracker')}
+        />
+      )}
       <OfflineBanner />
       <DashboardSidebar collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />
         <div className={cn("flex-1 flex flex-col transition-all duration-300 ease-out", sidebarCollapsed ? "lg:pl-20" : "lg:pl-64")}>
