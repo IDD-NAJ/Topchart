@@ -117,6 +117,12 @@ async function getAccessToken(): Promise<string> {
   }
 
   const config = getReloadlyConfig();
+  
+  // Clean up baseUrl - remove trailing slash for audience
+  const audience = config.baseUrl.replace(/\/$/, "");
+  
+  console.log(`[Reloadly Auth] Using audience: ${audience}`);
+  console.log(`[Reloadly Auth] Auth URL: ${config.authUrl}`);
 
   try {
     const response = await fetch(config.authUrl, {
@@ -129,7 +135,7 @@ async function getAccessToken(): Promise<string> {
         client_id: config.clientId,
         client_secret: config.clientSecret,
         grant_type: "client_credentials",
-        audience: config.baseUrl,
+        audience: audience,
       }),
     });
 
@@ -163,7 +169,11 @@ async function reloadlyRequest<T>(
     const token = await getAccessToken();
     const config = getReloadlyConfig();
 
-    const response = await fetch(`${config.baseUrl}${endpoint}`, {
+    const baseUrl = config.baseUrl.replace(/\/$/, "");
+    const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+    const url = `${baseUrl}${path}`;
+
+    const response = await fetch(url, {
       ...options,
       headers: {
         Authorization: `Bearer ${token}`,
