@@ -18,8 +18,17 @@ export async function GET() {
     );
   } catch (error) {
     console.error("Dashboard API error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorDetails = error instanceof Error && error.stack ? error.stack : "";
+    
+    console.error("Dashboard error details:", errorMessage, errorDetails);
+    
     return NextResponse.json(
-      { success: false, error: "Failed to load dashboard data" },
+      { 
+        success: false, 
+        error: "Failed to load dashboard data",
+        details: process.env.NODE_ENV === "development" ? errorMessage : undefined
+      },
       {
         status: 500,
         headers: {
