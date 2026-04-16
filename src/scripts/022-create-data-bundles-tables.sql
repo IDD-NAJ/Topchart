@@ -43,6 +43,15 @@ CREATE INDEX IF NOT EXISTS idx_data_bundles_datamart_plan_id ON data_bundles(dat
 CREATE INDEX IF NOT EXISTS idx_data_bundle_categories_network ON data_bundle_categories(network);
 CREATE INDEX IF NOT EXISTS idx_data_bundle_categories_is_active ON data_bundle_categories(is_active);
 
+-- Function to update updated_at timestamp (if not exists)
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
 -- Create trigger for updated_at on data_bundles
 DROP TRIGGER IF EXISTS update_data_bundles_updated_at ON data_bundles;
 CREATE TRIGGER update_data_bundles_updated_at
