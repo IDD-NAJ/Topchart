@@ -15,7 +15,7 @@ import {
   PhoneCall,
   GraduationCap,
   ShieldCheck,
-  Zap,
+  Asterisk,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -69,38 +69,21 @@ export function Header() {
   const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [servicesOpen, setServicesOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10)
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
 
   return (
     <header
-      className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-        scrolled
-          ? "bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm"
-          : "bg-transparent border-b border-white/10"
-      )}
+      className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 transition-all duration-300"
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
-        
+
         {/* LOGO */}
         <Link href="/" className="shrink-0 flex items-center group relative z-10">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0052CC] to-[#003d99] flex items-center justify-center shadow-sm">
-              <Zap className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-lg bg-[#0071CE] flex items-center justify-center shadow-sm">
+              <Asterisk className="w-4 h-4 text-white" />
             </div>
-            <span className="font-sans text-xl font-bold tracking-tight flex items-center">
-              <span className={cn(
-                "transition-colors",
-                scrolled ? "text-slate-900" : "text-white"
-              )}>
-                Topchart
-              </span>
+            <span className="font-sans text-xl font-bold tracking-tight flex items-center text-slate-900">
+              Topchart
             </span>
           </div>
         </Link>
@@ -113,10 +96,7 @@ export function Header() {
                 <Link
                   key={l.href}
                   href={l.href}
-                  className={cn(
-                    "text-sm font-medium transition-colors",
-                    scrolled ? "text-slate-600 hover:text-slate-900" : "text-white/90 hover:text-white"
-                  )}
+                  className="text-sm font-medium text-slate-700 hover:text-[#0071CE] transition-colors"
                 >
                   {l.label}
                 </Link>
@@ -127,28 +107,25 @@ export function Header() {
 
           <DropdownMenu>
             <DropdownMenuTrigger
-              className={cn(
-                "flex items-center gap-1.5 text-sm font-medium outline-none transition-colors group",
-                scrolled ? "text-slate-600 hover:text-slate-900 data-[state=open]:text-slate-900" : "text-white/90 hover:text-white data-[state=open]:text-white"
-              )}
+              className="flex items-center gap-1.5 text-sm font-medium text-slate-700 hover:text-[#0071CE] outline-none transition-colors group data-[state=open]:text-[#0071CE]"
             >
               Services
               <ChevronDown className="h-4 w-4 opacity-70 group-data-[state=open]:rotate-180 transition-transform duration-200" aria-hidden />
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="center"
-              className="min-w-[320px] rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
+              className="min-w-[320px] rounded-lg border border-slate-200 bg-white p-2 shadow-lg"
             >
               <div className="grid gap-1">
                 {serviceLinks.map((s) => {
                   const Icon = s.icon
                   return (
-                    <DropdownMenuItem key={s.href} asChild className="focus:bg-slate-100 focus:text-slate-900 cursor-pointer rounded-lg">
+                    <DropdownMenuItem key={s.href} asChild className="focus:bg-[#0071CE]/5 focus:text-[#0071CE] cursor-pointer rounded-md">
                       <Link
                         href={s.href}
                         className="flex items-center gap-3 px-3 py-2.5 outline-none transition-colors w-full"
                       >
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#0052CC]/10 to-[#003d99]/10 text-[#0052CC]">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#0071CE]/10 text-[#0071CE]">
                           <Icon className="h-4 w-4" aria-hidden />
                         </div>
                         <div className="flex flex-col gap-0.5">
@@ -173,10 +150,7 @@ export function Header() {
                 <Link
                   key={l.href}
                   href={l.href}
-                  className={cn(
-                    "text-sm font-medium transition-colors",
-                    scrolled ? "text-slate-600 hover:text-slate-900" : "text-white/90 hover:text-white"
-                  )}
+                  className="text-sm font-medium text-slate-700 hover:text-[#0071CE] transition-colors"
                 >
                   {l.label}
                 </Link>
@@ -192,12 +166,7 @@ export function Header() {
              <Button
                asChild
                variant="outline"
-               className={cn(
-                 "h-9 rounded-lg text-sm font-medium shadow-sm px-5",
-                 scrolled 
-                   ? "border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900" 
-                   : "border-white/30 text-white hover:bg-white/10 hover:text-white"
-               )}
+               className="h-9 rounded-lg border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-900 text-sm font-medium px-5"
              >
                <Link href="/dashboard">
                  Dashboard
@@ -207,21 +176,13 @@ export function Header() {
             <div className="hidden sm:flex items-center gap-4">
               <Link
                 href="/login"
-                className={cn(
-                  "text-sm font-medium transition-colors px-2",
-                  scrolled ? "text-slate-600 hover:text-slate-900" : "text-white/90 hover:text-white"
-                )}
+                className="text-sm font-medium text-slate-700 hover:text-[#0071CE] transition-colors px-2"
               >
                 Sign In
               </Link>
-              <Button 
-                asChild 
-                className={cn(
-                  "h-9 rounded-lg text-sm font-medium shadow-sm px-5",
-                  scrolled 
-                    ? "bg-[#0052CC] hover:bg-[#003d99] text-white" 
-                    : "bg-[#0052CC] hover:bg-[#003d99] text-white"
-                )}
+              <Button
+                asChild
+                className="h-9 rounded-lg bg-[#0071CE] hover:bg-[#0056a8] text-white text-sm font-medium px-5"
               >
                 <Link href="/register">
                   Get Started
@@ -241,10 +202,7 @@ export function Header() {
             <SheetTrigger asChild>
               <button
                 type="button"
-                className={cn(
-                  "inline-flex h-9 w-9 items-center justify-center rounded-lg md:hidden transition-colors",
-                  scrolled ? "text-slate-600 hover:bg-slate-100" : "text-white/90 hover:bg-white/10"
-                )}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg md:hidden text-slate-700 hover:bg-slate-100 transition-colors"
                 aria-label="Toggle menu"
               >
                 <Menu className="h-5 w-5" />
@@ -259,16 +217,16 @@ export function Header() {
                 <Link
                   href="/"
                   onClick={() => setIsOpen(false)}
-                  className="rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                  className="rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                 >
                   Home
                 </Link>
-                
+
                 <div className="rounded-lg overflow-hidden">
                   <button
                     type="button"
                     onClick={() => setServicesOpen((o) => !o)}
-                    className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                    className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                     aria-expanded={servicesOpen}
                   >
                     Services
@@ -296,9 +254,9 @@ export function Header() {
                                   setIsOpen(false)
                                   setServicesOpen(false)
                                 }}
-                                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-slate-600 hover:bg-slate-100 transition-colors"
+                                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-slate-600 hover:bg-slate-50 transition-colors"
                               >
-                                <Icon className="h-4 w-4 shrink-0 text-[#0052CC]" aria-hidden />
+                                <Icon className="h-4 w-4 shrink-0 text-[#0071CE]" aria-hidden />
                                 <span className="text-sm font-medium">{s.label}</span>
                               </Link>
                             )
@@ -316,28 +274,28 @@ export function Header() {
                       key={l.href}
                       href={l.href}
                       onClick={() => setIsOpen(false)}
-                      className="rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                      className="rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                     >
                       {l.label}
                     </Link>
                   ))}
-                  
+
                 {!user && (
                   <Link
                     href="/login"
                     onClick={() => setIsOpen(false)}
-                    className="rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors sm:hidden"
+                    className="rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors sm:hidden"
                   >
                     Sign In
                   </Link>
                 )}
               </div>
-              
+
               <div className="border-t border-slate-200 p-6 bg-slate-50">
                 {user ? (
                    <Button
                      asChild
-                     className="w-full h-10 rounded-lg bg-[#0052CC] hover:bg-[#003d99] text-white font-medium shadow-sm"
+                     className="w-full h-10 rounded-lg bg-[#0071CE] hover:bg-[#0056a8] text-white font-medium"
                    >
                      <Link href="/dashboard" onClick={() => setIsOpen(false)}>
                        Go to Dashboard
@@ -346,7 +304,7 @@ export function Header() {
                 ) : (
                    <Button
                      asChild
-                     className="w-full h-10 rounded-lg bg-[#0052CC] hover:bg-[#003d99] text-white font-medium shadow-sm"
+                     className="w-full h-10 rounded-lg bg-[#0071CE] hover:bg-[#0056a8] text-white font-medium"
                    >
                      <Link href="/register" onClick={() => setIsOpen(false)}>
                        Get Started
