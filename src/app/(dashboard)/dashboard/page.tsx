@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { formatCurrency } from "@/lib/networks"
 import { copyToClipboard } from "@/lib/clipboard"
+import { toast } from "sonner"
 import { WalletCard } from "@/components/wallet-card"
 import { FundWalletModal } from "@/components/fund-wallet-modal"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -28,6 +29,7 @@ import {
   ShieldCheck,
   Gift,
   Link as LinkIcon,
+  Share2,
   ChevronRight,
   ArrowUpRight,
   Zap,
@@ -40,6 +42,8 @@ import {
   Inbox,
   GraduationCap,
   Store,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react"
 import { Suspense } from "react"
 import Loading from "./loading"
@@ -130,6 +134,7 @@ export default function DashboardPage() {
   const [showFundModal, setShowFundModal] = useState(false)
   const [pendingReference, setPendingReference] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [expandedTransaction, setExpandedTransaction] = useState<string | null>(null)
   const [referralStats, setReferralStats] = useState<ReferralStats | null>(null)
   const [referralError, setReferralError] = useState<string | null>(null)
   const [dashboardData, setDashboardData] = useState<{
@@ -654,34 +659,80 @@ export default function DashboardPage() {
                   ) : (
                     <div className="divide-y divide-border">
                       {recentTransactions.map((tx) => (
-                        <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
-                          <div className="flex items-center gap-3">
-                            <div className={cn(
-                              "w-10 h-10 rounded-full flex items-center justify-center",
-                              tx.type === "deposit" ? "bg-[#0052CC]/10 text-[#0052CC]" : "bg-[#1A85B8]/10 text-[#1A85B8]"
-                            )}>
-                              {tx.type === "deposit" ? <ArrowDownRight className="w-5 h-5" /> : 
-                               tx.type === "airtime" ? <Phone className="w-4 h-4" /> : <Wifi className="w-4 h-4" />}
+                        <div key={tx.id}>
+                          <div 
+                            className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors cursor-pointer"
+                            onClick={() => setExpandedTransaction(expandedTransaction === tx.id ? null : tx.id)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={cn(
+                                "w-10 h-10 rounded-full flex items-center justify-center",
+                                tx.type === "deposit" ? "bg-[#0052CC]/10 text-[#0052CC]" : "bg-[#1A85B8]/10 text-[#1A85B8]"
+                              )}>
+                                {tx.type === "deposit" ? <ArrowDownRight className="w-5 h-5" /> : 
+                                 tx.type === "airtime" ? <Phone className="w-4 h-4" /> : <Wifi className="w-4 h-4" />}
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold truncate max-w-[150px] sm:max-w-[200px]">{tx.description}</p>
+                                <p className="text-[10px] text-muted-foreground uppercase">
+                                  {new Date(tx.created_at).toLocaleDateString("en-GH", { day: 'numeric', month: 'short' })} · 
+                                  {new Date(tx.created_at).toLocaleTimeString("en-GH", { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-bold truncate max-w-[150px] sm:max-w-[200px]">{tx.description}</p>
-                              <p className="text-[10px] text-muted-foreground uppercase">
-                                {new Date(tx.created_at).toLocaleDateString("en-GH", { day: 'numeric', month: 'short' })} · 
-                                {new Date(tx.created_at).toLocaleTimeString("en-GH", { hour: '2-digit', minute: '2-digit' })}
-                              </p>
+                            <div className="flex items-center gap-2">
+                              <div className="text-right">
+                                <p className={cn("text-sm font-bold", tx.type === "deposit" ? "text-[#0052CC]" : "text-foreground")}>
+                                  {tx.type === "deposit" ? "+" : "-"}{formatCurrency(tx.amount)}
+                                </p>
+                                <Badge variant={tx.status === "success" ? "outline" : "secondary"} className={cn(
+                                  "text-[9px] uppercase font-bold h-4 px-1.5",
+                                  tx.status === "success" ? "text-[#0052CC] bg-[#E6F0FF]/80 border-[#0052CC]/20" : "text-amber-600 bg-amber-50/50"
+                                )}>
+                                  {tx.status}
+                                </Badge>
+                              </div>
+                              {expandedTransaction === tx.id ? (
+                                <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                              )}
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className={cn("text-sm font-bold", tx.type === "deposit" ? "text-[#0052CC]" : "text-foreground")}>
-                              {tx.type === "deposit" ? "+" : "-"}{formatCurrency(tx.amount)}
-                            </p>
-                            <Badge variant={tx.status === "success" ? "outline" : "secondary"} className={cn(
-                              "text-[9px] uppercase font-bold h-4 px-1.5",
-                              tx.status === "success" ? "text-[#0052CC] bg-[#E6F0FF]/80 border-[#0052CC]/20" : "text-amber-600 bg-amber-50/50"
-                            )}>
-                              {tx.status}
-                            </Badge>
-                          </div>
+                          {expandedTransaction === tx.id && (
+                            <div className="px-4 pb-4 space-y-2 bg-muted/30 border-t border-border">
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div className="p-2 rounded bg-background border">
+                                  <p className="text-muted-foreground font-bold uppercase">Type</p>
+                                  <p className="font-medium">{tx.type}</p>
+                                </div>
+                                <div className="p-2 rounded bg-background border">
+                                  <p className="text-muted-foreground font-bold uppercase">Amount</p>
+                                  <p className="font-medium">{formatCurrency(tx.amount)}</p>
+                                </div>
+                              </div>
+                              {tx.phone_number && (
+                                <div className="p-2 rounded bg-background border text-xs">
+                                  <p className="text-muted-foreground font-bold uppercase">Phone Number</p>
+                                  <p className="font-medium">{tx.phone_number}</p>
+                                </div>
+                              )}
+                              {tx.network && (
+                                <div className="p-2 rounded bg-background border text-xs">
+                                  <p className="text-muted-foreground font-bold uppercase">Network</p>
+                                  <p className="font-medium">{tx.network}</p>
+                                </div>
+                              )}
+                              <div className="p-2 rounded bg-background border text-xs">
+                                <p className="text-muted-foreground font-bold uppercase">Transaction ID</p>
+                                <p className="font-mono text-xs">{tx.id}</p>
+                              </div>
+                              <div className="p-2 rounded bg-background border text-xs">
+                                <p className="text-muted-foreground font-bold uppercase">Date & Time</p>
+                                <p className="font-medium">{new Date(tx.created_at).toLocaleString("en-GH")}</p>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -761,19 +812,56 @@ export default function DashboardPage() {
                     <LinkIcon className="w-3.5 h-3.5 text-muted-foreground" />
                     <span className="text-xs font-mono truncate max-w-[150px]">{referralLink}</span>
                  </div>
-                 <Button 
-                   size="sm" 
-                   className="h-7 text-[10px] uppercase font-bold"
-                   onClick={async () => {
-                     const success = await copyToClipboard(referralLink)
-                     if (success) {
-                       setCopied(true)
-                       setTimeout(() => setCopied(false), 1200)
-                     }
-                   }}
-                 >
-                   {copied ? "Copied" : "Copy"}
-                 </Button>
+                 <div className="flex gap-2">
+                   <Button 
+                     size="sm" 
+                     variant="outline"
+                     className="h-7 text-[10px] uppercase font-bold"
+                     onClick={async () => {
+                       const success = await copyToClipboard(referralLink)
+                       if (success) {
+                         setCopied(true)
+                         toast.success("Referral link copied to clipboard")
+                         setTimeout(() => setCopied(false), 1200)
+                       } else {
+                         toast.error("Failed to copy link")
+                       }
+                     }}
+                   >
+                     {copied ? "Copied" : "Copy"}
+                   </Button>
+                   <Button 
+                     size="sm" 
+                     className="h-7 text-[10px] uppercase font-bold"
+                     onClick={async () => {
+                       const shareData = {
+                         title: "Join Topchart Ghana",
+                         text: "Scale your earnings by expanding our infrastructure network. Use my referral link to get started!",
+                         url: referralLink
+                       }
+                       
+                       if (navigator.share && navigator.canShare(shareData)) {
+                         try {
+                           await navigator.share(shareData)
+                           toast.success("Shared successfully")
+                         } catch (error) {
+                           if ((error as Error).name !== 'AbortError') {
+                             toast.error("Failed to share")
+                           }
+                         }
+                       } else {
+                         const success = await copyToClipboard(referralLink)
+                         if (success) {
+                           toast.success("Referral link copied to clipboard")
+                         } else {
+                           toast.error("Failed to copy link")
+                         }
+                       }
+                     }}
+                   >
+                     <Share2 className="w-3 h-3" />
+                   </Button>
+                 </div>
                </div>
                <div className="grid grid-cols-2 gap-3">
                  <div className="p-3 rounded-lg bg-background border border-border">

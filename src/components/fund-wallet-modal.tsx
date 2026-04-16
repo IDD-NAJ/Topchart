@@ -196,12 +196,12 @@ export function FundWalletModal({ open, onOpenChange, pendingReference }: FundWa
                         <span className="font-medium">{formatCurrency(Number(amount))}</span>
                       </div>
                       <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Service Charge (4%):</span>
-                        <span className="font-medium">{formatCurrency(Number(amount) * 0.04)}</span>
+                        <span className="text-muted-foreground">Service Charge (5%):</span>
+                        <span className="font-medium">{formatCurrency(Number(amount) * 0.05)}</span>
                       </div>
                       <div className="flex justify-between text-sm font-bold border-t border-border pt-1 mt-1">
                         <span>Total to Pay:</span>
-                        <span className="text-[color:var(--marketing-accent)]">{formatCurrency(Number(amount) * 1.04)}</span>
+                        <span className="text-[color:var(--marketing-accent)]">{formatCurrency(Number(amount) * 1.05)}</span>
                       </div>
                     </div>
                   )}
