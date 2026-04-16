@@ -58,11 +58,20 @@ const datamartEnvSchema = z.object({
 });
 type DatamartEnv = z.infer<typeof datamartEnvSchema>;
 
+const reloadlyEnvSchema = z.object({
+  RELOADLY_CLIENT_ID: z.string().min(1, "RELOADLY_CLIENT_ID is required"),
+  RELOADLY_CLIENT_SECRET: z.string().min(1, "RELOADLY_CLIENT_SECRET is required"),
+  RELOADLY_BASE_URL: z.string().url().optional(),
+  RELOADLY_AUTH_URL: z.string().url().optional(),
+});
+type ReloadlyEnv = z.infer<typeof reloadlyEnvSchema>;
+
 let cachedEnv: ServerEnv | null = null;
 let cachedDatabaseEnv: DatabaseEnv | null = null;
 let cachedPaystackEnv: PaystackEnv | null = null;
 let cachedSupabaseStorageEnv: SupabaseStorageEnv | null = null;
 let cachedDatamartEnv: DatamartEnv | null = null;
+let cachedReloadlyEnv: ReloadlyEnv | null = null;
 
 export function getServerEnv(): ServerEnv {
   if (cachedEnv) {
@@ -137,4 +146,19 @@ export function getDatamartEnv(): DatamartEnv {
 
   cachedDatamartEnv = parsed.data;
   return cachedDatamartEnv;
+}
+
+export function getReloadlyEnv(): ReloadlyEnv {
+  if (cachedReloadlyEnv) {
+    return cachedReloadlyEnv;
+  }
+
+  const parsed = reloadlyEnvSchema.safeParse(process.env);
+  if (!parsed.success) {
+    const errors = parsed.error.issues.map((issue) => issue.message).join(", ");
+    throw new Error(`Invalid Reloadly environment: ${errors}`);
+  }
+
+  cachedReloadlyEnv = parsed.data;
+  return cachedReloadlyEnv;
 }

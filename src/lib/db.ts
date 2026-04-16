@@ -51,6 +51,14 @@ function getPool(): Pool {
   );
 }
 
+function isErrorEventLike(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as any;
+  if (e.type === "error") return true;
+  const ctorName = e?.constructor?.name;
+  return ctorName === "ErrorEvent";
+}
+
 function isTimeoutError(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
   const e = err as any;
@@ -64,18 +72,46 @@ function isTimeoutError(err: unknown): boolean {
   );
 }
 
-async function withRetry<T>(fn: () => Promise<T>, retries = 4, delayMs = 1500): Promise<T> {
+function normalizeDbError(err: unknown): Error {
+  const asAny = err as any;
+
+  if (isErrorEventLike(err) || isTimeoutError(err)) {
+    const originalMessage =
+      typeof asAny?.message === "string" && asAny.message.trim().length > 0
+        ? asAny.message
+        : "Database network error (likely Neon connectivity issue)";
+    const wrapped = new Error(originalMessage);
+    (wrapped as any).code = asAny?.code || "NEON_ERROR_EVENT";
+    return wrapped;
+  }
+
+  if (err instanceof Error) {
+    return err;
+  }
+
+  const fallbackMessage =
+    typeof err === "string" && err.length > 0 ? err : "Database query failed";
+  const wrapped = new Error(fallbackMessage);
+  if (asAny?.code) {
+    (wrapped as any).code = asAny.code;
+  }
+  return wrapped;
+}
+
+async function withRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 1200): Promise<T> {
   let lastError: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       return await fn();
     } catch (err) {
       lastError = err;
-      if (!isTimeoutError(err) || attempt === retries) throw err;
+      if (!isTimeoutError(err) || attempt === retries) {
+        throw normalizeDbError(err);
+      }
       await new Promise((r) => setTimeout(r, delayMs));
     }
   }
-  throw lastError;
+  throw normalizeDbError(lastError);
 }
 
 function sql(strings: TemplateStringsArray, ...values: unknown[]): Promise<any[]> {

@@ -45,6 +45,10 @@ const migrations = [
   '021-add-user-referral-columns.sql',
   '022-create-data-bundles-tables.sql',
   '023-create-favorites-table.sql',
+  '024-create-homepage-images-table.sql',
+  '025-create-homepage-media-table.sql',
+  '026-add-pricing-fields-to-data-bundles.sql',
+  '027-add-reloadly-fields.sql',
 ];
 
 function getCleanConnectionString(): string {

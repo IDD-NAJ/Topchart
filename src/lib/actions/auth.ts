@@ -319,13 +319,32 @@ export async function login(formData: {
     };
   } catch (error: unknown) {
     const err = error as { message?: string; code?: string; cause?: unknown };
-    console.error("Login error:", {
-      message: err?.message || "Unknown error",
-      code: err?.code,
-      cause:
-        err?.cause && typeof err.cause === "object"
-          ? (err.cause as { message?: string }).message || "Nested error"
-          : undefined,
+    const message = err?.message || "";
+    const code = err?.code;
+    const lowerMessage = message.toLowerCase();
+
+    const isNetworkIssue =
+      code === "NEON_ERROR_EVENT" ||
+      code === "UND_ERR_CONNECT_TIMEOUT" ||
+      lowerMessage.includes("connect timeout") ||
+      lowerMessage.includes("fetch failed") ||
+      lowerMessage.includes("websocket server error") ||
+      lowerMessage.includes("network error");
+
+    if (isNetworkIssue) {
+      console.error("[auth.login] Database network error", {
+        code: code || "NEON_ERROR_EVENT",
+        message: message || "Database network error (likely Neon connectivity issue)",
+      });
+      return {
+        success: false,
+        error: "Login is temporarily unavailable due to a network issue. Please try again in a moment.",
+      };
+    }
+
+    console.error("[auth.login] Unexpected error", {
+      code: code || "UNKNOWN",
+      message: message || "Unknown error",
     });
     return { success: false, error: "Failed to login. Please try again." };
   }

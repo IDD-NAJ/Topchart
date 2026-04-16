@@ -27,11 +27,21 @@ import { Label } from "@/components/ui/label"
 
 interface DatamartPlan {
   id: string
-  data_plan: string
-  plan_network: string
-  month_validate: string
-  plan_amount: string
-  plan_type?: string
+  networkId: string
+  network: string
+  name: string
+  validity: string | null
+  validityHours: number | null
+  validityDays: number | null
+  providerPrice: number
+  effectivePrice: number
+  priceOverride: number | null
+  markupPercent: number | null
+  isPopular: boolean
+  isActive: boolean
+  isFeatured: boolean
+  datamartPlanId: string | null
+  datamartPlanType: string | null
 }
 
 type Step = "form" | "confirm" | "processing" | "success" | "failed"
@@ -109,21 +119,21 @@ export default function DataPage() {
   // Deselect plan if network changes and plan doesn't match
   useEffect(() => {
     if (selectedNetwork && selectedPlan) {
-      const isMatch = datamartNetworkMatches(selectedPlan.plan_network, selectedNetwork.name);
+      const isMatch = datamartNetworkMatches(selectedPlan.network, selectedNetwork.name);
       if (!isMatch) {
         setSelectedPlan(null);
       }
     }
   }, [selectedNetwork, selectedPlan]);
 
-  const planTypes = ["ALL", ...Array.from(new Set(plans.map((p) => p.plan_type || "SME").filter(Boolean)))]
+  const planTypes = ["ALL", ...Array.from(new Set(plans.map((p) => p.datamartPlanType || "SME").filter(Boolean)))]
 
   const filteredPlans = plans.filter((p) => {
-    if (activeType !== "ALL" && (p.plan_type || "SME") !== activeType) return false;
+    if (activeType !== "ALL" && (p.datamartPlanType || "SME") !== activeType) return false;
 
     // If a network is selected, filter by network
-    if (selectedNetwork && p.plan_network) {
-      const isMatch = datamartNetworkMatches(p.plan_network, selectedNetwork.name);
+    if (selectedNetwork && p.network) {
+      const isMatch = datamartNetworkMatches(p.network, selectedNetwork.name);
       if (!isMatch) return false;
     }
 
@@ -134,7 +144,7 @@ export default function DataPage() {
     if (!selectedNetwork) { setError("Please select a network provider."); return false }
     if (!phone || phone.length < 10) { setError("Please enter a valid 10-digit phone number."); return false }
     if (!selectedPlan) { setError("Please select a data bundle plan."); return false }
-    const price = parseFloat(selectedPlan.plan_amount)
+    const price = selectedPlan.effectivePrice
     if (!authUser || price > authUser.walletBalance) {
       setError("Insufficient wallet balance. Please fund your wallet.")
       return false
@@ -196,9 +206,9 @@ export default function DataPage() {
           networkId: selectedNetwork.id,
           networkName: selectedNetwork.name,
           planId: selectedPlan.id,
-          planName: selectedPlan.data_plan,
-          planSize: selectedPlan.data_plan,
-          planPrice: parseFloat(selectedPlan.plan_amount),
+          planName: selectedPlan.name,
+          planSize: selectedPlan.name,
+          planPrice: selectedPlan.effectivePrice,
           type: "DATA",
           idempotencyKey,
         }),
@@ -218,7 +228,7 @@ export default function DataPage() {
     }
   }
 
-  const planPrice = selectedPlan ? parseFloat(selectedPlan.plan_amount) : 0
+  const planPrice = selectedPlan ? selectedPlan.effectivePrice : 0
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-16 animate-in fade-in duration-700">
@@ -265,7 +275,7 @@ export default function DataPage() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">Bundle</p>
-                    <p className="text-lg font-bold">{selectedPlan?.data_plan}</p>
+                    <p className="text-lg font-bold">{selectedPlan?.name}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">Amount</p>
@@ -431,16 +441,16 @@ export default function DataPage() {
                               )}
                             >
                               <div className="space-y-1">
-                                <p className="text-sm font-bold group-hover:text-[#F38F20] transition-colors">{plan.data_plan}</p>
-                                <p className="text-[10px] text-muted-foreground font-mono">{plan.month_validate}</p>
-                                {plan.plan_type && plan.plan_type !== "SME" && (
+                                <p className="text-sm font-bold group-hover:text-[#F38F20] transition-colors">{plan.name}</p>
+                                <p className="text-[10px] text-muted-foreground font-mono">{plan.validity}</p>
+                                {plan.datamartPlanType && plan.datamartPlanType !== "SME" && (
                                   <Badge variant="outline" className="text-[8px] h-4 px-1.5 font-bold">
-                                    {PLAN_TYPE_LABELS[plan.plan_type] || plan.plan_type}
+                                    {PLAN_TYPE_LABELS[plan.datamartPlanType] || plan.datamartPlanType}
                                   </Badge>
                                 )}
                               </div>
                               <div className="text-right space-y-1">
-                                <p className="text-sm font-bold">GH₵{parseFloat(plan.plan_amount).toFixed(2)}</p>
+                                <p className="text-sm font-bold">GH₵{plan.effectivePrice.toFixed(2)}</p>
                                 {selectedPlan?.id === plan.id && (
                                   <Badge className="text-[8px] h-4 px-1.5 uppercase bg-[#F38F20]">Selected</Badge>
                                 )}
@@ -493,11 +503,11 @@ export default function DataPage() {
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-dashed border-[#F38F20]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Bundle</span>
-                      <span className="text-sm font-bold truncate max-w-[120px]">{selectedPlan?.data_plan || "—"}</span>
+                      <span className="text-sm font-bold truncate max-w-[120px]">{selectedPlan?.name || "—"}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-dashed border-[#F38F20]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Validity</span>
-                      <span className="text-sm font-bold">{selectedPlan?.month_validate || "—"}</span>
+                      <span className="text-sm font-bold">{selectedPlan?.validity || "—"}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-dashed border-[#F38F20]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Wallet</span>
@@ -554,7 +564,7 @@ export default function DataPage() {
               </DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
                 {step === "processing" && "Sending your request to network provider. Please wait…"}
-                {step === "success" && `${selectedPlan?.data_plan} has been activated on ${phone}.`}
+                {step === "success" && `${selectedPlan?.name} has been activated on ${phone}.`}
                 {step === "failed" && (error || "The data bundle could not be activated. Your wallet has been refunded.")}
               </DialogDescription>
             </div>

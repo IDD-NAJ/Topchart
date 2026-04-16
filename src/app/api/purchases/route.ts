@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql, withTransaction } from "@/lib/db";
-import { purchaseDataBundle, purchaseAirtime } from "@/lib/datamart";
+import { purchaseDataBundle, purchaseAirtime as purchaseDatamartAirtime } from "@/lib/datamart";
+import { purchaseAirtime as purchaseReloadlyAirtime, getOperatorId } from "@/lib/reloadly";
 
 export const runtime = "nodejs";
 
@@ -167,6 +168,7 @@ export async function POST(request: NextRequest) {
     let providerSuccess = false;
     let providerMessage = "";
     let providerOrderId: string | number | undefined;
+    let providerName = "datamart";
 
     if (purchaseType === "DATA") {
       const result = await purchaseDataBundle({
@@ -180,26 +182,76 @@ export async function POST(request: NextRequest) {
         providerSuccess = status === "successful";
         providerMessage = result.data.message || result.data.api_response || "";
         providerOrderId = result.data.id;
+        providerName = "datamart";
 
         if (!providerSuccess && status === "pending") providerMessage = "Order queued with provider";
       } else {
         providerMessage = result.error || "DataMart request failed";
       }
     } else {
-      const result = await purchaseAirtime({
-        networkCode: networkId,
-        phoneNumber: phone,
-        amount: price,
-      });
+      // Try Reloadly first for airtime
+      const operatorId = getOperatorId(networkName);
 
-      if (result.success && result.data) {
-        const status = result.data.Status?.toLowerCase();
-        providerSuccess = status === "successful";
-        providerMessage = result.data.message || "";
+      if (operatorId) {
+        console.log(`[Reloadly] Attempting airtime purchase for ${networkName} (${operatorId}) - ${phone} - GH₵${price}`);
+        const reloadlyResult = await purchaseReloadlyAirtime({
+          operatorId,
+          amount: price,
+          recipientPhone: phone,
+          customIdentifier: reference,
+        });
 
-        if (!providerSuccess && status === "pending") providerMessage = "Airtime queued with provider";
+        if (reloadlyResult.success && reloadlyResult.data) {
+          const status = reloadlyResult.data.status?.toLowerCase();
+          providerSuccess = status === "successful";
+          providerMessage = reloadlyResult.data.status || "";
+          providerOrderId = reloadlyResult.data.transactionId;
+          providerName = "reloadly";
+
+          console.log(`[Reloadly] Purchase ${providerSuccess ? "successful" : "pending"} - TX: ${providerOrderId}`);
+
+          if (!providerSuccess && status === "pending") {
+            providerMessage = "Airtime queued with Reloadly";
+          }
+        } else {
+          // Reloadly failed - log and fallback to DataMart
+          console.warn(`[Reloadly] Failed: ${reloadlyResult.error} (${reloadlyResult.errorCode}). Falling back to DataMart.`);
+
+          const datamartResult = await purchaseDatamartAirtime({
+            networkCode: networkId,
+            phoneNumber: phone,
+            amount: price,
+          });
+
+          if (datamartResult.success && datamartResult.data) {
+            const status = datamartResult.data.Status?.toLowerCase();
+            providerSuccess = status === "successful";
+            providerMessage = datamartResult.data.message || "";
+            providerName = "datamart";
+
+            if (!providerSuccess && status === "pending") providerMessage = "Airtime queued with provider";
+          } else {
+            providerMessage = datamartResult.error || "Both Reloadly and DataMart failed";
+          }
+        }
       } else {
-        providerMessage = result.error || "DataMart request failed";
+        // No operator mapping found, use DataMart directly
+        console.log(`[DataMart] No Reloadly operator mapping for ${networkName}, using DataMart directly`);
+        const datamartResult = await purchaseDatamartAirtime({
+          networkCode: networkId,
+          phoneNumber: phone,
+          amount: price,
+        });
+
+        if (datamartResult.success && datamartResult.data) {
+          const status = datamartResult.data.Status?.toLowerCase();
+          providerSuccess = status === "successful";
+          providerMessage = datamartResult.data.message || "";
+
+          if (!providerSuccess && status === "pending") providerMessage = "Airtime queued with provider";
+        } else {
+          providerMessage = datamartResult.error || "DataMart request failed";
+        }
       }
     }
 
@@ -209,7 +261,7 @@ export async function POST(request: NextRequest) {
         UPDATE transactions
         SET status = ${finalStatus},
             metadata = metadata || ${JSON.stringify({
-              provider: "datamart",
+              provider: providerName || "datamart",
               state: providerSuccess ? "success" : "provider_submitted",
               provider_order_id: providerOrderId,
               provider_message: providerMessage,
