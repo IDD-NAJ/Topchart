@@ -1,8 +1,10 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
-  PAYSTACK_SECRET_KEY: z.string().min(1, "PAYSTACK_SECRET_KEY is required"),
+  DATABASE_URL: z.string().optional(),
+  NEON_DATABASE_URL: z.string().optional(),
+  NETLIFY_DATABASE_URL: z.string().optional(),
+  PAYSTACK_SECRET_KEY: z.string().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   PVADEALS_API_KEY: z.string().optional(),
   PVADEALS_BASE_URL: z.string().url().optional(),
@@ -12,6 +14,9 @@ const envSchema = z.object({
   USD_TO_GHS_RATE: z.string().optional(),
   TEXTVERIFIED_API_KEY: z.string().optional(),
   TEXTVERIFIED_API_URL: z.string().url().optional(),
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  SUPABASE_BUCKET_HOMEPAGE_MEDIA: z.string().optional(),
   EMAIL_HOST: z.string().optional(),
   EMAIL_PORT: z.string().optional(),
   EMAIL_USER: z.string().optional(),
@@ -20,6 +25,33 @@ const envSchema = z.object({
 });
 
 type ServerEnv = z.infer<typeof envSchema>;
+const databaseEnvSchema = z
+  .object({
+    DATABASE_URL: z.string().optional(),
+    NEON_DATABASE_URL: z.string().optional(),
+    NETLIFY_DATABASE_URL: z.string().optional(),
+  })
+  .refine(
+    (env) =>
+      Boolean(env.DATABASE_URL?.trim()) ||
+      Boolean(env.NEON_DATABASE_URL?.trim()) ||
+      Boolean(env.NETLIFY_DATABASE_URL?.trim()),
+    "One of DATABASE_URL, NEON_DATABASE_URL, or NETLIFY_DATABASE_URL is required"
+  );
+type DatabaseEnv = z.infer<typeof databaseEnvSchema>;
+
+const paystackEnvSchema = z.object({
+  PAYSTACK_SECRET_KEY: z.string().min(1, "PAYSTACK_SECRET_KEY is required"),
+});
+type PaystackEnv = z.infer<typeof paystackEnvSchema>;
+
+const supabaseStorageEnvSchema = z.object({
+  SUPABASE_URL: z.string().url("SUPABASE_URL must be a valid URL"),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
+  SUPABASE_BUCKET_HOMEPAGE_MEDIA: z.string().optional(),
+});
+type SupabaseStorageEnv = z.infer<typeof supabaseStorageEnvSchema>;
+
 const datamartEnvSchema = z.object({
   DATAMART_API_KEY: z.string().min(1, "DATAMART_API_KEY is required"),
   DATAMART_BASE_URL: z.string().url().optional(),
@@ -27,6 +59,9 @@ const datamartEnvSchema = z.object({
 type DatamartEnv = z.infer<typeof datamartEnvSchema>;
 
 let cachedEnv: ServerEnv | null = null;
+let cachedDatabaseEnv: DatabaseEnv | null = null;
+let cachedPaystackEnv: PaystackEnv | null = null;
+let cachedSupabaseStorageEnv: SupabaseStorageEnv | null = null;
 let cachedDatamartEnv: DatamartEnv | null = null;
 
 export function getServerEnv(): ServerEnv {
@@ -42,6 +77,51 @@ export function getServerEnv(): ServerEnv {
 
   cachedEnv = parsed.data;
   return cachedEnv;
+}
+
+export function getDatabaseEnv(): DatabaseEnv {
+  if (cachedDatabaseEnv) {
+    return cachedDatabaseEnv;
+  }
+
+  const parsed = databaseEnvSchema.safeParse(process.env);
+  if (!parsed.success) {
+    const errors = parsed.error.issues.map((issue) => issue.message).join(", ");
+    throw new Error(`Invalid database environment: ${errors}`);
+  }
+
+  cachedDatabaseEnv = parsed.data;
+  return cachedDatabaseEnv;
+}
+
+export function getPaystackEnv(): PaystackEnv {
+  if (cachedPaystackEnv) {
+    return cachedPaystackEnv;
+  }
+
+  const parsed = paystackEnvSchema.safeParse(process.env);
+  if (!parsed.success) {
+    const errors = parsed.error.issues.map((issue) => issue.message).join(", ");
+    throw new Error(`Invalid Paystack environment: ${errors}`);
+  }
+
+  cachedPaystackEnv = parsed.data;
+  return cachedPaystackEnv;
+}
+
+export function getSupabaseStorageEnv(): SupabaseStorageEnv {
+  if (cachedSupabaseStorageEnv) {
+    return cachedSupabaseStorageEnv;
+  }
+
+  const parsed = supabaseStorageEnvSchema.safeParse(process.env);
+  if (!parsed.success) {
+    const errors = parsed.error.issues.map((issue) => issue.message).join(", ");
+    throw new Error(`Invalid Supabase storage environment: ${errors}`);
+  }
+
+  cachedSupabaseStorageEnv = parsed.data;
+  return cachedSupabaseStorageEnv;
 }
 
 export function getDatamartEnv(): DatamartEnv {

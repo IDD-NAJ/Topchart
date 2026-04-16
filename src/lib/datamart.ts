@@ -191,6 +191,7 @@ export function resolveNetworkCode(internalId: string): string {
 }
 
 export function datamartNetworkMatches(planNetwork: string, selectedNetwork: string): boolean {
+  if (!planNetwork || !selectedNetwork) return false;
   const plan = planNetwork.toLowerCase();
   const selected = selectedNetwork.toLowerCase();
   if (plan.includes(selected) || selected.includes(plan)) return true;

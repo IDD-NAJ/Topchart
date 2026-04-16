@@ -74,6 +74,8 @@ async function main() {
     path.join(__dirname, "013-create-press-tables.sql"),
     path.join(__dirname, "015-add-verification-tables.sql"),
     path.join(__dirname, "020-referral-links.sql"),
+    path.join(__dirname, "024-create-homepage-images-table.sql"),
+    path.join(__dirname, "025-create-homepage-media-table.sql"),
   ];
  
   for (const f of files) {

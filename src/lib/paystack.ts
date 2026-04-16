@@ -1,9 +1,13 @@
-﻿import { getServerEnv } from "@/lib/env";
+import { getPaystackEnv } from "@/lib/env";
 
 const PAYSTACK_BASE_URL = "https://api.paystack.co";
 
 function getPaystackKey(): string {
-  return getServerEnv().PAYSTACK_SECRET_KEY || "";
+  try {
+    return getPaystackEnv().PAYSTACK_SECRET_KEY;
+  } catch {
+    return "";
+  }
 }
 
 export interface PaystackInitializeResponse {

@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
+import { useEffect, useState } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import {
@@ -114,6 +115,21 @@ const TESTIMONIALS: Testimonial[] = [
     role: "Finance Director",
   },
 ]
+
+type NetworkLogoConfig = {
+  key: string
+  name: string
+  color: string
+  image: string
+}
+
+const DEFAULT_NETWORK_LOGOS: NetworkLogoConfig[] = [
+  { key: "mtn_logo", name: "MTN", image: "/images/mtn-logo.svg", color: "bg-yellow-400" },
+  { key: "telecel_logo", name: "Telecel", image: "/images/telecel-logo.svg", color: "bg-red-500" },
+  { key: "airteltigo_logo", name: "AirtelTigo", image: "/images/airteltigo-logo.svg", color: "bg-red-600" },
+]
+
+const DEFAULT_DEVELOPER_IMAGE = "/images/technical-partnership.jpg"
 
 function TopographicBg() {
   return (
@@ -326,6 +342,45 @@ function PrimaryLink({
 }
 
 export default function HomePage() {
+  const [networkLogos, setNetworkLogos] = useState<NetworkLogoConfig[]>(DEFAULT_NETWORK_LOGOS)
+  const [developerImage, setDeveloperImage] = useState(DEFAULT_DEVELOPER_IMAGE)
+
+  useEffect(() => {
+    let active = true
+
+    const loadHomepageImages = async () => {
+      try {
+        const response = await fetch("/api/content/homepage-media", { cache: "no-store" })
+        const payload = await response.json()
+        if (!active || !payload?.success || !Array.isArray(payload.media)) return
+
+        const imageMap = new Map<string, string>()
+        for (const item of payload.media as Array<{ section_key?: string; public_url?: string; asset_type?: string }>) {
+          if (item?.asset_type === "image" && item?.section_key && item?.public_url) {
+            imageMap.set(item.section_key, item.public_url)
+          }
+        }
+
+        setNetworkLogos((current) =>
+          current.map((logo) => ({
+            ...logo,
+            image: imageMap.get(logo.key) || logo.image,
+          }))
+        )
+
+        setDeveloperImage(imageMap.get("developer_community_image") || DEFAULT_DEVELOPER_IMAGE)
+      } catch {
+        setNetworkLogos(DEFAULT_NETWORK_LOGOS)
+        setDeveloperImage(DEFAULT_DEVELOPER_IMAGE)
+      }
+    }
+
+    loadHomepageImages()
+    return () => {
+      active = false
+    }
+  }, [])
+
   return (
     <PageTransition className="min-h-screen flex flex-col bg-[color:var(--marketing-cream)]">
       <Header />
@@ -424,11 +479,7 @@ export default function HomePage() {
               transition={{ duration: 0.6, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
               className="mt-16 flex flex-wrap items-center justify-center gap-4 sm:gap-6"
             >
-              {[
-                { name: "MTN", image: "/images/mtn-logo.svg", color: "bg-yellow-400" },
-                { name: "Telecel", image: "/images/telecel-logo.svg", color: "bg-red-500" },
-                { name: "AirtelTigo", image: "/images/airteltigo-logo.svg", color: "bg-red-600" },
-              ].map((network, index) => (
+              {networkLogos.map((network, index) => (
                 <motion.div
                   key={network.name}
                   initial={{ opacity: 0, scale: 0.8 }}
@@ -596,7 +647,7 @@ export default function HomePage() {
             <ScrollReveal once={false} amount={0.22} className="relative">
               <div className="relative aspect-[4/3] overflow-hidden rounded bg-neutral-900">
                 <Image
-                  src="/images/technical-partnership.jpg"
+                  src={developerImage}
                   alt="A user looking at code metrics"
                   fill
                   className="object-cover"

@@ -317,8 +317,16 @@ export async function login(formData: {
       token: token,
       expiresAt: expiresAt
     };
-  } catch (error) {
-    console.error("Login error:", error);
+  } catch (error: unknown) {
+    const err = error as { message?: string; code?: string; cause?: unknown };
+    console.error("Login error:", {
+      message: err?.message || "Unknown error",
+      code: err?.code,
+      cause:
+        err?.cause && typeof err.cause === "object"
+          ? (err.cause as { message?: string }).message || "Nested error"
+          : undefined,
+    });
     return { success: false, error: "Failed to login. Please try again." };
   }
 }

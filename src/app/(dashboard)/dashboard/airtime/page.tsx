@@ -76,29 +76,38 @@ export default function AirtimePage() {
     }
   }
 
+  const [favoritesRefreshKey, setFavoritesRefreshKey] = useState(0)
+
   const handleSaveFavorite = async () => {
-    if (!authUser || !phone) return;
-    if (saveAsFavorite && !favoriteName) {
-      toast.error("Please provide a label for this recipient.");
-      return;
+    if (!authUser || !phone) {
+      toast.error("Please enter a phone number.")
+      return
     }
 
-    setIsSaving(true);
+    const cleanPhone = phone.replace(/\D/g, '')
+    if (cleanPhone.length < 9) {
+      toast.error("Please enter a valid phone number (at least 9 digits).")
+      return
+    }
+
+    const nameToUse = favoriteName.trim() || phone
+
+    setIsSaving(true)
     const result = await addFavorite({
       userId: authUser.id,
       phoneNumber: phone,
-      name: favoriteName,
+      name: nameToUse,
       type: "airtime",
-      network: selectedNetwork?.name
-    });
-
-    setIsSaving(false);
+      network: selectedNetwork?.name || "general",
+    })
+    setIsSaving(false)
     if (result.success) {
-      toast.success("Recipient saved successfully.");
-      setSaveAsFavorite(false);
-      setFavoriteName("");
+      toast.success("Recipient saved successfully.")
+      setSaveAsFavorite(false)
+      setFavoriteName("")
+      setFavoritesRefreshKey(prev => prev + 1)
     } else {
-      toast.error(result.error || "Failed to save recipient.");
+      toast.error(result.error || "Failed to save recipient.")
     }
   }
 
@@ -146,7 +155,7 @@ export default function AirtimePage() {
       case "failed":
         return <AlertCircle className="w-8 h-8 text-red-500" />
       default:
-        return <Loader2 className="w-8 h-8 animate-spin text-[#0052CC]" />
+        return <Loader2 className="w-8 h-8 animate-spin text-[#F38F20]" />
     }
   }
 
@@ -156,7 +165,7 @@ export default function AirtimePage() {
       {/* Infrastructure Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <Link href="/dashboard" className="inline-flex items-center text-xs font-bold text-muted-foreground hover:text-[#0052CC] transition-colors uppercase tracking-widest mb-2 group">
+          <Link href="/dashboard" className="inline-flex items-center text-xs font-bold text-muted-foreground hover:text-[#F38F20] transition-colors uppercase tracking-widest mb-2 group">
             <ArrowLeft className="w-3 h-3 mr-1.5 group-hover:-translate-x-1 transition-transform" />
             Back to Infrastructure
           </Link>
@@ -164,9 +173,9 @@ export default function AirtimePage() {
           <p className="text-muted-foreground">Instant synchronization with Ghana's major network nodes.</p>
         </div>
         <div className="flex items-center gap-3">
-           <div className="px-4 py-2 rounded-lg bg-[#0052CC]/5 border border-[#0052CC]/10 flex items-center gap-2">
+           <div className="px-4 py-2 rounded-lg bg-[#F38F20]/5 border border-[#F38F20]/10 flex items-center gap-2">
              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-             <span className="text-xs font-bold uppercase tracking-wider text-[#0052CC]">System Online</span>
+             <span className="text-xs font-bold uppercase tracking-wider text-[#F38F20]">System Online</span>
            </div>
         </div>
       </div>
@@ -174,8 +183,8 @@ export default function AirtimePage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {step === "confirm" ? (
           <div className="lg:col-span-12 animate-in slide-in-from-bottom-4 duration-500">
-            <Card className="border-[#0052CC]/20 bg-[#0052CC]/5 max-w-2xl mx-auto overflow-hidden">
-              <div className="bg-gradient-to-r from-[#0052CC] to-[#1A85B8] p-8 text-white relative">
+            <Card className="border-[#F38F20]/20 bg-[#F38F20]/5 max-w-2xl mx-auto overflow-hidden">
+              <div className="bg-gradient-to-r from-[#F38F20] to-[#cc7414] p-8 text-white relative">
                 <div className="absolute right-8 top-8 w-24 h-24 bg-white/5 rounded-full blur-3xl" />
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm border border-white/20">
@@ -236,7 +245,7 @@ export default function AirtimePage() {
               
               <section className="space-y-4">
                 <div className="flex items-center gap-2 px-1">
-                   <Zap className="w-4 h-4 text-[#0052CC]" />
+                   <Zap className="w-4 h-4 text-[#F38F20]" />
                    <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Node Configuration</h2>
                 </div>
                 
@@ -273,7 +282,7 @@ export default function AirtimePage() {
                               onClick={() => setSaveAsFavorite(!saveAsFavorite)}
                               className={cn(
                                 "absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all",
-                                saveAsFavorite ? "text-[#0052CC] bg-[#0052CC]/10 shadow-sm" : "text-muted-foreground hover:bg-muted"
+                                saveAsFavorite ? "text-[#F38F20] bg-[#F38F20]/10 shadow-sm" : "text-muted-foreground hover:bg-muted"
                               )}
                             >
                               <Star className={cn("w-5 h-5", saveAsFavorite && "fill-current")} />
@@ -282,8 +291,8 @@ export default function AirtimePage() {
                         </div>
 
                         {saveAsFavorite && (
-                          <div className="p-3 rounded-lg border border-dashed border-[#0052CC]/30 bg-[#0052CC]/5 space-y-2 animate-in slide-in-from-top-2 duration-300">
-                            <Label htmlFor="fav-name" className="text-[10px] uppercase font-bold text-[#0052CC]">System Alias (Label)</Label>
+                          <div className="p-3 rounded-lg border border-dashed border-[#F38F20]/30 bg-[#F38F20]/5 space-y-2 animate-in slide-in-from-top-2 duration-300">
+                            <Label htmlFor="fav-name" className="text-[10px] uppercase font-bold text-[#F38F20]">System Alias (Label)</Label>
                             <div className="flex gap-2">
                               <Input
                                 id="fav-name"
@@ -294,8 +303,8 @@ export default function AirtimePage() {
                               />
                               <Button 
                                 size="sm" 
-                                className="h-9 px-4 font-bold uppercase text-[10px]" 
-                                onClick={handleSaveFavorite}
+                                className="h-9 px-4 font-bold uppercase text-[10px] bg-[#F38F20] hover:bg-[#cc7414] text-white" 
+                                onClick={handleSaveFavorite} 
                                 disabled={isSaving}
                               >
                                 {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : "Registry"}
@@ -330,8 +339,8 @@ export default function AirtimePage() {
                               className={cn(
                                 "h-10 border rounded-lg text-xs font-bold transition-all flex items-center justify-center",
                                 amount === amt.toString() 
-                                  ? "border-[#0052CC] bg-[#0052CC] text-white shadow-md" 
-                                  : "border-border hover:border-[#0052CC]/50 hover:bg-muted/50"
+                                  ? "border-[#F38F20] bg-[#F38F20] text-white shadow-md" 
+                                  : "border-border hover:border-[#F38F20]/50 hover:bg-muted/50"
                               )}
                             >
                               GH₵{amt}
@@ -364,12 +373,13 @@ export default function AirtimePage() {
               {/* Registry Section */}
               <section className="space-y-4">
                  <div className="flex items-center gap-2 px-1">
-                    <Users className="w-4 h-4 text-[#0052CC]" />
+                    <Users className="w-4 h-4 text-[#F38F20]" />
                     <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Local Registry</h2>
                  </div>
                  <Card>
                    <CardContent className="pt-6">
                      <FavoriteNumbers 
+                        key={favoritesRefreshKey}
                         userId={authUser?.id ?? ""} 
                         type="airtime" 
                         onSelect={(val) => setPhone(val)} 
@@ -381,42 +391,42 @@ export default function AirtimePage() {
 
             {/* Audit & Verification Sidebar */}
             <div className="lg:col-span-4 space-y-6">
-              <Card className="sticky top-24 border-[#0052CC]/20 bg-[#0052CC]/5">
-                <CardHeader className="pb-2 border-b border-[#0052CC]/10">
+              <Card className="sticky top-24 border-[#F38F20]/20 bg-[#F38F20]/5">
+                <CardHeader className="pb-2 border-b border-[#F38F20]/10">
                   <CardTitle className="text-base flex items-center gap-2">
-                     <ShieldCheck className="w-4 h-4 text-[#0052CC]" />
+                     <ShieldCheck className="w-4 h-4 text-[#F38F20]" />
                      Transaction Audit
                   </CardTitle>
                   <CardDescription>Pre-flight verification for your request.</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-6">
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#0052CC]/20">
+                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#F38F20]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Infrastructure</span>
                       <span className="text-sm font-bold">{selectedNetwork?.name || "Pending..."}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#0052CC]/20">
+                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#F38F20]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Destination</span>
                       <span className="text-sm font-mono font-bold tracking-tight">{phone || "No Endpoint"}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#0052CC]/20">
+                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#F38F20]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Liquidity</span>
                       <span className="text-sm font-bold text-green-600">GH₵{Number(authUser?.walletBalance || 0).toFixed(2)}</span>
                     </div>
                     
                     <div className="pt-4 flex justify-between items-end">
                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold uppercase text-[#0052CC]">Total Magnitude</p>
+                          <p className="text-[10px] font-bold uppercase text-[#F38F20]">Total Magnitude</p>
                           <p className="text-3xl font-bold tracking-tighter">GH₵{customAmount || amount || "0.00"}</p>
                        </div>
-                       <div className="p-2 rounded bg-[#0052CC]/10 border border-[#0052CC]/20">
-                          <CreditCard className="w-4 h-4 text-[#0052CC]" />
+                       <div className="p-2 rounded bg-[#F38F20]/10 border border-[#F38F20]/20">
+                          <CreditCard className="w-4 h-4 text-[#F38F20]" />
                        </div>
                     </div>
                   </div>
                   <div className="space-y-3">
                     <Button 
-                        className="w-full h-12 text-xs font-bold uppercase tracking-widest shadow-lg shadow-[#0052CC]/20 group bg-gradient-to-r from-[#0052CC] to-[#1A85B8] text-white hover:from-[#00567A] hover:to-[#0052CC]"
+                        className="w-full h-12 text-xs font-bold uppercase tracking-widest shadow-lg shadow-[#F38F20]/20 group bg-gradient-to-r from-[#F38F20] to-[#cc7414] text-white hover:from-[#e07e1a] hover:to-[#F38F20]"
                         onClick={handleProceed}
                         disabled={!selectedNetwork || !phone || !(amount || customAmount) || !authUser}
                       >

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDataPlans, getNetworks, getAccountInfo } from "@/lib/datamart";
 import { requireAdmin } from "@/lib/admin-auth";
-import { sql } from "@/lib/db";
+import { sqlUnsafe } from "@/lib/db";
+import { dataPlans as staticDataPlans } from "@/lib/networks";
 
 export const revalidate = 300;
 export const runtime = "nodejs";
@@ -16,12 +17,37 @@ const globalCache = globalThis as unknown as {
   datamartNetworksCache?: PlansCacheEntry;
 };
 
+function buildStaticFallbackPlans(network?: string) {
+  const filtered = network
+    ? staticDataPlans.filter(
+        (plan) =>
+          plan.networkId.toLowerCase() === network.toLowerCase() ||
+          plan.name.toLowerCase().includes(network.toLowerCase())
+      )
+    : staticDataPlans;
+
+  return filtered.map((plan) => ({
+    id: plan.id,
+    networkId: plan.networkId,
+    network: plan.networkId.toUpperCase(),
+    name: `${plan.name} ${plan.size}`.trim(),
+    validity: plan.validity,
+    validityHours: null,
+    validityDays: null,
+    price: Number(plan.price),
+    isPopular: false,
+    isActive: true,
+    datamartPlanId: null,
+    datamartPlanType: plan.type,
+    syncedAt: null,
+  }));
+}
+
 async function fetchPlansFromDatabase(network?: string) {
-  try {
-    let query = sql`
-      SELECT 
+  const selectBase = `
+      SELECT
         id,
-        network_id as "networkId",
+        {{NETWORK_COLUMN}} as "networkId",
         network,
         name,
         validity,
@@ -35,30 +61,28 @@ async function fetchPlansFromDatabase(network?: string) {
         synced_at as "syncedAt"
       FROM data_bundles
       WHERE is_active = true
-    `;
-    
-    if (network) {
-      query = sql`
-        SELECT 
-          id,
-          network_id as "networkId",
-          network,
-          name,
-          validity,
-          validity_hours as "validityHours",
-          validity_days as "validityDays",
-          price,
-          is_popular as "isPopular",
-          is_active as "isActive",
-          datamart_plan_id as "datamartPlanId",
-          datamart_plan_type as "datamartPlanType",
-          synced_at as "syncedAt"
-        FROM data_bundles
-        WHERE is_active = true AND network = ${network}
-      `;
-    }
+  `;
 
-    const plans = await query;
+  const runQueryForNetworkColumn = async (networkColumn: "network_id" | "\"networkId\"") => {
+    const queryText = `${selectBase.replace("{{NETWORK_COLUMN}}", networkColumn)}${network ? " AND network = $1" : ""}`;
+    const params = network ? [network] : undefined;
+    return sqlUnsafe(queryText, params);
+  };
+
+  try {
+    let plans: unknown[] = [];
+    try {
+      plans = await runQueryForNetworkColumn("network_id");
+    } catch (error) {
+      const e = error as { code?: string; message?: string };
+      const message = `${e?.message || ""}`.toLowerCase();
+      const missingLegacyColumn = e?.code === "42703" && message.includes("network_id");
+      if (!missingLegacyColumn) {
+        throw error;
+      }
+
+      plans = await runQueryForNetworkColumn("\"networkId\"");
+    }
     
     if (plans.length > 0) {
       return { success: true, data: plans, fromDatabase: true };
@@ -66,6 +90,10 @@ async function fetchPlansFromDatabase(network?: string) {
     
     return { success: false, error: "No plans found in database" };
   } catch (error) {
+    const e = error as { code?: string; message?: string };
+    if (e?.code === "42703") {
+      return { success: false, error: "Data bundle schema mismatch" };
+    }
     console.error("Database fetch error:", error);
     return { success: false, error: "Failed to fetch from database" };
   }
@@ -130,6 +158,18 @@ export async function GET(request: NextRequest) {
 
     const result = await getDataPlans(network || undefined);
     if (!result.success) {
+      const staticFallback = buildStaticFallbackPlans(network || undefined);
+      if (staticFallback.length > 0) {
+        return NextResponse.json({
+          success: true,
+          data: staticFallback,
+          stale: true,
+          fetchedAt: new Date().toISOString(),
+          providerError: result.error || "Failed to fetch data plans from DataMart",
+          code: result.errorCode,
+          fromStaticFallback: true,
+        });
+      }
       if (globalCache.datamartPlansCache) {
         return NextResponse.json({
           success: true,

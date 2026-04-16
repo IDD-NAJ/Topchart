@@ -120,13 +120,13 @@ export default function DataPage() {
 
   const filteredPlans = plans.filter((p) => {
     if (activeType !== "ALL" && (p.plan_type || "SME") !== activeType) return false;
-    
+
     // If a network is selected, filter by network
-    if (selectedNetwork) {
+    if (selectedNetwork && p.plan_network) {
       const isMatch = datamartNetworkMatches(p.plan_network, selectedNetwork.name);
       if (!isMatch) return false;
     }
-    
+
     return true;
   });
 
@@ -142,22 +142,36 @@ export default function DataPage() {
     return true
   }
 
+  const [favoritesRefreshKey, setFavoritesRefreshKey] = useState(0)
+
   const handleSaveFavorite = async () => {
-    if (!authUser || !phone) return
-    if (saveAsFavorite && !favoriteName) { toast.error("Please provide a label for this recipient."); return }
+    if (!authUser || !phone) {
+      toast.error("Please enter a phone number.")
+      return
+    }
+
+    const cleanPhone = phone.replace(/\D/g, '')
+    if (cleanPhone.length < 9) {
+      toast.error("Please enter a valid phone number (at least 9 digits).")
+      return
+    }
+
+    const nameToUse = favoriteName.trim() || phone
+
     setIsSaving(true)
     const result = await addFavorite({
       userId: authUser.id,
       phoneNumber: phone,
-      name: favoriteName,
+      name: nameToUse,
       type: "data",
-      network: selectedNetwork?.name,
+      network: selectedNetwork?.name || "general",
     })
     setIsSaving(false)
     if (result.success) {
       toast.success("Recipient saved successfully.")
       setSaveAsFavorite(false)
       setFavoriteName("")
+      setFavoritesRefreshKey(prev => prev + 1)
     } else {
       toast.error(result.error || "Failed to save recipient.")
     }
@@ -210,7 +224,7 @@ export default function DataPage() {
     <div className="max-w-5xl mx-auto space-y-8 pb-16 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <Link href="/dashboard" className="inline-flex items-center text-xs font-bold text-muted-foreground hover:text-[#0052CC] transition-colors uppercase tracking-widest mb-2 group">
+          <Link href="/dashboard" className="inline-flex items-center text-xs font-bold text-muted-foreground hover:text-[#F38F20] transition-colors uppercase tracking-widest mb-2 group">
             <ArrowLeft className="w-3 h-3 mr-1.5 group-hover:-translate-x-1 transition-transform" />
             Back to Dashboard
           </Link>
@@ -218,9 +232,9 @@ export default function DataPage() {
           <p className="text-muted-foreground">Live data plans from MTN, Telecel & AirtelTigo via provider.</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="px-4 py-2 rounded-lg bg-[#0052CC]/5 border border-[#0052CC]/10 flex items-center gap-2">
+          <div className="px-4 py-2 rounded-lg bg-[#F38F20]/5 border border-[#F38F20]/10 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-wider text-[#0052CC]">System Online</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-[#F38F20]">System Online</span>
           </div>
         </div>
       </div>
@@ -228,8 +242,8 @@ export default function DataPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {step === "confirm" ? (
           <div className="lg:col-span-12 animate-in slide-in-from-bottom-4 duration-500">
-            <Card className="border-[#0052CC]/20 bg-[#0052CC]/5 max-w-2xl mx-auto overflow-hidden">
-              <div className="bg-gradient-to-r from-[#0052CC] to-[#1A85B8] p-8 text-white relative">
+            <Card className="border-[#F38F20]/20 bg-[#F38F20]/5 max-w-2xl mx-auto overflow-hidden">
+              <div className="bg-gradient-to-r from-[#F38F20] to-[#cc7414] p-8 text-white relative">
                 <div className="absolute right-8 top-8 w-24 h-24 bg-white/5 rounded-full blur-3xl" />
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm border border-white/20">
@@ -283,7 +297,7 @@ export default function DataPage() {
             <div className="lg:col-span-8 space-y-6">
               <section className="space-y-4">
                 <div className="flex items-center gap-2 px-1">
-                  <Zap className="w-4 h-4 text-[#0052CC]" />
+                  <Zap className="w-4 h-4 text-[#F38F20]" />
                   <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Network & Recipient</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -316,7 +330,7 @@ export default function DataPage() {
                             onClick={() => setSaveAsFavorite(!saveAsFavorite)}
                             className={cn(
                               "absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all",
-                              saveAsFavorite ? "text-[#0052CC] bg-[#0052CC]/10 shadow-sm" : "text-muted-foreground hover:bg-muted"
+                              saveAsFavorite ? "text-[#F38F20] bg-[#F38F20]/10 shadow-sm" : "text-muted-foreground hover:bg-muted"
                             )}
                           >
                             <Star className={cn("w-5 h-5", saveAsFavorite && "fill-current")} />
@@ -325,8 +339,8 @@ export default function DataPage() {
                       </div>
 
                       {saveAsFavorite && (
-                        <div className="p-3 rounded-lg border border-dashed border-[#0052CC]/30 bg-[#0052CC]/5 space-y-2 animate-in slide-in-from-top-2 duration-300">
-                          <Label htmlFor="fav-name" className="text-[10px] uppercase font-bold text-[#0052CC]">Save As (Label)</Label>
+                        <div className="p-3 rounded-lg border border-dashed border-[#F38F20]/30 bg-[#F38F20]/5 space-y-2 animate-in slide-in-from-top-2 duration-300">
+                          <Label htmlFor="fav-name" className="text-[10px] uppercase font-bold text-[#F38F20]">Save As (Label)</Label>
                           <div className="flex gap-2">
                             <Input
                               id="fav-name"
@@ -335,7 +349,7 @@ export default function DataPage() {
                               onChange={(e) => setFavoriteName(e.target.value)}
                               className="h-9 text-sm"
                             />
-                            <Button size="sm" className="h-9 px-4 font-bold uppercase text-[10px]" onClick={handleSaveFavorite} disabled={isSaving}>
+                            <Button size="sm" className="h-9 px-4 font-bold uppercase text-[10px] bg-[#F38F20] hover:bg-[#cc7414] text-white" onClick={handleSaveFavorite} disabled={isSaving}>
                               {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : "Save"}
                             </Button>
                           </div>
@@ -356,7 +370,7 @@ export default function DataPage() {
               <section className="space-y-4">
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-2">
-                    <Target className="w-4 h-4 text-[#0052CC]" />
+                    <Target className="w-4 h-4 text-[#F38F20]" />
                     <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Available Plans</h2>
                   </div>
                   {selectedNetwork && !plansLoading && plans.length > 0 && (
@@ -397,7 +411,7 @@ export default function DataPage() {
                                 className={cn(
                                   "px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wide whitespace-nowrap transition-all",
                                   activeType === type
-                                    ? "bg-[#0052CC] text-white"
+                                    ? "bg-[#F38F20] text-white"
                                     : "bg-muted text-muted-foreground hover:bg-muted/80"
                                 )}
                               >
@@ -413,11 +427,11 @@ export default function DataPage() {
                               onClick={() => setSelectedPlan(plan)}
                               className={cn(
                                 "p-4 text-left transition-all hover:bg-muted/50 group flex items-center justify-between",
-                                selectedPlan?.id === plan.id ? "bg-[#0052CC]/5 ring-1 ring-inset ring-[#0052CC]/20" : ""
+                                selectedPlan?.id === plan.id ? "bg-[#F38F20]/5 ring-1 ring-inset ring-[#F38F20]/20" : ""
                               )}
                             >
                               <div className="space-y-1">
-                                <p className="text-sm font-bold group-hover:text-[#0052CC] transition-colors">{plan.data_plan}</p>
+                                <p className="text-sm font-bold group-hover:text-[#F38F20] transition-colors">{plan.data_plan}</p>
                                 <p className="text-[10px] text-muted-foreground font-mono">{plan.month_validate}</p>
                                 {plan.plan_type && plan.plan_type !== "SME" && (
                                   <Badge variant="outline" className="text-[8px] h-4 px-1.5 font-bold">
@@ -428,7 +442,7 @@ export default function DataPage() {
                               <div className="text-right space-y-1">
                                 <p className="text-sm font-bold">GH₵{parseFloat(plan.plan_amount).toFixed(2)}</p>
                                 {selectedPlan?.id === plan.id && (
-                                  <Badge className="text-[8px] h-4 px-1.5 uppercase bg-[#0052CC]">Selected</Badge>
+                                  <Badge className="text-[8px] h-4 px-1.5 uppercase bg-[#F38F20]">Selected</Badge>
                                 )}
                               </div>
                             </button>
@@ -447,62 +461,62 @@ export default function DataPage() {
 
               <section className="space-y-4">
                 <div className="flex items-center gap-2 px-1">
-                  <Users className="w-4 h-4 text-[#0052CC]" />
+                  <Users className="w-4 h-4 text-[#F38F20]" />
                   <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Saved Recipients</h2>
                 </div>
                 <Card>
                   <CardContent className="pt-6">
-                    <FavoriteNumbers userId={authUser?.id ?? ""} type="data" onSelect={(val) => setPhone(val)} />
+                    <FavoriteNumbers key={favoritesRefreshKey} userId={authUser?.id ?? ""} type="data" onSelect={(val) => setPhone(val)} />
                   </CardContent>
                 </Card>
               </section>
             </div>
 
             <div className="lg:col-span-4 space-y-6">
-              <Card className="sticky top-24 border-[#0052CC]/20 bg-[#0052CC]/5">
-                <CardHeader className="pb-2 border-b border-[#0052CC]/10">
+              <Card className="sticky top-24 border-[#F38F20]/20 bg-[#F38F20]/5">
+                <CardHeader className="pb-2 border-b border-[#F38F20]/10">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-[#0052CC]" />
+                    <ShieldCheck className="w-4 h-4 text-[#F38F20]" />
                     Order Summary
                   </CardTitle>
                   <CardDescription>Pre-flight verification for your request.</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-6">
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#0052CC]/20">
+                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#F38F20]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Network</span>
                       <span className="text-sm font-bold">{selectedNetwork?.name || "—"}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#0052CC]/20">
+                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#F38F20]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Recipient</span>
                       <span className="text-sm font-mono font-bold">{phone || "—"}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#0052CC]/20">
+                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#F38F20]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Bundle</span>
                       <span className="text-sm font-bold truncate max-w-[120px]">{selectedPlan?.data_plan || "—"}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#0052CC]/20">
+                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#F38F20]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Validity</span>
                       <span className="text-sm font-bold">{selectedPlan?.month_validate || "—"}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#0052CC]/20">
+                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#F38F20]/20">
                       <span className="text-xs font-medium text-muted-foreground uppercase">Wallet</span>
                       <span className="text-sm font-bold text-green-600">GH₵{Number(authUser?.walletBalance || 0).toFixed(2)}</span>
                     </div>
                     <div className="pt-4 flex justify-between items-end">
                       <div className="space-y-1">
-                        <p className="text-[10px] font-bold uppercase text-[#0052CC]">Total</p>
+                        <p className="text-[10px] font-bold uppercase text-[#F38F20]">Total</p>
                         <p className="text-3xl font-bold tracking-tighter">GH₵{planPrice.toFixed(2)}</p>
                       </div>
-                      <div className="p-2 rounded bg-[#0052CC]/10 border border-[#0052CC]/20">
-                        <CreditCard className="w-4 h-4 text-[#0052CC]" />
+                      <div className="p-2 rounded bg-[#F38F20]/10 border border-[#F38F20]/20">
+                        <CreditCard className="w-4 h-4 text-[#F38F20]" />
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-3">
                     <Button
-                      className="w-full h-12 text-xs font-bold uppercase tracking-widest shadow-lg shadow-[#0052CC]/20 bg-gradient-to-r from-[#0052CC] to-[#1A85B8] text-white hover:from-[#00567A] hover:to-[#0052CC] group"
+                      className="w-full h-12 text-xs font-bold uppercase tracking-widest shadow-lg shadow-[#F38F20]/20 bg-gradient-to-r from-[#F38F20] to-[#cc7414] text-white hover:from-[#e07e1a] hover:to-[#F38F20] group"
                       onClick={handleProceed}
                       disabled={!selectedNetwork || !phone || !selectedPlan || !authUser || plansLoading}
                     >

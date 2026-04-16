@@ -42,6 +42,7 @@ import {
   BarChart3,
   ShieldAlert,
   Megaphone,
+  Image,
   Trophy,
   Sliders,
   Smartphone,
@@ -155,6 +156,7 @@ const navItems: NavItem[] = [
       { title: "Tiers", href: "/admin/tiers", icon: Trophy },
       { title: "Fraud Alerts", href: "/admin/fraud-alerts", icon: ShieldAlert },
       { title: "Marketing Assets", href: "/admin/marketing-assets", icon: Megaphone },
+      { title: "Homepage Media", href: "/admin/homepage-media", icon: Image },
       { title: "Form Config", href: "/admin/reseller-form-config", icon: Sliders },
     ]
   },

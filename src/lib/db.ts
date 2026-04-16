@@ -1,11 +1,12 @@
 import { Pool, neonConfig } from "@neondatabase/serverless";
-import { getServerEnv } from "@/lib/env";
+import { getDatabaseEnv } from "@/lib/env";
 
 function getCleanConnectionString(): string {
+  const dbEnv = getDatabaseEnv();
   const rawConnection =
-    getServerEnv().DATABASE_URL ||
-    process.env.NEON_DATABASE_URL ||
-    process.env.NETLIFY_DATABASE_URL ||
+    dbEnv.DATABASE_URL ||
+    dbEnv.NEON_DATABASE_URL ||
+    dbEnv.NETLIFY_DATABASE_URL ||
     "";
   let connectionString = rawConnection;
   
