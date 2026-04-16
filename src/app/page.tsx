@@ -425,9 +425,9 @@ export default function HomePage() {
               className="mt-16 flex flex-wrap items-center justify-center gap-4 sm:gap-6"
             >
               {[
-                { name: "MTN", image: "/images/mtn-logo.png", color: "bg-yellow-400" },
-                { name: "Telecel", image: "/images/telecel-logo.png", color: "bg-red-500" },
-                { name: "AirtelTigo", image: "/images/airteltigo-logo.png", color: "bg-red-600" },
+                { name: "MTN", image: "/images/mtn-logo.svg", color: "bg-yellow-400" },
+                { name: "Telecel", image: "/images/telecel-logo.svg", color: "bg-red-500" },
+                { name: "AirtelTigo", image: "/images/airteltigo-logo.svg", color: "bg-red-600" },
               ].map((network, index) => (
                 <motion.div
                   key={network.name}
