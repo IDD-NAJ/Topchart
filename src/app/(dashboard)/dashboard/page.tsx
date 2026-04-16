@@ -108,6 +108,7 @@ const services = [
 
 interface Transaction {
   id: string
+  reference?: string
   type: "deposit" | "airtime" | "data"
   amount: number
   status: string
@@ -723,10 +724,12 @@ export default function DashboardPage() {
                                   <p className="font-medium">{tx.network}</p>
                                 </div>
                               )}
-                              <div className="p-2 rounded bg-background border text-xs">
-                                <p className="text-muted-foreground font-bold uppercase">Transaction ID</p>
-                                <p className="font-mono text-xs">{tx.id}</p>
-                              </div>
+                              {tx.reference && (
+                                <div className="p-2 rounded bg-background border text-xs">
+                                  <p className="text-muted-foreground font-bold uppercase">Reference</p>
+                                  <p className="font-mono text-xs">{tx.reference}</p>
+                                </div>
+                              )}
                               <div className="p-2 rounded bg-background border text-xs">
                                 <p className="text-muted-foreground font-bold uppercase">Date & Time</p>
                                 <p className="font-medium">{new Date(tx.created_at).toLocaleString("en-GH")}</p>

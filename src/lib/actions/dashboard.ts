@@ -8,6 +8,7 @@ export type DashboardTransactionStatus = "pending" | "success" | "failed";
 
 export interface DashboardTransactionRow {
   id: string;
+  reference?: string;
   type: DashboardTransactionType;
   amount: number;
   status: DashboardTransactionStatus;
@@ -256,6 +257,7 @@ export async function getDashboardData(options?: {
   // Helper to map raw DB rows to DashboardTransactionRow
   const mapTransaction = (row: any): DashboardTransactionRow => ({
     id: row.id,
+    reference: row.reference,
     type: String(row.type || "").toLowerCase() as DashboardTransactionType,
     amount: Number(row.amount ?? 0),
     status: String(row.status || "").toLowerCase() as DashboardTransactionStatus,
