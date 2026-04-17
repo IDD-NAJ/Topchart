@@ -201,7 +201,12 @@ export async function POST(request: NextRequest) {
           customIdentifier: reference,
         });
 
-        if (reloadlyResult.success && reloadlyResult.data) {
+        // Check if it's an auth error - if so, silently fallback to DataMart
+        if (reloadlyResult.errorCode === "RELOADLY_AUTH_FAILED" || 
+            reloadlyResult.errorCode === "RELOADLY_REQUEST_FAILED") {
+          console.warn(`[Reloadly] Auth failed (credentials may be for Gift Card API). Falling back to DataMart.`);
+          // Continue to DataMart fallback below
+        } else if (reloadlyResult.success && reloadlyResult.data) {
           const status = reloadlyResult.data.status?.toLowerCase();
           providerSuccess = status === "successful";
           providerMessage = reloadlyResult.data.status || "";

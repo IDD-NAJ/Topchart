@@ -62,7 +62,9 @@ const reloadlyEnvSchema = z.object({
   RELOADLY_CLIENT_ID: z.string().min(1, "RELOADLY_CLIENT_ID is required"),
   RELOADLY_CLIENT_SECRET: z.string().min(1, "RELOADLY_CLIENT_SECRET is required"),
   RELOADLY_BASE_URL: z.string().url().optional(),
+  RELOADLY_API_BASE_URL: z.string().url().optional(), // Legacy support
   RELOADLY_AUTH_URL: z.string().url().optional(),
+  RELOADLY_SANDBOX: z.enum(["true", "false"]).optional(),
 });
 type ReloadlyEnv = z.infer<typeof reloadlyEnvSchema>;
 
@@ -157,6 +159,11 @@ export function getReloadlyEnv(): ReloadlyEnv {
   if (!parsed.success) {
     const errors = parsed.error.issues.map((issue) => issue.message).join(", ");
     throw new Error(`Invalid Reloadly environment: ${errors}`);
+  }
+
+  // Use RELOADLY_BASE_URL first, fallback to RELOADLY_API_BASE_URL
+  if (!parsed.data.RELOADLY_BASE_URL && parsed.data.RELOADLY_API_BASE_URL) {
+    parsed.data.RELOADLY_BASE_URL = parsed.data.RELOADLY_API_BASE_URL;
   }
 
   cachedReloadlyEnv = parsed.data;

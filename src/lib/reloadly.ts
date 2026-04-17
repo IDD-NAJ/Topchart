@@ -102,8 +102,26 @@ const GHANA_OPERATOR_IDS: Record<string, number> = {
 
 function getReloadlyConfig() {
   const env = getReloadlyEnv();
+  
+  // Get base URL - check if it's giftcards and convert to airtime
+  let baseUrl = env.RELOADLY_BASE_URL || "https://airtime.reloadly.com";
+  
+  // If user provided giftcards URL, convert to airtime URL
+  // Gift Card and Airtime APIs are separate services
+  if (baseUrl.includes("giftcards")) {
+    console.warn("[Reloadly] Warning: Provided URL is for Gift Card API. Converting to Airtime API URL.");
+    console.warn("[Reloadly] You may need separate credentials for Airtime API.");
+    
+    // Convert giftcards URL to airtime URL
+    if (baseUrl.includes("sandbox")) {
+      baseUrl = "https://airtime-sandbox.reloadly.com";
+    } else {
+      baseUrl = "https://airtime.reloadly.com";
+    }
+  }
+  
   return {
-    baseUrl: env.RELOADLY_BASE_URL || "https://airtime.reloadly.com",
+    baseUrl,
     authUrl: env.RELOADLY_AUTH_URL || "https://auth.reloadly.com/oauth/token",
     clientId: env.RELOADLY_CLIENT_ID,
     clientSecret: env.RELOADLY_CLIENT_SECRET,
