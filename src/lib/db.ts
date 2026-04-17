@@ -98,17 +98,35 @@ function normalizeDbError(err: unknown): Error {
   return wrapped;
 }
 
-async function withRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 1200): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, retries = 3, baseDelayMs = 1000): Promise<T> {
   let lastError: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      return await fn();
+      const result = await fn();
+      if (attempt > 0) {
+        console.log(`[DB] Query succeeded after ${attempt} retry(s)`);
+      }
+      return result;
     } catch (err) {
       lastError = err;
-      if (!isTimeoutError(err) || attempt === retries) {
+      const isTimeout = isTimeoutError(err);
+      const errorCode = (err as any)?.code;
+      
+      console.warn(`[DB] Attempt ${attempt + 1}/${retries + 1} failed:`, {
+        code: errorCode,
+        isTimeout,
+        message: (err as Error)?.message?.substring(0, 100)
+      });
+      
+      if (attempt === retries) {
+        console.error(`[DB] All ${retries + 1} attempts exhausted`);
         throw normalizeDbError(err);
       }
-      await new Promise((r) => setTimeout(r, delayMs));
+      
+      // Exponential backoff with jitter
+      const delay = baseDelayMs * Math.pow(2, attempt) + Math.random() * 500;
+      console.log(`[DB] Retrying in ${Math.round(delay)}ms...`);
+      await new Promise((r) => setTimeout(r, delay));
     }
   }
   throw normalizeDbError(lastError);
