@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/lib/auth-context'
 import { AntiClone } from '@/components/anti-clone'
 import { PreloadWrapper } from '@/components/preload-wrapper'
+import { TawkChat } from '@/components/tawk-chat'
 import '@fontsource-variable/inter'
 import '@fontsource/dm-serif-display'
 import './globals.css'
@@ -16,9 +17,9 @@ export const metadata: Metadata = {
     default: 'Topchart Ghana — Digital Services Platform',
     template: '%s | Topchart Ghana',
   },
-  description: 'Ghana\'s complete digital services platform. Buy airtime, data bundles, verification numbers, check exam results, and join our reseller programme — instantly and securely.',
+  description: 'Ghana\'s complete digital services platform. Buy data bundles, verification numbers, check exam results, and join our reseller programme — instantly and securely.',
   applicationName: 'Topchart Ghana',
-  keywords: ['airtime Ghana', 'data bundles Ghana', 'verification numbers Ghana', 'WAEC result checker', 'BECE result checker', 'reseller programme Ghana', 'MTN', 'Telecel', 'AirtelTigo', 'mobile top up', 'buy airtime online Ghana', 'OTP verification number Ghana'],
+  keywords: ['data bundles Ghana', 'verification numbers Ghana', 'WAEC result checker', 'BECE result checker', 'reseller programme Ghana', 'MTN', 'Telecel', 'AirtelTigo', 'mobile data', 'buy data online Ghana', 'OTP verification number Ghana'],
   authors: [{ name: 'Topchart Ghana', url: 'https://topchart.gh' }],
   creator: 'Topchart Ghana',
   publisher: 'Topchart Ghana',
@@ -39,13 +40,13 @@ export const metadata: Metadata = {
     url: 'https://topchart.gh',
     siteName: 'Topchart Ghana',
     title: 'Topchart Ghana — Digital Services Platform',
-    description: 'Ghana\'s complete digital services platform — airtime, data, verification numbers, exam results, and reseller programme.',
+    description: 'Ghana\'s complete digital services platform — data, verification numbers, exam results, and reseller programme.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Topchart Ghana — Instant Airtime & Data Top-up',
+        alt: 'Topchart Ghana — Instant Data & Services',
       },
     ],
   },
@@ -54,7 +55,7 @@ export const metadata: Metadata = {
     site: '@topchartgh',
     creator: '@topchartgh',
     title: 'Topchart Ghana — Digital Services Platform',
-    description: 'Ghana\'s complete digital services platform — airtime, data, verification numbers, exam results, and reseller programme.',
+    description: 'Ghana\'s complete digital services platform — data, verification numbers, exam results, and reseller programme.',
     images: ['/og-image.png'],
   },
   alternates: {
@@ -68,7 +69,7 @@ export const metadata: Metadata = {
       alternateName: 'Topchart',
       url: 'https://topchart.gh',
       logo: 'https://topchart.gh/logo.svg',
-      description: 'Ghana\'s complete digital services platform for airtime, data bundles, verification numbers, result checkers, and reseller services.',
+      description: 'Ghana\'s complete digital services platform for data bundles, verification numbers, result checkers, and reseller services.',
       contactPoint: [
         {
           '@type': 'ContactPoint',
@@ -123,6 +124,7 @@ export default function RootLayout({
           <PreloadWrapper>
             {children}
           </PreloadWrapper>
+          <TawkChat />
         </AuthProvider>
         <Analytics />
       </body>

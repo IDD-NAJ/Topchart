@@ -44,6 +44,7 @@ import {
   Store,
   ChevronDown,
   ChevronUp,
+  Smartphone,
 } from "lucide-react"
 import { Suspense } from "react"
 import Loading from "./loading"
@@ -64,14 +65,6 @@ const staggerContainer = {
 }
 
 const services = [
-  {
-    href: "/dashboard/airtime",
-    label: "Buy Airtime",
-    description: "Recharge any network instantly",
-    icon: Phone,
-    color: "text-[#0052CC] bg-[#E6F0FF]",
-    hoverColor: "group-hover:border-[#0052CC]/30"
-  },
   {
     href: "/dashboard/data",
     label: "Buy Data",
@@ -104,12 +97,44 @@ const services = [
     color: "text-amber-700 bg-amber-50",
     hoverColor: "group-hover:border-amber-300/50"
   },
+  {
+    href: "/dashboard/esim",
+    label: "eSIM",
+    description: "Digital SIM cards for global connectivity",
+    icon: Smartphone,
+    color: "text-emerald-600 bg-emerald-50",
+    hoverColor: "group-hover:border-emerald-300/50"
+  },
+  {
+    href: "/dashboard/proxies",
+    label: "Proxies",
+    description: "Residential, mobile & datacenter proxies",
+    icon: Shield,
+    color: "text-violet-600 bg-violet-50",
+    hoverColor: "group-hover:border-violet-300/50"
+  },
+  {
+    href: "/dashboard/giftcards",
+    label: "Gift Cards",
+    description: "Buy & send digital gift cards instantly",
+    icon: Gift,
+    color: "text-pink-600 bg-pink-50",
+    hoverColor: "group-hover:border-pink-300/50"
+  },
+  {
+    href: "/dashboard/bills",
+    label: "Pay Bills",
+    description: "Electricity, TV, water & internet bills",
+    icon: CreditCard,
+    color: "text-orange-600 bg-orange-50",
+    hoverColor: "group-hover:border-orange-300/50"
+  },
 ]
 
 interface Transaction {
   id: string
   reference?: string
-  type: "deposit" | "airtime" | "data"
+  type: "deposit" | "data"
   amount: number
   status: string
   description: string
@@ -142,7 +167,6 @@ export default function DashboardPage() {
     totals: {
       totalDeposits: number
       totalSpend: number
-      airtimeSpend: number
       dataSpend: number
       verificationSpend: number
       resultCheckerSpend: number
@@ -160,7 +184,6 @@ export default function DashboardPage() {
     totals: {
       totalDeposits: 0,
       totalSpend: 0,
-      airtimeSpend: 0,
       dataSpend: 0,
       verificationSpend: 0,
       resultCheckerSpend: 0,
@@ -211,12 +234,13 @@ export default function DashboardPage() {
       ]);
       clearTimeout(timeoutId);
       
-      if (!dashRes.ok) {
-        throw new Error(`Dashboard API error: ${dashRes.status}`)
+      if (dashRes.status === 401) {
+        window.location.href = "/login?redirect=/dashboard"
+        return
       }
-      
+
       const json = await dashRes.json()
-      if (json?.success && json?.data) {
+      if (dashRes.ok && json?.success && json?.data) {
         const result = json.data
         setDashboardData({
           totals: result.totals,
@@ -226,7 +250,7 @@ export default function DashboardPage() {
         })
         setLastUpdated(new Date())
       } else {
-        setError(json?.error || "Failed to load dashboard data")
+        setError(json?.error || `Dashboard API error: ${dashRes.status}`)
       }
       
       if (!refRes.ok) {
@@ -288,7 +312,6 @@ export default function DashboardPage() {
   const {
     totalDeposits,
     totalSpend,
-    airtimeSpend,
     dataSpend,
     verificationSpend,
     resultCheckerSpend,
@@ -296,8 +319,7 @@ export default function DashboardPage() {
     totalCount,
   } = dashboardData.totals
 
-  const spendTotal = airtimeSpend + dataSpend + verificationSpend + resultCheckerSpend
-  const airtimePct = spendTotal > 0 ? Math.round((airtimeSpend / spendTotal) * 100) : 0
+  const spendTotal = dataSpend + verificationSpend + resultCheckerSpend
   const dataPct = spendTotal > 0 ? Math.round((dataSpend / spendTotal) * 100) : 0
   const verificationPct = spendTotal > 0 ? Math.round((verificationSpend / spendTotal) * 100) : 0
   const resultCheckerPct = spendTotal > 0 ? Math.round((resultCheckerSpend / spendTotal) * 100) : 0
@@ -336,7 +358,7 @@ export default function DashboardPage() {
             )}
             <p className="text-muted-foreground flex items-center gap-2">
               <Target className="w-4 h-4 text-[#0052CC]" />
-              Airtime, data, verification, result checkers &amp; reseller — all in one place.
+              Data, verification, result checkers &amp; reseller — all in one place.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -530,12 +552,6 @@ export default function DashboardPage() {
                       <p className="text-sm font-medium">No Active Purchases</p>
                       <p className="text-xs text-muted-foreground">All transactions completed. Ready for your next purchase.</p>
                       <div className="flex gap-2 justify-center pt-2">
-                        <Link href="/dashboard/airtime">
-                          <Button size="sm" variant="outline" className="h-8">
-                            <Phone className="w-3 h-3 mr-1" />
-                            Airtime
-                          </Button>
-                        </Link>
                         <Link href="/dashboard/data">
                           <Button size="sm" variant="outline" className="h-8">
                             <Wifi className="w-3 h-3 mr-1" />
@@ -550,7 +566,7 @@ export default function DashboardPage() {
                         <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center">
-                              {tx.type === "airtime" ? <Phone className="w-4 h-4" /> : <Wifi className="w-4 h-4" />}
+                              <Wifi className="w-4 h-4" />
                             </div>
                             <div>
                               <p className="text-sm font-bold">{tx.description || "Provider Request"}</p>
@@ -583,13 +599,6 @@ export default function DashboardPage() {
                   <CardDescription>Distribution of spending across infrastructure categories</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-medium text-muted-foreground">Airtime Infrastructure</span>
-                      <span className="font-bold">{formatCurrency(airtimeSpend)} ({airtimePct}%)</span>
-                    </div>
-                    <Progress value={airtimePct} className="h-1.5" />
-                  </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-medium text-muted-foreground">Data Connectivity</span>
@@ -643,12 +652,6 @@ export default function DashboardPage() {
                         <p className="text-sm text-muted-foreground">Your activity will appear here once you make purchases.</p>
                       </div>
                       <div className="flex gap-2 justify-center">
-                        <Link href="/dashboard/airtime">
-                          <Button size="sm" variant="outline">
-                            <Phone className="w-4 h-4 mr-2" />
-                            Buy Airtime
-                          </Button>
-                        </Link>
                         <Link href="/dashboard/data">
                           <Button size="sm" variant="outline">
                             <Wifi className="w-4 h-4 mr-2" />
@@ -670,8 +673,7 @@ export default function DashboardPage() {
                                 "w-10 h-10 rounded-full flex items-center justify-center",
                                 tx.type === "deposit" ? "bg-[#0052CC]/10 text-[#0052CC]" : "bg-[#1A85B8]/10 text-[#1A85B8]"
                               )}>
-                                {tx.type === "deposit" ? <ArrowDownRight className="w-5 h-5" /> : 
-                                 tx.type === "airtime" ? <Phone className="w-4 h-4" /> : <Wifi className="w-4 h-4" />}
+                                {tx.type === "deposit" ? <ArrowDownRight className="w-5 h-5" /> : <Wifi className="w-4 h-4" />}
                               </div>
                               <div>
                                 <p className="text-sm font-bold truncate max-w-[150px] sm:max-w-[200px]">{tx.description}</p>
@@ -775,9 +777,9 @@ export default function DashboardPage() {
                             </div>
                           </div>
                           <div className="flex gap-1.5">
-                            <Button asChild size="icon" variant="ghost" className="h-7 w-7 rounded-full text-[#0052CC] hover:text-[#004D6E] hover:bg-[#E6F0FF]">
-                              <Link href={`/dashboard/airtime?phone=${encodeURIComponent(b.phone_number)}`}>
-                                <Phone className="w-3 h-3" />
+                            <Button asChild size="icon" variant="ghost" className="h-7 w-7 rounded-full text-[#1A85B8] hover:text-[#1A85B8]/80 hover:bg-[#E6F0FF]">
+                              <Link href={`/dashboard/data?phone=${encodeURIComponent(b.phone_number)}`}>
+                                <Wifi className="w-3 h-3" />
                               </Link>
                             </Button>
                             <Button asChild size="icon" variant="ghost" className="h-7 w-7 rounded-full text-[#1A85B8] hover:text-[#0052CC] hover:bg-[#E6F0FF]">

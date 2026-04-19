@@ -146,17 +146,6 @@ export async function fundWallet(
   }
 }
 
-export async function purchaseAirtime(
-  amount: number,
-  phoneNumber: string,
-  network: string
-): Promise<TransactionResult> {
-  void amount;
-  void phoneNumber;
-  void network;
-  return { success: false, error: "Deprecated action. Use /api/purchases route for airtime purchases." };
-}
-
 export async function purchaseData(
   amount: number,
   phoneNumber: string,

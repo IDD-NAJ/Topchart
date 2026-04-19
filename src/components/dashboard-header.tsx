@@ -1,13 +1,12 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
+import { LogoVideo } from "@/components/logo-video"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
 import {
   Menu,
   LayoutDashboard,
-  Phone,
   Wifi,
   History,
   LogOut,
@@ -25,6 +24,9 @@ import {
   MessageSquare,
   ShieldAlert,
   GraduationCap,
+  Smartphone,
+  Gift,
+  Receipt,
 } from "lucide-react"
 
 import { useAuth } from "@/lib/auth-context"
@@ -34,11 +36,14 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 
 const mainNavItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/airtime", label: "Buy Airtime", icon: Phone },
   { href: "/dashboard/data", label: "Buy Data", icon: Wifi },
   { href: "/dashboard/verification", label: "Verification Numbers", icon: PhoneCall },
   { href: "/dashboard/verification/history", label: "Verification History", icon: ClipboardList, indent: true },
   { href: "/dashboard/result-checkers", label: "Result Checkers", icon: GraduationCap },
+  { href: "/dashboard/esim", label: "Buy eSIM", icon: Smartphone },
+  { href: "/dashboard/proxies", label: "Proxies", icon: Shield },
+  { href: "/dashboard/giftcards", label: "Gift Cards", icon: Gift },
+  { href: "/dashboard/bills", label: "Pay Bills", icon: Receipt },
   { href: "/dashboard/history", label: "Transaction History", icon: History },
 ]
 
@@ -114,12 +119,10 @@ export function DashboardHeader({ sidebarCollapsed = false }: DashboardHeaderPro
         <div className="flex min-w-0 flex-1 items-center gap-3 lg:gap-4">
           <div className="flex min-w-0 items-center gap-3 lg:hidden">
             <Link href="/" className="flex shrink-0 items-center gap-2">
-              <Image
-                src="/logo.svg"
-                alt="Topchart"
+              <LogoVideo
                 width={100}
                 height={28}
-                className="h-7 w-auto object-contain"
+                className="h-7 w-auto"
               />
             </Link>
             <div className="h-6 w-px shrink-0 bg-border" />
@@ -157,12 +160,10 @@ export function DashboardHeader({ sidebarCollapsed = false }: DashboardHeaderPro
               <SheetTitle className="sr-only">Dashboard Menu</SheetTitle>
               <div className="flex items-center gap-3 border-b p-6">
                 <Link href="/" onClick={() => setOpen(false)} className="flex shrink-0 items-center">
-                  <Image
-                    src="/logo.svg"
-                    alt="Topchart"
+                  <LogoVideo
                     width={120}
                     height={32}
-                    className="h-8 w-auto object-contain"
+                    className="h-8 w-auto"
                   />
                 </Link>
               </div>

@@ -4,7 +4,8 @@ export type ProviderErrorCode =
   | "PROVIDER_5XX"
   | "PROVIDER_4XX"
   | "PROVIDER_NETWORK"
-  | "PROVIDER_BAD_RESPONSE";
+  | "PROVIDER_BAD_RESPONSE"
+  | "PROVIDER_UNSUPPORTED_OPERATION";
 
 export interface ProviderHttpError {
   code: ProviderErrorCode;

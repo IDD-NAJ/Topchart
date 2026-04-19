@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Activity,
-  Phone,
   CreditCard,
   TrendingUp,
 } from "lucide-react";
@@ -41,30 +40,45 @@ interface ReloadlyOperator {
   isMapped?: boolean;
 }
 
+interface ReloadlyBalanceResponse {
+  success: boolean;
+  data?: ReloadlyBalance;
+  error?: string;
+  state?: "connected" | "disconnected" | "unknown" | "not_configured";
+}
+
 export default function ReloadlySettingsPage() {
   const [balance, setBalance] = useState<ReloadlyBalance | null>(null);
   const [operators, setOperators] = useState<ReloadlyOperator[]>([]);
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [loadingOperators, setLoadingOperators] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<"connected" | "disconnected" | "unknown">("unknown");
+  const [connectionStatus, setConnectionStatus] = useState<"connected" | "disconnected" | "unknown" | "not_configured">("unknown");
 
   const fetchBalance = useCallback(async (refresh = false) => {
     try {
       setLoadingBalance(true);
       const response = await fetch(`/api/admin/reloadly-balance${refresh ? "?refresh=true" : ""}`);
-      const result = await response.json();
+      const result = await response.json() as ReloadlyBalanceResponse;
 
       if (result.success) {
-        setBalance(result.data);
+        setBalance(result.data ?? null);
         setConnectionStatus("connected");
         if (refresh) {
           toast.success("Balance refreshed successfully");
         }
       } else {
-        setConnectionStatus("disconnected");
-        toast.error(result.error || "Failed to fetch balance");
+        const errorMessage = result.error || "Failed to fetch balance";
+        if (result.state === "not_configured") {
+          setBalance(null);
+          setConnectionStatus("not_configured");
+        } else {
+          setBalance(null);
+          setConnectionStatus("disconnected");
+          toast.error(errorMessage);
+        }
       }
     } catch (error) {
+      setBalance(null);
       setConnectionStatus("disconnected");
       toast.error("Failed to fetch Reloadly balance");
       console.error(error);
@@ -106,6 +120,7 @@ export default function ReloadlySettingsPage() {
         return "bg-green-500";
       case "pending":
       case "warning":
+      case "not_configured":
         return "bg-yellow-500";
       case "failed":
       case "disconnected":
@@ -129,7 +144,7 @@ export default function ReloadlySettingsPage() {
           <Button
             variant="outline"
             onClick={() => fetchBalance(true)}
-            disabled={loadingBalance}
+            disabled={loadingBalance || connectionStatus === "not_configured"}
             className="gap-2"
           >
             {loadingBalance ? (
@@ -151,13 +166,28 @@ export default function ReloadlySettingsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-3">
-            <div className={cn("w-3 h-3 rounded-full", getStatusColor(connectionStatus))} />
-            <span className="font-medium">
-              {connectionStatus === "connected" && "Connected to Reloadly API"}
-              {connectionStatus === "disconnected" && "Disconnected from Reloadly API"}
-              {connectionStatus === "unknown" && "Checking connection..."}
-            </span>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className={cn("w-3 h-3 rounded-full", getStatusColor(connectionStatus))} />
+              <span className="font-medium">
+                {connectionStatus === "connected" && "Connected to Reloadly API"}
+                {connectionStatus === "disconnected" && "Disconnected from Reloadly API"}
+                {connectionStatus === "not_configured" && "Reloadly credentials not added yet"}
+                {connectionStatus === "unknown" && "Checking connection..."}
+              </span>
+            </div>
+            {connectionStatus === "not_configured" && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-950">
+                <div className="font-medium">Add Reloadly credentials to `.env.local` to enable live balance checks.</div>
+                <div className="mt-2 space-y-1 font-mono text-xs text-amber-900/90">
+                  <div>RELOADLY_CLIENT_ID=your-reloadly-client-id</div>
+                  <div>RELOADLY_CLIENT_SECRET=your-reloadly-client-secret</div>
+                  <div>RELOADLY_BASE_URL=https://topups.reloadly.com</div>
+                  <div>RELOADLY_AUTH_URL=https://auth.reloadly.com/oauth/token</div>
+                  <div>RELOADLY_SANDBOX=false</div>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -182,6 +212,10 @@ export default function ReloadlySettingsPage() {
               <div className="text-sm text-muted-foreground">
                 Last updated: {new Date(balance.updatedAt).toLocaleString()}
               </div>
+            </div>
+          ) : connectionStatus === "not_configured" ? (
+            <div className="text-muted-foreground">
+              Add your Reloadly credentials in `.env.local` to fetch the live account balance.
             </div>
           ) : (
             <div className="text-muted-foreground">
@@ -295,7 +329,7 @@ export default function ReloadlySettingsPage() {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Base URL:</span>
-              <span className="font-mono">https://airtime.reloadly.com</span>
+              <span className="font-mono">https://topups.reloadly.com</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Auth URL:</span>

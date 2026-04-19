@@ -19,7 +19,7 @@ export function DashboardFooter() {
               <span className="text-lg font-bold text-foreground">Topchart</span>
             </Link>
             <p className="mt-3 text-sm text-muted-foreground">
-              Fast, reliable airtime & data top-ups for Ghanaian networks.
+              Fast, reliable data top-ups for Ghanaian networks.
             </p>
           </div>
 
@@ -28,12 +28,6 @@ export function DashboardFooter() {
             <div className="flex flex-col gap-2 text-sm">
               <Link className="text-muted-foreground hover:text-foreground transition-colors" href="/dashboard">
                 Dashboard
-              </Link>
-              <Link className="text-muted-foreground hover:text-foreground transition-colors" href="/dashboard/airtime">
-                Buy airtime
-              </Link>
-              <Link className="text-muted-foreground hover:text-foreground transition-colors" href="/dashboard/data">
-                Buy data
               </Link>
               <Link className="text-muted-foreground hover:text-foreground transition-colors" href="/dashboard/history">
                 Transaction history

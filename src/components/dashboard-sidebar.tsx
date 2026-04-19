@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
+import { LogoVideo } from "@/components/logo-video"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import {
   LayoutDashboard,
-  Phone,
   Wifi,
   History,
   User,
@@ -34,13 +33,20 @@ import {
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
+  Smartphone,
+  Globe2,
+  Gift,
+  Receipt,
 } from "lucide-react"
 import { useState } from "react"
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/airtime", label: "Buy Airtime", icon: Phone },
   { href: "/dashboard/data", label: "Buy Data", icon: Wifi },
+  { href: "/dashboard/esim", label: "Buy eSIM", icon: Smartphone },
+  { href: "/dashboard/giftcards", label: "Gift Cards", icon: Gift },
+  { href: "/dashboard/bills", label: "Pay Bills", icon: Receipt },
+  { href: "/dashboard/proxies", label: "Proxies", icon: Globe2 },
   { href: "/dashboard/verification", label: "Verification Numbers", icon: PhoneCall },
   { href: "/dashboard/verification/history", label: "Verification History", icon: ClipboardList, indent: true },
   { href: "/dashboard/result-checkers", label: "Result Checkers", icon: GraduationCap },
@@ -104,12 +110,10 @@ export function DashboardSidebar({ collapsed: controlledCollapsed, onCollapsedCh
     >
       <div className={cn("flex items-center justify-between", collapsed ? "p-4 justify-center" : "p-6")}>
         <Link href="/dashboard" className={cn("flex items-center gap-2.5 group", collapsed && "hidden")}>
-          <Image 
-            src="/logo.svg" 
-            alt="Topchart" 
-            width={140} 
-            height={40} 
-            className="h-9 w-auto object-contain"
+          <LogoVideo
+            width={140}
+            height={40}
+            className="h-10 w-auto transition-transform duration-300 group-hover:scale-105"
           />
         </Link>
         <button

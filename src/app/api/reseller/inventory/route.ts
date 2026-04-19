@@ -163,22 +163,38 @@ async function PATCHHandler(request: NextRequest) {
       );
     }
     
-    const { inventory_id, sold_to } = validation.data!;
-    
-    // Update inventory item
+    const { inventoryId, soldTo } = validation.data as {
+      inventoryId: string;
+      soldTo?: string;
+    };
+
+    const inventoryItem = await sql`
+      SELECT id, status
+      FROM reseller_inventory
+      WHERE id = ${inventoryId} AND reseller_id = ${reseller.id}
+      LIMIT 1
+    `;
+
+    if (!inventoryItem.length) {
+      return NextResponse.json({ success: false, error: "Inventory item not found" }, { status: 404 });
+    }
+
+    if ((inventoryItem[0] as { status: string }).status === "sold") {
+      return NextResponse.json({ success: false, error: "Card already sold" }, { status: 409 });
+    }
+
     await sql`
       UPDATE reseller_inventory
-      SET status = 'sold', sold_to = ${sold_to || null}, sold_at = NOW()
-      WHERE id = ${inventory_id} AND reseller_id = ${reseller.id}
+      SET status = 'sold', sold_to = ${soldTo || null}, sold_at = NOW()
+      WHERE id = ${inventoryId} AND reseller_id = ${reseller.id}
     `;
     
-    // Also update the card status
     await sql`
       UPDATE result_checker_cards
       SET status = 'sold', purchased_by = (
-        SELECT id FROM users WHERE phone = ${sold_to} LIMIT 1
+        SELECT id FROM users WHERE phone = ${soldTo} LIMIT 1
       ), purchased_at = NOW()
-      WHERE id = (SELECT card_id FROM reseller_inventory WHERE id = ${inventory_id})
+      WHERE id = (SELECT card_id FROM reseller_inventory WHERE id = ${inventoryId})
     `;
     
     return NextResponse.json({ success: true, message: "Card marked as sold" });

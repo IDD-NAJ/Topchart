@@ -82,6 +82,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Guard: Do not allow cancellation if SMS has already been received
+    const smsRecords = await sql`
+      SELECT id FROM verification_sms WHERE number_id = ${numberId} LIMIT 1
+    `;
+    if (smsRecords.length > 0) {
+      return NextResponse.json(
+        { success: false, error: "Cannot cancel a number that has already received an SMS" },
+        { status: 400 }
+      );
+    }
+
     // Check if already expired
     if (new Date(number.expires_at) < new Date()) {
       await sql`

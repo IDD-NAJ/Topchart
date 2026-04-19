@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
-import { getGhanaOperators, getOperators } from "@/lib/reloadly";
+import { getGhanaOperators, getOperatorsByCountry } from "@/lib/reloadly";
 import { GHANA_RELOADLY_OPERATORS, getNetworkName } from "@/lib/reloadly-networks";
 
 export const runtime = "nodejs";
@@ -36,14 +36,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch operators from Reloadly API
-    const result = country === "GH" 
+    const result = country === "GH"
       ? await getGhanaOperators()
-      : await getOperators(country);
+      : await getOperatorsByCountry(country, { includeBundles: true, includeData: true, includePin: true });
 
     if (result.success && result.data) {
+      const operators = Array.isArray(result.data) ? result.data : ((result.data as { content?: unknown[] }).content || []) as Record<string, unknown>[];
       // Enhance with local network mapping
-      const enhancedOperators = result.data.map((op) => {
-        const localNetwork = getNetworkName(op.id);
+      const enhancedOperators = operators.map((op) => {
+        const opId = (op as Record<string, unknown>).id as number | undefined ?? (op as Record<string, unknown>).operatorId as number | undefined;
+        const localNetwork = opId ? getNetworkName(opId) : null;
         return {
           ...op,
           mappedNetwork: localNetwork,

@@ -327,7 +327,7 @@ function ServiceDetailPageContent() {
               )}
             </div>
           </CardContent>
-          {activeNumber.status === "active" && !activeNumber.is_expired && (
+          {activeNumber.status === "active" && !activeNumber.is_expired && smsList.length === 0 && (
             <CardFooter>
               <Button variant="destructive" onClick={handleCancel} className="w-full">
                 Cancel Number

@@ -7,6 +7,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const requestId = crypto.randomUUID();
+  const startTime = Date.now();
+
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json({ success: false, error: admin.error }, { status: admin.status });
@@ -18,18 +21,25 @@ export async function GET() {
       FROM homepage_media
       ORDER BY section_key ASC, sort_order ASC, created_at ASC
     `;
+    const duration = Date.now() - startTime;
+    console.log("[HOMEPAGE_MEDIA] GET completed", { requestId, count: media.length, duration });
     return NextResponse.json({ success: true, media });
   } catch (error: unknown) {
+    const duration = Date.now() - startTime;
     const message = String((error as { message?: string })?.message || "");
     if (message.includes("does not exist") || message.includes("relation")) {
+      console.log("[HOMEPAGE_MEDIA] Table does not exist, returning empty", { requestId, duration });
       return NextResponse.json({ success: true, media: [] });
     }
-    console.error("Homepage media admin GET error:", error);
+    console.error("[HOMEPAGE_MEDIA] GET error", { requestId, duration, error: message });
     return NextResponse.json({ success: false, error: "Failed to load homepage media" }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
+  const requestId = crypto.randomUUID();
+  const startTime = Date.now();
+  
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json({ success: false, error: admin.error }, { status: admin.status });
@@ -55,7 +65,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "file is required" }, { status: 400 });
     }
 
-    const uploaded = await uploadHomepageMedia({ file, sectionKey, assetType });
+    const MAX_FILE_SIZE = 50 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      console.error("[UPLOAD] File too large", { requestId, size: file.size, maxSize: MAX_FILE_SIZE });
+      return NextResponse.json({ success: false, error: "File size exceeds 50MB limit" }, { status: 400 });
+    }
+
+    const uploadStartTime = Date.now();
+    const uploaded = await Promise.race([
+      uploadHomepageMedia({ file, sectionKey, assetType }),
+      new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error("Upload timeout")), 60000)
+      )
+    ]);
+    const uploadDuration = Date.now() - uploadStartTime;
+    console.log("[UPLOAD] Storage upload completed", { requestId, duration: uploadDuration, size: file.size });
 
     const inserted = await sql`
       INSERT INTO homepage_media (section_key, asset_type, storage_path, public_url, alt_text, sort_order, is_active)
@@ -63,9 +87,23 @@ export async function POST(request: Request) {
       RETURNING id, section_key, asset_type, storage_path, public_url, alt_text, sort_order, is_active, created_at, updated_at
     `;
 
+    const totalDuration = Date.now() - startTime;
+    console.log("[UPLOAD] Homepage media upload completed", { requestId, totalDuration, mediaId: inserted[0]?.id });
+
     return NextResponse.json({ success: true, media: inserted[0] }, { status: 201 });
   } catch (error) {
-    console.error("Homepage media admin POST error:", error);
+    const duration = Date.now() - startTime;
+    const err = error as any;
+    console.error("[UPLOAD] Homepage media admin POST error", {
+      requestId,
+      duration,
+      error: err?.message || String(error)
+    });
+    
+    if (err?.message === "Upload timeout") {
+      return NextResponse.json({ success: false, error: "Upload timed out. Please try again with a smaller file." }, { status: 504 });
+    }
+    
     return NextResponse.json({ success: false, error: "Failed to upload homepage media" }, { status: 500 });
   }
 }

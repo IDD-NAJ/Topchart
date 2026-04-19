@@ -29,7 +29,7 @@ interface PricingData {
   walletBalance: number;
   resultCheckerCards: { exam_type: string; count: number }[];
   networks: { id: string; name: string; color: string }[];
-  dataBundles: { id: string; name: string; size: string; price: number }[];
+  dataBundles: { id: string; network: string; name: string; size: string; price: number }[];
 }
 
 export default function ResellerPurchasePage() {
@@ -37,15 +37,10 @@ export default function ResellerPurchasePage() {
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
   const [pricing, setPricing] = useState<PricingData | null>(null);
-  const [activeTab, setActiveTab] = useState("airtime");
+  const [activeTab, setActiveTab] = useState("data");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingPurchase, setPendingPurchase] = useState<any>(null);
   const [recentPurchases, setRecentPurchases] = useState<any[]>([]);
-  
-  // Airtime form
-  const [airtimeNetwork, setAirtimeNetwork] = useState("");
-  const [airtimePhone, setAirtimePhone] = useState("");
-  const [airtimeAmount, setAirtimeAmount] = useState("");
   
   // Data form
   const [dataNetwork, setDataNetwork] = useState("");
@@ -63,7 +58,7 @@ export default function ResellerPurchasePage() {
 
   const loadPricing = async () => {
     try {
-      const res = await fetch("/api/reseller/purchase", { credentials: "include" });
+      const res = await fetch("/api/reseller/purchase", { credentials: "include", cache: "no-store" });
       const data = await res.json();
       if (data.success) {
         setPricing(data);
@@ -77,7 +72,7 @@ export default function ResellerPurchasePage() {
 
   const loadRecentPurchases = async () => {
     try {
-      const res = await fetch("/api/reseller/purchases?limit=5", { credentials: "include" });
+      const res = await fetch("/api/reseller/purchases?limit=5", { credentials: "include", cache: "no-store" });
       const data = await res.json();
       if (data.success) {
         setRecentPurchases(data.purchases || []);
@@ -92,31 +87,6 @@ export default function ResellerPurchasePage() {
     return originalPrice * (1 - pricing.discountRate / 100);
   };
 
-  const handleAirtimePurchase = () => {
-    if (!airtimeNetwork || !airtimePhone || !airtimeAmount) {
-      toast.error("Please fill in all fields");
-      return;
-    }
-    const networkName = pricing?.networks.find(n => n.id === airtimeNetwork)?.name || airtimeNetwork;
-    const originalAmount = parseFloat(airtimeAmount);
-    const discountedAmount = getDiscountedPrice(originalAmount);
-    
-    if (pricing?.walletBalance && discountedAmount > pricing.walletBalance) {
-      toast.error(`Insufficient wallet balance. You need GHS ${discountedAmount.toFixed(2)} but have GHS ${pricing.walletBalance.toFixed(2)}`);
-      return;
-    }
-    
-    setPendingPurchase({
-      type: "airtime",
-      network: airtimeNetwork,
-      networkName,
-      phone: airtimePhone,
-      amount: originalAmount,
-      discountedAmount,
-      discountRate: pricing?.discountRate
-    });
-    setShowConfirmModal(true);
-  };
 
   const handleDataPurchase = () => {
     if (!dataNetwork || !dataPhone || !selectedBundle) {
@@ -183,20 +153,12 @@ export default function ResellerPurchasePage() {
     setShowConfirmModal(false);
     
     let payload: any = {};
-    if (pendingPurchase.type === "airtime") {
-      payload = {
-        type: "airtime",
-        network: pendingPurchase.network,
-        phone: pendingPurchase.phone,
-        amount: pendingPurchase.amount
-      };
-    } else if (pendingPurchase.type === "data") {
+    if (pendingPurchase.type === "data") {
       payload = {
         type: "data",
         network: pendingPurchase.network,
         phone: pendingPurchase.phone,
-        bundleId: pendingPurchase.bundleId,
-        bundlePrice: pendingPurchase.amount
+        bundleId: pendingPurchase.bundleId
       };
     } else if (pendingPurchase.type === "result_checker") {
       payload = {
@@ -209,18 +171,28 @@ export default function ResellerPurchasePage() {
     await submitPurchase(payload);
   };
 
+  const createIdempotencyKey = () => {
+    const globalCrypto = typeof globalThis !== "undefined" ? (globalThis.crypto as Crypto | undefined) : undefined;
+    if (globalCrypto && typeof globalCrypto.randomUUID === "function") {
+      return globalCrypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  };
+
   const submitPurchase = async (payload: any) => {
     setPurchasing(true);
     try {
+      const idempotencyKey = createIdempotencyKey();
       const res = await fetch("/api/reseller/purchase", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-Idempotency-Key": idempotencyKey },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (data.success) {
         toast.success("Purchase completed!");
+        await loadPricing();
         await loadRecentPurchases();
         if (payload.type === 'result_checker') {
           router.push("/dashboard/reseller/inventory");
@@ -273,11 +245,7 @@ export default function ResellerPurchasePage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-slate-100 p-1">
-          <TabsTrigger value="airtime" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            <Smartphone className="h-4 w-4" />
-            Airtime
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1">
           <TabsTrigger value="data" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             <Wifi className="h-4 w-4" />
             Data
@@ -287,81 +255,6 @@ export default function ResellerPurchasePage() {
             Exam Cards
           </TabsTrigger>
         </TabsList>
-
-        {/* Airtime Tab */}
-        <TabsContent value="airtime">
-          <Card className="border-slate-200">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-3 text-slate-900">
-                <div className="p-2.5 bg-slate-100 rounded-lg">
-                  <Zap className="h-5 w-5 text-slate-600" />
-                </div>
-                Buy Airtime
-              </CardTitle>
-              <CardDescription className="text-slate-500">Top up any phone number at wholesale rates</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 sm:space-y-6">
-              <div className="grid grid-cols-3 gap-3">
-                {pricing?.networks.map((network) => (
-                  <Button
-                    key={network.id}
-                    variant={airtimeNetwork === network.id ? "default" : "outline"}
-                    className={`h-16 flex flex-col items-center justify-center ${airtimeNetwork === network.id ? 'bg-slate-900 text-white hover:bg-slate-800' : 'border-slate-300 hover:bg-slate-100'}`}
-                    onClick={() => setAirtimeNetwork(network.id)}
-                  >
-                    <span className="font-semibold">{network.name}</span>
-                  </Button>
-                ))}
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-slate-700">Phone Number</Label>
-                <Input
-                  placeholder="e.g., 0241234567"
-                  value={airtimePhone}
-                  onChange={(e) => setAirtimePhone(e.target.value)}
-                  className="border-slate-300"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-slate-700">Amount (GHS)</Label>
-                <Input
-                  type="number"
-                  placeholder="Enter amount"
-                  value={airtimeAmount}
-                  onChange={(e) => setAirtimeAmount(e.target.value)}
-                  className="border-slate-300"
-                />
-              </div>
-
-              {airtimeAmount && (
-                <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Original Price:</span>
-                    <span className="line-through text-slate-500">GHS {parseFloat(airtimeAmount).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-sm font-medium text-slate-900">Your Price ({pricing?.discountRate}% off):</span>
-                    <span className="text-lg font-bold text-slate-900">
-                      GHS {getDiscountedPrice(parseFloat(airtimeAmount)).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <Button 
-                className="w-full bg-slate-900 text-white hover:bg-slate-800" 
-                size="lg"
-                onClick={handleAirtimePurchase}
-                disabled={purchasing || !airtimeNetwork || !airtimePhone || !airtimeAmount}
-              >
-                {purchasing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ShoppingCart className="h-4 w-4 mr-2" />}
-                Complete Purchase
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* Data Tab */}
         <TabsContent value="data">
@@ -402,7 +295,7 @@ export default function ResellerPurchasePage() {
               <div className="space-y-2">
                 <Label className="text-slate-700">Select Bundle</Label>
                 <div className="grid grid-cols-2 gap-3">
-                  {pricing?.dataBundles.map((bundle) => (
+                  {pricing?.dataBundles.filter(b => b.network === dataNetwork).map((bundle) => (
                     <Button
                       key={bundle.id}
                       variant={selectedBundle === bundle.id ? "default" : "outline"}
@@ -415,6 +308,16 @@ export default function ResellerPurchasePage() {
                       </span>
                     </Button>
                   ))}
+                  {dataNetwork && pricing?.dataBundles.filter(b => b.network === dataNetwork).length === 0 && (
+                    <div className="col-span-2 py-8 text-center text-slate-500 text-sm">
+                      No data bundles available for this network
+                    </div>
+                  )}
+                  {!dataNetwork && (
+                    <div className="col-span-2 py-8 text-center text-slate-500 text-sm">
+                      Please select a network first
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -557,7 +460,6 @@ export default function ResellerPurchasePage() {
                 <div key={purchase.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
                   <div className="flex items-center gap-4">
                     <div className="p-2.5 bg-slate-100 rounded-lg">
-                      {purchase.product_type === 'airtime' && <Smartphone className="h-5 w-5 text-slate-600" />}
                       {purchase.product_type === 'data' && <Wifi className="h-5 w-5 text-slate-600" />}
                       {purchase.product_type === 'result_checker' && <GraduationCap className="h-5 w-5 text-slate-600" />}
                     </div>
@@ -589,34 +491,6 @@ export default function ResellerPurchasePage() {
             <DialogTitle className="text-slate-900">Confirm Purchase</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {pendingPurchase?.type === "airtime" && (
-              <>
-                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                  <span className="text-slate-600">Type:</span>
-                  <span className="font-medium text-slate-900">Airtime</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                  <span className="text-slate-600">Network:</span>
-                  <span className="font-medium text-slate-900">{pendingPurchase.networkName}</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                  <span className="text-slate-600">Phone:</span>
-                  <span className="font-medium text-slate-900">{pendingPurchase.phone}</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                  <span className="text-slate-600">Original Amount:</span>
-                  <span className="font-medium text-slate-500 line-through">GHS {pendingPurchase.amount.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                  <span className="text-slate-600">Discount ({pendingPurchase.discountRate}%):</span>
-                  <span className="font-medium text-slate-900">GHS {(pendingPurchase.amount - pendingPurchase.discountedAmount).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-slate-900 font-semibold">Total to Pay:</span>
-                  <span className="text-lg font-bold text-slate-900">GHS {pendingPurchase.discountedAmount.toFixed(2)}</span>
-                </div>
-              </>
-            )}
             {pendingPurchase?.type === "data" && (
               <>
                 <div className="flex justify-between items-center py-2 border-b border-slate-100">

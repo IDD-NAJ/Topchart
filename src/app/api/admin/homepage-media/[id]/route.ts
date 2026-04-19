@@ -10,6 +10,9 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
+  const requestId = crypto.randomUUID();
+  const startTime = Date.now();
+
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json({ success: false, error: admin.error }, { status: admin.status });
@@ -36,12 +39,22 @@ export async function PATCH(
     `;
 
     if (!updated.length) {
+      const duration = Date.now() - startTime;
+      console.log("[HOMEPAGE_MEDIA] PATCH - not found", { requestId, id, duration });
       return NextResponse.json({ success: false, error: "Media not found" }, { status: 404 });
     }
 
+    const duration = Date.now() - startTime;
+    console.log("[HOMEPAGE_MEDIA] PATCH completed", { requestId, id, duration });
     return NextResponse.json({ success: true, media: updated[0] });
   } catch (error) {
-    console.error("Homepage media admin PATCH error:", error);
+    const duration = Date.now() - startTime;
+    console.error("[HOMEPAGE_MEDIA] PATCH error", {
+      requestId,
+      id,
+      duration,
+      error: error instanceof Error ? error.message : String(error)
+    });
     return NextResponse.json({ success: false, error: "Failed to update homepage media" }, { status: 500 });
   }
 }
@@ -50,6 +63,9 @@ export async function DELETE(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
+  const requestId = crypto.randomUUID();
+  const startTime = Date.now();
+
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json({ success: false, error: admin.error }, { status: admin.status });
@@ -64,18 +80,37 @@ export async function DELETE(
       LIMIT 1
     `;
     if (!existing.length) {
-      return NextResponse.json({ success: false, error: "Media not found" }, { status: 404 });
+      const duration = Date.now() - startTime;
+      console.log("[HOMEPAGE_MEDIA] DELETE - already deleted", { requestId, id, duration });
+      return NextResponse.json({ success: true, alreadyDeleted: true, deleted: id });
     }
 
     const storagePath = existing[0].storage_path as string;
     if (storagePath && !storagePath.startsWith("seed/")) {
-      await deleteHomepageMediaObject(storagePath);
+      try {
+        await deleteHomepageMediaObject(storagePath);
+      } catch (storageError) {
+        console.error("[HOMEPAGE_MEDIA] Storage delete failed (continuing with DB delete)", {
+          requestId,
+          id,
+          storagePath,
+          error: storageError instanceof Error ? storageError.message : String(storageError)
+        });
+      }
     }
 
     await sql`DELETE FROM homepage_media WHERE id = ${id}`;
+    const duration = Date.now() - startTime;
+    console.log("[HOMEPAGE_MEDIA] DELETE completed", { requestId, id, duration });
     return NextResponse.json({ success: true, deleted: id });
   } catch (error) {
-    console.error("Homepage media admin DELETE error:", error);
+    const duration = Date.now() - startTime;
+    console.error("[HOMEPAGE_MEDIA] DELETE error", {
+      requestId,
+      id,
+      duration,
+      error: error instanceof Error ? error.message : String(error)
+    });
     return NextResponse.json({ success: false, error: "Failed to delete homepage media" }, { status: 500 });
   }
 }

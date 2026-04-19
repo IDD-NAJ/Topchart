@@ -22,6 +22,9 @@ const envSchema = z.object({
   EMAIL_USER: z.string().optional(),
   EMAIL_PASS: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
+  NINEPROXY_API_KEY: z.string().optional(),
+  NINEPROXY_BASE_URL: z.string().url().optional(),
+  NINEPROXY_SANDBOX: z.enum(["true", "false"]).optional(),
 });
 
 type ServerEnv = z.infer<typeof envSchema>;
@@ -46,10 +49,17 @@ const paystackEnvSchema = z.object({
 type PaystackEnv = z.infer<typeof paystackEnvSchema>;
 
 const supabaseStorageEnvSchema = z.object({
-  SUPABASE_URL: z.string().url("SUPABASE_URL must be a valid URL"),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
+  SUPABASE_URL: z.string().url("SUPABASE_URL must be a valid URL").optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required").optional(),
   SUPABASE_BUCKET_HOMEPAGE_MEDIA: z.string().optional(),
-});
+}).refine(
+  (env) => {
+    const hasUrl = env.SUPABASE_URL && env.SUPABASE_URL.trim() !== "";
+    const hasKey = env.SUPABASE_SERVICE_ROLE_KEY && env.SUPABASE_SERVICE_ROLE_KEY.trim() !== "";
+    return (hasUrl && hasKey) || (!hasUrl && !hasKey);
+  },
+  "Both SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be provided together, or neither"
+);
 type SupabaseStorageEnv = z.infer<typeof supabaseStorageEnvSchema>;
 
 const datamartEnvSchema = z.object({
@@ -68,12 +78,20 @@ const reloadlyEnvSchema = z.object({
 });
 type ReloadlyEnv = z.infer<typeof reloadlyEnvSchema>;
 
+const nineproxyEnvSchema = z.object({
+  NINEPROXY_API_KEY: z.string().min(1, "NINEPROXY_API_KEY is required"),
+  NINEPROXY_BASE_URL: z.string().url().optional(),
+  NINEPROXY_SANDBOX: z.enum(["true", "false"]).optional(),
+});
+type NineProxyEnv = z.infer<typeof nineproxyEnvSchema>;
+
 let cachedEnv: ServerEnv | null = null;
 let cachedDatabaseEnv: DatabaseEnv | null = null;
 let cachedPaystackEnv: PaystackEnv | null = null;
 let cachedSupabaseStorageEnv: SupabaseStorageEnv | null = null;
 let cachedDatamartEnv: DatamartEnv | null = null;
 let cachedReloadlyEnv: ReloadlyEnv | null = null;
+let cachedNineProxyEnv: NineProxyEnv | null = null;
 
 export function getServerEnv(): ServerEnv {
   if (cachedEnv) {
@@ -97,8 +115,13 @@ export function getDatabaseEnv(): DatabaseEnv {
 
   const parsed = databaseEnvSchema.safeParse(process.env);
   if (!parsed.success) {
-    const errors = parsed.error.issues.map((issue) => issue.message).join(", ");
-    throw new Error(`Invalid database environment: ${errors}`);
+    const missingFields = parsed.error.issues
+      .filter((issue) => issue.code === "invalid_type")
+      .map((issue) => issue.path.join("."));
+    const message = missingFields.length > 0
+      ? `Missing required environment variables: ${missingFields.join(", ")}`
+      : `Invalid database environment: ${parsed.error.issues.map((issue) => issue.message).join(", ")}`;
+    throw new Error(message);
   }
 
   cachedDatabaseEnv = parsed.data;
@@ -112,8 +135,13 @@ export function getPaystackEnv(): PaystackEnv {
 
   const parsed = paystackEnvSchema.safeParse(process.env);
   if (!parsed.success) {
-    const errors = parsed.error.issues.map((issue) => issue.message).join(", ");
-    throw new Error(`Invalid Paystack environment: ${errors}`);
+    const missingFields = parsed.error.issues
+      .filter((issue) => issue.code === "invalid_type")
+      .map((issue) => issue.path.join("."));
+    const message = missingFields.length > 0
+      ? `Missing required environment variables: ${missingFields.join(", ")}`
+      : `Invalid Paystack environment: ${parsed.error.issues.map((issue) => issue.message).join(", ")}`;
+    throw new Error(message);
   }
 
   cachedPaystackEnv = parsed.data;
@@ -127,8 +155,13 @@ export function getSupabaseStorageEnv(): SupabaseStorageEnv {
 
   const parsed = supabaseStorageEnvSchema.safeParse(process.env);
   if (!parsed.success) {
-    const errors = parsed.error.issues.map((issue) => issue.message).join(", ");
-    throw new Error(`Invalid Supabase storage environment: ${errors}`);
+    const missingFields = parsed.error.issues
+      .filter((issue) => issue.code === "invalid_type")
+      .map((issue) => issue.path.join("."));
+    const message = missingFields.length > 0
+      ? `Missing required environment variables: ${missingFields.join(", ")}`
+      : `Invalid Supabase storage environment: ${parsed.error.issues.map((issue) => issue.message).join(", ")}`;
+    throw new Error(message);
   }
 
   cachedSupabaseStorageEnv = parsed.data;
@@ -142,8 +175,13 @@ export function getDatamartEnv(): DatamartEnv {
 
   const parsed = datamartEnvSchema.safeParse(process.env);
   if (!parsed.success) {
-    const errors = parsed.error.issues.map((issue) => issue.message).join(", ");
-    throw new Error(`Invalid DataMart environment: ${errors}`);
+    const missingFields = parsed.error.issues
+      .filter((issue) => issue.code === "invalid_type")
+      .map((issue) => issue.path.join("."));
+    const message = missingFields.length > 0
+      ? `Missing required environment variables: ${missingFields.join(", ")}`
+      : `Invalid DataMart environment: ${parsed.error.issues.map((issue) => issue.message).join(", ")}`;
+    throw new Error(message);
   }
 
   cachedDatamartEnv = parsed.data;
@@ -157,8 +195,13 @@ export function getReloadlyEnv(): ReloadlyEnv {
 
   const parsed = reloadlyEnvSchema.safeParse(process.env);
   if (!parsed.success) {
-    const errors = parsed.error.issues.map((issue) => issue.message).join(", ");
-    throw new Error(`Invalid Reloadly environment: ${errors}`);
+    const missingFields = parsed.error.issues
+      .filter((issue) => issue.code === "invalid_type")
+      .map((issue) => issue.path.join("."));
+    const message = missingFields.length > 0
+      ? `Missing required environment variables: ${missingFields.join(", ")}`
+      : `Invalid Reloadly environment: ${parsed.error.issues.map((issue) => issue.message).join(", ")}`;
+    throw new Error(message);
   }
 
   // Use RELOADLY_BASE_URL first, fallback to RELOADLY_API_BASE_URL
@@ -168,4 +211,24 @@ export function getReloadlyEnv(): ReloadlyEnv {
 
   cachedReloadlyEnv = parsed.data;
   return cachedReloadlyEnv;
+}
+
+export function getNineProxyEnv(): NineProxyEnv {
+  if (cachedNineProxyEnv) {
+    return cachedNineProxyEnv;
+  }
+
+  const parsed = nineproxyEnvSchema.safeParse(process.env);
+  if (!parsed.success) {
+    const missingFields = parsed.error.issues
+      .filter((issue) => issue.code === "invalid_type")
+      .map((issue) => issue.path.join("."));
+    const message = missingFields.length > 0
+      ? `Missing required environment variables: ${missingFields.join(", ")}`
+      : `Invalid 9Proxy environment: ${parsed.error.issues.map((issue) => issue.message).join(", ")}`;
+    throw new Error(message);
+  }
+
+  cachedNineProxyEnv = parsed.data;
+  return cachedNineProxyEnv;
 }

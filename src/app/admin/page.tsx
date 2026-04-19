@@ -50,6 +50,8 @@ import {
   ArrowDownRight,
   Clock,
   RefreshCw,
+  Image as ImageIcon,
+  Video,
 } from "lucide-react"
 
 interface AdminUser {
@@ -688,6 +690,129 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* Content Management */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Link href="/admin/homepage-media">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">Homepage Media</CardTitle>
+              <ImageIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <ImageIcon className="h-3 w-3 text-[#4A9AC8]" />
+                <Video className="h-3 w-3 text-[#FF5630]" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Images & Videos</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/marketing-assets">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">Marketing Assets</CardTitle>
+              <Gift className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Assets</div>
+              <p className="text-xs text-muted-foreground">Reseller kits</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/networks">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">Networks</CardTitle>
+              <Phone className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">3</div>
+              <p className="text-xs text-muted-foreground">Supported</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/reloadly-settings">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">Reloadly</CardTitle>
+              <RefreshCw className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">API</div>
+              <p className="text-xs text-muted-foreground">Settings</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/9proxy-settings">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">9Proxy</CardTitle>
+              <Shield className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">API</div>
+              <p className="text-xs text-muted-foreground">Settings</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/esim-orders">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">eSIM</CardTitle>
+              <Phone className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Orders</div>
+              <p className="text-xs text-muted-foreground">Digital SIM</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/proxy-orders">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">Proxies</CardTitle>
+              <Shield className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Orders</div>
+              <p className="text-xs text-muted-foreground">Residential & DC</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/giftcard-orders">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">Gift Cards</CardTitle>
+              <Gift className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Orders</div>
+              <p className="text-xs text-muted-foreground">Digital Cards</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/bill-payments">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">Bills</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Payments</div>
+              <p className="text-xs text-muted-foreground">Utilities</p>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
 
       {/* Transaction Breakdown */}
       {stats && stats.transactionsByType && stats.transactionsByType.length > 0 && (

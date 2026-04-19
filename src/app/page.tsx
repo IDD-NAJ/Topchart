@@ -27,19 +27,15 @@ import {
   Server,
   Activity,
   Terminal,
+  Smartphone,
+  Shield,
+  Gift,
 } from "lucide-react"
 import { motion } from "framer-motion"
 import { ScrollReveal, StaggerReveal, StaggerRevealItem, PageTransition } from "@/components/animations"
 import { TestimonialCarousel, type Testimonial } from "@/components/marketing/testimonial-carousel"
 
 const SERVICES = [
-  {
-    icon: Phone,
-    title: "Airtime Top-Up",
-    description: "Instant airtime for MTN, Telecel, and AirtelTigo. Credits within seconds.",
-    href: "/dashboard/airtime",
-    label: "Top up now",
-  },
   {
     icon: Wifi,
     title: "Data Bundles",
@@ -62,6 +58,34 @@ const SERVICES = [
     label: "Check results",
   },
   {
+    icon: Smartphone,
+    title: "eSIM",
+    description: "Get a US phone number or travel data eSIM for 50+ countries.",
+    href: "/dashboard/esim",
+    label: "Get eSIM",
+  },
+  {
+    icon: Shield,
+    title: "Proxies",
+    description: "Residential, mobile & datacenter proxies via 9Proxy.",
+    href: "/dashboard/proxies",
+    label: "Get proxies",
+  },
+  {
+    icon: Gift,
+    title: "Gift Cards",
+    description: "Digital gift cards for Netflix, Amazon, Steam & more — delivered instantly.",
+    href: "/dashboard/giftcards",
+    label: "Buy gift cards",
+  },
+  {
+    icon: CreditCard,
+    title: "Pay Bills",
+    description: "Electricity, TV, water & internet bill payments in Ghana.",
+    href: "/dashboard/bills",
+    label: "Pay now",
+  },
+  {
     icon: Store,
     title: "Reseller Program",
     description: "Earn commissions reselling our services under your own brand.",
@@ -72,7 +96,7 @@ const SERVICES = [
 
 const FAQS = [
   {
-    q: "How fast is airtime and data delivery?",
+    q: "How fast is airtime ana dirtime and data delivery?",
     a: "Most orders complete within seconds. Network congestion may occasionally add a short delay.",
   },
   {
@@ -96,7 +120,7 @@ const TESTIMONIALS: Testimonial[] = [
   {
     brand: "Campus Hub GH",
     quote:
-      "We sell data and airtime to students daily. Reliability and the reseller tools have been excellent.",
+      "We sell data ad  airtimitime to students daily. Reliability and the reseller tools have been excellent.",
     name: "Ama O.",
     role: "Product Lead",
   },
@@ -110,7 +134,7 @@ const TESTIMONIALS: Testimonial[] = [
   {
     brand: "Retail Collective",
     quote:
-      "Airtime and data in one dashboard simplified payouts for our field teams.",
+      "Airrime tndiaatadata in one dashboard simplified payouts for our field teams.",
     name: "Esi T.",
     role: "Finance Director",
   },
@@ -344,20 +368,28 @@ function PrimaryLink({
 export default function HomePage() {
   const [networkLogos, setNetworkLogos] = useState<NetworkLogoConfig[]>(DEFAULT_NETWORK_LOGOS)
   const [developerImage, setDeveloperImage] = useState(DEFAULT_DEVELOPER_IMAGE)
+  const [heroVideo, setHeroVideo] = useState("/13046977_3840_2160_30fps.mp4")
+  const [scaleVideo, setScaleVideo] = useState("/7490425-uhd_3840_2160_25fps.mp4")
 
   useEffect(() => {
     let active = true
 
-    const loadHomepageImages = async () => {
+    const loadHomepageMedia = async () => {
       try {
         const response = await fetch("/api/content/homepage-media", { cache: "no-store" })
         const payload = await response.json()
         if (!active || !payload?.success || !Array.isArray(payload.media)) return
 
         const imageMap = new Map<string, string>()
+        const videoMap = new Map<string, string>()
+        
         for (const item of payload.media as Array<{ section_key?: string; public_url?: string; asset_type?: string }>) {
-          if (item?.asset_type === "image" && item?.section_key && item?.public_url) {
-            imageMap.set(item.section_key, item.public_url)
+          if (item?.section_key && item?.public_url) {
+            if (item?.asset_type === "image") {
+              imageMap.set(item.section_key, item.public_url)
+            } else if (item?.asset_type === "video") {
+              videoMap.set(item.section_key, item.public_url)
+            }
           }
         }
 
@@ -369,13 +401,17 @@ export default function HomePage() {
         )
 
         setDeveloperImage(imageMap.get("developer_community_image") || DEFAULT_DEVELOPER_IMAGE)
+        setHeroVideo(videoMap.get("hero_background_video") || "/13046977_3840_2160_30fps.mp4")
+        setScaleVideo(videoMap.get("scale_background_video") || "/7490425-uhd_3840_2160_25fps.mp4")
       } catch {
         setNetworkLogos(DEFAULT_NETWORK_LOGOS)
         setDeveloperImage(DEFAULT_DEVELOPER_IMAGE)
+        setHeroVideo("/13046977_3840_2160_30fps.mp4")
+        setScaleVideo("/7490425-uhd_3840_2160_25fps.mp4")
       }
     }
 
-    loadHomepageImages()
+    loadHomepageMedia()
     return () => {
       active = false
     }
@@ -396,7 +432,7 @@ export default function HomePage() {
             playsInline
             className="absolute inset-0 h-full w-full object-cover opacity-40"
           >
-            <source src="/13046977_3840_2160_30fps.mp4" type="video/mp4" />
+            <source src={heroVideo} type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-gradient-to-b from-[#0d1627]/80 via-[#0d1627]/60 to-[#0d1627] pointer-events-none" />
           <ConnectionsGrid />
@@ -431,7 +467,7 @@ export default function HomePage() {
               transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
               className="mt-6 max-w-2xl text-[15px] sm:text-base leading-relaxed text-[#8a9ba8]"
             >
-              Airtime, data bundles, verification numbers, exam results, and a full reseller programme — all in one secure platform.
+              Airtime, dirtime, data bundles, verification numbers, exam results, and a full reseller programme — all in one secure platform.
             </motion.p>
 
             <motion.div
@@ -578,7 +614,7 @@ export default function HomePage() {
                   playsInline
                   className="absolute inset-0 h-full w-full object-cover"
                 >
-                  <source src="/7490425-uhd_3840_2160_25fps.mp4" type="video/mp4" />
+                  <source src={scaleVideo} type="video/mp4" />
                 </video>
               </div>
             </ScrollReveal>
@@ -641,7 +677,7 @@ export default function HomePage() {
                 Developer Community
               </h2>
               <p className="mt-6 text-neutral-600 leading-relaxed">
-                Banks, fintechs, and growing brands use Topchart to deliver airtime, data, and adjacent services without rebuilding telco integrations. We handle compliance-minded flows, wallet logic, and operational tooling.
+                Banks, fintechs, and growing brands use Topchart to deliver data and adjacent services without rebuilding telco integrations. We handle compliance-minded flows, wallet logic, and operational tooling.
               </p>
             </ScrollReveal>
             <ScrollReveal once={false} amount={0.22} className="relative">
@@ -767,7 +803,7 @@ export default function HomePage() {
                 <div className="flex flex-1 flex-col gap-6 sm:flex-row sm:items-center">
                   <DotGridCorner className="shrink-0 opacity-50 invert" />
                   <h2 className="text-balance text-2xl font-extrabold leading-tight text-foreground sm:text-3xl">
-                    Enjoy the best of airtime, data, and digital services
+                    Enjoy the best of data and digital services
                   </h2>
                 </div>
                 <PrimaryLink href="/register" className="shrink-0 self-start sm:self-center">

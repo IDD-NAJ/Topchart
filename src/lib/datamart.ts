@@ -79,10 +79,16 @@ interface ApiResponse<T> {
 
 const NETWORK_MAP: Record<string, string> = {
   mtn: "MTN",
-  vodafone: "Vodafone",
-  telecel: "Telecel",
-  airteltigo: "AirtelTigo",
-  at: "AirtelTigo",
+  mtngh: "MTN",
+  "mtn-ghana": "MTN",
+  vodafone: "VODAFONE",
+  voda: "VODAFONE",
+  "vodafone-ghana": "VODAFONE",
+  telecel: "TELECEL",
+  tigo: "AIRTELTIGO",
+  airteltigo: "AIRTELTIGO",
+  "airtel-tigo": "AIRTELTIGO",
+  at: "AIRTELTIGO",
 };
 
 async function datamartRequest<T>(
@@ -169,15 +175,15 @@ export async function purchaseAirtime(params: {
   amount: number;
   bypassPortedNumber?: boolean;
 }): Promise<ApiResponse<DatamartAirtimeResult>> {
-  return datamartRequest<DatamartAirtimeResult>("/api/v1/airtime/", {
-    method: "POST",
-    body: JSON.stringify({
-      network: params.networkCode,
-      mobile_number: params.phoneNumber,
-      amount: params.amount,
-      bypass_ported_number: params.bypassPortedNumber || false,
-    }),
-  });
+  // DataMart does not support airtime purchases - only data bundles
+  // This endpoint returns 404 "Route not found"
+  console.warn(`[DataMart] Airtime purchase attempted but not supported. network=${params.networkCode}, phone=${params.phoneNumber}, amount=${params.amount}`);
+  return {
+    success: false,
+    error: "DataMart does not support airtime purchases. Only data bundles are available.",
+    errorCode: "PROVIDER_UNSUPPORTED_OPERATION",
+    statusCode: 404,
+  };
 }
 
 export async function getDataOrderStatus(
@@ -186,8 +192,19 @@ export async function getDataOrderStatus(
   return datamartRequest<DatamartOrderResult>(`/api/v1/data/${orderId}/`);
 }
 
-export function resolveNetworkCode(internalId: string): string {
-  return NETWORK_MAP[internalId.toLowerCase()] || internalId;
+export function resolveNetworkCode(value: string): string {
+  if (!value) return value;
+
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z]/g, "");
+
+  if (normalized in NETWORK_MAP) {
+    return NETWORK_MAP[normalized];
+  }
+
+  return value.trim();
 }
 
 export function datamartNetworkMatches(planNetwork: string, selectedNetwork: string): boolean {

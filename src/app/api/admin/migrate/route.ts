@@ -139,6 +139,36 @@ export async function POST(request: NextRequest) {
     `;
     steps.push("system_config default rows seeded");
 
+    await sql`
+      CREATE TABLE IF NOT EXISTS homepage_media (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        section_key VARCHAR(120) NOT NULL,
+        asset_type VARCHAR(20) NOT NULL CHECK (asset_type IN ('image', 'video')),
+        storage_path TEXT NOT NULL,
+        public_url TEXT NOT NULL,
+        alt_text TEXT,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_homepage_media_section_active_sort
+      ON homepage_media(section_key, is_active, sort_order)
+    `;
+    await sql`
+      INSERT INTO homepage_media (section_key, asset_type, storage_path, public_url, alt_text, sort_order, is_active) VALUES
+      ('mtn_logo', 'image', 'seed/mtn-logo.svg', '/images/mtn-logo.svg', 'MTN logo', 1, TRUE),
+      ('telecel_logo', 'image', 'seed/telecel-logo.svg', '/images/telecel-logo.svg', 'Telecel logo', 2, TRUE),
+      ('airteltigo_logo', 'image', 'seed/airteltigo-logo.svg', '/images/airteltigo-logo.svg', 'AirtelTigo logo', 3, TRUE),
+      ('developer_community_image', 'image', 'seed/technical-partnership.jpg', '/images/technical-partnership.jpg', 'A user looking at code metrics', 4, TRUE),
+      ('hero_background_video', 'video', 'public/13046977_3840_2160_30fps.mp4', '/13046977_3840_2160_30fps.mp4', 'Hero section background video', 5, TRUE),
+      ('scale_background_video', 'video', 'public/7490425-uhd_3840_2160_25fps.mp4', '/7490425-uhd_3840_2160_25fps.mp4', 'Scale section background video', 6, TRUE)
+      ON CONFLICT DO NOTHING
+    `;
+    steps.push("homepage_media table created and seeded");
+
     await sql`CREATE INDEX IF NOT EXISTS idx_reseller_applications_user ON reseller_applications(user_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_reseller_applications_status ON reseller_applications(application_status)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_reseller_profiles_user ON reseller_profiles(user_id)`;

@@ -5,6 +5,9 @@ export type HomepageMediaAssetType = "image" | "video";
 
 function getStorageClient() {
   const env = getSupabaseStorageEnv();
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("Supabase storage is not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.");
+  }
   const bucketName = env.SUPABASE_BUCKET_HOMEPAGE_MEDIA || "homepage-media";
   const client = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false },

@@ -10,15 +10,19 @@ import {
   Menu,
   ChevronDown,
   LayoutDashboard,
-  Phone,
   Wifi,
   PhoneCall,
   GraduationCap,
   ShieldCheck,
   Asterisk,
+  Smartphone,
+  Shield,
+  Gift,
+  CreditCard,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { LogoVideo } from "@/components/logo-video"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,12 +36,6 @@ const serviceLinks: { href: string; label: string; description: string; icon: Lu
     label: "Overview",
     description: "Balances, referrals, and activity",
     icon: LayoutDashboard,
-  },
-  {
-    href: "/dashboard/airtime",
-    label: "Airtime",
-    description: "Instant top-ups for all networks",
-    icon: Phone,
   },
   {
     href: "/dashboard/data",
@@ -56,6 +54,30 @@ const serviceLinks: { href: string; label: string; description: string; icon: Lu
     label: "Result checkers",
     description: "Exam results and PINs",
     icon: GraduationCap,
+  },
+  {
+    href: "/dashboard/esim",
+    label: "eSIM",
+    description: "US phone numbers & travel data eSIMs",
+    icon: Smartphone,
+  },
+  {
+    href: "/dashboard/proxies",
+    label: "Proxies",
+    description: "Residential, mobile & datacenter proxies",
+    icon: Shield,
+  },
+  {
+    href: "/dashboard/giftcards",
+    label: "Gift Cards",
+    description: "Digital gift cards delivered instantly",
+    icon: Gift,
+  },
+  {
+    href: "/dashboard/bills",
+    label: "Pay Bills",
+    description: "Electricity, TV, water & internet",
+    icon: CreditCard,
   },
 ]
 
@@ -78,14 +100,11 @@ export function Header() {
 
         {/* LOGO */}
         <Link href="/" className="shrink-0 flex items-center group relative z-10">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#F38F20] flex items-center justify-center shadow-sm">
-              <Asterisk className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-sans text-xl font-bold tracking-tight flex items-center text-slate-900">
-              Topchart
-            </span>
-          </div>
+          <LogoVideo
+            width={160}
+            height={40}
+            className="h-10 w-auto"
+          />
         </Link>
 
         {/* DESKTOP NAV */}
@@ -96,7 +115,7 @@ export function Header() {
                 <Link
                   key={l.href}
                   href={l.href}
-                  className="text-sm font-medium text-slate-700 hover:text-[#F38F20] transition-colors"
+                  className="text-sm font-[family-name:var(--font-aesthetic)] font-medium text-slate-700 hover:text-[#F38F20] transition-colors"
                 >
                   {l.label}
                 </Link>
@@ -107,7 +126,7 @@ export function Header() {
 
           <DropdownMenu>
             <DropdownMenuTrigger
-              className="flex items-center gap-1.5 text-sm font-medium text-slate-700 hover:text-[#F38F20] outline-none transition-colors group data-[state=open]:text-[#F38F20]"
+              className="flex items-center gap-1.5 text-sm font-[family-name:var(--font-aesthetic)] font-medium text-slate-700 hover:text-[#F38F20] outline-none transition-colors group data-[state=open]:text-[#F38F20]"
             >
               Services
               <ChevronDown className="h-4 w-4 opacity-70 group-data-[state=open]:rotate-180 transition-transform duration-200" aria-hidden />
@@ -129,7 +148,7 @@ export function Header() {
                           <Icon className="h-4 w-4" aria-hidden />
                         </div>
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-sm font-medium text-slate-900">
+                          <span className="text-sm font-[family-name:var(--font-aesthetic)] font-medium text-slate-900">
                             {s.label}
                           </span>
                           <span className="text-xs text-slate-500">
@@ -150,7 +169,7 @@ export function Header() {
                 <Link
                   key={l.href}
                   href={l.href}
-                  className="text-sm font-medium text-slate-700 hover:text-[#F38F20] transition-colors"
+                  className="text-sm font-[family-name:var(--font-aesthetic)] font-medium text-slate-700 hover:text-[#F38F20] transition-colors"
                 >
                   {l.label}
                 </Link>
@@ -166,7 +185,7 @@ export function Header() {
              <Button
                asChild
                variant="outline"
-               className="h-9 rounded-lg border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-900 text-sm font-medium px-5"
+               className="h-9 rounded-lg border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-900 text-sm font-[family-name:var(--font-aesthetic)] font-medium px-5"
              >
                <Link href="/dashboard">
                  Dashboard
@@ -176,13 +195,13 @@ export function Header() {
             <div className="hidden sm:flex items-center gap-4">
               <Link
                 href="/login"
-                className="text-sm font-medium text-slate-700 hover:text-[#F38F20] transition-colors px-2"
+                className="text-sm font-[family-name:var(--font-aesthetic)] font-medium text-slate-700 hover:text-[#F38F20] transition-colors px-2"
               >
                 Sign In
               </Link>
               <Button
                 asChild
-                className="h-9 rounded-lg bg-[#F38F20] hover:bg-[#cc7414] text-white text-sm font-medium px-5"
+                className="h-9 rounded-lg bg-[#F38F20] hover:bg-[#cc7414] text-white text-sm font-[family-name:var(--font-aesthetic)] font-medium px-5"
               >
                 <Link href="/register">
                   Get Started
@@ -217,7 +236,7 @@ export function Header() {
                 <Link
                   href="/"
                   onClick={() => setIsOpen(false)}
-                  className="rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                  className="rounded-lg px-4 py-3 text-sm font-[family-name:var(--font-aesthetic)] font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                 >
                   Home
                 </Link>
@@ -226,7 +245,7 @@ export function Header() {
                   <button
                     type="button"
                     onClick={() => setServicesOpen((o) => !o)}
-                    className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                    className="flex w-full items-center justify-between px-4 py-3 text-sm font-[family-name:var(--font-aesthetic)] font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                     aria-expanded={servicesOpen}
                   >
                     Services
@@ -274,7 +293,7 @@ export function Header() {
                       key={l.href}
                       href={l.href}
                       onClick={() => setIsOpen(false)}
-                      className="rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                      className="rounded-lg px-4 py-3 text-sm font-[family-name:var(--font-aesthetic)] font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                     >
                       {l.label}
                     </Link>
@@ -284,7 +303,7 @@ export function Header() {
                   <Link
                     href="/login"
                     onClick={() => setIsOpen(false)}
-                    className="rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors sm:hidden"
+                    className="rounded-lg px-4 py-3 text-sm font-[family-name:var(--font-aesthetic)] font-medium text-slate-700 hover:bg-slate-50 transition-colors sm:hidden"
                   >
                     Sign In
                   </Link>

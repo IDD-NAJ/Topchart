@@ -19,6 +19,10 @@ import {
   PhoneCall,
   GraduationCap,
   Store,
+  Smartphone,
+  Globe2,
+  Gift,
+  Receipt,
 } from "lucide-react"
 import {
   Sheet,
@@ -31,12 +35,15 @@ import { Button } from "@/components/ui/button"
 
 const mainNavItems = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/dashboard/airtime", label: "Airtime", icon: Phone },
   { href: "/dashboard/data", label: "Data", icon: Wifi },
   { href: "/dashboard/history", label: "History", icon: History },
 ]
 
 const moreNavItems = [
+  { href: "/dashboard/esim", label: "Buy eSIM", icon: Smartphone },
+  { href: "/dashboard/giftcards", label: "Gift Cards", icon: Gift },
+  { href: "/dashboard/bills", label: "Pay Bills", icon: Receipt },
+  { href: "/dashboard/proxies", label: "Proxies", icon: Globe2 },
   { href: "/dashboard/verification", label: "Verification Numbers", icon: PhoneCall },
   { href: "/dashboard/result-checkers", label: "Result Checkers", icon: GraduationCap },
   { href: "/dashboard/reseller", label: "Reseller Programme", icon: Store },

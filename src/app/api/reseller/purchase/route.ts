@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { randomUUID } from "crypto";
 import { sql } from "@/lib/db";
 import { withRateLimit } from "@/lib/rate-limit";
 import { validateRequest, formatZodError, purchaseSchema } from "@/lib/validation/schemas";
@@ -62,6 +63,22 @@ async function GETHandler(request: NextRequest) {
       LIMIT 10
     `;
     
+    // Get active data bundles
+    const activeDataBundles = await sql`
+      SELECT id, network, name, price, price_override, is_active 
+      FROM data_bundles
+      WHERE is_active = true
+      ORDER BY price ASC
+    `;
+
+    const formattedDataBundles = activeDataBundles.map((b: any) => ({
+      id: b.id,
+      network: b.network.toLowerCase(),
+      name: b.name,
+      size: b.name,
+      price: b.price_override || b.price
+    }));
+    
     return NextResponse.json({
       success: true,
       discountRate,
@@ -69,19 +86,12 @@ async function GETHandler(request: NextRequest) {
       walletBalance: reseller.wallet_balance || 0,
       resultCheckerCards: cardCounts,
       samplePricing: sampleCards,
-      networks: [
+      networks: formattedNetworks.length > 0 ? formattedNetworks : [
         { id: 'mtn', name: 'MTN', color: '#0052CC' },
         { id: 'vodafone', name: 'Vodafone', color: '#E60000' },
         { id: 'airteltigo', name: 'AirtelTigo', color: '#0099CC' }
       ],
-      dataBundles: [
-        { id: '1gb', name: '1GB', size: '1GB', price: 5.00 },
-        { id: '2gb', name: '2GB', size: '2GB', price: 8.00 },
-        { id: '3gb', name: '3GB', size: '3GB', price: 11.00 },
-        { id: '5gb', name: '5GB', size: '5GB', price: 16.00 },
-        { id: '10gb', name: '10GB', size: '10GB', price: 30.00 },
-        { id: '20gb', name: '20GB', size: '20GB', price: 55.00 }
-      ]
+      dataBundles: formattedDataBundles
     });
     
   } catch (error) {
@@ -147,56 +157,129 @@ async function POSTHandler(request: NextRequest) {
       );
     }
     
-    const { type } = validation.data!;
-    
+    const payload = validation.data!;
+    const { type } = payload;
+
+    const rawIdempotencyKey = request.headers.get("x-idempotency-key")?.trim() || null;
+    const idempotencyKey = rawIdempotencyKey && rawIdempotencyKey.length >= 8 ? rawIdempotencyKey : randomUUID();
+    const reference = `RS-${reseller.id}-${idempotencyKey}`;
+
+    const existingSale = await sql`
+      SELECT *
+      FROM reseller_sales
+      WHERE reseller_id = ${reseller.id} AND reference = ${reference}
+      LIMIT 1
+    `;
+
+    if (existingSale.length) {
+      const sale = existingSale[0] as Record<string, unknown>;
+      return NextResponse.json({
+        success: true,
+        sale,
+        totalCost: Number(sale.cost_price || 0),
+        sellingPrice: Number(sale.amount || sale.selling_price || 0),
+        discountApplied: discountRate,
+        duplicate: true,
+      });
+    }
+
     let saleData: any = {
       reseller_id: reseller.id,
       product_type: type,
-      status: 'pending'
+      status: 'pending',
+      reference
     };
     
     let totalCost = 0;
     let sellingPrice = 0;
     
-    if (type === 'airtime') {
-      const data = validation.data as { type: 'airtime'; network: string; phone: string; amount: number };
-      // Airtime purchase
-      const discountedAmount = data.amount * (1 - discountRate / 100);
-      totalCost = discountedAmount;
-      sellingPrice = data.amount;
-      
-      saleData = {
-        ...saleData,
-        customer_phone: data.phone,
-        network: data.network,
-        amount: sellingPrice,
-        cost_price: totalCost,
-        selling_price: sellingPrice,
-        profit: sellingPrice - totalCost
+    if (type === 'data') {
+      const data = payload as {
+        type: 'data';
+        network: string;
+        phone: string;
+        bundleId?: string;
+        bundle_id?: string;
+        amount?: number;
       };
-    } else if (type === 'data') {
-      const data = validation.data as { type: 'data'; network: string; phone: string; bundle_id: string; bundle_price: number };
-      // Data bundle purchase
-      const discountedPrice = data.bundle_price * (1 - discountRate / 100);
-      totalCost = discountedPrice;
-      sellingPrice = data.bundle_price;
+
+      const bundleId = data.bundleId || data.bundle_id;
+
+      if (!bundleId) {
+        return NextResponse.json({ success: false, error: "Bundle ID is required" }, { status: 400 });
+      }
+
+      const [bundleRow] = await sql`
+        SELECT 
+          id,
+          network,
+          price,
+          price_override as "priceOverride",
+          is_active as "isActive"
+        FROM data_bundles
+        WHERE id = ${bundleId}
+        LIMIT 1
+      `;
+
+      if (!bundleRow) {
+        return NextResponse.json({ success: false, error: "Data bundle not found" }, { status: 404 });
+      }
+
+      if (!(bundleRow as { isActive: boolean }).isActive) {
+        return NextResponse.json({ success: false, error: "Selected bundle is unavailable" }, { status: 400 });
+      }
+
+      const bundle = bundleRow as {
+        id: string;
+        network: string;
+        price: number | string;
+        priceOverride: number | string | null;
+      };
+
+      const basePrice = bundle.priceOverride ? Number(bundle.priceOverride) : Number(bundle.price);
+
+      if (Number.isNaN(basePrice) || basePrice <= 0) {
+        return NextResponse.json({ success: false, error: "Invalid bundle pricing" }, { status: 400 });
+      }
+
+      const normalizedNetwork = (bundle.network || data.network).toLowerCase();
+
+      if (data.network && data.network !== normalizedNetwork) {
+        return NextResponse.json({ success: false, error: "Selected bundle does not match network" }, { status: 400 });
+      }
+      const effectiveDiscount = discountRate;
+      const discountedPrice = basePrice * (1 - effectiveDiscount / 100);
+
+      totalCost = Math.max(0, Number(discountedPrice.toFixed(2)));
+      sellingPrice = Number(basePrice.toFixed(2));
       
       saleData = {
         ...saleData,
         customer_phone: data.phone,
-        network: data.network,
-        bundle_id: data.bundle_id,
+        network: normalizedNetwork,
+        bundle_id: bundle.id,
         amount: sellingPrice,
         cost_price: totalCost,
         selling_price: sellingPrice,
         profit: sellingPrice - totalCost
       };
     } else if (type === 'result_checker') {
-      const data = validation.data as { type: 'result_checker'; exam_type: string; quantity: number };
+      const data = payload as {
+        type: 'result_checker';
+        examType?: string;
+        exam_type?: string;
+        quantity: number;
+      };
+
+      const examType = data.examType || data.exam_type;
+
+      if (!examType) {
+        return NextResponse.json({ success: false, error: "Exam type is required" }, { status: 400 });
+      }
       // Result checker cards
       const cards = await sql`
         SELECT * FROM result_checker_cards
-        WHERE exam_type = ${data.exam_type} AND status = 'available'
+        WHERE exam_type = ${examType} AND status = 'available'
         LIMIT ${data.quantity}
       `;
       
@@ -220,7 +303,11 @@ async function POSTHandler(request: NextRequest) {
         cards: cards.map(c => c.id)
       };
     }
-    
+
+    if (totalCost > Number(reseller.wallet_balance || 0)) {
+      return NextResponse.json({ success: false, error: "Insufficient wallet balance" }, { status: 400 });
+    }
+
     // Create the sale record
     const saleResult = await sql`
       INSERT INTO reseller_sales (
@@ -246,7 +333,7 @@ async function POSTHandler(request: NextRequest) {
         ${saleData.selling_price},
         ${saleData.profit},
         'pending',
-        ${'SALE-' + Date.now()}
+        ${reference}
       )
       RETURNING *
     `;

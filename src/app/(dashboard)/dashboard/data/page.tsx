@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { detectNetwork, type Network } from "@/lib/networks"
+import { detectNetwork, networks, type Network } from "@/lib/networks"
+import { resolveNetworkCode } from "@/lib/datamart"
 import { datamartNetworkMatches } from "@/lib/datamart"
 import { NetworkSelector } from "@/components/network-selector"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,18 +13,20 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { AlertCircle, CheckCircle2, Loader2, ArrowLeft, Wifi, Star, Zap, ShieldCheck, Target, CreditCard, Users } from "lucide-react"
+import { AlertCircle, CheckCircle2, Loader2, ArrowLeft, Star, Zap, ShieldCheck, Target, CreditCard, Users, Smartphone, Receipt, Check, Database } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
 import { addFavorite } from "@/lib/actions/favorites"
 import { FavoriteNumbers } from "@/components/favorite-numbers"
 import { toast } from "sonner"
-import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
+import { PurchaseCard } from "@/components/purchase/PurchaseCard"
+import { RecentRecipients } from "@/components/purchase/RecentRecipients"
+import { addRecentRecipient, getRecentRecipients, type RecentRecipient } from "@/lib/purchase-data"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface DatamartPlan {
   id: string
@@ -54,6 +57,15 @@ const PLAN_TYPE_LABELS: Record<string, string> = {
   UNLIMITED: "Unlimited",
 }
 
+function normalizeNetworkId(networkName: string, selectedNetworkId?: string): string {
+  if (selectedNetworkId) return selectedNetworkId
+  const name = networkName.toLowerCase()
+  if (name.includes("mtn")) return "mtn"
+  if (name.includes("vodafone") || name.includes("telecel")) return "vodafone"
+  if (name.includes("airtel") || name.includes("tigo")) return "airteltigo"
+  return "mtn"
+}
+
 export default function DataPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -67,12 +79,15 @@ export default function DataPage() {
   const [saveAsFavorite, setSaveAsFavorite] = useState(false)
   const [favoriteName, setFavoriteName] = useState("")
   const [isSaving, setIsSaving] = useState(false)
+  const [recentRecipients, setRecentRecipients] = useState<RecentRecipient[]>([])
+
   const [plans, setPlans] = useState<DatamartPlan[]>([])
   const [plansLoading, setPlansLoading] = useState(false)
   const [plansError, setPlansError] = useState("")
   const [plansStale, setPlansStale] = useState(false)
   const [plansFetchedAt, setPlansFetchedAt] = useState<string>("")
   const [activeType, setActiveType] = useState<string>("ALL")
+  const [favoritesRefreshKey, setFavoritesRefreshKey] = useState(0)
 
   useEffect(() => {
     if (phone.length >= 4) {
@@ -80,6 +95,10 @@ export default function DataPage() {
       if (detected) setSelectedNetwork(detected)
     }
   }, [phone])
+
+  useEffect(() => {
+    setRecentRecipients(getRecentRecipients())
+  }, [])
 
   const fetchPlans = useCallback(async () => {
     setPlansLoading(true)
@@ -116,7 +135,6 @@ export default function DataPage() {
     fetchPlans()
   }, [fetchPlans])
 
-  // Deselect plan if network changes and plan doesn't match
   useEffect(() => {
     if (selectedNetwork && selectedPlan) {
       const isMatch = datamartNetworkMatches(selectedPlan.network, selectedNetwork.name);
@@ -130,15 +148,16 @@ export default function DataPage() {
 
   const filteredPlans = plans.filter((p) => {
     if (activeType !== "ALL" && (p.datamartPlanType || "SME") !== activeType) return false;
-
-    // If a network is selected, filter by network
     if (selectedNetwork && p.network) {
       const isMatch = datamartNetworkMatches(p.network, selectedNetwork.name);
       if (!isMatch) return false;
     }
-
     return true;
   });
+
+  const availableNetworks = Array.from(new Set(plans.map(p => normalizeNetworkId(p.network))))
+    .map(id => networks.find(n => n.id === id))
+    .filter(Boolean) as Network[];
 
   const validateForm = () => {
     if (!selectedNetwork) { setError("Please select a network provider."); return false }
@@ -152,8 +171,6 @@ export default function DataPage() {
     return true
   }
 
-  const [favoritesRefreshKey, setFavoritesRefreshKey] = useState(0)
-
   const handleSaveFavorite = async () => {
     if (!authUser || !phone) {
       toast.error("Please enter a phone number.")
@@ -166,17 +183,16 @@ export default function DataPage() {
       return
     }
 
-    const nameToUse = favoriteName.trim() || phone
-
     setIsSaving(true)
     const result = await addFavorite({
       userId: authUser.id,
       phoneNumber: phone,
-      name: nameToUse,
+      name: favoriteName.trim() || phone,
       type: "data",
       network: selectedNetwork?.name || "general",
     })
     setIsSaving(false)
+
     if (result.success) {
       toast.success("Recipient saved successfully.")
       setSaveAsFavorite(false)
@@ -193,8 +209,9 @@ export default function DataPage() {
   }
 
   const handleConfirm = async () => {
-    if (!selectedNetwork || !selectedPlan || !authUser) return
+    if (!validateForm()) return;
     setStep("processing")
+    
     try {
       const idempotencyKey = crypto.randomUUID()
       const response = await fetch("/api/purchases", {
@@ -203,18 +220,21 @@ export default function DataPage() {
         credentials: "include",
         body: JSON.stringify({
           phone,
-          networkId: selectedNetwork.id,
-          networkName: selectedNetwork.name,
-          planId: selectedPlan.id,
-          planName: selectedPlan.name,
-          planSize: selectedPlan.name,
-          planPrice: selectedPlan.effectivePrice,
+          networkId: resolveNetworkCode(selectedNetwork!.id),
+          networkName: selectedNetwork!.name,
+          planId: selectedPlan!.id,
+          planName: selectedPlan!.name,
+          planSize: selectedPlan!.name,
+          planPrice: selectedPlan!.effectivePrice,
           type: "DATA",
           idempotencyKey,
         }),
       })
       const result = await response.json()
+      
       if (result.success) {
+        addRecentRecipient(phone, selectedNetwork!.id)
+        setRecentRecipients(getRecentRecipients())
         setStep("success")
         await refreshUser()
       } else {
@@ -231,350 +251,417 @@ export default function DataPage() {
   const planPrice = selectedPlan ? selectedPlan.effectivePrice : 0
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-16 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <Link href="/dashboard" className="inline-flex items-center text-xs font-bold text-muted-foreground hover:text-[#F38F20] transition-colors uppercase tracking-widest mb-2 group">
-            <ArrowLeft className="w-3 h-3 mr-1.5 group-hover:-translate-x-1 transition-transform" />
-            Back to Dashboard
-          </Link>
-          <h1 className="text-3xl font-bold tracking-tight">Buy Data Bundle</h1>
-          <p className="text-muted-foreground">Live data plans from MTN, Telecel & AirtelTigo via provider.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="px-4 py-2 rounded-lg bg-[#F38F20]/5 border border-[#F38F20]/10 flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-wider text-[#F38F20]">System Online</span>
+    <div className="max-w-5xl mx-auto space-y-8 pt-4 pb-24 px-4 sm:px-6">
+      
+      <div className="flex flex-col gap-2 mb-8">
+        <Link href="/dashboard" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors group w-fit">
+          <ArrowLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
+          Back to Dashboard
+        </Link>
+        <div className="flex items-center justify-between mt-2">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Data Bundles</h1>
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+            <Database className="w-4 h-4 fill-current" />
+            Live Pricing
           </div>
         </div>
+        <p className="text-muted-foreground">Purchase direct data bundles across all major networks.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {step === "confirm" ? (
-          <div className="lg:col-span-12 animate-in slide-in-from-bottom-4 duration-500">
-            <Card className="border-[#F38F20]/20 bg-[#F38F20]/5 max-w-2xl mx-auto overflow-hidden">
-              <div className="bg-gradient-to-r from-[#F38F20] to-[#cc7414] p-8 text-white relative">
-                <div className="absolute right-8 top-8 w-24 h-24 bg-white/5 rounded-full blur-3xl" />
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm border border-white/20">
-                    <ShieldCheck className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white tracking-tight">Confirm Purchase</h2>
-                    <p className="text-white/80 text-sm">Review your data bundle request.</p>
-                  </div>
+      {step === "confirm" ? (
+        <div className="max-w-2xl mx-auto animate-in slide-in-from-bottom-4 duration-500">
+          <Card className="border-primary/20 shadow-xl overflow-hidden">
+            <div className="bg-primary p-6 sm:p-8 text-primary-foreground">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <ShieldCheck className="w-8 h-8 text-white" />
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-6 border-y border-white/10">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">Network</p>
-                    <p className="text-lg font-bold">{selectedNetwork?.name}</p>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Review Purchase</h2>
+                  <p className="text-primary-foreground/80">Please verify the details below</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/20">
+                <div>
+                  <p className="text-sm font-medium text-white/70 uppercase tracking-wider">Network</p>
+                  <p className="text-lg font-bold mt-1">{selectedNetwork?.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white/70 uppercase tracking-wider">Recipient</p>
+                  <p className="text-lg font-mono font-bold mt-1">{phone}</p>
+                </div>
+                <div className="col-span-2 bg-white/10 rounded-lg p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-white/70 uppercase tracking-wider">Bundle & Amount</p>
+                    <p className="text-2xl font-bold mt-1">{selectedPlan?.name}</p>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">Recipient</p>
-                    <p className="text-lg font-mono font-bold">{phone}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">Bundle</p>
-                    <p className="text-lg font-bold">{selectedPlan?.name}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">Amount</p>
-                    <p className="text-2xl font-black">GH₵{planPrice.toFixed(2)}</p>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-white/70 uppercase tracking-wider">You Pay</p>
+                    <p className="text-2xl font-bold text-green-300 mt-1">GH₵ {planPrice.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
-              <CardContent className="p-8 bg-background">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <Button variant="outline" onClick={() => setStep("form")} className="flex-1 h-12 font-bold uppercase text-xs tracking-widest border-2">
-                    Go Back
-                  </Button>
-                  <Button onClick={handleConfirm} className="flex-1 h-12 font-bold uppercase text-xs tracking-widest shadow-xl shadow-[#0052CC]/20 bg-gradient-to-r from-[#0052CC] to-[#1A85B8] text-white hover:from-[#00567A] hover:to-[#0052CC] group">
-                    Confirm & Pay
-                    <Zap className="w-4 h-4 ml-2 group-hover:scale-125 transition-transform" />
-                  </Button>
+            </div>
+
+            <CardContent className="p-6 sm:p-8 bg-card space-y-6">
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50 border">
+                <AlertCircle className="w-5 h-5 text-muted-foreground shrink-0" />
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Please ensure the phone number is correct. Data purchases cannot be reversed once processed.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => setStep("form")} 
+                  className="flex-1"
+                >
+                  Edit Details
+                </Button>
+                <Button 
+                  size="lg"
+                  onClick={handleConfirm} 
+                  className="flex-1"
+                >
+                  Confirm & Pay
+                  <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-8 space-y-6">
+            
+            {/* Network & Recipient Details */}
+            <Card className="border-border shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-sm font-bold">1</span>
+                  Network & Recipient
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                
+                <div className="space-y-3">
+                  <Label>Select Network</Label>
+                  <NetworkSelector
+                    networks={availableNetworks.length > 0 ? availableNetworks : networks}
+                    selected={selectedNetwork}
+                    onSelect={setSelectedNetwork}
+                  />
                 </div>
-                <div className="mt-6 p-4 rounded-xl bg-muted/50 border border-dashed flex items-start gap-3">
-                  <Target className="w-4 h-4 text-muted-foreground mt-0.5" />
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    By clicking "Confirm & Pay", you authorize an immediate debit from your wallet and dispatch of the data bundle to the recipient. This action is irreversible.
-                  </p>
+
+                <div className="space-y-4 pt-2 border-t">
+                  {recentRecipients.length > 0 && (
+                    <div className="space-y-3">
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Recent Contacts</Label>
+                      <RecentRecipients
+                        recipients={recentRecipients}
+                        onSelect={(recipient) => {
+                          setPhone(recipient.phoneNumber)
+                          const matchedNetwork = networks.find((n) => n.id === recipient.networkId)
+                          if (matchedNetwork) setSelectedNetwork(matchedNetwork)
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      {phone.length >= 10 && (
+                        <button
+                          onClick={() => setSaveAsFavorite(!saveAsFavorite)}
+                          className={cn(
+                            "text-sm font-medium flex items-center gap-1 transition-colors",
+                            saveAsFavorite ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          <Star className={cn("w-4 h-4", saveAsFavorite && "fill-current")} />
+                          {saveAsFavorite ? "Saving..." : "Save to Favorites"}
+                        </button>
+                      )}
+                    </div>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="024 XXX XXXX"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                      className="h-14 text-lg font-mono tracking-wider transition-all focus-visible:ring-primary"
+                      maxLength={10}
+                    />
+                  </div>
+
+                  {saveAsFavorite && (
+                    <div className="p-4 rounded-xl bg-muted border animate-in slide-in-from-top-2">
+                      <Label htmlFor="fav-name" className="text-sm font-medium mb-2 block">Contact Name</Label>
+                      <div className="flex gap-3">
+                        <Input
+                          id="fav-name"
+                          placeholder="e.g. Mom, Personal, Office"
+                          value={favoriteName}
+                          onChange={(e) => setFavoriteName(e.target.value)}
+                          className="flex-1 bg-background"
+                        />
+                        <Button onClick={handleSaveFavorite} disabled={isSaving} className="shrink-0">
+                          {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Plans Selection */}
+            <Card className="border-border shadow-sm overflow-hidden">
+              <CardHeader className="bg-muted/30 pb-4 border-b">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-sm font-bold">2</span>
+                    Select Plan
+                  </CardTitle>
+                  {selectedNetwork && !plansLoading && plans.length > 0 && (
+                    <span className="text-xs font-medium text-muted-foreground px-2 py-1 bg-muted rounded-full">
+                      {filteredPlans.length} available
+                    </span>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {plansStale && plansFetchedAt && (
+                  <div className="p-3 bg-amber-50 text-amber-800 text-xs font-medium border-b border-amber-100 flex items-center justify-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    Provider is slow. Showing cached plans from {new Date(plansFetchedAt).toLocaleTimeString()}.
+                  </div>
+                )}
+
+                {plansLoading ? (
+                  <div className="p-12 flex flex-col items-center gap-4">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground font-medium">Fetching live plans from provider...</p>
+                  </div>
+                ) : plansError ? (
+                  <div className="p-12 flex flex-col items-center text-center space-y-4">
+                    <AlertCircle className="w-10 h-10 text-destructive/50" />
+                    <div>
+                      <p className="font-medium text-destructive">{plansError}</p>
+                      <p className="text-sm text-muted-foreground mt-1">Please try refreshing the available plans.</p>
+                    </div>
+                    <Button variant="outline" onClick={() => fetchPlans()}>Retry Connection</Button>
+                  </div>
+                ) : !selectedNetwork ? (
+                  <div className="p-12 flex flex-col items-center text-center space-y-3 opacity-50">
+                    <Target className="w-10 h-10 text-muted-foreground" />
+                    <p className="font-medium text-muted-foreground">Select a network above to view plans.</p>
+                  </div>
+                ) : (
+                  <div className="p-4 space-y-4">
+                    {planTypes.length > 2 && (
+                      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                        {planTypes.map((type) => (
+                          <button
+                            key={type}
+                            onClick={() => setActiveType(type)}
+                            className={cn(
+                              "px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border",
+                              activeType === type
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-transparent text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+                            )}
+                          >
+                            {type === "ALL" ? "All Types" : (PLAN_TYPE_LABELS[type] || type)}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {filteredPlans.map((plan) => (
+                        <div
+                          key={plan.id}
+                          className={cn(
+                            "rounded-2xl transition-all cursor-pointer",
+                            selectedPlan?.id === plan.id 
+                              ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.01]" 
+                              : "hover:scale-[1.01]"
+                          )}
+                          onClick={() => setSelectedPlan(plan)}
+                        >
+                          <PurchaseCard
+                            bundle={{
+                              id: plan.id,
+                              name: plan.name,
+                              networkId: normalizeNetworkId(plan.network || "", selectedNetwork?.id),
+                              dataAmount: plan.name,
+                              validity: plan.validity || "N/A",
+                              price: plan.effectivePrice,
+                              originalPrice: plan.providerPrice > plan.effectivePrice ? plan.providerPrice : undefined,
+                              category: "other",
+                              isPopular: plan.isPopular,
+                              description: plan.datamartPlanType ? `Type: ${PLAN_TYPE_LABELS[plan.datamartPlanType] || plan.datamartPlanType}` : undefined,
+                            }}
+                            onPurchase={() => setSelectedPlan(plan)}
+                          />
+                        </div>
+                      ))}
+                      {filteredPlans.length === 0 && (
+                        <div className="sm:col-span-2 p-12 text-center flex flex-col items-center gap-2">
+                          <AlertCircle className="w-8 h-8 text-muted-foreground/30" />
+                          <p className="font-medium text-muted-foreground">No plans match this category.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-border shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="w-5 h-5 text-primary" />
+                  Saved Contacts
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FavoriteNumbers 
+                  key={favoritesRefreshKey}
+                  userId={authUser?.id ?? ""} 
+                  type="data" 
+                  onSelect={(val) => {
+                    setPhone(val)
+                    setError("")
+                  }} 
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Sidebar - Summary */}
+          <div className="lg:col-span-4">
+            <Card className="sticky top-24 shadow-lg border-primary/10 bg-gradient-to-b from-card to-muted/20">
+              <CardHeader className="pb-4 border-b">
+                <CardTitle className="flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-primary" />
+                  Order Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-6">
+                
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Network</span>
+                    <span className="font-medium">{selectedNetwork?.name || "—"}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Number</span>
+                    <span className="font-mono font-medium">{phone || "—"}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Bundle</span>
+                    <span className="font-medium truncate max-w-[150px]">{selectedPlan?.name || "—"}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Validity</span>
+                    <span className="font-medium">{selectedPlan?.validity || "—"}</span>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-dashed">
+                  <div className="flex justify-between items-end mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">Total to Pay</span>
+                    <span className="text-3xl font-bold tracking-tight">GH₵ {planPrice.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm mt-4">
+                    <span className="text-muted-foreground">Wallet Balance</span>
+                    <span className={cn(
+                      "font-medium",
+                      authUser && planPrice > authUser.walletBalance ? "text-destructive" : "text-green-600"
+                    )}>
+                      GH₵ {authUser ? authUser.walletBalance.toFixed(2) : "0.00"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Button 
+                    size="lg"
+                    className="w-full h-14 text-base font-bold shadow-lg transition-transform hover:scale-[1.02]"
+                    onClick={handleProceed}
+                    disabled={!selectedNetwork || phone.length < 9 || !selectedPlan || plansLoading}
+                  >
+                    Proceed to Pay
+                  </Button>
+                  {error && (
+                    <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm font-medium text-center flex items-center justify-center gap-2 animate-in slide-in-from-top-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      {error}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <ShieldCheck className="w-4 h-4" />
+                  Secure, instant transaction
                 </div>
               </CardContent>
             </Card>
           </div>
-        ) : (
-          <>
-            <div className="lg:col-span-8 space-y-6">
-              <section className="space-y-4">
-                <div className="flex items-center gap-2 px-1">
-                  <Zap className="w-4 h-4 text-[#F38F20]" />
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Network & Recipient</h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="md:col-span-2">
-                    <CardHeader className="pb-4 border-b bg-muted/20">
-                      <CardTitle className="text-base">Network Provider</CardTitle>
-                      <CardDescription>Select the network for this data bundle.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                      <NetworkSelector selected={selectedNetwork} onSelect={setSelectedNetwork} />
-                    </CardContent>
-                  </Card>
+        </div>
+      )}
 
-                  <Card className="md:col-span-1">
-                    <CardHeader className="pb-4 border-b bg-muted/20">
-                      <CardTitle className="text-base">Recipient Number</CardTitle>
-                      <CardDescription>Enter the phone number to receive data.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-6 space-y-4">
-                      <div className="relative">
-                        <Input
-                          type="tel"
-                          placeholder="e.g. 024XXXXXXX"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          className="text-lg font-mono tracking-widest pr-10 h-12"
-                        />
-                        {phone.length >= 9 && (
-                          <button
-                            onClick={() => setSaveAsFavorite(!saveAsFavorite)}
-                            className={cn(
-                              "absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all",
-                              saveAsFavorite ? "text-[#F38F20] bg-[#F38F20]/10 shadow-sm" : "text-muted-foreground hover:bg-muted"
-                            )}
-                          >
-                            <Star className={cn("w-5 h-5", saveAsFavorite && "fill-current")} />
-                          </button>
-                        )}
-                      </div>
-
-                      {saveAsFavorite && (
-                        <div className="p-3 rounded-lg border border-dashed border-[#F38F20]/30 bg-[#F38F20]/5 space-y-2 animate-in slide-in-from-top-2 duration-300">
-                          <Label htmlFor="fav-name" className="text-[10px] uppercase font-bold text-[#F38F20]">Save As (Label)</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              id="fav-name"
-                              placeholder="e.g. Personal, Work"
-                              value={favoriteName}
-                              onChange={(e) => setFavoriteName(e.target.value)}
-                              className="h-9 text-sm"
-                            />
-                            <Button size="sm" className="h-9 px-4 font-bold uppercase text-[10px] bg-[#F38F20] hover:bg-[#cc7414] text-white" onClick={handleSaveFavorite} disabled={isSaving}>
-                              {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : "Save"}
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      {error && (
-                        <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/20 flex items-center gap-2 text-destructive">
-                          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                          <p className="text-xs font-medium">{error}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </section>
-
-              <section className="space-y-4">
-                <div className="flex items-center justify-between px-1">
-                  <div className="flex items-center gap-2">
-                    <Target className="w-4 h-4 text-[#F38F20]" />
-                    <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Available Plans</h2>
-                  </div>
-                  {selectedNetwork && !plansLoading && plans.length > 0 && (
-                    <span className="text-xs text-muted-foreground">
-                      {plans.length} plans available{plansStale ? " (cached)" : ""}
-                    </span>
-                  )}
-                </div>
-                {plansStale && plansFetchedAt && (
-                  <p className="px-1 text-xs text-amber-600">
-                    Provider is temporarily unavailable. Showing cached plans from {new Date(plansFetchedAt).toLocaleString()}.
-                  </p>
-                )}
-
-                <Card className="overflow-hidden">
-                  <CardContent className="p-0">
-                    {plansLoading ? (
-                      <div className="p-12 flex flex-col items-center gap-4">
-                        <Loader2 className="w-8 h-8 animate-spin text-[#0052CC]" />
-                        <p className="text-sm text-muted-foreground">Fetching live plans from provider…</p>
-                      </div>
-                    ) : plansError ? (
-                      <div className="p-8 text-center space-y-3">
-                        <AlertCircle className="w-8 h-8 text-destructive mx-auto" />
-                        <p className="text-sm text-destructive">{plansError}</p>
-                        <Button size="sm" variant="outline" onClick={() => fetchPlans()}>
-                          Retry
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        {planTypes.length > 2 && (
-                          <div className="flex gap-2 p-3 border-b overflow-x-auto">
-                            {planTypes.map((type) => (
-                              <button
-                                key={type}
-                                onClick={() => setActiveType(type)}
-                                className={cn(
-                                  "px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wide whitespace-nowrap transition-all",
-                                  activeType === type
-                                    ? "bg-[#F38F20] text-white"
-                                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                                )}
-                              >
-                                {type === "ALL" ? "All" : (PLAN_TYPE_LABELS[type] || type)}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-y divide-border">
-                          {filteredPlans.map((plan) => (
-                            <button
-                              key={plan.id}
-                              onClick={() => setSelectedPlan(plan)}
-                              className={cn(
-                                "p-4 text-left transition-all hover:bg-muted/50 group flex items-center justify-between",
-                                selectedPlan?.id === plan.id ? "bg-[#F38F20]/5 ring-1 ring-inset ring-[#F38F20]/20" : ""
-                              )}
-                            >
-                              <div className="space-y-1">
-                                <p className="text-sm font-bold group-hover:text-[#F38F20] transition-colors">{plan.name}</p>
-                                <p className="text-[10px] text-muted-foreground font-mono">{plan.validity}</p>
-                                {plan.datamartPlanType && plan.datamartPlanType !== "SME" && (
-                                  <Badge variant="outline" className="text-[8px] h-4 px-1.5 font-bold">
-                                    {PLAN_TYPE_LABELS[plan.datamartPlanType] || plan.datamartPlanType}
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="text-right space-y-1">
-                                <p className="text-sm font-bold">GH₵{plan.effectivePrice.toFixed(2)}</p>
-                                {selectedPlan?.id === plan.id && (
-                                  <Badge className="text-[8px] h-4 px-1.5 uppercase bg-[#F38F20]">Selected</Badge>
-                                )}
-                              </div>
-                            </button>
-                          ))}
-                          {filteredPlans.length === 0 && (
-                            <div className="md:col-span-2 p-8 text-center text-muted-foreground text-sm">
-                              No plans in this category.
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              </section>
-
-              <section className="space-y-4">
-                <div className="flex items-center gap-2 px-1">
-                  <Users className="w-4 h-4 text-[#F38F20]" />
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Saved Recipients</h2>
-                </div>
-                <Card>
-                  <CardContent className="pt-6">
-                    <FavoriteNumbers key={favoritesRefreshKey} userId={authUser?.id ?? ""} type="data" onSelect={(val) => setPhone(val)} />
-                  </CardContent>
-                </Card>
-              </section>
-            </div>
-
-            <div className="lg:col-span-4 space-y-6">
-              <Card className="sticky top-24 border-[#F38F20]/20 bg-[#F38F20]/5">
-                <CardHeader className="pb-2 border-b border-[#F38F20]/10">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-[#F38F20]" />
-                    Order Summary
-                  </CardTitle>
-                  <CardDescription>Pre-flight verification for your request.</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6 space-y-6">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#F38F20]/20">
-                      <span className="text-xs font-medium text-muted-foreground uppercase">Network</span>
-                      <span className="text-sm font-bold">{selectedNetwork?.name || "—"}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#F38F20]/20">
-                      <span className="text-xs font-medium text-muted-foreground uppercase">Recipient</span>
-                      <span className="text-sm font-mono font-bold">{phone || "—"}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#F38F20]/20">
-                      <span className="text-xs font-medium text-muted-foreground uppercase">Bundle</span>
-                      <span className="text-sm font-bold truncate max-w-[120px]">{selectedPlan?.name || "—"}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#F38F20]/20">
-                      <span className="text-xs font-medium text-muted-foreground uppercase">Validity</span>
-                      <span className="text-sm font-bold">{selectedPlan?.validity || "—"}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-dashed border-[#F38F20]/20">
-                      <span className="text-xs font-medium text-muted-foreground uppercase">Wallet</span>
-                      <span className="text-sm font-bold text-green-600">GH₵{Number(authUser?.walletBalance || 0).toFixed(2)}</span>
-                    </div>
-                    <div className="pt-4 flex justify-between items-end">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-bold uppercase text-[#F38F20]">Total</p>
-                        <p className="text-3xl font-bold tracking-tighter">GH₵{planPrice.toFixed(2)}</p>
-                      </div>
-                      <div className="p-2 rounded bg-[#F38F20]/10 border border-[#F38F20]/20">
-                        <CreditCard className="w-4 h-4 text-[#F38F20]" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Button
-                      className="w-full h-12 text-xs font-bold uppercase tracking-widest shadow-lg shadow-[#F38F20]/20 bg-gradient-to-r from-[#F38F20] to-[#cc7414] text-white hover:from-[#e07e1a] hover:to-[#F38F20] group"
-                      onClick={handleProceed}
-                      disabled={!selectedNetwork || !phone || !selectedPlan || !authUser || plansLoading}
-                    >
-                      Review & Pay
-                      <Zap className="w-3 h-3 ml-2 group-hover:scale-125 transition-transform" />
-                    </Button>
-                    <p className="text-[10px] text-center text-muted-foreground leading-relaxed">
-                      Instant delivery processed through secure infrastructure.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </>
-        )}
-      </div>
-
-      <Dialog open={["processing", "success", "failed"].includes(step)} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-[400px] text-center p-8">
-          <div className="flex flex-col items-center space-y-6">
+      {/* Processing/Outcome Modal */}
+      <Dialog open={["processing", "success", "failed"].includes(step)} onOpenChange={(open) => {
+        if (!open && step !== "processing") setStep("form")
+      }}>
+        <DialogContent className="sm:max-w-md p-8">
+          <div className="flex flex-col items-center text-center space-y-6">
             <div className={cn(
-              "w-20 h-20 rounded-full flex items-center justify-center animate-in zoom-in duration-500",
-              step === "processing" ? "bg-primary/10" :
-              step === "success" ? "bg-green-500/10" : "bg-destructive/10"
+              "w-24 h-24 rounded-full flex items-center justify-center animate-in zoom-in duration-300",
+              step === "processing" ? "bg-primary/10" : 
+              step === "success" ? "bg-green-500/10 text-green-500" : "bg-destructive/10 text-destructive"
             )}>
-              {step === "processing" && <Loader2 className="w-8 h-8 animate-spin text-[#0052CC]" />}
-              {step === "success" && <CheckCircle2 className="w-8 h-8 text-green-500" />}
-              {step === "failed" && <AlertCircle className="w-8 h-8 text-red-500" />}
+              {step === "processing" ? <Loader2 className="w-12 h-12 animate-spin text-primary" /> :
+               step === "success" ? <Check className="w-12 h-12" /> :
+               <AlertCircle className="w-12 h-12" />}
             </div>
+            
             <div className="space-y-2">
-              <DialogTitle className="text-xl font-bold">
-                {step === "processing" && "Processing…"}
-                {step === "success" && "Bundle Activated!"}
-                {step === "failed" && "Purchase Failed"}
+              <DialogTitle className="text-2xl font-bold tracking-tight">
+                {step === "processing" && "Processing"}
+                {step === "success" && "Transaction Successful"}
+                {step === "failed" && "Transaction Failed"}
               </DialogTitle>
-              <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
-                {step === "processing" && "Sending your request to network provider. Please wait…"}
-                {step === "success" && `${selectedPlan?.name} has been activated on ${phone}.`}
-                {step === "failed" && (error || "The data bundle could not be activated. Your wallet has been refunded.")}
+              <DialogDescription className="text-base">
+                {step === "processing" && "Please wait while we secure your transaction."}
+                {step === "success" && `${selectedPlan?.name} delivered to ${phone}.`}
+                {step === "failed" && (error || "Your transaction could not be completed.")}
               </DialogDescription>
             </div>
+
             {step === "success" && (
-              <Button onClick={() => router.push("/dashboard")} className="w-full font-bold uppercase tracking-widest text-[10px]">
-                Back to Dashboard
-              </Button>
+              <div className="flex flex-col gap-3 w-full mt-4">
+                <Button onClick={() => {
+                  setSelectedPlan(null)
+                  setStep("form")
+                }} variant="outline" className="w-full h-12">
+                  Buy Another
+                </Button>
+                <Button onClick={() => router.push("/dashboard")} className="w-full h-12">
+                  Return to Dashboard
+                </Button>
+              </div>
             )}
+            
             {step === "failed" && (
-              <Button onClick={() => { setStep("form"); setError("") }} variant="outline" className="w-full font-bold uppercase tracking-widest text-[10px]">
+              <Button onClick={() => { setStep("form"); setError("") }} className="w-full h-12">
                 Try Again
               </Button>
             )}
@@ -584,3 +671,4 @@ export default function DataPage() {
     </div>
   )
 }
+

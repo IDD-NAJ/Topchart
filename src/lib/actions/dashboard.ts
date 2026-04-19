@@ -3,7 +3,7 @@
 import { sql } from "@/lib/db";
 import { getCurrentUser } from "@/lib/actions/auth";
 
-export type DashboardTransactionType = "deposit" | "airtime" | "data" | "verification" | "result_checker";
+export type DashboardTransactionType = "deposit" | "data" | "verification" | "result_checker" | "esim" | "proxy" | "giftcard" | "bill";
 export type DashboardTransactionStatus = "pending" | "success" | "failed";
 
 export interface DashboardTransactionRow {
@@ -28,7 +28,6 @@ export interface DashboardData {
   totals: {
     totalDeposits: number;
     totalSpend: number;
-    airtimeSpend: number;
     dataSpend: number;
     verificationSpend: number;
     resultCheckerSpend: number;
@@ -53,7 +52,6 @@ export async function getDashboardData(options?: {
       totals: {
         totalDeposits: 0,
         totalSpend: 0,
-        airtimeSpend: 0,
         dataSpend: 0,
         verificationSpend: 0,
         resultCheckerSpend: 0,
@@ -81,12 +79,8 @@ export async function getDashboardData(options?: {
           ), 0) AS "totalDeposits",
           COALESCE(SUM(amount) FILTER (
             WHERE status = 'success'
-              AND type IN ('airtime', 'data', 'verification', 'result_checker')
+              AND type IN ('data', 'verification', 'result_checker')
           ), 0) AS "totalSpend",
-          COALESCE(SUM(amount) FILTER (
-            WHERE status = 'success'
-              AND type = 'airtime'
-          ), 0) AS "airtimeSpend",
           COALESCE(SUM(amount) FILTER (
             WHERE status = 'success'
               AND type = 'data'
@@ -127,7 +121,7 @@ export async function getDashboardData(options?: {
           created_at
         FROM transactions
         WHERE user_id = ${user.id}
-          AND type IN ('airtime', 'data', 'AIRTIME', 'DATA')
+          AND type IN ('data', 'DATA')
           AND status IN ('pending', 'PENDING', 'processing', 'PROCESSING')
         ORDER BY created_at DESC
         LIMIT 10
@@ -152,7 +146,7 @@ export async function getDashboardData(options?: {
         FROM transactions
         WHERE user_id = ${user.id}
           AND status IN ('success', 'SUCCESS')
-          AND type IN ('airtime', 'data', 'AIRTIME', 'DATA')
+          AND type IN ('data', 'DATA')
           AND COALESCE(
             metadata->>'phoneNumber',
             metadata->>'phone_number'
@@ -185,12 +179,8 @@ export async function getDashboardData(options?: {
           ), 0) AS "totalDeposits",
           COALESCE(SUM(amount) FILTER (
             WHERE status = 'success'
-              AND type IN ('airtime', 'data', 'verification', 'result_checker')
+              AND type IN ('data', 'verification', 'result_checker')
           ), 0) AS "totalSpend",
-          COALESCE(SUM(amount) FILTER (
-            WHERE status = 'success'
-              AND type = 'airtime'
-          ), 0) AS "airtimeSpend",
           COALESCE(SUM(amount) FILTER (
             WHERE status = 'success'
               AND type = 'data'
@@ -231,7 +221,7 @@ export async function getDashboardData(options?: {
           created_at
         FROM transactions
         WHERE user_id = ${user.id}
-          AND type IN ('airtime', 'data', 'AIRTIME', 'DATA')
+          AND type IN ('data', 'DATA')
           AND status IN ('pending', 'PENDING', 'processing', 'PROCESSING')
         ORDER BY created_at DESC
         LIMIT 10
@@ -244,7 +234,7 @@ export async function getDashboardData(options?: {
         FROM transactions
         WHERE user_id = ${user.id}
           AND status IN ('success', 'SUCCESS')
-          AND type IN ('airtime', 'data', 'AIRTIME', 'DATA')
+          AND type IN ('data', 'DATA')
           AND phone_number IS NOT NULL
         ORDER BY phone_number, created_at DESC
         LIMIT ${beneficiaryLimit}
@@ -280,7 +270,6 @@ export async function getDashboardData(options?: {
     totals: {
       totalDeposits: Number(totalsRow.totalDeposits ?? 0),
       totalSpend: Number(totalsRow.totalSpend ?? 0),
-      airtimeSpend: Number(totalsRow.airtimeSpend ?? 0),
       dataSpend: Number(totalsRow.dataSpend ?? 0),
       verificationSpend: Number(totalsRow.verificationSpend ?? 0),
       resultCheckerSpend: Number(totalsRow.resultCheckerSpend ?? 0),

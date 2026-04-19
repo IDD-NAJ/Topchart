@@ -46,7 +46,9 @@ import {
   Trophy,
   Sliders,
   Smartphone,
-  LayoutGrid
+  LayoutGrid,
+  Globe2,
+  Server
 } from "lucide-react"
 
 interface NavItem {
@@ -91,9 +93,8 @@ const navItems: NavItem[] = [
   },
   {
     title: "Purchases",
-    icon: Phone,
+    icon: Wifi,
     children: [
-      { title: "Airtime Purchases", href: "/admin/airtime-purchases", icon: Phone },
       { title: "Data Purchases", href: "/admin/data-purchases", icon: Wifi },
     ]
   },
@@ -168,6 +169,17 @@ const navItems: NavItem[] = [
       { title: "Numbers", href: "/admin/verification/numbers", icon: Phone },
       { title: "Pricing", href: "/admin/verification/pricing", icon: DollarSign },
       { title: "SMS Log", href: "/admin/verification/sms", icon: MessageSquare },
+    ]
+  },
+  {
+    title: "New Services",
+    icon: Globe2,
+    children: [
+      { title: "eSIM Orders", href: "/admin/esim-orders", icon: Smartphone },
+      { title: "Proxy Orders", href: "/admin/proxy-orders", icon: Shield },
+      { title: "Gift Card Orders", href: "/admin/giftcard-orders", icon: Gift },
+      { title: "Bill Payments", href: "/admin/bill-payments", icon: CreditCard },
+      { title: "9Proxy Settings", href: "/admin/9proxy-settings", icon: Settings },
     ]
   },
   { title: "Management", href: "/admin/management", icon: LayoutGrid },

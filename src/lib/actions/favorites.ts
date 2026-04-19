@@ -18,13 +18,15 @@ export async function getFavorites(userId: string, type?: string) {
     let result;
     if (type) {
       result = await sql`
-        SELECT * FROM favorites 
-        WHERE user_id = ${userId} AND (type = ${type} OR type = 'general')
+        SELECT id, user_id, phone_number, name, type, network, created_at
+        FROM favorites 
+        WHERE user_id = ${userId} AND type IN (${type}, 'general')
         ORDER BY created_at DESC
       ` as Favorite[];
     } else {
       result = await sql`
-        SELECT * FROM favorites 
+        SELECT id, user_id, phone_number, name, type, network, created_at
+        FROM favorites 
         WHERE user_id = ${userId}
         ORDER BY created_at DESC
       ` as Favorite[];
@@ -61,7 +63,6 @@ export async function addFavorite(data: {
       VALUES (${userId}, ${phoneNumber}, ${name || null}, ${type}, ${network || null})
     `;
     
-    revalidatePath("/dashboard/airtime");
     revalidatePath("/dashboard/data");
     return { success: true };
   } catch (error) {
@@ -73,7 +74,6 @@ export async function addFavorite(data: {
 export async function removeFavorite(id: string, userId: string) {
   try {
     const result = await sql`DELETE FROM favorites WHERE id = ${id} AND user_id = ${userId}`;
-    revalidatePath("/dashboard/airtime");
     revalidatePath("/dashboard/data");
     return { success: true };
   } catch (error) {

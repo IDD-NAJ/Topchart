@@ -4,9 +4,13 @@
  * Run with: npx tsx src/scripts/diagnose-connections.ts
  */
 
+import { config } from "dotenv";
+import { resolve } from "path";
+
+config({ path: resolve(__dirname, "../../.env.local") });
+
 import { sql } from "@/lib/db";
-import { getReloadlyEnv } from "@/lib/env";
-import { getDatamartEnv } from "@/lib/env";
+import { getConfig } from "@/lib/config";
 
 interface TestResult {
   name: string;
@@ -14,11 +18,19 @@ interface TestResult {
   message: string;
   latency?: number;
   error?: string;
+  config?: {
+    selectedVars?: string[];
+    missingVars?: string[];
+    hasDefaults?: boolean;
+  };
 }
 
 async function testDatabase(): Promise<TestResult> {
   const startTime = Date.now();
   try {
+    const config = getConfig();
+    const selectedVars = [config.database.source];
+    
     const result = await sql`SELECT 1 as test, now() as time`;
     const latency = Date.now() - startTime;
     return {
@@ -26,43 +38,54 @@ async function testDatabase(): Promise<TestResult> {
       status: "pass",
       message: `Connected successfully. Server time: ${result[0]?.time}`,
       latency,
+      config: { selectedVars },
     };
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const missingVars = errorMessage.includes("Missing required environment variables")
+      ? errorMessage.split(": ")[1]?.split(" | ") || []
+      : [];
+    
     return {
       name: "Database (Neon PostgreSQL)",
       status: "fail",
       message: "Failed to connect to database",
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage,
+      config: { missingVars },
     };
   }
 }
 
 async function testReloadlyAuth(): Promise<TestResult> {
+  const startTime = Date.now();
   try {
-    const env = getReloadlyEnv();
-    const startTime = Date.now();
+    const config = getConfig();
     
-    const authUrl = env.RELOADLY_AUTH_URL || "https://auth.reloadly.com/oauth/token";
-    const baseUrl = env.RELOADLY_BASE_URL || env.RELOADLY_API_BASE_URL || "https://airtime.reloadly.com";
-    
-    // Check if credentials are present
-    if (!env.RELOADLY_CLIENT_ID || !env.RELOADLY_CLIENT_SECRET) {
+    if (!config.reloadly) {
       return {
         name: "Reloadly (Airtime API)",
         status: "skip",
         message: "Credentials not configured",
+        config: { missingVars: ["RELOADLY_CLIENT_ID", "RELOADLY_CLIENT_SECRET"] },
       };
     }
     
-    // Try to authenticate
-    const response = await fetch(authUrl, {
+    const selectedVars = ["RELOADLY_CLIENT_ID", "RELOADLY_CLIENT_SECRET"];
+    if (config.reloadly.baseUrl !== "https://topups.reloadly.com") {
+      selectedVars.push("RELOADLY_BASE_URL");
+    }
+    if (config.reloadly.authUrl !== "https://auth.reloadly.com/oauth/token") {
+      selectedVars.push("RELOADLY_AUTH_URL");
+    }
+    
+    const response = await fetch(config.reloadly.authUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        client_id: env.RELOADLY_CLIENT_ID,
-        client_secret: env.RELOADLY_CLIENT_SECRET,
+        client_id: config.reloadly.clientId,
+        client_secret: config.reloadly.clientSecret,
         grant_type: "client_credentials",
-        audience: baseUrl.replace(/\/$/, ""),
+        audience: config.reloadly.audience,
       }),
     });
     
@@ -75,6 +98,7 @@ async function testReloadlyAuth(): Promise<TestResult> {
         status: "pass",
         message: `Authenticated successfully. Token expires in ${data.expires_in}s`,
         latency,
+        config: { selectedVars, hasDefaults: config.reloadly.baseUrl === "https://topups.reloadly.com" },
       };
     } else {
       const error = await response.json();
@@ -84,37 +108,47 @@ async function testReloadlyAuth(): Promise<TestResult> {
         message: `Authentication failed: ${error.errorCode || response.statusText}`,
         latency,
         error: JSON.stringify(error),
+        config: { selectedVars },
       };
     }
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const missingVars = errorMessage.includes("Missing required environment variables")
+      ? errorMessage.split(": ")[1]?.split(", ") || []
+      : [];
+    
     return {
       name: "Reloadly (Airtime API)",
       status: "fail",
       message: "Failed to connect to Reloadly",
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage,
+      config: { missingVars },
     };
   }
 }
 
 async function testDataMart(): Promise<TestResult> {
+  const startTime = Date.now();
   try {
-    const env = getDatamartEnv();
-    const startTime = Date.now();
+    const config = getConfig();
     
-    if (!env.DATAMART_API_KEY) {
+    if (!config.datamart) {
       return {
         name: "DataMart API",
         status: "skip",
         message: "API key not configured",
+        config: { missingVars: ["DATAMART_API_KEY"] },
       };
     }
     
-    const baseUrl = env.DATAMART_BASE_URL || "https://api.datamartgh.shop";
+    const selectedVars = ["DATAMART_API_KEY"];
+    if (config.datamart.baseUrl !== "https://api.datamartgh.shop") {
+      selectedVars.push("DATAMART_BASE_URL");
+    }
     
-    // Test the /me endpoint
-    const response = await fetch(`${baseUrl}/api/v1/me/`, {
+    const response = await fetch(`${config.datamart.baseUrl}/api/v1/me/`, {
       headers: {
-        Authorization: `Token ${env.DATAMART_API_KEY}`,
+        Authorization: `Token ${config.datamart.apiKey}`,
         "Content-Type": "application/json",
       },
     });
@@ -128,6 +162,7 @@ async function testDataMart(): Promise<TestResult> {
         status: "pass",
         message: `Connected. User: ${data.email || data.username || "Unknown"}`,
         latency,
+        config: { selectedVars, hasDefaults: config.datamart.baseUrl === "https://api.datamartgh.shop" },
       };
     } else {
       return {
@@ -135,14 +170,21 @@ async function testDataMart(): Promise<TestResult> {
         status: "fail",
         message: `API error: ${response.status} ${response.statusText}`,
         latency,
+        config: { selectedVars },
       };
     }
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const missingVars = errorMessage.includes("Missing required environment variables")
+      ? errorMessage.split(": ")[1]?.split(", ") || []
+      : [];
+    
     return {
       name: "DataMart API",
       status: "fail",
       message: "Failed to connect to DataMart",
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage,
+      config: { missingVars },
     };
   }
 }
@@ -166,6 +208,18 @@ function printResults(results: TestResult[]) {
     console.log(`   Status: ${result.status.toUpperCase()}`);
     console.log(`   Message: ${result.message}`);
     
+    if (result.config) {
+      if (result.config.selectedVars && result.config.selectedVars.length > 0) {
+        console.log(`   Selected env vars: ${result.config.selectedVars.join(", ")}`);
+      }
+      if (result.config.missingVars && result.config.missingVars.length > 0) {
+        console.log(`   Missing env vars: ${result.config.missingVars.join(", ")}`);
+      }
+      if (result.config.hasDefaults !== undefined) {
+        console.log(`   Using defaults: ${result.config.hasDefaults ? "Yes" : "No"}`);
+      }
+    }
+    
     if (result.latency) {
       console.log(`   Latency: ${result.latency}ms`);
     }
@@ -185,12 +239,14 @@ function printResults(results: TestResult[]) {
   console.log(`Summary: ${passed} passed, ${failed} failed, ${skipped} skipped`);
   console.log("=".repeat(70) + "\n");
   
-  // Exit code based on results
-  process.exit(failed > 0 ? 1 : 0);
+  // Exit code based on results - only fail if database fails (required)
+  const databaseFailed = results.find(r => r.name.includes("Database"))?.status === "fail";
+  process.exit(databaseFailed ? 1 : 0);
 }
 
 async function main() {
-  console.log("Running connection diagnostics...\n");
+  console.log("Running connection diagnostics...");
+  console.log("Loading environment from .env.local...\n");
   
   const results: TestResult[] = [];
   

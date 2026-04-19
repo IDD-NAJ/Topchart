@@ -1,14 +1,15 @@
 "use client"
 
-import { networks, type Network } from "@/lib/networks"
+import { networks as defaultNetworks, type Network } from "@/lib/networks"
 import { cn } from "@/lib/utils"
 
 interface NetworkSelectorProps {
   selected: Network | null
   onSelect: (network: Network) => void
+  networks?: Network[]
 }
 
-export function NetworkSelector({ selected, onSelect }: NetworkSelectorProps) {
+export function NetworkSelector({ selected, onSelect, networks = defaultNetworks }: NetworkSelectorProps) {
   return (
     <div className="grid grid-cols-3 gap-3">
       {networks.map((network) => (

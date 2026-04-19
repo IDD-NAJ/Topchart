@@ -23,7 +23,7 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
   return response;
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionToken = request.cookies.get("session_token")?.value;
 
@@ -32,21 +32,27 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Dashboard protection
   if (pathname.startsWith("/dashboard")) {
     if (!sessionToken) {
       return applySecurityHeaders(
         NextResponse.redirect(new URL(LOGIN, request.url))
       );
     }
-    return applySecurityHeaders(NextResponse.next());
   }
 
+  // Admin protection
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
     if (!sessionToken) {
       return applySecurityHeaders(
         NextResponse.redirect(new URL(ADMIN_LOGIN, request.url))
       );
     }
+    
+    // We cannot easily check the role from DB in edge middleware without a DB call
+    // But we can check if it's stored in a secure cookie or just rely on the API checks.
+    // For now, ensure session exists and redirect if not.
+    // The individual admin pages and APIs will perform strict role checks via requireAdmin()
   }
 
   return applySecurityHeaders(NextResponse.next());

@@ -20,6 +20,11 @@ export const phoneSchema = z
   .min(1, "Phone number is required")
   .regex(/^0[2-5][0-9]\d{7}$/, "Invalid Ghana phone number (format: 024XXXXXXX)");
 
+const networkIdSchema = z
+  .string()
+  .min(1, "Network is required")
+  .transform((value) => value.trim().toLowerCase());
+
 export const nameSchema = z
   .string()
   .min(2, "Name must be at least 2 characters")
@@ -90,29 +95,24 @@ export const walletPaymentSchema = z.object({
 });
 
 // Purchase schemas
-export const airtimePurchaseSchema = z.object({
-  type: z.literal("airtime"),
-  network: z.enum(["mtn", "vodafone", "airteltigo"]),
-  phone: phoneSchema,
-  amount: z.number().positive("Amount must be positive").max(1000, "Maximum amount is GHS 1000"),
-});
-
 export const dataPurchaseSchema = z.object({
   type: z.literal("data"),
-  network: z.enum(["mtn", "vodafone", "airteltigo"]),
+  network: networkIdSchema,
   phone: phoneSchema,
-  bundle_id: z.string().min(1, "Bundle ID is required"),
-  bundle_price: z.number().positive("Price must be positive"),
+  bundleId: z.string().min(1, "Bundle ID is required").optional(),
+  bundle_id: z.string().min(1, "Bundle ID is required").optional(),
 });
+
+const examTypeEnum = z.enum(["WAEC", "BECE", "WASSCE"]);
 
 export const resultCheckerPurchaseSchema = z.object({
   type: z.literal("result_checker"),
-  exam_type: z.enum(["WAEC", "BECE", "WASSCE"]),
+  examType: examTypeEnum.optional(),
+  exam_type: examTypeEnum.optional(),
   quantity: z.number().int().positive("Quantity must be positive").max(50, "Maximum 50 cards per purchase"),
 });
 
 export const purchaseSchema = z.discriminatedUnion("type", [
-  airtimePurchaseSchema,
   dataPurchaseSchema,
   resultCheckerPurchaseSchema,
 ]);
@@ -125,10 +125,30 @@ export const createReferralLinkSchema = z.object({
 });
 
 // Inventory schemas
-export const markSoldSchema = z.object({
-  inventory_id: idSchema,
-  sold_to: phoneSchema.optional(),
-});
+export const markSoldSchema = z
+  .union([
+    z.object({
+      inventoryId: idSchema,
+      soldTo: phoneSchema.optional(),
+    }),
+    z.object({
+      inventory_id: idSchema,
+      sold_to: phoneSchema.optional(),
+    }),
+  ])
+  .transform((data) => {
+    if ("inventoryId" in data) {
+      return {
+        inventoryId: data.inventoryId,
+        soldTo: data.soldTo,
+      };
+    }
+
+    return {
+      inventoryId: data.inventory_id,
+      soldTo: data.sold_to,
+    };
+  });
 
 // Admin schemas
 export const adminLoginSchema = z.object({

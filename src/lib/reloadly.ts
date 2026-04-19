@@ -1,12 +1,227 @@
 import { getReloadlyEnv } from "@/lib/env";
 
-// Token cache with expiration
+const REQUEST_TIMEOUT_MS = 15_000;
+const TOPUP_TIMEOUT_MS = 30_000;
+const AUTH_TIMEOUT_MS = 10_000;
+const MAX_RETRIES = 3;
+const RETRY_BASE_DELAY_MS = 500;
+const TOKEN_EXPIRY_BUFFER_S = 300;
+
 type TokenCache = {
   accessToken: string;
   expiresAt: number;
 };
 
 let tokenCache: TokenCache | null = null;
+let tokenRefreshPromise: Promise<string> | null = null;
+let configValidated = false;
+
+// ─── OpenAPI 3.1 Spec-derived Types ───────────────────────────────────────────
+
+export interface AccessTokenRequest {
+  client_id: string;
+  client_secret: string;
+  grant_type: "client_credentials";
+  audience: string;
+}
+
+export interface AccessTokenResponse200 {
+  access_token: string;
+  scope: string;
+  expires_in: number;
+  token_type: string;
+}
+
+export interface ApiErrorResponse {
+  timeStamp?: string;
+  message?: string;
+  path?: string;
+  errorCode?: string | null;
+  infoLink?: string | null;
+  details?: unknown[];
+  status?: number;
+  error?: string;
+}
+
+export interface AccountsBalanceResponse {
+  balance: number;
+  currencyCode: string;
+  currencyName: string;
+  updatedAt: string;
+}
+
+export interface CountryResponse {
+  isoName: string;
+  name: string;
+  continent: string;
+  currencyCode: string;
+  currencyName: string;
+  currencySymbol: string;
+  flag: string;
+  callingCodes: string[];
+}
+
+export interface OperatorFees {
+  international: number;
+  internationalPercentage: number;
+  local: number;
+  localPercentage: number;
+}
+
+export interface OperatorResponse {
+  operatorId: number;
+  name: string;
+  bundle: boolean;
+  data: boolean;
+  comboProduct: boolean;
+  pin: boolean;
+  supportsLocalAmounts: boolean;
+  denominationType: "RANGE" | "FIXED";
+  senderCurrencyCode: string;
+  senderCurrencySymbol: string;
+  destinationCurrencyCode: string;
+  destinationCurrencySymbol: string;
+  commission: number;
+  internationalDiscount: number;
+  localDiscount: number;
+  mostPopularAmount: number | null;
+  minAmount: number | null;
+  maxAmount: number | null;
+  localMinAmount: number | null;
+  localMaxAmount: number | null;
+  country: { isoName: string; name: string };
+  fx: { rate: number; currencyCode: string };
+  logoUrls: string[];
+  fixedAmounts: number[];
+  fixedAmountsDescriptions: string[];
+  localFixedAmounts: number[];
+  localFixedAmountsDescriptions: string[];
+  suggestedAmounts: number[];
+  suggestedAmountsMap: Record<string, number>;
+  promotions: unknown[];
+  fees?: OperatorFees;
+}
+
+export interface FxRateRequest {
+  operatorId: number;
+  amount: number;
+}
+
+export interface FxRateResponse {
+  id?: number;
+  name?: string;
+  fxRate: number;
+  currencyCode: string;
+}
+
+export interface CommissionOperator {
+  operatorId: number;
+  name: string;
+  countryCode: string;
+  status: boolean;
+  bundle: boolean;
+  data: boolean;
+}
+
+export interface CommissionResponse {
+  operator: CommissionOperator;
+  percentage: number;
+  internationalPercentage: number;
+  localPercentage: number;
+  updatedAt: number;
+}
+
+export interface PromotionResponse {
+  promotionId: number;
+  operatorId: number;
+  title1: string;
+  title2: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  denominations: string;
+  localDenominations: string | null;
+}
+
+export interface TopUpsRequest {
+  operatorId: string;
+  amount: string;
+  useLocalAmount?: boolean;
+  customIdentifier?: string;
+  recipientEmail?: string;
+  recipientPhone: {
+    countryCode: string;
+    number: string;
+  };
+  senderPhone?: {
+    countryCode: string;
+    number: string;
+  };
+}
+
+export interface PinDetail {
+  serial: number | string | null;
+  info?: string | null;
+  info1?: string | null;
+  info2?: string | null;
+  info3?: string | null;
+  value: string | null;
+  code: number | string | null;
+  ivr: string | null;
+  validity: string | null;
+}
+
+export interface BalanceInfo {
+  oldBalance: number;
+  newBalance: number;
+  currencyCode: string;
+  currencyName: string;
+  updatedAt: string;
+  cost?: number;
+}
+
+export interface TopUpsResponse200 {
+  transactionId: number;
+  status: string;
+  operatorTransactionId: string | null;
+  customIdentifier: string | null;
+  recipientPhone: number | string;
+  recipientEmail?: string | null;
+  senderPhone: string;
+  countryCode: string;
+  operatorId: number;
+  operatorName: string;
+  discount: number;
+  discountCurrencyCode: string;
+  requestedAmount: number;
+  requestedAmountCurrencyCode: string;
+  deliveredAmount: number;
+  deliveredAmountCurrencyCode: string;
+  transactionDate: string;
+  fee: number;
+  pinDetail: PinDetail | null;
+  balanceInfo: BalanceInfo | null;
+}
+
+export interface TopUpsAsyncResponse200 {
+  transactionId: number;
+}
+
+export interface TopUpsStatusResponse200 {
+  code: string | null;
+  message: string | null;
+  status: "SUCCESSFUL" | "PROCESSING" | "REFUNDED" | "FAILED";
+  transaction: TopUpsResponse200;
+}
+
+export interface TransactionResponse extends TopUpsResponse200 {}
+
+export interface NumberLookupRequest {
+  number: string;
+  countryCode: string;
+}
+
+// ─── Backward-compatible legacy types ─────────────────────────────────────────
 
 export interface ReloadlyOperator {
   id: number;
@@ -90,162 +305,610 @@ interface ApiResponse<T> {
   statusCode?: number;
 }
 
-// Ghana operator mappings - these should be verified with Reloadly API
+// ─── Config ───────────────────────────────────────────────────────────────────
 const GHANA_OPERATOR_IDS: Record<string, number> = {
   MTN: 179,
   VODAFONE: 180,
-  TELECEL: 180, // Vodafone rebranded as Telecel
+  TELECEL: 180,
   AIRTELTIGO: 181,
   AIRTEL: 181,
   TIGO: 181,
 };
 
-function getReloadlyConfig() {
-  const env = getReloadlyEnv();
-  
-  // Get base URL - check if it's giftcards and convert to airtime
-  let baseUrl = env.RELOADLY_BASE_URL || "https://airtime.reloadly.com";
-  
-  // If user provided giftcards URL, convert to airtime URL
-  // Gift Card and Airtime APIs are separate services
-  if (baseUrl.includes("giftcards")) {
-    console.warn("[Reloadly] Warning: Provided URL is for Gift Card API. Converting to Airtime API URL.");
-    console.warn("[Reloadly] You may need separate credentials for Airtime API.");
-    
-    // Convert giftcards URL to airtime URL
-    if (baseUrl.includes("sandbox")) {
-      baseUrl = "https://airtime-sandbox.reloadly.com";
-    } else {
-      baseUrl = "https://airtime.reloadly.com";
+function validateReloadlyConfig(env: ReturnType<typeof getReloadlyEnv>) {
+  const placeholders = ["your_", "xxx", "test_", "placeholder", "changeme", "example"];
+  const clientId = env.RELOADLY_CLIENT_ID.toLowerCase();
+  const clientSecret = env.RELOADLY_CLIENT_SECRET.toLowerCase();
+
+  for (const p of placeholders) {
+    if (clientId.startsWith(p) || clientSecret.startsWith(p)) {
+      throw new Error(
+        `[Reloadly Config] Credentials appear to be placeholder values (starts with "${p}"). ` +
+        `Set valid RELOADLY_CLIENT_ID and RELOADLY_CLIENT_SECRET in your environment.`
+      );
     }
   }
-  
+
+  if (clientId.length < 10 || clientSecret.length < 10) {
+    throw new Error(
+      `[Reloadly Config] Credentials appear too short to be valid. ` +
+      `RELOADLY_CLIENT_ID length: ${clientId.length}, RELOADLY_CLIENT_SECRET length: ${clientSecret.length}. ` +
+      `Check your Reloadly dashboard for correct values.`
+    );
+  }
+
+  const isSandbox =
+    env.RELOADLY_BASE_URL?.includes("sandbox") ||
+    env.RELOADLY_SANDBOX === "true" ||
+    false;
+
+  if (env.RELOADLY_AUTH_URL && isSandbox && !env.RELOADLY_AUTH_URL.includes("sandbox")) {
+    console.warn(
+      "[Reloadly Config] Sandbox mode detected but RELOADLY_AUTH_URL does not contain 'sandbox'. " +
+      "Ensure sandbox credentials are used with sandbox endpoints."
+    );
+  }
+
+  configValidated = true;
+}
+
+function getReloadlyConfig() {
+  const env = getReloadlyEnv();
+
+  if (!configValidated) {
+    validateReloadlyConfig(env);
+  }
+
+  const isSandbox = env.RELOADLY_BASE_URL?.includes("sandbox") ||
+                    env.RELOADLY_SANDBOX === "true" ||
+                    false;
+
+  const baseUrl = isSandbox
+    ? "https://topups-sandbox.reloadly.com"
+    : "https://topups.reloadly.com";
+
+  const audience = isSandbox
+    ? "https://topups-sandbox.reloadly.com"
+    : "https://topups.reloadly.com";
+
   return {
     baseUrl,
+    audience,
     authUrl: env.RELOADLY_AUTH_URL || "https://auth.reloadly.com/oauth/token",
     clientId: env.RELOADLY_CLIENT_ID,
     clientSecret: env.RELOADLY_CLIENT_SECRET,
+    isSandbox,
   };
 }
 
-async function getAccessToken(): Promise<string> {
-  // Check if we have a valid cached token
-  if (tokenCache && tokenCache.expiresAt > Date.now()) {
+export async function getAccessToken(forceRefresh = false): Promise<string> {
+  if (!forceRefresh && tokenCache && tokenCache.expiresAt > Date.now()) {
     return tokenCache.accessToken;
   }
 
-  const config = getReloadlyConfig();
-  
-  // Clean up baseUrl - remove trailing slash for audience
-  const audience = config.baseUrl.replace(/\/$/, "");
-  
-  console.log(`[Reloadly Auth] Using audience: ${audience}`);
-  console.log(`[Reloadly Auth] Auth URL: ${config.authUrl}`);
+  if (tokenRefreshPromise) {
+    return tokenRefreshPromise;
+  }
 
-  try {
-    const response = await fetch(config.authUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
+  tokenRefreshPromise = (async () => {
+    const config = getReloadlyConfig();
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), AUTH_TIMEOUT_MS);
+
+    try {
+      const payload: AccessTokenRequest = {
         client_id: config.clientId,
         client_secret: config.clientSecret,
         grant_type: "client_credentials",
-        audience: audience,
-      }),
-    });
+        audience: config.audience,
+      };
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Authentication failed: ${error}`);
+      const response = await fetch(config.authUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let isInvalidCredentials = false;
+        try {
+          const parsed = JSON.parse(errorText);
+          isInvalidCredentials = parsed.errorCode === "INVALID_CREDENTIALS" || parsed.message === "Access Denied";
+        } catch { /* not JSON */ }
+
+        if (isInvalidCredentials) {
+          const err = new Error(`Reloadly authentication failed: INVALID_CREDENTIALS. Verify RELOADLY_CLIENT_ID and RELOADLY_CLIENT_SECRET match the ${config.isSandbox ? "sandbox" : "production"} environment.`);
+          (err as any).code = "INVALID_CREDENTIALS";
+          (err as any).retryable = false;
+          throw err;
+        }
+
+        throw new Error(`Authentication failed: ${errorText}`);
+      }
+
+      const data: AccessTokenResponse200 = await response.json();
+      const expiresIn = data.expires_in || 3600;
+
+      tokenCache = {
+        accessToken: data.access_token,
+        expiresAt: Date.now() + (expiresIn - TOKEN_EXPIRY_BUFFER_S) * 1000,
+      };
+
+      return data.access_token;
+    } catch (error) {
+      if (error instanceof Error && (error as any).code !== "INVALID_CREDENTIALS") {
+        console.error("[Reloadly Auth] error:", error.message);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
+      tokenRefreshPromise = null;
     }
+  })();
 
-    const data = await response.json();
-    const accessToken = data.access_token;
-    const expiresIn = data.expires_in || 3600; // Default 1 hour
+  return tokenRefreshPromise;
+}
 
-    // Cache token with 5 minute buffer before expiration
-    tokenCache = {
-      accessToken,
-      expiresAt: Date.now() + (expiresIn - 300) * 1000,
-    };
+function isRetryable(status: number | undefined, error?: unknown): boolean {
+  if (error instanceof Error && error.name === "AbortError") return false;
+  if (error instanceof Error && (error as any).code === "INVALID_CREDENTIALS") return false;
+  if (status === 401) return false;
+  if (!status) return true;
+  if (status >= 500) return true;
+  if (status === 429) return true;
+  return false;
+}
 
-    return accessToken;
-  } catch (error) {
-    console.error("Reloadly authentication error:", error);
-    throw error;
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function buildErrorResult(errorText: string, status: number): ApiResponse<never> {
+  let errorCode = "RELOADLY_API_ERROR";
+  let parsedError: ApiErrorResponse | null = null;
+
+  try {
+    parsedError = JSON.parse(errorText);
+  } catch {
+    // not JSON
   }
+
+  if (parsedError?.errorCode === "INVALID_CREDENTIALS" || parsedError?.message === "Access Denied") {
+    errorCode = "RELOADLY_INVALID_CREDENTIALS";
+  } else if (status === 401) errorCode = "RELOADLY_AUTH_FAILED";
+  else if (status === 400) errorCode = "RELOADLY_INVALID_REQUEST";
+  else if (status === 404) errorCode = "RELOADLY_OPERATOR_NOT_FOUND";
+  else if (status === 402) errorCode = "RELOADLY_INSUFFICIENT_BALANCE";
+  else if (status === 422) errorCode = "RELOADLY_INVALID_PHONE";
+  else if (status === 429) errorCode = "RELOADLY_RATE_LIMITED";
+  else if (status === 500) errorCode = "RELOADLY_SERVER_ERROR";
+
+  const errorMessage =
+    parsedError?.message ||
+    parsedError?.error ||
+    errorText ||
+    `HTTP ${status}`;
+
+  return {
+    success: false,
+    error: errorMessage,
+    errorCode,
+    statusCode: status,
+  };
 }
 
 async function reloadlyRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit & { skipRetry?: boolean; isMutating?: boolean } = {}
 ): Promise<ApiResponse<T>> {
-  try {
-    const token = await getAccessToken();
-    const config = getReloadlyConfig();
+  const { skipRetry, isMutating, ...fetchOptions } = options;
+  const config = getReloadlyConfig();
+  const baseUrl = config.baseUrl.replace(/\/$/, "");
+  const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const url = `${baseUrl}${path}`;
 
-    const baseUrl = config.baseUrl.replace(/\/$/, "");
-    const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-    const url = `${baseUrl}${path}`;
+  const timeoutMs = isMutating ? TOPUP_TIMEOUT_MS : REQUEST_TIMEOUT_MS;
+  const maxAttempts = skipRetry ? 1 : MAX_RETRIES;
+  let lastError: ApiResponse<T> | null = null;
 
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        ...options.headers,
-      },
-    });
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      let errorCode = "RELOADLY_API_ERROR";
+    try {
+      const token = await getAccessToken(attempt > 1);
 
-      // Map HTTP status codes to error codes
-      if (response.status === 401) errorCode = "RELOADLY_AUTH_FAILED";
-      else if (response.status === 400) errorCode = "RELOADLY_INVALID_REQUEST";
-      else if (response.status === 404) errorCode = "RELOADLY_OPERATOR_NOT_FOUND";
-      else if (response.status === 402) errorCode = "RELOADLY_INSUFFICIENT_BALANCE";
-      else if (response.status === 422) errorCode = "RELOADLY_INVALID_PHONE";
+      const response = await fetch(url, {
+        ...fetchOptions,
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/com.reloadly.topups-v1+json",
+          ...fetchOptions.headers,
+        },
+      });
 
-      return {
+      if (response.status === 401) {
+        tokenCache = null;
+        const errorText = await response.text();
+        lastError = buildErrorResult(errorText, response.status);
+
+        if (attempt < maxAttempts) {
+          const jitter = Math.floor(Math.random() * 250);
+          const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1) + jitter;
+          console.warn(`[Reloadly] 401 on ${endpoint}, invalidating token, retry ${attempt}/${maxAttempts} after ${delay}ms`);
+          await sleep(delay);
+          continue;
+        }
+        return lastError;
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        lastError = buildErrorResult(errorText, response.status);
+
+        if (!isRetryable(response.status) || skipRetry) {
+          return lastError;
+        }
+
+        if (attempt < maxAttempts) {
+          const jitter = Math.floor(Math.random() * 250);
+          const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1) + jitter;
+          console.warn(`[Reloadly] Retrying ${endpoint} after ${delay}ms (attempt ${attempt}/${maxAttempts})`);
+          await sleep(delay);
+          continue;
+        }
+        return lastError;
+      }
+
+      const data = await response.json();
+      return { success: true, data };
+    } catch (error) {
+      clearTimeout(timer);
+
+      const isAbort = error instanceof Error && error.name === "AbortError";
+      const isInvalidCreds = error instanceof Error && (error as any).code === "INVALID_CREDENTIALS";
+      const errorCode = isAbort
+        ? (isMutating ? "RELOADLY_TIMEOUT_RECONCILIATION" : "RELOADLY_TIMEOUT")
+        : isInvalidCreds
+          ? "RELOADLY_INVALID_CREDENTIALS"
+          : "RELOADLY_REQUEST_FAILED";
+      const errorMsg = isAbort
+        ? `Request to ${endpoint} timed out after ${timeoutMs}ms`
+        : error instanceof Error
+          ? error.message
+          : "Request failed";
+
+      lastError = {
         success: false,
-        error: errorText,
+        error: errorMsg,
         errorCode,
-        statusCode: response.status,
       };
+
+      if (!isRetryable(undefined, error) || skipRetry || isAbort || isInvalidCreds) {
+        return lastError;
+      }
+
+      if (attempt < maxAttempts) {
+        const jitter = Math.floor(Math.random() * 250);
+        const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1) + jitter;
+        console.warn(`[Reloadly] Retrying ${endpoint} after ${delay}ms (attempt ${attempt}/${maxAttempts})`);
+        await sleep(delay);
+        continue;
+      }
+      return lastError;
+    } finally {
+      clearTimeout(timer);
     }
-
-    const data = await response.json();
-    return { success: true, data };
-  } catch (error) {
-    console.error("Reloadly request error:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Request failed",
-      errorCode: "RELOADLY_REQUEST_FAILED",
-    };
   }
+
+  return lastError!;
 }
 
-export async function getBalance(): Promise<ApiResponse<ReloadlyBalance>> {
-  return reloadlyRequest<ReloadlyBalance>("/accounts/balance");
+// ─── Spec-driven API functions ────────────────────────────────────────────────
+
+export async function getBalance(): Promise<ApiResponse<AccountsBalanceResponse>> {
+  return reloadlyRequest<AccountsBalanceResponse>("/accounts/balance");
 }
 
-export async function getOperators(countryCode?: string): Promise<ApiResponse<ReloadlyOperator[]>> {
-  const endpoint = countryCode
-    ? `/operators?countryCode=${countryCode}&includeBundles=true&includeData=true&includePin=true`
-    : "/operators?includeBundles=true&includeData=true&includePin=true";
+export async function getCountries(): Promise<ApiResponse<CountryResponse[]>> {
+  return reloadlyRequest<CountryResponse[]>("/countries");
+}
 
-  return reloadlyRequest<ReloadlyOperator[]>(endpoint);
+export async function getCountryByIso(
+  isoCode: string
+): Promise<ApiResponse<CountryResponse[]>> {
+  return reloadlyRequest<CountryResponse[]>(`/countries/${isoCode}`);
+}
+
+export interface GetOperatorsParams {
+  includeBundles?: boolean;
+  includeData?: boolean;
+  suggestedAmountsMap?: boolean;
+  size?: number;
+  page?: number;
+  includeCombo?: boolean;
+  comboOnly?: boolean;
+  bundlesOnly?: boolean;
+  dataOnly?: boolean;
+  pinOnly?: boolean;
+}
+
+export async function getOperators(
+  params?: GetOperatorsParams
+): Promise<ApiResponse<{ content: OperatorResponse[] }>> {
+  const query = new URLSearchParams();
+  if (params?.includeBundles !== undefined) query.set("includeBundles", String(params.includeBundles));
+  if (params?.includeData !== undefined) query.set("includeData", String(params.includeData));
+  if (params?.suggestedAmountsMap !== undefined) query.set("suggestedAmountsMap", String(params.suggestedAmountsMap));
+  if (params?.size !== undefined) query.set("size", String(params.size));
+  if (params?.page !== undefined) query.set("page", String(params.page));
+  if (params?.includeCombo !== undefined) query.set("includeCombo", String(params.includeCombo));
+  if (params?.comboOnly !== undefined) query.set("comboOnly", String(params.comboOnly));
+  if (params?.bundlesOnly !== undefined) query.set("bundlesOnly", String(params.bundlesOnly));
+  if (params?.dataOnly !== undefined) query.set("dataOnly", String(params.dataOnly));
+  if (params?.pinOnly !== undefined) query.set("pinOnly", String(params.pinOnly));
+  const qs = query.toString();
+  return reloadlyRequest<{ content: OperatorResponse[] }>(`/operators${qs ? `?${qs}` : ""}`);
+}
+
+export async function getOperatorById(
+  operatorId: number
+): Promise<ApiResponse<OperatorResponse>> {
+  return reloadlyRequest<OperatorResponse>(`/operators/${operatorId}`);
+}
+
+export async function autoDetectOperator(
+  phone: string | number,
+  countryIsoCode: string,
+  params?: { suggestedAmountsMap?: boolean; suggestedAmounts?: boolean }
+): Promise<ApiResponse<OperatorResponse>> {
+  const query = new URLSearchParams();
+  if (params?.suggestedAmountsMap !== undefined) query.set("suggestedAmountsMap", String(params.suggestedAmountsMap));
+  if (params?.suggestedAmounts !== undefined) query.set("suggestedAmounts", String(params.suggestedAmounts));
+  const qs = query.toString();
+  return reloadlyRequest<OperatorResponse>(
+    `/operators/auto-detect/phone/${phone}/countries/${countryIsoCode}${qs ? `?${qs}` : ""}`
+  );
+}
+
+export interface GetOperatorsByCountryParams {
+  suggestedAmountsMap?: boolean;
+  suggestedAmounts?: boolean;
+  includePin?: boolean;
+  includeData?: boolean;
+  includeBundles?: boolean;
+  includeCombo?: boolean;
+  comboOnly?: boolean;
+  bundlesOnly?: boolean;
+  dataOnly?: boolean;
+  pinOnly?: boolean;
+}
+
+export async function getOperatorsByCountry(
+  countryCode: string,
+  params?: GetOperatorsByCountryParams
+): Promise<ApiResponse<{ content: OperatorResponse[] }>> {
+  const query = new URLSearchParams();
+  if (params?.suggestedAmountsMap !== undefined) query.set("suggestedAmountsMap", String(params.suggestedAmountsMap));
+  if (params?.suggestedAmounts !== undefined) query.set("suggestedAmounts", String(params.suggestedAmounts));
+  if (params?.includePin !== undefined) query.set("includePin", String(params.includePin));
+  if (params?.includeData !== undefined) query.set("includeData", String(params.includeData));
+  if (params?.includeBundles !== undefined) query.set("includeBundles", String(params.includeBundles));
+  if (params?.includeCombo !== undefined) query.set("includeCombo", String(params.includeCombo));
+  if (params?.comboOnly !== undefined) query.set("comboOnly", String(params.comboOnly));
+  if (params?.bundlesOnly !== undefined) query.set("bundlesOnly", String(params.bundlesOnly));
+  if (params?.dataOnly !== undefined) query.set("dataOnly", String(params.dataOnly));
+  if (params?.pinOnly !== undefined) query.set("pinOnly", String(params.pinOnly));
+  const qs = query.toString();
+  return reloadlyRequest<{ content: OperatorResponse[] }>(`/operators/countries/${countryCode}${qs ? `?${qs}` : ""}`);
+}
+
+export async function getFxRate(
+  params: FxRateRequest
+): Promise<ApiResponse<FxRateResponse>> {
+  return reloadlyRequest<FxRateResponse>("/operators/fx-rate", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
+export async function getCommissions(
+  params?: { size?: number; page?: number }
+): Promise<ApiResponse<{ content: CommissionResponse[] }>> {
+  const query = new URLSearchParams();
+  if (params?.size !== undefined) query.set("size", String(params.size));
+  if (params?.page !== undefined) query.set("page", String(params.page));
+  const qs = query.toString();
+  return reloadlyRequest<{ content: CommissionResponse[] }>(`/operators/commissions${qs ? `?${qs}` : ""}`);
+}
+
+export async function getCommissionByOperatorId(
+  operatorId: number
+): Promise<ApiResponse<CommissionResponse>> {
+  return reloadlyRequest<CommissionResponse>(`/operators/${operatorId}/commissions`);
+}
+
+export async function getPromotions(
+  params?: { size?: number; page?: number; languageCode?: string }
+): Promise<ApiResponse<{ content: PromotionResponse[] }>> {
+  const query = new URLSearchParams();
+  if (params?.size !== undefined) query.set("size", String(params.size));
+  if (params?.page !== undefined) query.set("page", String(params.page));
+  if (params?.languageCode) query.set("languageCode", params.languageCode);
+  const qs = query.toString();
+  return reloadlyRequest<{ content: PromotionResponse[] }>(`/promotions${qs ? `?${qs}` : ""}`);
+}
+
+export async function getPromotionById(
+  promotionId: number,
+  languageCode?: string
+): Promise<ApiResponse<{ content: PromotionResponse }>> {
+  const query = new URLSearchParams();
+  if (languageCode) query.set("languageCode", languageCode);
+  const qs = query.toString();
+  return reloadlyRequest<{ content: PromotionResponse }>(`/promotions/${promotionId}${qs ? `?${qs}` : ""}`);
+}
+
+export async function getPromotionsByCountry(
+  countryCode: string,
+  languageCode?: string
+): Promise<ApiResponse<{ content: PromotionResponse[] }>> {
+  const query = new URLSearchParams();
+  if (languageCode) query.set("languageCode", languageCode);
+  const qs = query.toString();
+  return reloadlyRequest<{ content: PromotionResponse[] }>(`/promotions/country-codes/${countryCode}${qs ? `?${qs}` : ""}`);
+}
+
+export async function getPromotionsByOperatorId(
+  operatorId: number,
+  languageCode?: string
+): Promise<ApiResponse<{ content: PromotionResponse[] }>> {
+  const query = new URLSearchParams();
+  if (languageCode) query.set("languageCode", languageCode);
+  const qs = query.toString();
+  return reloadlyRequest<{ content: PromotionResponse[] }>(`/promotions/operators/${operatorId}${qs ? `?${qs}` : ""}`);
+}
+
+export async function makeTopup(
+  params: TopUpsRequest
+): Promise<ApiResponse<TopUpsResponse200>> {
+  return reloadlyRequest<TopUpsResponse200>("/topups", {
+    method: "POST",
+    body: JSON.stringify(params),
+    skipRetry: true,
+    isMutating: true,
+  });
+}
+
+export async function makeTopupAsync(
+  params: TopUpsRequest
+): Promise<ApiResponse<TopUpsAsyncResponse200>> {
+  return reloadlyRequest<TopUpsAsyncResponse200>("/topups-async", {
+    method: "POST",
+    body: JSON.stringify(params),
+    skipRetry: true,
+    isMutating: true,
+  });
+}
+
+export async function getTopupStatus(
+  transactionId: number
+): Promise<ApiResponse<TopUpsStatusResponse200>> {
+  return reloadlyRequest<TopUpsStatusResponse200>(`/topups/${transactionId}/status`);
+}
+
+export interface GetTransactionsParams {
+  size?: number;
+  page?: number;
+  countryCode?: string;
+  operatorId?: string;
+  operatorName?: string;
+  customIdentifier?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export async function getTransactions(
+  params?: GetTransactionsParams
+): Promise<ApiResponse<{ content: TransactionResponse[] }>> {
+  const query = new URLSearchParams();
+  if (params?.size !== undefined) query.set("size", String(params.size));
+  if (params?.page !== undefined) query.set("page", String(params.page));
+  if (params?.countryCode) query.set("countryCode", params.countryCode);
+  if (params?.operatorId) query.set("operatorId", params.operatorId);
+  if (params?.operatorName) query.set("operatorName", params.operatorName);
+  if (params?.customIdentifier) query.set("customIdentifier", params.customIdentifier);
+  if (params?.startDate) query.set("startDate", params.startDate);
+  if (params?.endDate) query.set("endDate", params.endDate);
+  const qs = query.toString();
+  return reloadlyRequest<{ content: TransactionResponse[] }>(`/topups/reports/transactions${qs ? `?${qs}` : ""}`);
+}
+
+export async function getTransactionById(
+  transactionId: number
+): Promise<ApiResponse<TransactionResponse>> {
+  return reloadlyRequest<TransactionResponse>(`/topups/reports/transactions/${transactionId}`);
+}
+
+export async function mnpLookupGet(
+  phone: string | number,
+  countryCode: string,
+  params?: { suggestedAmountsMap?: boolean; suggestedAmounts?: boolean }
+): Promise<ApiResponse<OperatorResponse>> {
+  const query = new URLSearchParams();
+  if (params?.suggestedAmountsMap !== undefined) query.set("suggestedAmountsMap", String(params.suggestedAmountsMap));
+  if (params?.suggestedAmounts !== undefined) query.set("suggestedAmounts", String(params.suggestedAmounts));
+  const qs = query.toString();
+  return reloadlyRequest<OperatorResponse>(
+    `/operators/mnp-lookup/phone/${phone}/countries/${countryCode}${qs ? `?${qs}` : ""}`
+  );
+}
+
+export async function mnpLookupPost(
+  params: NumberLookupRequest
+): Promise<ApiResponse<OperatorResponse>> {
+  return reloadlyRequest<OperatorResponse>("/mnp-lookup/operators", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
 }
 
 export async function getGhanaOperators(): Promise<ApiResponse<ReloadlyOperator[]>> {
-  return getOperators("GH");
+  const result = await getOperatorsByCountry("GH", {
+    includeBundles: true,
+    includeData: true,
+    includePin: true,
+  });
+
+  if (!result.success || !result.data) return result as unknown as ApiResponse<ReloadlyOperator[]>;
+
+  const mapped: ReloadlyOperator[] = (result.data.content || []).map((op) => ({
+    id: op.operatorId,
+    name: op.name,
+    countryCode: op.country.isoName,
+    countryName: op.country.name,
+    bundle: op.bundle,
+    data: op.data,
+    pin: op.pin,
+    supportsLocalAmounts: op.supportsLocalAmounts,
+    supportsGeographicalRechargePlans: false,
+    denominationType: op.denominationType,
+    senderCurrencyCode: op.senderCurrencyCode,
+    senderCurrencyName: op.senderCurrencySymbol,
+    destinationCurrencyCode: op.destinationCurrencyCode,
+    destinationCurrencyName: op.destinationCurrencySymbol,
+    commission: op.commission,
+    internationalDiscount: op.internationalDiscount,
+    localDiscount: op.localDiscount,
+    mostPopularAmount: op.mostPopularAmount,
+    mostPopularLocalAmount: null,
+    minAmount: op.minAmount,
+    maxAmount: op.maxAmount,
+    localMinAmount: op.localMinAmount,
+    localMaxAmount: op.localMaxAmount,
+    fxRate: op.fx.rate,
+    logoUrls: op.logoUrls,
+    fixedAmounts: op.fixedAmounts,
+    fixedAmountsDescriptions: Object.fromEntries(op.fixedAmountsDescriptions.map((d, i) => [i, d])),
+    localFixedAmounts: op.localFixedAmounts,
+    localFixedAmountsDescriptions: Object.fromEntries(op.localFixedAmountsDescriptions.map((d, i) => [i, d])),
+    suggestedAmounts: op.suggestedAmounts,
+    suggestedAmountsMap: op.suggestedAmountsMap,
+    fees: op.fees?.international ?? 0,
+    geographicalRechargePlans: [],
+    promotions: op.promotions,
+    status: "ACTIVE",
+  }));
+
+  return { success: true, data: mapped };
 }
 
 export function getOperatorId(networkName: string): number | null {
@@ -267,38 +930,99 @@ export function getOperatorId(networkName: string): number | null {
 export async function purchaseAirtime(
   params: ReloadlyAirtimeRequest
 ): Promise<ApiResponse<ReloadlyAirtimeResult>> {
-  const config = getReloadlyConfig();
+  const normalizedPhone = params.recipientPhone.replace(/\D/g, "");
 
-  const payload: Record<string, unknown> = {
+  console.log("[Reloadly] purchaseAirtime START:", {
     operatorId: params.operatorId,
     amount: params.amount,
+    phoneOriginal: params.recipientPhone,
+    phoneNormalized: normalizedPhone,
+    customIdentifier: params.customIdentifier,
+  });
+
+  const topupPayload: TopUpsRequest = {
+    operatorId: String(params.operatorId),
+    amount: String(params.amount),
     recipientPhone: {
       countryCode: "GH",
-      number: params.recipientPhone.replace(/\D/g, ""),
+      number: normalizedPhone,
     },
   };
 
   if (params.senderPhone) {
-    payload.senderPhone = {
+    topupPayload.senderPhone = {
       countryCode: "GH",
       number: params.senderPhone.replace(/\D/g, ""),
     };
   }
 
   if (params.customIdentifier) {
-    payload.customIdentifier = params.customIdentifier;
+    topupPayload.customIdentifier = params.customIdentifier;
   }
 
-  return reloadlyRequest<ReloadlyAirtimeResult>("/topups", {
-    method: "POST",
-    body: JSON.stringify(payload),
+  const result = await makeTopup(topupPayload);
+
+  if (!result.success || !result.data) {
+    return result as unknown as ApiResponse<ReloadlyAirtimeResult>;
+  }
+
+  const d = result.data;
+  const mapped: ReloadlyAirtimeResult = {
+    transactionId: d.transactionId,
+    status: d.status === "SUCCESSFUL" ? "SUCCESSFUL" : d.status === "FAILED" ? "FAILED" : "PENDING",
+    operatorTransactionId: d.operatorTransactionId ?? undefined,
+    recipientPhone: String(d.recipientPhone),
+    recipientEmail: d.recipientEmail ?? undefined,
+    senderPhone: d.senderPhone,
+    countryCode: d.countryCode,
+    operatorId: d.operatorId,
+    operatorName: d.operatorName,
+    discount: d.discount,
+    requestedAmount: d.requestedAmount,
+    deliveredAmount: d.deliveredAmount,
+    currencyCode: d.deliveredAmountCurrencyCode,
+    fee: d.fee,
+    customIdentifier: d.customIdentifier ?? undefined,
+  };
+
+  console.log("[Reloadly] purchaseAirtime SUCCESS:", {
+    transactionId: mapped.transactionId,
+    status: mapped.status,
+    recipientPhone: mapped.recipientPhone,
   });
+
+  return { success: true, data: mapped };
 }
 
 export async function getTransactionStatus(
   transactionId: number
 ): Promise<ApiResponse<ReloadlyAirtimeResult>> {
-  return reloadlyRequest<ReloadlyAirtimeResult>(`/topups/${transactionId}/status`);
+  const result = await getTopupStatus(transactionId);
+
+  if (!result.success || !result.data) {
+    return result as unknown as ApiResponse<ReloadlyAirtimeResult>;
+  }
+
+  const t = result.data.transaction;
+  const mapped: ReloadlyAirtimeResult = {
+    transactionId: t.transactionId,
+    status: result.data.status === "SUCCESSFUL" ? "SUCCESSFUL" : result.data.status === "FAILED" ? "FAILED" : "PENDING",
+    operatorTransactionId: t.operatorTransactionId ?? undefined,
+    recipientPhone: String(t.recipientPhone),
+    recipientEmail: t.recipientEmail ?? undefined,
+    senderPhone: t.senderPhone,
+    countryCode: t.countryCode,
+    operatorId: t.operatorId,
+    operatorName: t.operatorName,
+    discount: t.discount,
+    requestedAmount: t.requestedAmount,
+    deliveredAmount: t.deliveredAmount,
+    currencyCode: t.deliveredAmountCurrencyCode,
+    fee: t.fee,
+    customIdentifier: t.customIdentifier ?? undefined,
+  };
+
+  return { success: true, data: mapped };
 }
 
 // Auto-detect operator by phone number (for Ghana)
@@ -326,4 +1050,6 @@ export function detectOperatorByPhone(phone: string): number | null {
 // Clear token cache (useful for testing or when token is revoked)
 export function clearTokenCache(): void {
   tokenCache = null;
+  tokenRefreshPromise = null;
+  configValidated = false;
 }

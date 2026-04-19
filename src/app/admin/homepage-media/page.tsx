@@ -27,6 +27,8 @@ const sectionOptions = [
   "telecel_logo",
   "airteltigo_logo",
   "developer_community_image",
+  "hero_background_video",
+  "scale_background_video",
 ];
 
 export default function AdminHomepageMediaPage() {
@@ -38,6 +40,7 @@ export default function AdminHomepageMediaPage() {
   const [assetType, setAssetType] = useState<"image" | "video">("image");
   const [altText, setAltText] = useState("");
   const [sortOrder, setSortOrder] = useState(0);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const grouped = useMemo(() => {
     return media.reduce<Record<string, HomepageMediaRecord[]>>((acc, item) => {
@@ -121,13 +124,18 @@ export default function AdminHomepageMediaPage() {
   };
 
   const removeMedia = async (id: string) => {
-    const response = await fetch(`/api/admin/homepage-media/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
-    const payload = await response.json();
-    if (!response.ok || !payload?.success) {
-      throw new Error(payload?.error || "Delete failed");
+    setDeletingId(id);
+    try {
+      const response = await fetch(`/api/admin/homepage-media/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.error || "Delete failed");
+      }
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -272,6 +280,7 @@ export default function AdminHomepageMediaPage() {
                       variant="ghost"
                       size="sm"
                       className="text-destructive"
+                      disabled={deletingId === item.id}
                       onClick={async () => {
                         if (!window.confirm("Delete this media item?")) return;
                         try {
@@ -282,7 +291,11 @@ export default function AdminHomepageMediaPage() {
                         }
                       }}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      {deletingId === item.id ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-destructive border-t-transparent" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>

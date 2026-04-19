@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql, withTransaction } from "@/lib/db";
-import { purchaseDataBundle, purchaseAirtime as purchaseDatamartAirtime } from "@/lib/datamart";
-import { purchaseAirtime as purchaseReloadlyAirtime, getOperatorId } from "@/lib/reloadly";
+import { purchaseDataBundle, resolveNetworkCode } from "@/lib/datamart";
+import { logServiceEvent, apiResponse } from "@/lib/api-utils";
 
 export const runtime = "nodejs";
+
+const REQUEST_DEADLINE_MS = 45_000;
 
 async function getAuthenticatedUserId(): Promise<string | null> {
   const cookieStore = await cookies();
@@ -40,10 +42,7 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await getAuthenticatedUserId();
     if (!userId) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized — please log in" },
-        { status: 401 }
-      );
+      return apiResponse(false, "Unauthorized — please log in", { status: 401, correlationId });
     }
 
     const body = await request.json();
@@ -60,51 +59,31 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!phone || !networkId || !planPrice || (!planId && !planName)) {
-      return NextResponse.json(
-        { success: false, error: "Missing required fields: phone, networkId, planId, planPrice" },
-        { status: 400 }
-      );
+      return apiResponse(false, "Missing required fields: phone, networkId, planId, planPrice", { status: 400, correlationId });
     }
 
-    const purchaseType: "DATA" | "AIRTIME" =
-      String(type || planName || "")
-        .toLowerCase()
-        .includes("airtime")
-        ? "AIRTIME"
-        : "DATA";
+    const purchaseType = "DATA";
     const idempotencyKeyHeader = request.headers.get("x-idempotency-key");
     const idempotencyKey = String(bodyIdempotencyKey || idempotencyKeyHeader || "").trim();
     if (!idempotencyKey) {
-      return NextResponse.json(
-        { success: false, error: "Missing idempotency key", code: "MISSING_IDEMPOTENCY_KEY", correlationId },
-        { status: 400 }
-      );
+      return apiResponse(false, "Missing idempotency key", { status: 400, code: "MISSING_IDEMPOTENCY_KEY", correlationId });
     }
 
     const price = Number(planPrice);
     if (isNaN(price) || price <= 0) {
-      return NextResponse.json(
-        { success: false, error: "Invalid plan price" },
-        { status: 400 }
-      );
+      return apiResponse(false, "Invalid plan price", { status: 400, correlationId });
     }
 
     const userRows = await sql`
       SELECT wallet_balance FROM users WHERE id = ${userId} LIMIT 1
     `;
     if (userRows.length === 0) {
-      return NextResponse.json(
-        { success: false, error: "User not found" },
-        { status: 404 }
-      );
+      return apiResponse(false, "User not found", { status: 404, correlationId });
     }
 
     const balance = Number(userRows[0].wallet_balance);
     if (price > balance) {
-      return NextResponse.json(
-        { success: false, error: `Insufficient balance. Need GHS ${price.toFixed(2)}, have GHS ${balance.toFixed(2)}` },
-        { status: 400 }
-      );
+      return apiResponse(false, `Insufficient balance. Need GHS ${price.toFixed(2)}, have GHS ${balance.toFixed(2)}`, { status: 400, correlationId });
     }
 
     const existingTx = await sql`
@@ -116,13 +95,18 @@ export async function POST(request: NextRequest) {
       LIMIT 1
     `;
     if (existingTx.length > 0) {
-      return NextResponse.json(
-        { success: false, error: "Duplicate purchase request", code: "DUPLICATE_REQUEST", transaction: existingTx[0], correlationId },
-        { status: 409 }
-      );
+      return apiResponse(false, "Duplicate purchase request", { 
+        status: 409, 
+        code: "DUPLICATE_REQUEST", 
+        correlationId,
+        data: existingTx[0] 
+      });
     }
 
     const reference = `${purchaseType}_${Date.now()}_${Math.random().toString(36).slice(2, 9).toUpperCase()}`;
+    
+    logServiceEvent("purchase", purchaseType, "started", { userId, phone, networkId, price, reference });
+
     await withTransaction(async (tx) => {
       const walletId = await ensureWallet(userId, tx);
       await tx(
@@ -153,7 +137,7 @@ export async function POST(request: NextRequest) {
             state: "debited",
             idempotency_key: idempotencyKey,
             correlation_id: correlationId,
-            description: `${purchaseType === "AIRTIME" ? "Airtime" : "Data bundle"} — ${planName || ""} ${planSize || ""}`.trim(),
+            description: `Data bundle — ${planName || ""} ${planSize || ""}`.trim(),
             networkId,
             network: networkName || networkId,
             phoneNumber: phone,
@@ -170,9 +154,10 @@ export async function POST(request: NextRequest) {
     let providerOrderId: string | number | undefined;
     let providerName = "datamart";
 
-    if (purchaseType === "DATA") {
+    {
+      const datamartNetwork = resolveNetworkCode(networkId);
       const result = await purchaseDataBundle({
-        networkCode: networkId,
+        networkCode: datamartNetwork,
         phoneNumber: phone,
         planId: String(planId),
       });
@@ -185,110 +170,48 @@ export async function POST(request: NextRequest) {
         providerName = "datamart";
 
         if (!providerSuccess && status === "pending") providerMessage = "Order queued with provider";
+        
+        logServiceEvent("datamart", "purchase_data", providerSuccess ? "success" : "pending", { 
+          reference, status, providerOrderId 
+        });
       } else {
         providerMessage = result.error || "DataMart request failed";
-      }
-    } else {
-      // Try Reloadly first for airtime
-      const operatorId = getOperatorId(networkName);
-
-      if (operatorId) {
-        console.log(`[Reloadly] Attempting airtime purchase for ${networkName} (${operatorId}) - ${phone} - GH₵${price}`);
-        const reloadlyResult = await purchaseReloadlyAirtime({
-          operatorId,
-          amount: price,
-          recipientPhone: phone,
-          customIdentifier: reference,
-        });
-
-        // Check if it's an auth error - if so, silently fallback to DataMart
-        if (reloadlyResult.errorCode === "RELOADLY_AUTH_FAILED" || 
-            reloadlyResult.errorCode === "RELOADLY_REQUEST_FAILED") {
-          console.warn(`[Reloadly] Auth failed (credentials may be for Gift Card API). Falling back to DataMart.`);
-          // Continue to DataMart fallback below
-        } else if (reloadlyResult.success && reloadlyResult.data) {
-          const status = reloadlyResult.data.status?.toLowerCase();
-          providerSuccess = status === "successful";
-          providerMessage = reloadlyResult.data.status || "";
-          providerOrderId = reloadlyResult.data.transactionId;
-          providerName = "reloadly";
-
-          console.log(`[Reloadly] Purchase ${providerSuccess ? "successful" : "pending"} - TX: ${providerOrderId}`);
-
-          if (!providerSuccess && status === "pending") {
-            providerMessage = "Airtime queued with Reloadly";
-          }
-        } else {
-          // Reloadly failed - log and fallback to DataMart
-          console.warn(`[Reloadly] Failed: ${reloadlyResult.error} (${reloadlyResult.errorCode}). Falling back to DataMart.`);
-
-          const datamartResult = await purchaseDatamartAirtime({
-            networkCode: networkId,
-            phoneNumber: phone,
-            amount: price,
-          });
-
-          if (datamartResult.success && datamartResult.data) {
-            const status = datamartResult.data.Status?.toLowerCase();
-            providerSuccess = status === "successful";
-            providerMessage = datamartResult.data.message || "";
-            providerName = "datamart";
-
-            if (!providerSuccess && status === "pending") providerMessage = "Airtime queued with provider";
-          } else {
-            providerMessage = datamartResult.error || "Both Reloadly and DataMart failed";
-          }
-        }
-      } else {
-        // No operator mapping found, use DataMart directly
-        console.log(`[DataMart] No Reloadly operator mapping for ${networkName}, using DataMart directly`);
-        const datamartResult = await purchaseDatamartAirtime({
-          networkCode: networkId,
-          phoneNumber: phone,
-          amount: price,
-        });
-
-        if (datamartResult.success && datamartResult.data) {
-          const status = datamartResult.data.Status?.toLowerCase();
-          providerSuccess = status === "successful";
-          providerMessage = datamartResult.data.message || "";
-
-          if (!providerSuccess && status === "pending") providerMessage = "Airtime queued with provider";
-        } else {
-          providerMessage = datamartResult.error || "DataMart request failed";
-        }
+        logServiceEvent("datamart", "purchase_data", "failed", { reference, error: providerMessage });
       }
     }
 
-    if (providerSuccess || providerMessage.toLowerCase().includes("queued")) {
-      const finalStatus = providerSuccess ? "success" : "pending";
+    // Stage 5: Reconcile result and update DB atomically
+    const isReconciliation = !providerSuccess && providerMessage.toLowerCase().includes("being processed");
+
+    if (providerSuccess || providerMessage.toLowerCase().includes("queued") || isReconciliation) {
+      const finalStatus = providerSuccess ? "success" : isReconciliation ? "pending_reconciliation" : "pending";
       await sql`
         UPDATE transactions
         SET status = ${finalStatus},
             metadata = metadata || ${JSON.stringify({
               provider: providerName || "datamart",
-              state: providerSuccess ? "success" : "provider_submitted",
+              state: providerSuccess ? "success" : isReconciliation ? "reconciliation_needed" : "provider_submitted",
               provider_order_id: providerOrderId,
               provider_message: providerMessage,
-              fulfilled_at: new Date().toISOString(),
+              fulfilled_at: providerSuccess ? new Date().toISOString() : undefined,
             })}::jsonb,
             updated_at = NOW()
         WHERE reference = ${reference}
       `;
 
-      return NextResponse.json({
-        success: true,
-        message: `${purchaseType === "AIRTIME" ? "Airtime" : "Data bundle"} delivered successfully`,
-        transaction: {
-          reference,
-          amount: price,
-          network: networkName || networkId,
-          phone,
-          status: finalStatus,
-          providerOrderId,
-        },
-        correlationId,
-      });
+      if (isReconciliation) {
+        return apiResponse(true, {
+          reference, amount: price, network: networkName || networkId, phone,
+          status: "pending_reconciliation",
+          message: providerMessage,
+        }, { correlationId });
+      }
+
+      return apiResponse(true, {
+        reference, amount: price, network: networkName || networkId, phone,
+        status: finalStatus, providerOrderId,
+        message: "Data bundle delivered successfully"
+      }, { correlationId });
     } else {
       await withTransaction(async (tx) => {
         await tx(
@@ -299,7 +222,7 @@ export async function POST(request: NextRequest) {
            WHERE reference = $2`,
           [
             JSON.stringify({
-              provider: "datamart",
+              provider: providerName || "datamart",
               state: "refunded",
               provider_error: providerMessage,
               failed_at: new Date().toISOString(),
@@ -310,21 +233,18 @@ export async function POST(request: NextRequest) {
         await tx(`UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2`, [price, userId]);
       });
 
-      return NextResponse.json(
-        {
-          success: false,
-          code: "PROVIDER_FAILED",
-          error: providerMessage || "Provider could not complete the request. Your wallet has been refunded.",
-          transaction: { reference, status: "failed" },
-          correlationId,
-        },
-        { status: 502 }
-      );
+      const errorCode = providerMessage.includes("unavailable") ? "SERVICE_UNAVAILABLE" : "PROVIDER_FAILED";
+      return apiResponse(false, providerMessage || "Provider could not complete the request. Your wallet has been refunded.", { 
+        status: 502, code: errorCode, correlationId,
+        data: { reference, status: "failed" } 
+      });
     }
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: "Internal server error", code: "INTERNAL_ERROR", correlationId },
-      { status: 500 }
-    );
+    console.error("Purchase API error:", error);
+    return apiResponse(false, "Internal server error", { 
+      status: 500, 
+      code: "INTERNAL_ERROR", 
+      correlationId 
+    });
   }
 }

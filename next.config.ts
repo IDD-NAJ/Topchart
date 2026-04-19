@@ -3,6 +3,17 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   compress: true,
   productionBrowserSourceMaps: false,
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.ignoreWarnings = [
+        ...(config.ignoreWarnings || []),
+        /Invalid source map/,
+        /sourceMapURL could not be parsed/,
+      ];
+    }
+    return config;
+  },
+  turbopack: {},
   allowedDevOrigins: [
     "*.orchids.cloud",
     "*.daytona.works",
