@@ -15,7 +15,8 @@ import {
   EyeOff,
   Edit3,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,25 +45,20 @@ interface DataBundle {
   id: string;
   networkId: string;
   network: string;
+  networkCode: string;
   name: string;
-  validity: string | null;
+  sizeMb: number | null;
   validityHours: number | null;
-  validityDays: number | null;
   providerPrice: number;
-  originalPrice: number | null;
   priceOverride: number | null;
   markupPercent: number | null;
   isPopular: boolean;
   isActive: boolean;
   isFeatured: boolean;
-  datamartPlanId: string | null;
-  datamartPlanType: string | null;
-  notes: string | null;
-  syncedAt: string | null;
+  updatedAt: string | null;
 }
 
 const NETWORKS = ["All", "MTN", "Telecel", "AirtelTigo"];
-const PLAN_TYPES = ["All", "SME", "GIFTING", "CG", "DIRECT"];
 
 export default function DataBundlesPricingPage() {
   const [bundles, setBundles] = useState<DataBundle[]>([]);
@@ -71,10 +67,14 @@ export default function DataBundlesPricingPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState<Set<string>>(new Set());
   const [networkFilter, setNetworkFilter] = useState("All");
-  const [typeFilter, setTypeFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [editing, setEditing] = useState<Set<string>>(new Set());
   const [editValues, setEditValues] = useState<Record<string, Partial<DataBundle>>>({});
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkMode, setBulkMode] = useState<"fixed" | "percent">("percent");
+  const [bulkAmount, setBulkAmount] = useState("");
+  const [bulkApplyTo, setBulkApplyTo] = useState<"add" | "override">("add");
+  const [bulkSaving, setBulkSaving] = useState(false);
 
   const fetchBundles = useCallback(async () => {
     try {
@@ -108,21 +108,17 @@ export default function DataBundlesPricingPage() {
       filtered = filtered.filter(b => b.network === networkFilter);
     }
 
-    if (typeFilter !== "All") {
-      filtered = filtered.filter(b => b.datamartPlanType === typeFilter);
-    }
-
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(b => 
         b.name.toLowerCase().includes(query) ||
         b.network.toLowerCase().includes(query) ||
-        (b.datamartPlanId && b.datamartPlanId.toLowerCase().includes(query))
+        b.networkCode.toLowerCase().includes(query)
       );
     }
 
     setFilteredBundles(filtered);
-  }, [bundles, networkFilter, typeFilter, searchQuery]);
+  }, [bundles, networkFilter, searchQuery]);
 
   const calculateEffectivePrice = (bundle: DataBundle): number => {
     if (bundle.priceOverride !== null && bundle.priceOverride > 0) {
@@ -221,8 +217,76 @@ export default function DataBundlesPricingPage() {
       toast.error("Please select a specific network for bulk updates");
       return;
     }
+    setBulkDialogOpen(true);
+  };
 
-    toast.info("Bulk update functionality coming soon");
+  const executeBulkUpdate = async () => {
+    const amount = parseFloat(bulkAmount);
+    if (isNaN(amount)) {
+      toast.error("Please enter a valid number");
+      return;
+    }
+
+    const dbCode = networkFilter === "MTN" ? "MTN" : networkFilter === "Telecel" ? "VODAFONE" : "AIRTELTIGO";
+
+    try {
+      setBulkSaving(true);
+      const response = await fetch("/api/admin/data-bundles-pricing", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bulkUpdate: {
+            networkCode: dbCode,
+            mode: bulkMode,
+            amount,
+            applyTo: bulkApplyTo,
+          }
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        toast.success(result.message);
+        setBulkDialogOpen(false);
+        setBulkAmount("");
+        fetchBundles();
+      } else {
+        toast.error(result.error || "Bulk update failed");
+      }
+    } catch {
+      toast.error("Failed to apply bulk update");
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
+  const executeBulkClear = async () => {
+    const dbCode = networkFilter === "MTN" ? "MTN" : networkFilter === "Telecel" ? "VODAFONE" : "AIRTELTIGO";
+    try {
+      setBulkSaving(true);
+      const response = await fetch("/api/admin/data-bundles-pricing", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bulkUpdate: {
+            networkCode: dbCode,
+            mode: "clear",
+          }
+        }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        toast.success(result.message);
+        setBulkDialogOpen(false);
+        fetchBundles();
+      } else {
+        toast.error(result.error || "Clear failed");
+      }
+    } catch {
+      toast.error("Failed to clear pricing");
+    } finally {
+      setBulkSaving(false);
+    }
   };
 
   const updateEditValue = (bundleId: string, field: keyof DataBundle, value: unknown) => {
@@ -275,7 +339,7 @@ export default function DataBundlesPricingPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-xs uppercase font-bold">Network</Label>
               <Select value={networkFilter} onValueChange={setNetworkFilter}>
@@ -285,20 +349,6 @@ export default function DataBundlesPricingPage() {
                 <SelectContent>
                   {NETWORKS.map(n => (
                     <SelectItem key={n} value={n}>{n}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs uppercase font-bold">Plan Type</Label>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PLAN_TYPES.map(t => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -327,7 +377,7 @@ export default function DataBundlesPricingPage() {
                 className="gap-2"
               >
                 <Percent className="w-4 h-4" />
-                Bulk Update {networkFilter}
+                Bulk Adjust {networkFilter} Prices
               </Button>
             </div>
           )}
@@ -359,7 +409,6 @@ export default function DataBundlesPricingPage() {
                 <TableRow>
                   <TableHead className="w-[200px]">Plan</TableHead>
                   <TableHead>Network</TableHead>
-                  <TableHead>Type</TableHead>
                   <TableHead className="text-right">Provider</TableHead>
                   <TableHead className="text-right">Override</TableHead>
                   <TableHead className="text-right">Markup %</TableHead>
@@ -384,24 +433,14 @@ export default function DataBundlesPricingPage() {
                       <TableCell>
                         <div className="space-y-1">
                           <p className="font-medium text-sm">{bundle.name}</p>
-                          {bundle.validity && (
-                            <p className="text-xs text-muted-foreground">{bundle.validity}</p>
-                          )}
-                          {bundle.datamartPlanId && (
-                            <p className="text-[10px] font-mono text-muted-foreground truncate max-w-[180px]">
-                              {bundle.datamartPlanId}
-                            </p>
+                          {bundle.sizeMb && (
+                            <p className="text-xs text-muted-foreground">{bundle.sizeMb >= 1000 ? `${(bundle.sizeMb / 1000).toFixed(0)}GB` : `${bundle.sizeMb}MB`}</p>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
                           {bundle.network}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="text-xs">
-                          {bundle.datamartPlanType || "N/A"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
@@ -542,6 +581,160 @@ export default function DataBundlesPricingPage() {
           </div>
         </CardContent>
       </Card>
+
+      {bulkDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <Card className="w-full max-w-md mx-4 shadow-2xl">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-[#F38F20]" />
+                  Bulk Adjust — {networkFilter}
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setBulkDialogOpen(false)} className="h-8 w-8 p-0">
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <CardDescription>
+                Adjust prices for all {filteredBundles.length} active {networkFilter} bundles
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold">Adjustment Type</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setBulkMode("fixed")}
+                    className={cn(
+                      "flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border-2 text-sm font-medium transition-all",
+                      bulkMode === "fixed"
+                        ? "border-[#F38F20] bg-[#F38F20]/10 text-[#F38F20]"
+                        : "border-border text-muted-foreground hover:border-muted-foreground"
+                    )}
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    Fixed Amount
+                  </button>
+                  <button
+                    onClick={() => setBulkMode("percent")}
+                    className={cn(
+                      "flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border-2 text-sm font-medium transition-all",
+                      bulkMode === "percent"
+                        ? "border-[#F38F20] bg-[#F38F20]/10 text-[#F38F20]"
+                        : "border-border text-muted-foreground hover:border-muted-foreground"
+                    )}
+                  >
+                    <Percent className="w-4 h-4" />
+                    Percentage
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold">
+                  {bulkMode === "fixed" ? "Amount (GHS)" : "Percentage (%)"}
+                </Label>
+                <Input
+                  type="number"
+                  step={bulkMode === "fixed" ? "0.01" : "0.1"}
+                  placeholder={bulkMode === "fixed" ? "e.g. 2.00" : "e.g. 10"}
+                  value={bulkAmount}
+                  onChange={(e) => setBulkAmount(e.target.value)}
+                  className="text-lg font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {bulkMode === "fixed" 
+                    ? "This amount will be added to the provider price for each bundle"
+                    : "This percentage will be applied as markup on top of the provider price"
+                  }
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold">Apply As</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setBulkApplyTo("add")}
+                    className={cn(
+                      "flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all",
+                      bulkApplyTo === "add"
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:border-muted-foreground"
+                    )}
+                  >
+                    Add to current
+                  </button>
+                  <button
+                    onClick={() => setBulkApplyTo("override")}
+                    className={cn(
+                      "flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all",
+                      bulkApplyTo === "override"
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:border-muted-foreground"
+                    )}
+                  >
+                    Replace existing
+                  </button>
+                </div>
+              </div>
+
+              {bulkAmount && !isNaN(parseFloat(bulkAmount)) && (
+                <div className="p-3 rounded-lg bg-muted/50 border">
+                  <p className="text-xs font-bold text-muted-foreground uppercase mb-2">Preview</p>
+                  <div className="space-y-1">
+                    {filteredBundles.slice(0, 3).map((b) => {
+                      const current = calculateEffectivePrice(b);
+                      let newPrice: number;
+                      if (bulkMode === "fixed") {
+                        newPrice = bulkApplyTo === "override" ? parseFloat(bulkAmount) : b.providerPrice + parseFloat(bulkAmount);
+                      } else {
+                        const pct = parseFloat(bulkAmount);
+                        newPrice = bulkApplyTo === "override" ? b.providerPrice * (1 + pct / 100) : current * (1 + pct / 100);
+                      }
+                      return (
+                        <div key={b.id} className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{b.name}</span>
+                          <span>
+                            <span className="line-through text-muted-foreground">GH₵{current.toFixed(2)}</span>
+                            {" → "}
+                            <span className="font-bold text-[#F38F20]">GH₵{newPrice.toFixed(2)}</span>
+                          </span>
+                        </div>
+                      );
+                    })}
+                    {filteredBundles.length > 3 && (
+                      <p className="text-[10px] text-muted-foreground">+ {filteredBundles.length - 3} more bundles</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={executeBulkClear}
+                  disabled={bulkSaving}
+                  className="gap-1"
+                >
+                  Reset to Provider Price
+                </Button>
+                <Button
+                  onClick={executeBulkUpdate}
+                  disabled={bulkSaving || !bulkAmount}
+                  className="flex-1 gap-2 bg-[#F38F20] hover:bg-[#F38F20]/90"
+                >
+                  {bulkSaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4" />
+                  )}
+                  Apply to {filteredBundles.length} Bundles
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

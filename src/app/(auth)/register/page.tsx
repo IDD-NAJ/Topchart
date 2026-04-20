@@ -150,7 +150,7 @@ export default function RegisterPage() {
 
     const phoneRegex = /^0[2-5][0-9]\d{7}$/
     if (!phoneRegex.test(formData.phone)) {
-      setError("Please enter a valid Ghanaian phone number")
+      setError("Please enter a valid ian phone number")
       return
     }
 

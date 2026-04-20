@@ -83,7 +83,7 @@ export default function CareersPage() {
               We&apos;re Hiring
             </div>
             <h1 className="font-heading text-4xl font-normal tracking-tight mb-4">Join the Team</h1>
-            <p className="text-xl text-muted-foreground font-body max-w-xl mx-auto">Help us build the financial infrastructure for the next generation of Ghanaian businesses.</p>
+            <p className="text-xl text-muted-foreground font-body max-w-xl mx-auto">Help us build the financial infrastructure for the next generation of ian businesses.</p>
           </div>
         </div>
 

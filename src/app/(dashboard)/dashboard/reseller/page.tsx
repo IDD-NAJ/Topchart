@@ -202,7 +202,7 @@ export default function ResellerDashboardPage() {
   };
 
   const shareViaWhatsApp = (url: string) => {
-    const text = `Join Topchart Ghana and get amazing deals on airtime and data! Use my referral link: ${url}`;
+    const text = `Join Topchart  and get amazing deals on airtime and data! Use my referral link: ${url}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -954,7 +954,7 @@ export default function ResellerDashboardPage() {
                   variant="outline"
                   className="border-slate-300 text-slate-700 hover:bg-slate-100"
                   onClick={() => {
-                    const text = `Join Topchart Ghana and get amazing deals! Use my referral code: ${profile.reseller_code}`;
+                    const text = `Join Topchart  and get amazing deals! Use my referral code: ${profile.reseller_code}`;
                     navigator.clipboard.writeText(text);
                     toast.success("Message copied to clipboard");
                   }}

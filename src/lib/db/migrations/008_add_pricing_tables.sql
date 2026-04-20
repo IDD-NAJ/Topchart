@@ -78,9 +78,9 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Insert seed data for eSIM data packages
 INSERT INTO esim_data_packages (id, country, country_code, flag, data_allowance, validity, price, network, speed, region, is_active, sort_order) VALUES
-('gh-1gb-7d', 'Ghana', 'GH', '🇬🇭', '1 GB', '7 Days', 15, 'MTN / Telecel', '4G/LTE', 'africa', true, 1),
-('gh-3gb-30d', 'Ghana', 'GH', '🇬🇭', '3 GB', '30 Days', 35, 'MTN / Telecel', '4G/LTE', 'africa', true, 2),
-('gh-5gb-30d', 'Ghana', 'GH', '🇬🇭', '5 GB', '30 Days', 55, 'MTN / Telecel', '4G/LTE', 'africa', true, 3),
+('gh-1gb-7d', '', 'GH', '🇬🇭', '1 GB', '7 Days', 15, 'MTN / Telecel', '4G/LTE', 'africa', true, 1),
+('gh-3gb-30d', '', 'GH', '🇬🇭', '3 GB', '30 Days', 35, 'MTN / Telecel', '4G/LTE', 'africa', true, 2),
+('gh-5gb-30d', '', 'GH', '🇬🇭', '5 GB', '30 Days', 55, 'MTN / Telecel', '4G/LTE', 'africa', true, 3),
 ('ng-2gb-7d', 'Nigeria', 'NG', '🇳🇬', '2 GB', '7 Days', 20, 'MTN / Airtel', '4G/LTE', 'africa', true, 4),
 ('ng-5gb-30d', 'Nigeria', 'NG', '🇳🇬', '5 GB', '30 Days', 50, 'MTN / Airtel', '4G/LTE', 'africa', true, 5),
 ('ke-3gb-30d', 'Kenya', 'KE', '🇰🇪', '3 GB', '30 Days', 30, 'Safaricom', '4G/LTE', 'africa', true, 6),
@@ -104,7 +104,7 @@ INSERT INTO gift_card_products (id, brand, category, region, denominations, imag
 ('steam', 'Steam', 'gaming', 'Global', '[20, 50, 100]', '🎮', 0, true, 6),
 ('playstation', 'PlayStation', 'gaming', 'US/EU', '[25, 50, 100]', '🎯', 0, true, 7),
 ('xbox', 'Xbox', 'gaming', 'US/EU', '[25, 50, 100]', '🟢', 0, true, 8),
-('uber', 'Uber', 'lifestyle', 'Ghana', '[20, 50, 100]', '🚗', 0, true, 9),
+('uber', 'Uber', 'lifestyle', '', '[20, 50, 100]', '🚗', 0, true, 9),
 ('airbnb', 'Airbnb', 'lifestyle', 'Global', '[50, 100, 200]', '🏠', 0, true, 10)
 ON CONFLICT (id) DO NOTHING;
 

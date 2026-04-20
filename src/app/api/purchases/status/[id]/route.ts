@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql, withTransaction } from "@/lib/db";
-import { getDataOrderStatus } from "@/lib/datamart";
+import { getOrderStatus } from "@/lib/datamart";
 
 export const runtime = "nodejs";
 
@@ -66,7 +66,7 @@ export async function GET(
           reference: tx.reference,
           status: tx.status,
           amount: Number(tx.amount),
-          providerOrderId: meta.provider_order_id,
+          providerOrderId: meta.provider_order_ref || meta.provider_order_id,
           providerMessage: meta.provider_message || meta.provider_error || meta.reconcile_error,
           fulfilledAt: meta.fulfilled_at || meta.failed_at,
         },
@@ -74,16 +74,16 @@ export async function GET(
       });
     }
 
-    const providerOrderId = meta.provider_order_id;
-    if (providerOrderId) {
-      let providerStatus = await getDataOrderStatus(String(providerOrderId));
+    const providerOrderRef = meta.provider_order_ref || meta.provider_order_id;
+    if (providerOrderRef) {
+      let providerStatus = await getOrderStatus(String(providerOrderRef));
       if (!providerStatus.success && (providerStatus.errorCode === "PROVIDER_TIMEOUT" || providerStatus.errorCode === "PROVIDER_5XX")) {
-        providerStatus = await getDataOrderStatus(String(providerOrderId));
+        providerStatus = await getOrderStatus(String(providerOrderRef));
       }
       if (providerStatus.success && providerStatus.data) {
-        const status = providerStatus.data.Status?.toLowerCase();
+        const status = providerStatus.data.orderStatus?.toLowerCase();
 
-        if (status === "successful") {
+        if (status === "completed") {
           await sql`
             UPDATE transactions
             SET status = 'success',

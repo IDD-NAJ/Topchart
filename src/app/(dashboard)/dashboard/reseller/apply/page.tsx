@@ -161,7 +161,7 @@ function ResellerApplyContent() {
     if (config.business_phone.enabled && formData.business_phone) {
       const phoneRegex = /^0[2-9]\d{8}$/;
       if (!phoneRegex.test(formData.business_phone.replace(/\s/g, ""))) {
-        newErrors.business_phone = "Please enter a valid Ghana phone number (e.g., 024XXXXXXX)";
+        newErrors.business_phone = "Please enter a valid  phone number (e.g., 024XXXXXXX)";
       }
     }
     if (config.business_email.enabled && formData.business_email) {

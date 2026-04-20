@@ -53,17 +53,7 @@ interface PhoneNumberPlan {
   popular?: boolean
 }
 
-// Fetched from API - no longer hardcoded
-
-const US_AREA_CODES = [
-  { code: "212", city: "New York" },
-  { code: "310", city: "Los Angeles" },
-  { code: "312", city: "Chicago" },
-  { code: "415", city: "San Francisco" },
-  { code: "305", city: "Miami" },
-  { code: "202", city: "Washington DC" },
-  { code: "713", city: "Houston" },
-  { code: "404", city: "Atlanta" },
+const DEFAULT_AREA_CODES = [
   { code: "random", city: "Any available" },
 ]
 
@@ -88,8 +78,8 @@ export default function ESIMPage() {
   // API-fetched data
   const [phonePlans, setPhonePlans] = useState<PhoneNumberPlan[]>([])
   const [dataPackages, setDataPackages] = useState<ESIMPackage[]>([])
-  const [loadingPlans, setLoadingPlans] = useState(false)
-  const [loadingPackages, setLoadingPackages] = useState(false)
+  const [loadingPlans, setLoadingPlans] = useState(true)
+  const [loadingPackages, setLoadingPackages] = useState(true)
 
   const [selectedRegion, setSelectedRegion] = useState("africa")
   const [selectedPackage, setSelectedPackage] = useState<ESIMPackage | null>(null)
@@ -107,10 +97,10 @@ export default function ESIMPage() {
     const fetchBalance = async () => {
       try {
         setLoadingBalance(true)
-        const res = await fetch("/api/wallet/balance", { credentials: "include" })
+        const res = await fetch("/api/wallet", { credentials: "include" })
         if (res.ok) {
-          const data = await res.json()
-          if (data.success) setWalletBalance(data.balance ?? 0)
+          const result = await res.json()
+          if (result.success) setWalletBalance(result.data.balance ?? 0)
         }
       } catch { /* ignore */ } finally {
         setLoadingBalance(false)
@@ -345,42 +335,49 @@ export default function ESIMPage() {
               </CardContent>
             </Card>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {phonePlans.map((plan) => (
-                <Card
-                  key={plan.id}
-                  className={cn(
-                    "cursor-pointer transition-all hover:shadow-md border-2 relative",
-                    selectedPhonePlan?.id === plan.id
-                      ? "border-[color:var(--marketing-accent)] shadow-md"
-                      : "border-transparent hover:border-[color:var(--marketing-accent)]/30"
-                  )}
-                  onClick={() => setSelectedPhonePlan(plan)}
-                >
-                  {plan.popular && (
-                    <Badge className="absolute -top-2 right-4 bg-[color:var(--marketing-accent)] text-white text-[10px]">Popular</Badge>
-                  )}
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">{plan.name}</CardTitle>
-                    <CardDescription>🇺🇸 US phone number</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="text-2xl font-bold text-[color:var(--marketing-accent)]">₵{plan.price}</div>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-muted-foreground" /> {plan.minutes} minutes</div>
-                      <div className="flex items-center gap-2"><MessageSquare className="h-3.5 w-3.5 text-muted-foreground" /> {plan.sms} SMS</div>
-                    </div>
-                    <div className="pt-2 border-t space-y-1">
-                      {plan.features.map((f) => (
-                        <div key={f} className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <CheckCircle2 className="h-3 w-3 text-green-500" /> {f}
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {loadingPlans ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-[color:var(--marketing-accent)]" />
+                <span className="ml-3 text-muted-foreground">Loading phone plans...</span>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {phonePlans.map((plan) => (
+                  <Card
+                    key={plan.id}
+                    className={cn(
+                      "cursor-pointer transition-all hover:shadow-md border-2 relative",
+                      selectedPhonePlan?.id === plan.id
+                        ? "border-[color:var(--marketing-accent)] shadow-md"
+                        : "border-transparent hover:border-[color:var(--marketing-accent)]/30"
+                    )}
+                    onClick={() => setSelectedPhonePlan(plan)}
+                  >
+                    {plan.popular && (
+                      <Badge className="absolute -top-2 right-4 bg-[color:var(--marketing-accent)] text-white text-[10px]">Popular</Badge>
+                    )}
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">{plan.name}</CardTitle>
+                      <CardDescription>🇺🇸 US phone number</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="text-2xl font-bold text-[color:var(--marketing-accent)]">₵{plan.price}</div>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-muted-foreground" /> {plan.minutes} minutes</div>
+                        <div className="flex items-center gap-2"><MessageSquare className="h-3.5 w-3.5 text-muted-foreground" /> {plan.sms} SMS</div>
+                      </div>
+                      <div className="pt-2 border-t space-y-1">
+                        {plan.features.map((f) => (
+                          <div key={f} className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <CheckCircle2 className="h-3 w-3 text-green-500" /> {f}
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
 
             {selectedPhonePlan && (
               <Card className="border-2 border-[color:var(--marketing-accent)]/20">
@@ -413,7 +410,7 @@ export default function ESIMPage() {
                       <Select value={areaCode} onValueChange={setAreaCode}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {US_AREA_CODES.map((ac) => (
+                          {DEFAULT_AREA_CODES.map((ac) => (
                             <SelectItem key={ac.code} value={ac.code}>
                               {ac.code === "random" ? "Any available" : `${ac.code} (${ac.city})`}
                             </SelectItem>
@@ -498,52 +495,61 @@ export default function ESIMPage() {
               })}
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredPackages.map((pkg) => (
-                <Card
-                  key={pkg.id}
-                  className={cn(
-                    "cursor-pointer transition-all hover:shadow-md border-2",
-                    selectedPackage?.id === pkg.id
-                      ? "border-[color:var(--marketing-accent)] shadow-md"
-                      : "border-transparent hover:border-[color:var(--marketing-accent)]/30"
-                  )}
-                  onClick={() => setSelectedPackage(pkg)}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl">{pkg.flag}</span>
-                        <CardTitle className="text-base">{pkg.country}</CardTitle>
-                      </div>
-                      <Badge variant="secondary" className="text-xs">{pkg.speed}</Badge>
-                    </div>
-                    <CardDescription className="text-xs">{pkg.network}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Wifi className="h-4 w-4 text-[color:var(--marketing-accent)]" />
-                        <span className="font-semibold">{pkg.dataAllowance}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Smartphone className="h-4 w-4" />
-                        <span>Valid for {pkg.validity}</span>
-                      </div>
-                      <div className="pt-2 border-t">
-                        <span className="text-2xl font-bold text-[color:var(--marketing-accent)]">₵{pkg.price}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {filteredPackages.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                <Globe className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                <p>No eSIM packages available for this region yet.</p>
+            {loadingPackages ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-[color:var(--marketing-accent)]" />
+                <span className="ml-3 text-muted-foreground">Loading data packages...</span>
               </div>
+            ) : (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {filteredPackages.map((pkg) => (
+                    <Card
+                      key={pkg.id}
+                      className={cn(
+                        "cursor-pointer transition-all hover:shadow-md border-2",
+                        selectedPackage?.id === pkg.id
+                          ? "border-[color:var(--marketing-accent)] shadow-md"
+                          : "border-transparent hover:border-[color:var(--marketing-accent)]/30"
+                      )}
+                      onClick={() => setSelectedPackage(pkg)}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">{pkg.flag}</span>
+                            <CardTitle className="text-base">{pkg.country}</CardTitle>
+                          </div>
+                          <Badge variant="secondary" className="text-xs">{pkg.speed}</Badge>
+                        </div>
+                        <CardDescription className="text-xs">{pkg.network}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Wifi className="h-4 w-4 text-[color:var(--marketing-accent)]" />
+                            <span className="font-semibold">{pkg.dataAllowance}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Smartphone className="h-4 w-4" />
+                            <span>Valid for {pkg.validity}</span>
+                          </div>
+                          <div className="pt-2 border-t">
+                            <span className="text-2xl font-bold text-[color:var(--marketing-accent)]">₵{pkg.price}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {filteredPackages.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Globe className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                    <p>No eSIM packages available for this region yet.</p>
+                  </div>
+                )}
+              </>
             )}
 
             {selectedPackage && (

@@ -2,10 +2,10 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Careers',
-  description: 'Join the Topchart team in Accra, Ghana. We are building the financial infrastructure for the next generation of Ghanaian businesses. View open positions.',
+  description: 'Join the Topchart team in Accra, . We are building the financial infrastructure for the next generation of ian businesses. View open positions.',
   openGraph: {
-    title: 'Careers at Topchart Ghana',
-    description: 'Help us build the financial infrastructure for the next generation of Ghanaian businesses. View open engineering, design and operations roles.',
+    title: 'Careers at Topchart ',
+    description: 'Help us build the financial infrastructure for the next generation of ian businesses. View open engineering, design and operations roles.',
     url: 'https://topchart.gh/careers',
   },
   alternates: {

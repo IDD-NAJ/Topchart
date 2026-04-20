@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         `
 
         const txId = `TX_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`.toUpperCase()
-        const status = planType === "phone-number" ? "pending" : "completed"
+        const status = "pending"
 
         await sql`
           INSERT INTO transactions (id, user_id, type, amount, status, description, payment_method, currency, metadata, created_at, updated_at)
@@ -107,9 +107,7 @@ export async function POST(request: NextRequest) {
           data: {
             orderId: txId,
             status,
-            message: planType === "phone-number"
-              ? "Order received. Admin will assign your number shortly."
-              : "eSIM order placed. QR code will be emailed shortly.",
+            message: "Order received. Admin will process your request and deliver your eSIM shortly."
           },
         })
       } catch (txError) {

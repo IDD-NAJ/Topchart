@@ -329,7 +329,7 @@ export default function DashboardPage() {
 
   const referralCode = referralStats?.referralCode || (user ? user.id.slice(0, 8).toUpperCase() : "XXXXXX")
   const referralLink = typeof window !== "undefined" ? `${window.location.origin}/r/${referralCode}` : `/r/${referralCode}`
-  const referralText = `Join me on Topchart Ghana! Sign up using my link: ${referralLink}`
+  const referralText = `Join me on Topchart ! Sign up using my link: ${referralLink}`
 
   return (
     <Suspense fallback={<Loading />}>
@@ -840,7 +840,7 @@ export default function DashboardPage() {
                      className="h-7 text-[10px] uppercase font-bold"
                      onClick={async () => {
                        const shareData = {
-                         title: "Join Topchart Ghana",
+                         title: "Join Topchart ",
                          text: "Scale your earnings by expanding our infrastructure network. Use my referral link to get started!",
                          url: referralLink
                        }

@@ -78,6 +78,21 @@ async function GETHandler(request: NextRequest) {
       size: b.name,
       price: b.price_override || b.price
     }));
+
+    // Get unique networks from data bundles
+    const uniqueNetworks = [...new Set(activeDataBundles.map((b: any) => b.network.toLowerCase()))];
+    const networkColors: Record<string, string> = {
+      mtn: '#0052CC',
+      vodafone: '#E60000',
+      airteltigo: '#0099CC',
+      telecel: '#0099CC',
+      glo: '#009900'
+    };
+    const formattedNetworks = uniqueNetworks.map(id => ({
+      id,
+      name: id.charAt(0).toUpperCase() + id.slice(1),
+      color: networkColors[id] || '#666666'
+    }));
     
     return NextResponse.json({
       success: true,

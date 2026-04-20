@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sql, sqlUnsafe } from "@/lib/db";
+import { sql } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
+
+const DB_NETWORK_MAP: Record<string, string> = {
+  MTN: "MTN",
+  Telecel: "VODAFONE",
+  Vodafone: "VODAFONE",
+  AirtelTigo: "AIRTELTIGO",
+};
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,113 +23,68 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const network = searchParams.get("network");
-    const planType = searchParams.get("planType");
 
-    let query;
-    if (network) {
-      query = sql`
-        SELECT 
-          id,
-          network_id as "networkId",
-          network,
-          name,
-          validity,
-          validity_hours as "validityHours",
-          validity_days as "validityDays",
-          price as "providerPrice",
-          original_price as "originalPrice",
-          price_override as "priceOverride",
-          markup_percent as "markupPercent",
-          is_popular as "isPopular",
-          is_active as "isActive",
-          is_featured as "isFeatured",
-          datamart_plan_id as "datamartPlanId",
-          datamart_plan_type as "datamartPlanType",
-          notes,
-          synced_at as "syncedAt",
-          created_at as "createdAt",
-          updated_at as "updatedAt"
-        FROM data_bundles
-        WHERE network = ${network}
-        ORDER BY price ASC
-      `;
-    } else if (planType) {
-      query = sql`
-        SELECT 
-          id,
-          network_id as "networkId",
-          network,
-          name,
-          validity,
-          validity_hours as "validityHours",
-          validity_days as "validityDays",
-          price as "providerPrice",
-          original_price as "originalPrice",
-          price_override as "priceOverride",
-          markup_percent as "markupPercent",
-          is_popular as "isPopular",
-          is_active as "isActive",
-          is_featured as "isFeatured",
-          datamart_plan_id as "datamartPlanId",
-          datamart_plan_type as "datamartPlanType",
-          notes,
-          synced_at as "syncedAt",
-          created_at as "createdAt",
-          updated_at as "updatedAt"
-        FROM data_bundles
-        WHERE datamart_plan_type = ${planType}
-        ORDER BY network, price ASC
-      `;
-    } else {
-      query = sql`
-        SELECT 
-          id,
-          network_id as "networkId",
-          network,
-          name,
-          validity,
-          validity_hours as "validityHours",
-          validity_days as "validityDays",
-          price as "providerPrice",
-          original_price as "originalPrice",
-          price_override as "priceOverride",
-          markup_percent as "markupPercent",
-          is_popular as "isPopular",
-          is_active as "isActive",
-          is_featured as "isFeatured",
-          datamart_plan_id as "datamartPlanId",
-          datamart_plan_type as "datamartPlanType",
-          notes,
-          synced_at as "syncedAt",
-          created_at as "createdAt",
-          updated_at as "updatedAt"
-        FROM data_bundles
-        ORDER BY network, price ASC
-      `;
-    }
+    const dbCode = network ? DB_NETWORK_MAP[network] : undefined;
 
-    const rows = await query;
+    const rows = dbCode
+      ? sql`
+          SELECT 
+            b.id,
+            b."networkId",
+            n.code as "networkCode",
+            n.name as "networkName",
+            b.name,
+            b."sizeMb",
+            b."validityHours",
+            b.price as "providerPrice",
+            b."priceOverride",
+            b."markupPercent",
+            b."isPopular",
+            b."isActive",
+            b."isFeatured",
+            b."updatedAt"
+          FROM data_bundles b
+          JOIN networks n ON n.id = b."networkId"
+          WHERE n.code = ${dbCode}
+          ORDER BY b.price ASC
+        `
+      : sql`
+          SELECT 
+            b.id,
+            b."networkId",
+            n.code as "networkCode",
+            n.name as "networkName",
+            b.name,
+            b."sizeMb",
+            b."validityHours",
+            b.price as "providerPrice",
+            b."priceOverride",
+            b."markupPercent",
+            b."isPopular",
+            b."isActive",
+            b."isFeatured",
+            b."updatedAt"
+          FROM data_bundles b
+          JOIN networks n ON n.id = b."networkId"
+          ORDER BY n.code, b.price ASC
+        `;
 
-    const bundles = rows.map((row: Record<string, unknown>) => ({
+    const result = await rows;
+
+    const bundles = result.map((row: Record<string, unknown>) => ({
       id: String(row.id),
       networkId: String(row.networkId),
-      network: String(row.network),
+      network: String(row.networkName),
+      networkCode: String(row.networkCode),
       name: String(row.name),
-      validity: row.validity ? String(row.validity) : null,
+      sizeMb: row.sizeMb ? Number(row.sizeMb) : null,
       validityHours: row.validityHours ? Number(row.validityHours) : null,
-      validityDays: row.validityDays ? Number(row.validityDays) : null,
       providerPrice: Number(row.providerPrice),
-      originalPrice: row.originalPrice ? Number(row.originalPrice) : null,
       priceOverride: row.priceOverride ? Number(row.priceOverride) : null,
       markupPercent: row.markupPercent ? Number(row.markupPercent) : null,
       isPopular: Boolean(row.isPopular),
       isActive: Boolean(row.isActive),
       isFeatured: Boolean(row.isFeatured),
-      datamartPlanId: row.datamartPlanId ? String(row.datamartPlanId) : null,
-      datamartPlanType: row.datamartPlanType ? String(row.datamartPlanType) : null,
-      notes: row.notes ? String(row.notes) : null,
-      syncedAt: row.syncedAt ? String(row.syncedAt) : null,
-      createdAt: row.createdAt ? String(row.createdAt) : null,
       updatedAt: row.updatedAt ? String(row.updatedAt) : null,
     }));
 
@@ -147,58 +109,90 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, updates, bulkNetworkUpdates } = body;
+    const { id, updates, bulkUpdate } = body;
 
-    if (bulkNetworkUpdates) {
-      const { network, markupPercent, priceOverride, isActive, isFeatured } = bulkNetworkUpdates;
-      
-      if (!network) {
+    if (bulkUpdate) {
+      const { networkCode, mode, amount, applyTo } = bulkUpdate;
+
+      if (!networkCode) {
         return NextResponse.json(
-          { success: false, error: "Network is required for bulk updates" },
+          { success: false, error: "Network code is required for bulk updates" },
           { status: 400 }
         );
       }
 
-      const updateFields: string[] = [];
-      const values: (string | number | boolean | null)[] = [];
-      let paramIndex = 1;
+      if (mode === "fixed" && amount !== undefined) {
+        const fixedAmount = Number(amount);
+        if (isNaN(fixedAmount)) {
+          return NextResponse.json({ success: false, error: "Invalid amount" }, { status: 400 });
+        }
 
-      if (markupPercent !== undefined) {
-        updateFields.push(`markup_percent = $${paramIndex++}`);
-        values.push(markupPercent);
-      }
-      if (priceOverride !== undefined) {
-        updateFields.push(`price_override = $${paramIndex++}`);
-        values.push(priceOverride);
-      }
-      if (isActive !== undefined) {
-        updateFields.push(`is_active = $${paramIndex++}`);
-        values.push(isActive);
-      }
-      if (isFeatured !== undefined) {
-        updateFields.push(`is_featured = $${paramIndex++}`);
-        values.push(isFeatured);
+        if (applyTo === "override") {
+          await sql`
+            UPDATE data_bundles
+            SET "priceOverride" = ${fixedAmount}, "updatedAt" = NOW()
+            WHERE "networkId" IN (SELECT id FROM networks WHERE code = ${networkCode})
+              AND "isActive" = true
+          `;
+        } else {
+          await sql`
+            UPDATE data_bundles
+            SET "priceOverride" = price + ${fixedAmount}, "markupPercent" = NULL, "updatedAt" = NOW()
+            WHERE "networkId" IN (SELECT id FROM networks WHERE code = ${networkCode})
+              AND "isActive" = true
+          `;
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: `Added GH₵${fixedAmount.toFixed(2)} to all ${networkCode} bundles`,
+        });
       }
 
-      if (updateFields.length === 0) {
-        return NextResponse.json(
-          { success: false, error: "No fields to update" },
-          { status: 400 }
-        );
+      if (mode === "percent" && amount !== undefined) {
+        const pct = Number(amount);
+        if (isNaN(pct)) {
+          return NextResponse.json({ success: false, error: "Invalid percentage" }, { status: 400 });
+        }
+
+        if (applyTo === "override") {
+          await sql`
+            UPDATE data_bundles
+            SET "markupPercent" = ${pct}, "priceOverride" = NULL, "updatedAt" = NOW()
+            WHERE "networkId" IN (SELECT id FROM networks WHERE code = ${networkCode})
+              AND "isActive" = true
+          `;
+        } else {
+          await sql`
+            UPDATE data_bundles
+            SET "markupPercent" = COALESCE("markupPercent", 0) + ${pct}, "updatedAt" = NOW()
+            WHERE "networkId" IN (SELECT id FROM networks WHERE code = ${networkCode})
+              AND "isActive" = true
+          `;
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: `Applied ${pct}% markup to all ${networkCode} bundles`,
+        });
       }
 
-      values.push(network);
+      if (mode === "clear") {
+        await sql`
+          UPDATE data_bundles
+          SET "priceOverride" = NULL, "markupPercent" = NULL, "updatedAt" = NOW()
+          WHERE "networkId" IN (SELECT id FROM networks WHERE code = ${networkCode})
+        `;
+        return NextResponse.json({
+          success: true,
+          message: `Cleared all pricing overrides for ${networkCode}`,
+        });
+      }
 
-      await sqlUnsafe(`
-        UPDATE data_bundles
-        SET ${updateFields.join(", ")}, updated_at = NOW()
-        WHERE network = $${paramIndex}
-      `, values);
-
-      return NextResponse.json({
-        success: true,
-        message: `Updated all bundles for network: ${network}`,
-      });
+      return NextResponse.json(
+        { success: false, error: "Invalid bulk update mode" },
+        { status: 400 }
+      );
     }
 
     if (!id || !updates) {
@@ -208,25 +202,17 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const { 
-      priceOverride, 
-      markupPercent, 
-      isActive, 
-      isFeatured, 
-      isPopular,
-      notes 
-    } = updates;
+    const { priceOverride, markupPercent, isActive, isFeatured, isPopular } = updates;
 
     await sql`
       UPDATE data_bundles
       SET 
-        price_override = ${priceOverride !== undefined ? priceOverride : null},
-        markup_percent = ${markupPercent !== undefined ? markupPercent : null},
-        is_active = ${isActive !== undefined ? isActive : undefined},
-        is_featured = ${isFeatured !== undefined ? isFeatured : undefined},
-        is_popular = ${isPopular !== undefined ? isPopular : undefined},
-        notes = ${notes !== undefined ? notes : undefined},
-        updated_at = NOW()
+        "priceOverride" = ${priceOverride !== undefined ? priceOverride : null},
+        "markupPercent" = ${markupPercent !== undefined ? markupPercent : null},
+        "isActive" = ${isActive !== undefined ? isActive : undefined},
+        "isFeatured" = ${isFeatured !== undefined ? isFeatured : undefined},
+        "isPopular" = ${isPopular !== undefined ? isPopular : undefined},
+        "updatedAt" = NOW()
       WHERE id = ${id}
     `;
 

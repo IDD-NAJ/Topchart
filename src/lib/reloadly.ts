@@ -306,7 +306,7 @@ interface ApiResponse<T> {
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const GHANA_OPERATOR_IDS: Record<string, number> = {
+const _OPERATOR_IDS: Record<string, number> = {
   MTN: 179,
   VODAFONE: 180,
   TELECEL: 180,
@@ -915,14 +915,14 @@ export function getOperatorId(networkName: string): number | null {
   const normalized = networkName.toUpperCase().replace(/[^A-Z]/g, "");
 
   // Direct match
-  if (GHANA_OPERATOR_IDS[normalized]) {
-    return GHANA_OPERATOR_IDS[normalized];
+  if (_OPERATOR_IDS[normalized]) {
+    return _OPERATOR_IDS[normalized];
   }
 
   // Partial matches
-  if (normalized.includes("MTN")) return GHANA_OPERATOR_IDS.MTN;
-  if (normalized.includes("VODAFONE") || normalized.includes("TELECEL")) return GHANA_OPERATOR_IDS.VODAFONE;
-  if (normalized.includes("AIRTEL") || normalized.includes("TIGO")) return GHANA_OPERATOR_IDS.AIRTELTIGO;
+  if (normalized.includes("MTN")) return _OPERATOR_IDS.MTN;
+  if (normalized.includes("VODAFONE") || normalized.includes("TELECEL")) return _OPERATOR_IDS.VODAFONE;
+  if (normalized.includes("AIRTEL") || normalized.includes("TIGO")) return _OPERATOR_IDS.AIRTELTIGO;
 
   return null;
 }
@@ -1025,23 +1025,23 @@ export async function getTransactionStatus(
   return { success: true, data: mapped };
 }
 
-// Auto-detect operator by phone number (for Ghana)
+// Auto-detect operator by phone number (for )
 export function detectOperatorByPhone(phone: string): number | null {
   const cleanPhone = phone.replace(/\D/g, "");
 
   // MTN: starts with 024, 025, 054, 055, 059
   if (/^(024|025|054|055|059)/.test(cleanPhone)) {
-    return GHANA_OPERATOR_IDS.MTN;
+    return _OPERATOR_IDS.MTN;
   }
 
   // Vodafone/Telecel: starts with 020, 050
   if (/^(020|050)/.test(cleanPhone)) {
-    return GHANA_OPERATOR_IDS.VODAFONE;
+    return _OPERATOR_IDS.VODAFONE;
   }
 
   // AirtelTigo: starts with 026, 027, 056, 057
   if (/^(026|027|056|057)/.test(cleanPhone)) {
-    return GHANA_OPERATOR_IDS.AIRTELTIGO;
+    return _OPERATOR_IDS.AIRTELTIGO;
   }
 
   return null;

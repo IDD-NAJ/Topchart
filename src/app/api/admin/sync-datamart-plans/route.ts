@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
-import { getNetworks, getDataPlans } from "@/lib/datamart";
+import { getDataPackages, getNetworkDisplayName, type DatamartNetworkCode } from "@/lib/datamart";
 
 export const runtime = "nodejs";
+
+const NETWORK_CODES: DatamartNetworkCode[] = ["YELLO", "TELECEL", "AT_PREMIUM"];
+
+const DATAMART_TO_DB_NETWORK: Record<string, string> = {
+  YELLO: "MTN",
+  TELECEL: "VODAFONE",
+  AT_PREMIUM: "AIRTELTIGO",
+  at: "AIRTELTIGO",
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,125 +31,84 @@ export async function POST(request: NextRequest) {
     let errorCount = 0;
     const errors: string[] = [];
 
-    const networksResult = await getNetworks();
-    if (!networksResult.success || !networksResult.data) {
-      return NextResponse.json(
-        { success: false, error: networksResult.error || "Failed to fetch networks from DataMart" },
-        { status: 502 }
-      );
+    const networkRows = await sql`SELECT id, code FROM networks`;
+    const networkIdMap: Record<string, string> = {};
+    for (const row of networkRows) {
+      networkIdMap[row.code] = row.id;
     }
 
-    const networks = networksResult.data;
-    
-    for (const network of networks) {
+    const categoryRows = await sql`SELECT id, "networkId", name FROM data_bundle_categories`;
+    const categoryMap: Record<string, string> = {};
+    for (const row of categoryRows) {
+      categoryMap[row.networkId] = row.id;
+    }
+
+    for (const code of NETWORK_CODES) {
       try {
-        const plansResult = await getDataPlans(network.id);
+        const plansResult = await getDataPackages(code);
         if (!plansResult.success || !plansResult.data) {
           errorCount++;
-          errors.push(`Failed to fetch plans for network ${network.name}: ${plansResult.error}`);
+          errors.push(`Failed to fetch packages for ${code}: ${plansResult.error}`);
           continue;
         }
 
-        const plans = plansResult.data;
+        const packages_ = plansResult.data;
+        const displayName = getNetworkDisplayName(code);
+        const dbNetworkCode = DATAMART_TO_DB_NETWORK[code];
+        const dbNetworkId = networkIdMap[dbNetworkCode];
 
-        for (const plan of plans) {
+        if (!dbNetworkId) {
+          errorCount++;
+          errors.push(`No DB network for ${code} (mapped to ${dbNetworkCode})`);
+          continue;
+        }
+
+        let categoryId = categoryMap[dbNetworkId];
+        if (!categoryId) {
+          const catResult = await sql`
+            INSERT INTO data_bundle_categories (id, "networkId", name, "updatedAt")
+            VALUES (${crypto.randomUUID()}, ${dbNetworkId}, ${'Data Bundles'}, NOW())
+            RETURNING id
+          `;
+          categoryId = catResult[0]?.id;
+          if (categoryId) categoryMap[dbNetworkId] = categoryId;
+        }
+
+        for (const pkg of packages_) {
           try {
-            const planName = plan.data_plan || "Unknown Plan";
-            const planAmount = parseFloat(plan.plan_amount || "0");
-            const monthValidate = plan.month_validate || "";
-            
-            let validityHours: number | null = null;
-            let validityDays: number | null = null;
-            let validity = monthValidate;
+            const mb = parseInt(pkg.mb, 10);
+            const providerPrice = parseFloat(pkg.price);
+            const planName = `${pkg.capacity}GB ${displayName}`;
+            const bundleId = `dm_${code}_${pkg.capacity}gb`;
+            const validityHours = 90 * 24;
 
-            if (monthValidate) {
-              const match = monthValidate.match(/(\d+)\s*(hour|hr|day|week|month)/i);
-              if (match) {
-                const value = parseInt(match[1]);
-                const unit = match[2].toLowerCase();
-                if (unit.includes("hour")) validityHours = value;
-                else if (unit.includes("day")) validityDays = value;
-                else if (unit.includes("week")) validityDays = value * 7;
-                else if (unit.includes("month")) validityDays = value * 30;
-              }
+            if (force) {
+              await sql`DELETE FROM data_bundles WHERE id = ${bundleId}`;
             }
 
-            const existingBundle = await sql`
-              SELECT id FROM data_bundles 
-              WHERE datamart_plan_id = ${plan.id}
-              LIMIT 1
+            await sql`
+              INSERT INTO data_bundles (id, "networkId", "categoryId", name, "sizeMb", "validityHours", price, "isPopular", "isActive", "updatedAt")
+              VALUES (${bundleId}, ${dbNetworkId}, ${categoryId}, ${planName}, ${mb}, ${validityHours}, ${providerPrice}, false, ${pkg.inStock}, NOW())
+              ON CONFLICT (id) DO UPDATE SET
+                name = EXCLUDED.name,
+                "sizeMb" = EXCLUDED."sizeMb",
+                "validityHours" = EXCLUDED."validityHours",
+                price = EXCLUDED.price,
+                "isActive" = EXCLUDED."isActive",
+                "updatedAt" = NOW()
             `;
 
-            if (existingBundle.length > 0 && !force) {
-              await sql`
-                UPDATE data_bundles
-                SET 
-                  name = ${planName},
-                  validity = ${validity},
-                  validity_hours = ${validityHours},
-                  validity_days = ${validityDays},
-                  price = ${planAmount},
-                  original_price = ${planAmount},
-                  datamart_plan_type = ${plan.plan_type || null},
-                  metadata = ${JSON.stringify(plan)},
-                  synced_at = NOW(),
-                  updated_at = NOW()
-                WHERE id = ${existingBundle[0].id}
-              `;
-            } else {
-              if (existingBundle.length > 0 && force) {
-                await sql`
-                  DELETE FROM data_bundles WHERE id = ${existingBundle[0].id}
-                `;
-              }
-
-              await sql`
-                INSERT INTO data_bundles (
-                  network_id,
-                  network,
-                  name,
-                  validity,
-                  validity_hours,
-                  validity_days,
-                  price,
-                  original_price,
-                  datamart_plan_id,
-                  datamart_plan_type,
-                  metadata,
-                  synced_at
-                ) VALUES (
-                  ${network.id},
-                  ${network.name},
-                  ${planName},
-                  ${validity},
-                  ${validityHours},
-                  ${validityDays},
-                  ${planAmount},
-                  ${planAmount},
-                  ${plan.id},
-                  ${plan.plan_type || null},
-                  ${JSON.stringify(plan)},
-                  NOW()
-                )
-              `;
-            }
             syncedCount++;
           } catch (planError) {
             errorCount++;
-            errors.push(`Failed to sync plan ${plan.id}: ${planError instanceof Error ? planError.message : String(planError)}`);
+            errors.push(`Failed to sync ${code}_${pkg.capacity}GB: ${planError instanceof Error ? planError.message : String(planError)}`);
           }
         }
       } catch (networkError) {
         errorCount++;
-        errors.push(`Failed to process network ${network.name}: ${networkError instanceof Error ? networkError.message : String(networkError)}`);
+        errors.push(`Failed to process ${code}: ${networkError instanceof Error ? networkError.message : String(networkError)}`);
       }
     }
-
-    await sql`
-      UPDATE data_bundles
-      SET is_active = FALSE
-      WHERE synced_at < NOW() - INTERVAL '7 days'
-    `;
 
     return NextResponse.json({
       success: true,

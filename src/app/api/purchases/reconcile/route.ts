@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { sql, withTransaction } from "@/lib/db";
-import { getDataOrderStatus } from "@/lib/datamart";
+import { getOrderStatus } from "@/lib/datamart";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,20 +27,20 @@ export async function POST(request: NextRequest) {
     let failedCount = 0;
     let unresolvedCount = 0;
     for (const row of pendingRows as Array<{ reference: string; amount: number; user_id: string; metadata: Record<string, unknown> }>) {
-      const providerOrderId = row.metadata?.provider_order_id;
-      if (!providerOrderId) {
+      const providerOrderRef = row.metadata?.provider_order_ref || row.metadata?.provider_order_id;
+      if (!providerOrderRef) {
         unresolvedCount += 1;
         continue;
       }
 
-      const statusResult = await getDataOrderStatus(String(providerOrderId));
+      const statusResult = await getOrderStatus(String(providerOrderRef));
       if (!statusResult.success || !statusResult.data) {
         unresolvedCount += 1;
         continue;
       }
 
-      const providerStatus = String(statusResult.data.Status || "").toLowerCase();
-      if (providerStatus === "successful") {
+      const providerStatus = String(statusResult.data.orderStatus || "").toLowerCase();
+      if (providerStatus === "completed") {
         await sql`
           UPDATE transactions
           SET status = 'success',

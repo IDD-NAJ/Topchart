@@ -17,7 +17,7 @@ export async function updateProfile(data: {
   if (phone) {
     const phoneRegex = /^0[2-5][0-9]\d{7}$/;
     if (!phoneRegex.test(phone)) {
-      throw new Error("Please enter a valid Ghanaian phone number");
+      throw new Error("Please enter a valid ian phone number");
     }
   }
 

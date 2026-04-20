@@ -43,7 +43,7 @@ INSERT INTO faqs (question, answer, category, sort_order, is_active) VALUES
 
 ('Can I get a refund?', 'If a transaction fails, your money is automatically refunded to your wallet within minutes.', 'Refunds', 4, TRUE),
 
-('Which networks are supported?', 'We support all major Ghanaian networks: MTN, Telecel (formerly Vodafone), and AirtelTigo.', 'General', 5, TRUE),
+('Which networks are supported?', 'We support all major ian networks: MTN, Telecel (formerly Vodafone), and AirtelTigo.', 'General', 5, TRUE),
 
 ('Is there a minimum recharge amount?', 'The minimum recharge amount is GHS 1 for airtime and data bundles.', 'General', 6, TRUE),
 

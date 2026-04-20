@@ -111,7 +111,7 @@ export async function register(formData: {
     // Phone validation
     const phoneRegex = /^0[2-5][0-9]\d{7}$/;
     if (!phoneRegex.test(phone)) {
-      return { success: false, error: "Please enter a valid Ghanaian phone number" };
+      return { success: false, error: "Please enter a valid ian phone number" };
     }
 
     // Password validation

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { GHANA_NETWORKS, Network, detectNetwork } from "@/lib/purchase-data";
+import { _NETWORKS, Network, detectNetwork } from "@/lib/purchase-data";
 import { Signal, Check } from "lucide-react";
 
 interface NetworkSelectorProps {
@@ -47,7 +47,7 @@ export function NetworkSelector({
       </label>
       
       <div className="grid grid-cols-3 gap-3">
-        {GHANA_NETWORKS.map((network) => {
+        {_NETWORKS.map((network) => {
           const isSelected = selectedNetworkId === network.id;
           const isDetected = detectedNetwork?.id === network.id;
           
@@ -113,7 +113,7 @@ export function NetworkSelector({
       {/* Phone prefix hints */}
       {selectedNetworkId && (
         <p className="text-xs text-muted-foreground text-center">
-          Phone prefixes: {GHANA_NETWORKS.find(n => n.id === selectedNetworkId)?.phonePrefixes.join(", ")}
+          Phone prefixes: {_NETWORKS.find(n => n.id === selectedNetworkId)?.phonePrefixes.join(", ")}
         </p>
       )}
     </div>

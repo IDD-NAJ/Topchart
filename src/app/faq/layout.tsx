@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'FAQ — Frequently Asked Questions',
-  description: 'Everything you need to know about buying airtime and data on Topchart Ghana. Delivery speed, supported payment methods, refunds, supported networks, and more.',
+  description: 'Everything you need to know about buying airtime and data on Topchart . Delivery speed, supported payment methods, refunds, supported networks, and more.',
   openGraph: {
-    title: 'FAQ | Topchart Ghana',
+    title: 'FAQ | Topchart ',
     description: 'Answers to the most common questions about Topchart — delivery time, payments, security, supported networks, and refunds.',
     url: 'https://topchart.gh/faq',
   },
@@ -46,7 +46,7 @@ const faqJsonLd = {
       name: 'Which networks does Topchart support?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'We support all major Ghanaian networks: MTN, Telecel (formerly Vodafone), and AirtelTigo.',
+        text: 'We support all major ian networks: MTN, Telecel (formerly Vodafone), and AirtelTigo.',
       },
     },
     {

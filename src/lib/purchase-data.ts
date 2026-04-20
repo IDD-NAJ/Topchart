@@ -37,8 +37,8 @@ export interface RecentRecipient {
   usageCount: number;
 }
 
-// Ghana networks configuration
-export const GHANA_NETWORKS: Network[] = [
+//  networks configuration
+export const _NETWORKS: Network[] = [
   {
     id: "mtn",
     name: "MTN",
@@ -70,7 +70,7 @@ export function detectNetwork(phoneNumber: string): Network | null {
   const cleanNumber = phoneNumber.replace(/\D/g, "");
   const prefix = cleanNumber.slice(0, 3);
   
-  return GHANA_NETWORKS.find((network) =>
+  return _NETWORKS.find((network) =>
     network.phonePrefixes.includes(prefix)
   ) || null;
 }

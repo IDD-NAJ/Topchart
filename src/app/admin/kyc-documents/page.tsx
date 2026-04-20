@@ -12,7 +12,7 @@ export default function KycDocumentsPage() {
       columns={[
         { key: "id", label: "ID" },
         { key: "kycProfileId", label: "KYC Profile ID" },
-        { key: "type", label: "Type", type: "badge", badgeVariants: { GHANA_CARD: "default", VOTER_ID: "secondary", PASSPORT: "outline", SELFIE: "outline" } },
+        { key: "type", label: "Type", type: "badge", badgeVariants: { _CARD: "default", VOTER_ID: "secondary", PASSPORT: "outline", SELFIE: "outline" } },
         { key: "status", label: "Status", type: "badge", badgeVariants: { APPROVED: "default", PENDING: "secondary", REJECTED: "destructive" } },
         { key: "storageKey", label: "Storage Key" },
         { key: "createdAt", label: "Created", type: "date" },

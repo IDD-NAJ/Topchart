@@ -113,7 +113,7 @@ export default function PressPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
               className="text-xl text-muted-foreground font-body max-w-xl mx-auto"
-            >Resources, assets, and information for media and press inquiries about Topchart Ghana.</motion.p>
+            >Resources, assets, and information for media and press inquiries about Topchart .</motion.p>
           </div>
         </motion.div>
 

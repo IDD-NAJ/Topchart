@@ -45,7 +45,7 @@ export default function TermsPage() {
               By accessing and using Topchart, you accept and agree to be bound by the terms and provision of this agreement.
             </p>
             <p>
-              Topchart is a platform that allows users to purchase airtime, data bundles, and other telecommunication services in Ghana.
+              Topchart is a platform that allows users to purchase airtime, data bundles, and other telecommunication services in .
             </p>
           </CardContent>
         </Card>
@@ -143,7 +143,7 @@ export default function TermsPage() {
             <div className="mt-3 space-y-1">
               <p className="text-sm">Email: support@Topchart.com</p>
               <p className="text-sm">Phone: +233 24 123 4567</p>
-              <p className="text-sm">Address: Accra, Ghana</p>
+              <p className="text-sm">Address: Accra, </p>
             </div>
           </CardContent>
         </Card>

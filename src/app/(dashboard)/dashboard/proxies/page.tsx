@@ -36,11 +36,18 @@ type View = "create" | "connections"
 type Step = "form" | "confirm" | "processing" | "success" | "failed"
 type PaymentMethod = "wallet" | "paystack"
 
-const PROXY_TYPES = [
-  { id: 1, label: "Residential", icon: Globe2, description: "Real residential IPs — hardest to detect" },
-  { id: 2, label: "Mobile", icon: Smartphone, description: "Mobile carrier IPs — ideal for social/mobile" },
-  { id: 3, label: "Datacenter", icon: Server, description: "Fast datacenter IPs — best for high volume" },
-]
+interface ProxyPricing {
+  proxyType: number
+  label: string
+  description: string
+  pricePerPort: number
+}
+
+const PROXY_ICON_MAP: Record<number, React.ElementType> = {
+  1: Globe2,
+  2: Smartphone,
+  3: Server,
+}
 
 const SESSION_TYPES = [
   { id: 1, label: "Rotation", description: "IP rotates on each request" },
@@ -108,19 +115,41 @@ export default function ProxiesPage() {
   const [credentials, setCredentials] = useState<{ username: string; password: string }[] | null>(null)
   const [loadingCredentials, setLoadingCredentials] = useState(false)
 
-  const selectedProxyType = PROXY_TYPES.find((t) => t.id === proxyType)!
+  const [proxyPricing, setProxyPricing] = useState<ProxyPricing[]>([])
+  const [loadingPricing, setLoadingPricing] = useState(true)
+
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        setLoadingPricing(true)
+        const res = await fetch("/api/proxies/pricing", { credentials: "include" })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success) setProxyPricing(data.data)
+        }
+      } catch {
+        toast.error("Failed to load proxy pricing")
+      } finally {
+        setLoadingPricing(false)
+      }
+    }
+    fetchPricing()
+  }, [])
+
+  const selectedPricing = proxyPricing.find((p) => p.proxyType === proxyType)
+  const pricePerPort = selectedPricing?.pricePerPort ?? 0
   const selectedSessionType = SESSION_TYPES.find((t) => t.id === sessionType)!
-  const estimatedPrice = Number(quantity) * (proxyType === 1 ? 2 : proxyType === 2 ? 3 : 1)
+  const estimatedPrice = Number(quantity) * pricePerPort
   const canAfford = walletBalance >= estimatedPrice
 
   useEffect(() => {
     const fetchBalance = async () => {
       try {
         setLoadingBalance(true)
-        const res = await fetch("/api/wallet/balance", { credentials: "include" })
+        const res = await fetch("/api/wallet", { credentials: "include" })
         if (res.ok) {
-          const data = await res.json()
-          if (data.success) setWalletBalance(data.balance ?? 0)
+          const result = await res.json()
+          if (result.success) setWalletBalance(result.data.balance ?? 0)
         }
       } catch { /* ignore */ } finally {
         setLoadingBalance(false)
@@ -377,198 +406,205 @@ export default function ProxiesPage() {
 
         {view === "create" && (step === "form" || step === "confirm") && (
           <motion.div key="form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
-            <Card className="border-2 border-[color:var(--marketing-accent)]/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-[color:var(--marketing-accent)]" />
-                  Configure Proxy
-                </CardTitle>
-                <CardDescription>Select proxy type, targeting, and session settings</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-3">
-                  <Label>Proxy Type</Label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {PROXY_TYPES.map((type) => {
-                      const Icon = type.icon
-                      return (
+            {loadingPricing ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-[color:var(--marketing-accent)]" />
+                <span className="ml-3 text-muted-foreground">Loading proxy pricing...</span>
+              </div>
+            ) : (
+              <Card className="border-2 border-[color:var(--marketing-accent)]/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-[color:var(--marketing-accent)]" />
+                    Configure Proxy
+                  </CardTitle>
+                  <CardDescription>Select proxy type, targeting, and session settings</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-3">
+                    <Label>Proxy Type</Label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {proxyPricing.map((type) => {
+                        const Icon = PROXY_ICON_MAP[type.proxyType] || Globe2
+                        return (
+                          <button
+                            key={type.proxyType}
+                            onClick={() => setProxyType(type.proxyType)}
+                            className={cn(
+                              "flex flex-col items-center gap-2 p-4 rounded-lg border-2 text-center transition-all",
+                              proxyType === type.proxyType
+                                ? "border-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/5"
+                                : "border-muted hover:border-[color:var(--marketing-accent)]/30"
+                            )}
+                          >
+                            <Icon className={cn("h-6 w-6", proxyType === type.proxyType ? "text-[color:var(--marketing-accent)]" : "text-muted-foreground")} />
+                            <span className="text-sm font-medium">{type.label}</span>
+                            <span className="text-xs text-muted-foreground">{type.description}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Country</Label>
+                      <Select value={countryCode} onValueChange={setCountryCode}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COUNTRY_OPTIONS.map((c) => (
+                            <SelectItem key={c.code} value={c.code}>{c.name} ({c.code})</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Number of Ports</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                        placeholder="5"
+                      />
+                      <p className="text-xs text-muted-foreground">Each port = 1 concurrent proxy session</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label>Session Mode</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {SESSION_TYPES.map((type) => (
                         <button
                           key={type.id}
-                          onClick={() => setProxyType(type.id)}
+                          onClick={() => setSessionType(type.id)}
                           className={cn(
-                            "flex flex-col items-center gap-2 p-4 rounded-lg border-2 text-center transition-all",
-                            proxyType === type.id
+                            "flex flex-col items-center gap-1 p-3 rounded-lg border-2 text-center transition-all",
+                            sessionType === type.id
                               ? "border-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/5"
                               : "border-muted hover:border-[color:var(--marketing-accent)]/30"
                           )}
                         >
-                          <Icon className={cn("h-6 w-6", proxyType === type.id ? "text-[color:var(--marketing-accent)]" : "text-muted-foreground")} />
                           <span className="text-sm font-medium">{type.label}</span>
                           <span className="text-xs text-muted-foreground">{type.description}</span>
                         </button>
-                      )
-                    })}
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                  {sessionType === 2 && (
+                    <div className="space-y-2">
+                      <Label>Sticky Duration (minutes)</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={1440}
+                        value={sessionTime}
+                        onChange={(e) => setSessionTime(e.target.value)}
+                        placeholder="30"
+                      />
+                      <p className="text-xs text-muted-foreground">How long the same IP is kept before rotating</p>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
-                    <Label>Country</Label>
-                    <Select value={countryCode} onValueChange={setCountryCode}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {COUNTRY_OPTIONS.map((c) => (
-                          <SelectItem key={c.code} value={c.code}>{c.name} ({c.code})</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Number of Ports</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={100}
-                      value={quantity}
-                      onChange={(e) => setQuantity(e.target.value)}
-                      placeholder="5"
-                    />
-                    <p className="text-xs text-muted-foreground">Each port = 1 concurrent proxy session</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label>Session Mode</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {SESSION_TYPES.map((type) => (
+                    <Label>Payment Method</Label>
+                    <div className="grid grid-cols-2 gap-3">
                       <button
-                        key={type.id}
-                        onClick={() => setSessionType(type.id)}
+                        onClick={() => setPaymentMethod("wallet")}
                         className={cn(
-                          "flex flex-col items-center gap-1 p-3 rounded-lg border-2 text-center transition-all",
-                          sessionType === type.id
+                          "flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left",
+                          paymentMethod === "wallet"
                             ? "border-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/5"
                             : "border-muted hover:border-[color:var(--marketing-accent)]/30"
                         )}
                       >
-                        <span className="text-sm font-medium">{type.label}</span>
-                        <span className="text-xs text-muted-foreground">{type.description}</span>
+                        <Wallet className="h-5 w-5 text-[color:var(--marketing-accent)]" />
+                        <div>
+                          <p className="text-sm font-medium">Wallet</p>
+                          <p className="text-xs text-muted-foreground">Balance: ₵{loadingBalance ? "..." : walletBalance.toFixed(2)}</p>
+                        </div>
                       </button>
-                    ))}
-                  </div>
-                </div>
-
-                {sessionType === 2 && (
-                  <div className="space-y-2">
-                    <Label>Sticky Duration (minutes)</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={1440}
-                      value={sessionTime}
-                      onChange={(e) => setSessionTime(e.target.value)}
-                      placeholder="30"
-                    />
-                    <p className="text-xs text-muted-foreground">How long the same IP is kept before rotating</p>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label>Payment Method</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => setPaymentMethod("wallet")}
-                      className={cn(
-                        "flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left",
-                        paymentMethod === "wallet"
-                          ? "border-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/5"
-                          : "border-muted hover:border-[color:var(--marketing-accent)]/30"
-                      )}
-                    >
-                      <Wallet className="h-5 w-5 text-[color:var(--marketing-accent)]" />
-                      <div>
-                        <p className="text-sm font-medium">Wallet</p>
-                        <p className="text-xs text-muted-foreground">Balance: ₵{loadingBalance ? "..." : walletBalance.toFixed(2)}</p>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => setPaymentMethod("paystack")}
-                      className={cn(
-                        "flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left",
-                        paymentMethod === "paystack"
-                          ? "border-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/5"
-                          : "border-muted hover:border-[color:var(--marketing-accent)]/30"
-                      )}
-                    >
-                      <CreditCard className="h-5 w-5 text-[color:var(--marketing-accent)]" />
-                      <div>
-                        <p className="text-sm font-medium">Paystack</p>
-                        <p className="text-xs text-muted-foreground">Card / Mobile Money</p>
-                      </div>
-                    </button>
-                  </div>
-                  {paymentMethod === "wallet" && !canAfford && estimatedPrice > 0 && (
-                    <p className="text-xs text-red-500">Insufficient balance. Top up your wallet or use Paystack.</p>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-                  <div>
-                    <span className="font-medium">Estimated Cost</span>
-                    <p className="text-xs text-muted-foreground">~₵{estimatedPrice} ({quantity} ports × ₵{proxyType === 1 ? 2 : proxyType === 2 ? 3 : 1}/port)</p>
-                  </div>
-                  <span className="text-2xl font-bold text-[color:var(--marketing-accent)]">₵{estimatedPrice}</span>
-                </div>
-
-                {step === "form" && (
-                  <Button onClick={() => setStep("confirm")} className="w-full bg-[color:var(--marketing-accent)] hover:bg-[color:var(--marketing-accent)]/90">
-                    Continue to Confirm
-                  </Button>
-                )}
-
-                {step === "confirm" && (
-                  <div className="space-y-4 pt-4 border-t">
-                    <div className="rounded-lg bg-muted/50 p-4 space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Proxy Type</span>
-                        <span className="font-semibold">{selectedProxyType.label}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Country</span>
-                        <span className="font-semibold">{COUNTRY_OPTIONS.find((c) => c.code === countryCode)?.name || countryCode}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Ports</span>
-                        <span className="font-semibold">{quantity}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Session</span>
-                        <span className="font-semibold">{selectedSessionType.label}{sessionType === 2 ? ` (${sessionTime} min)` : ""}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Payment</span>
-                        <span className="font-semibold">{paymentMethod === "wallet" ? "Wallet" : "Paystack"}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-3">
-                      <Button variant="outline" onClick={() => setStep("form")} className="flex-1">Back</Button>
-                      <Button
-                        onClick={handleOrder}
-                        disabled={paymentMethod === "wallet" && !canAfford}
-                        className="flex-1 bg-[color:var(--marketing-accent)] hover:bg-[color:var(--marketing-accent)]/90"
+                      <button
+                        onClick={() => setPaymentMethod("paystack")}
+                        className={cn(
+                          "flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left",
+                          paymentMethod === "paystack"
+                            ? "border-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/5"
+                            : "border-muted hover:border-[color:var(--marketing-accent)]/30"
+                        )}
                       >
-                        <Zap className="h-4 w-4 mr-2" />
-                        {paymentMethod === "paystack" ? "Pay with Paystack" : "Create Proxy"}
-                      </Button>
+                        <CreditCard className="h-5 w-5 text-[color:var(--marketing-accent)]" />
+                        <div>
+                          <p className="text-sm font-medium">Paystack</p>
+                          <p className="text-xs text-muted-foreground">Card / Mobile Money</p>
+                        </div>
+                      </button>
                     </div>
+                    {paymentMethod === "wallet" && !canAfford && estimatedPrice > 0 && (
+                      <p className="text-xs text-red-500">Insufficient balance. Top up your wallet or use Paystack.</p>
+                    )}
                   </div>
-                )}
-              </CardContent>
-            </Card>
+
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                    <div>
+                      <span className="font-medium">Estimated Cost</span>
+                      <p className="text-xs text-muted-foreground">~₵{estimatedPrice} ({quantity} ports × ₵{pricePerPort}/port)</p>
+                    </div>
+                    <span className="text-2xl font-bold text-[color:var(--marketing-accent)]">₵{estimatedPrice}</span>
+                  </div>
+
+                  {step === "form" && (
+                    <Button onClick={() => setStep("confirm")} className="w-full bg-[color:var(--marketing-accent)] hover:bg-[color:var(--marketing-accent)]/90">
+                      Continue to Confirm
+                    </Button>
+                  )}
+
+                  {step === "confirm" && (
+                    <div className="space-y-4 pt-4 border-t">
+                      <div className="rounded-lg bg-muted/50 p-4 space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Proxy Type</span>
+                          <span className="font-semibold">{selectedPricing?.label || "Unknown"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Country</span>
+                          <span className="font-semibold">{COUNTRY_OPTIONS.find((c) => c.code === countryCode)?.name || countryCode}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Ports</span>
+                          <span className="font-semibold">{quantity}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Session</span>
+                          <span className="font-semibold">{selectedSessionType.label}{sessionType === 2 ? ` (${sessionTime} min)` : ""}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Payment</span>
+                          <span className="font-semibold">{paymentMethod === "wallet" ? "Wallet" : "Paystack"}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3">
+                        <Button variant="outline" onClick={() => setStep("form")} className="flex-1">Back</Button>
+                        <Button
+                          onClick={handleOrder}
+                          disabled={paymentMethod === "wallet" && !canAfford}
+                          className="flex-1 bg-[color:var(--marketing-accent)] hover:bg-[color:var(--marketing-accent)]/90"
+                        >
+                          <Zap className="h-4 w-4 mr-2" />
+                          {paymentMethod === "paystack" ? "Pay with Paystack" : "Create Proxy"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </motion.div>
         )}
 

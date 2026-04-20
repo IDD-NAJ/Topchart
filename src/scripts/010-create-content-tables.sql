@@ -55,23 +55,23 @@ INSERT INTO perks (title, description, icon_name, color_gradient, sort_order, is
 ('Fast Growth', 'Work on high-impact problems in a rapidly scaling fintech startup.', 'Zap', 'from-amber-500/20 to-amber-500/5', 2, TRUE),
 ('Remote Friendly', 'Flexible work arrangements with a remote-first culture for most roles.', 'Globe', 'from-blue-500/20 to-blue-500/5', 3, TRUE),
 ('Learning Budget', 'Annual budget for courses, conferences, and professional development.', 'GraduationCap', 'from-emerald-500/20 to-emerald-500/5', 4, TRUE),
-('Great Team', 'Join a diverse team of talented Ghanaians building for Africa and beyond.', 'Users', 'from-indigo-500/20 to-indigo-500/5', 5, TRUE),
+('Great Team', 'Join a diverse team of talented ians building for Africa and beyond.', 'Users', 'from-indigo-500/20 to-indigo-500/5', 5, TRUE),
 ('Equity', 'Share in the upside of what we are building with an equity package.', 'Shield', 'from-teal-500/20 to-teal-500/5', 6, TRUE)
 ON CONFLICT DO NOTHING;
 
 -- Seed default jobs data (matching current hardcoded values)
 INSERT INTO jobs (title, location, type, department, description, requirements, is_active, sort_order) VALUES
-('Senior Full Stack Engineer', 'Accra, Ghana / Remote', 'Full-time', 'Engineering', 
+('Senior Full Stack Engineer', 'Accra,  / Remote', 'Full-time', 'Engineering', 
  'Lead engineering initiatives across our entire stack, from frontend React components to backend API design and database optimization.', 
  ARRAY['5+ years experience with React and Node.js', 'Experience with PostgreSQL and database design', 'Strong understanding of TypeScript'], 
  TRUE, 1),
 
-('Product Designer', 'Accra, Ghana', 'Full-time', 'Design', 
+('Product Designer', 'Accra, ', 'Full-time', 'Design', 
  'Create beautiful, intuitive interfaces for our web and mobile applications. Work closely with engineering to ship polished features.', 
  ARRAY['3+ years of product design experience', 'Proficiency in Figma', 'Portfolio demonstrating strong UI/UX skills'], 
  TRUE, 2),
 
-('Customer Success Lead', 'Accra, Ghana', 'Full-time', 'Operations', 
+('Customer Success Lead', 'Accra, ', 'Full-time', 'Operations', 
  'Build and lead our customer support team, develop support processes, and ensure our users have an exceptional experience.', 
  ARRAY['4+ years in customer success or support', 'Experience building teams from scratch', 'Excellent communication skills'], 
  TRUE, 3)

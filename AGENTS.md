@@ -1,11 +1,11 @@
 ## Project Summary
-Topchart is a high-performance web platform for purchasing airtime and data bundles instantly across all major networks in Ghana (MTN, Vodafone, AirtelTigo). It focuses on reliability, security, and a premium "infrastructure-first" user experience.
+Topchart is a high-performance web platform for purchasing airtime and data bundles instantly across all major networks in  (MTN, Vodafone, AirtelTigo). It focuses on reliability, security, and a premium "infrastructure-first" user experience.
 
 ## Tech Stack
 - **Framework**: Next.js 15 (App Router)
 - **Styling**: Tailwind CSS 4, Lucide React icons
 - **Database**: Supabase / Neon (PostgreSQL)
-- **Payments**: Paystack (Ghana)
+- **Payments**: Paystack ()
 - **Chat**: Tawk.to
 
 ## Architecture

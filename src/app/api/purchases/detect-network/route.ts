@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { autoDetectOperator, mnpLookupGet } from "@/lib/reloadly";
-import { detectNetworkByPhone, getOperatorIdByPhone, GHANA_RELOADLY_OPERATORS } from "@/lib/reloadly-networks";
+import { detectNetworkByPhone, getOperatorIdByPhone, _RELOADLY_OPERATORS } from "@/lib/reloadly-networks";
 
 export const runtime = "nodejs";
 
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
         const op = apiResult.data;
         // Map operatorId back to local network name
         let mappedNetwork: string | null = null;
-        for (const [network, operator] of Object.entries(GHANA_RELOADLY_OPERATORS)) {
+        for (const [network, operator] of Object.entries(_RELOADLY_OPERATORS)) {
           if (operator.id === op.operatorId) {
             mappedNetwork = network;
             break;

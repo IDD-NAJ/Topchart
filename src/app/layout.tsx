@@ -14,15 +14,15 @@ import './globals.css'
 export const metadata: Metadata = {
   metadataBase: new URL('https://topchart.gh'),
   title: {
-    default: 'Topchart Ghana — Digital Services Platform',
-    template: '%s | Topchart Ghana',
+    default: 'Topchart  — Digital Services Platform',
+    template: '%s | Topchart ',
   },
-  description: 'Ghana\'s complete digital services platform. Buy data bundles, verification numbers, check exam results, and join our reseller programme — instantly and securely.',
-  applicationName: 'Topchart Ghana',
-  keywords: ['data bundles Ghana', 'verification numbers Ghana', 'WAEC result checker', 'BECE result checker', 'reseller programme Ghana', 'MTN', 'Telecel', 'AirtelTigo', 'mobile data', 'buy data online Ghana', 'OTP verification number Ghana'],
-  authors: [{ name: 'Topchart Ghana', url: 'https://topchart.gh' }],
-  creator: 'Topchart Ghana',
-  publisher: 'Topchart Ghana',
+  description: '\complete digital services platform. Buy data bundles, verification numbers, check exam results, and join our reseller programme — instantly and securely.',
+  applicationName: 'Topchart ',
+  keywords: ['data bundles ', 'verification numbers ', 'WAEC result checker', 'BECE result checker', 'reseller programme ', 'MTN', 'Telecel', 'AirtelTigo', 'mobile data', 'buy data online ', 'OTP verification number '],
+  authors: [{ name: 'Topchart ', url: 'https://topchart.gh' }],
+  creator: 'Topchart ',
+  publisher: 'Topchart ',
   robots: {
     index: true,
     follow: true,
@@ -38,15 +38,15 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_GH',
     url: 'https://topchart.gh',
-    siteName: 'Topchart Ghana',
-    title: 'Topchart Ghana — Digital Services Platform',
-    description: 'Ghana\'s complete digital services platform — data, verification numbers, exam results, and reseller programme.',
+    siteName: 'Topchart ',
+    title: 'Topchart  — Digital Services Platform',
+    description: '\complete digital services platform — data, verification numbers, exam results, and reseller programme.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Topchart Ghana — Instant Data & Services',
+        alt: 'Topchart  — Instant Data & Services',
       },
     ],
   },
@@ -54,8 +54,8 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     site: '@topchartgh',
     creator: '@topchartgh',
-    title: 'Topchart Ghana — Digital Services Platform',
-    description: 'Ghana\'s complete digital services platform — data, verification numbers, exam results, and reseller programme.',
+    title: 'Topchart  — Digital Services Platform',
+    description: '\complete digital services platform — data, verification numbers, exam results, and reseller programme.',
     images: ['/og-image.png'],
   },
   alternates: {
@@ -65,11 +65,11 @@ export const metadata: Metadata = {
     'script:ld+json': JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      name: 'Topchart Ghana',
+      name: 'Topchart ',
       alternateName: 'Topchart',
       url: 'https://topchart.gh',
       logo: 'https://topchart.gh/logo.svg',
-      description: 'Ghana\'s complete digital services platform for data bundles, verification numbers, result checkers, and reseller services.',
+      description: '\'s tal services platform for data bundles, verification numbers, result checkers, and reseller services.',
       contactPoint: [
         {
           '@type': 'ContactPoint',

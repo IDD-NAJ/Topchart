@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDataPlans, getNetworks, getAccountInfo } from "@/lib/datamart";
+import { getDataPackages, getNetworks, getBalance, resolveNetworkCode, getNetworkDisplayName, type DatamartNetworkCode } from "@/lib/datamart";
 import { requireAdmin } from "@/lib/admin-auth";
 import { sql } from "@/lib/db";
 
@@ -46,83 +46,102 @@ function calculateEffectivePrice(
   return providerPrice;
 }
 
+const FRONTEND_TO_DB_NETWORK: Record<string, string> = {
+  mtn: "MTN",
+  vodafone: "VODAFONE",
+  telecel: "VODAFONE",
+  airteltigo: "AIRTELTIGO",
+  "airtel-tigo": "AIRTELTIGO",
+  at: "AIRTELTIGO",
+  glo: "GLO",
+};
+
 async function fetchPlansFromCache(network?: string): Promise<{ success: true; data: CachedPlan[]; stale: boolean; fetchedAt: string | null } | { success: false; error: string }> {
   try {
-    const query = network
+    const dbNetworkCode = network ? (FRONTEND_TO_DB_NETWORK[network.toLowerCase()] || network.toUpperCase()) : undefined;
+
+    const rows = dbNetworkCode
       ? sql`
           SELECT 
-            id,
-            network_id as "networkId",
-            network,
-            name,
-            validity,
-            validity_hours as "validityHours",
-            validity_days as "validityDays",
-            price as "providerPrice",
-            price_override as "priceOverride",
-            markup_percent as "markupPercent",
-            is_popular as "isPopular",
-            is_active as "isActive",
-            is_featured as "isFeatured",
-            datamart_plan_id as "datamartPlanId",
-            datamart_plan_type as "datamartPlanType",
-            synced_at as "syncedAt"
-          FROM data_bundles
-          WHERE is_active = true AND network = ${network}
-          ORDER BY price ASC
+            b.id,
+            b."networkId",
+            n.name as "networkName",
+            n.code as "networkCode",
+            b.name,
+            b."sizeMb",
+            b."validityHours",
+            b.price as "providerPrice",
+            b."priceOverride",
+            b."markupPercent",
+            b."isPopular",
+            b."isActive",
+            b."isFeatured",
+            b."createdAt" as "syncedAt",
+            b."updatedAt"
+          FROM data_bundles b
+          JOIN networks n ON n.id = b."networkId"
+          WHERE b."isActive" = true AND n.code = ${dbNetworkCode}
+          ORDER BY b.price ASC
         `
       : sql`
           SELECT 
-            id,
-            network_id as "networkId",
-            network,
-            name,
-            validity,
-            validity_hours as "validityHours",
-            validity_days as "validityDays",
-            price as "providerPrice",
-            price_override as "priceOverride",
-            markup_percent as "markupPercent",
-            is_popular as "isPopular",
-            is_active as "isActive",
-            is_featured as "isFeatured",
-            datamart_plan_id as "datamartPlanId",
-            datamart_plan_type as "datamartPlanType",
-            synced_at as "syncedAt"
-          FROM data_bundles
-          WHERE is_active = true
-          ORDER BY network, price ASC
+            b.id,
+            b."networkId",
+            n.name as "networkName",
+            n.code as "networkCode",
+            b.name,
+            b."sizeMb",
+            b."validityHours",
+            b.price as "providerPrice",
+            b."priceOverride",
+            b."markupPercent",
+            b."isPopular",
+            b."isActive",
+            b."isFeatured",
+            b."createdAt" as "syncedAt",
+            b."updatedAt"
+          FROM data_bundles b
+          JOIN networks n ON n.id = b."networkId"
+          WHERE b."isActive" = true
+          ORDER BY n.code, b.price ASC
         `;
 
-    const rows = await query;
+    const result = await rows;
 
-    if (rows.length === 0) {
+    if (result.length === 0) {
       return { success: false, error: "No cached plans found" };
     }
 
-    const plans: CachedPlan[] = rows.map((row: Record<string, unknown>) => ({
-      id: String(row.id),
-      networkId: String(row.networkId),
-      network: String(row.network),
-      name: String(row.name),
-      validity: row.validity ? String(row.validity) : null,
-      validityHours: row.validityHours ? Number(row.validityHours) : null,
-      validityDays: row.validityDays ? Number(row.validityDays) : null,
-      providerPrice: Number(row.providerPrice),
-      effectivePrice: calculateEffectivePrice(
-        Number(row.providerPrice),
-        row.priceOverride ? Number(row.priceOverride) : null,
-        row.markupPercent ? Number(row.markupPercent) : null
-      ),
-      priceOverride: row.priceOverride ? Number(row.priceOverride) : null,
-      markupPercent: row.markupPercent ? Number(row.markupPercent) : null,
-      isPopular: Boolean(row.isPopular),
-      isActive: Boolean(row.isActive),
-      isFeatured: Boolean(row.isFeatured),
-      datamartPlanId: row.datamartPlanId ? String(row.datamartPlanId) : null,
-      datamartPlanType: row.datamartPlanType ? String(row.datamartPlanType) : null,
-      syncedAt: row.syncedAt ? String(row.syncedAt) : null,
-    }));
+    const plans: CachedPlan[] = result.map((row: Record<string, unknown>) => {
+      const providerPrice = Number(row.providerPrice);
+      const priceOverride = row.priceOverride ? Number(row.priceOverride) : null;
+      const markupPercent = row.markupPercent ? Number(row.markupPercent) : null;
+      let effectivePrice = providerPrice;
+      if (priceOverride !== null && priceOverride > 0) {
+        effectivePrice = priceOverride;
+      } else if (markupPercent !== null && markupPercent > 0) {
+        effectivePrice = Number((providerPrice + providerPrice * (markupPercent / 100)).toFixed(2));
+      }
+      return {
+        id: String(row.id),
+        networkId: String(row.networkId),
+        network: String(row.networkCode || row.networkName || ""),
+        name: String(row.name),
+        validity: row.validityHours ? `${Math.round(Number(row.validityHours) / 24)} days` : null,
+        validityHours: row.validityHours ? Number(row.validityHours) : null,
+        validityDays: row.validityHours ? Math.round(Number(row.validityHours) / 24) : null,
+        providerPrice,
+        effectivePrice,
+        priceOverride,
+        markupPercent,
+        isPopular: Boolean(row.isPopular),
+        isActive: Boolean(row.isActive),
+        isFeatured: Boolean(row.isFeatured),
+        datamartPlanId: String(row.id),
+        datamartPlanType: "capacity",
+        syncedAt: row.syncedAt ? String(row.syncedAt) : null,
+      };
+    });
 
     const oldestSync = plans
       .filter(p => p.syncedAt)
@@ -144,110 +163,91 @@ async function fetchPlansFromCache(network?: string): Promise<{ success: true; d
 }
 
 async function syncPlansFromDataMart(network?: string): Promise<{ success: boolean; syncedCount?: number; error?: string; errorCode?: string }> {
-  const networksResult = await getNetworks();
-  if (!networksResult.success) {
-    return { 
-      success: false, 
-      error: networksResult.error || "Failed to fetch networks from DataMart",
-      errorCode: networksResult.errorCode || "PROVIDER_NETWORK_ERROR"
-    };
-  }
+  const networkCodes: DatamartNetworkCode[] = network
+    ? [resolveNetworkCode(network)]
+    : ["YELLO", "TELECEL", "AT_PREMIUM"];
 
-  const networks = networksResult.data || [];
-  const targetNetworks = network
-    ? networks.filter(n => n.name.toLowerCase() === network.toLowerCase() || n.id.toLowerCase() === network.toLowerCase())
-    : networks;
+  const DATAMART_TO_DB_NETWORK: Record<string, string> = {
+    YELLO: "MTN",
+    TELECEL: "VODAFONE",
+    AT_PREMIUM: "AIRTELTIGO",
+    at: "AIRTELTIGO",
+  };
 
   let syncedCount = 0;
 
-  for (const net of targetNetworks) {
+  const networkRows = await sql`SELECT id, code FROM networks`;
+  const networkIdMap: Record<string, string> = {};
+  for (const row of networkRows) {
+    networkIdMap[row.code] = row.id;
+  }
+
+  const categoryRows = await sql`SELECT id, networkId, name FROM data_bundle_categories`;
+  const categoryMap: Record<string, string> = {};
+  for (const row of categoryRows) {
+    categoryMap[row.networkId] = row.id;
+  }
+
+  for (const code of networkCodes) {
     try {
-      const plansResult = await getDataPlans(net.id);
+      const plansResult = await getDataPackages(code);
       if (!plansResult.success) {
-        console.warn(`Failed to fetch plans for network ${net.name}: ${plansResult.error}`);
+        console.warn(`Failed to fetch packages for network ${code}: ${plansResult.error}`);
         continue;
       }
 
-      const plans = plansResult.data || [];
+      const packages_ = plansResult.data || [];
+      const dbNetworkCode = DATAMART_TO_DB_NETWORK[code];
+      const dbNetworkId = networkIdMap[dbNetworkCode];
 
-      for (const plan of plans) {
+      if (!dbNetworkId) {
+        console.warn(`No DB network found for DataMart code ${code} (mapped to ${dbNetworkCode})`);
+        continue;
+      }
+
+      let categoryId = categoryMap[dbNetworkId];
+      if (!categoryId) {
+        const catResult = await sql`
+          INSERT INTO data_bundle_categories (id, "networkId", name, "updatedAt")
+          VALUES (${crypto.randomUUID()}, ${dbNetworkId}, ${'Data Bundles'}, NOW())
+          RETURNING id
+        `;
+        categoryId = catResult[0]?.id;
+        if (categoryId) categoryMap[dbNetworkId] = categoryId;
+      }
+
+      for (const pkg of packages_) {
         try {
-          const planName = plan.data_plan || "Unknown Plan";
-          const providerPrice = parseFloat(plan.plan_amount || "0");
-          const monthValidate = plan.month_validate || "";
-
-          let validityHours: number | null = null;
-          let validityDays: number | null = null;
-          let validity = monthValidate;
-
-          if (monthValidate) {
-            const match = monthValidate.match(/(\d+)\s*(hour|hr|day|week|month)/i);
-            if (match) {
-              const value = parseInt(match[1]);
-              const unit = match[2].toLowerCase();
-              if (unit.includes("hour")) validityHours = value;
-              else if (unit.includes("day")) validityDays = value;
-              else if (unit.includes("week")) validityDays = value * 7;
-              else if (unit.includes("month")) validityDays = value * 30;
-            }
-          }
+          const mb = parseInt(pkg.mb, 10);
+          const providerPrice = parseFloat(pkg.price);
+          const displayName = getNetworkDisplayName(code);
+          const planName = `${pkg.capacity}GB ${displayName}`;
+          const bundleId = `dm_${code}_${pkg.capacity}gb`;
+          const validityHours = 90 * 24;
 
           await sql`
-            INSERT INTO data_bundles (
-              network_id,
-              network,
-              name,
-              validity,
-              validity_hours,
-              validity_days,
-              price,
-              original_price,
-              datamart_plan_id,
-              datamart_plan_type,
-              is_active,
-              synced_at,
-              metadata
-            ) VALUES (
-              ${net.id},
-              ${net.name},
-              ${planName},
-              ${validity},
-              ${validityHours},
-              ${validityDays},
-              ${providerPrice},
-              ${providerPrice},
-              ${plan.id},
-              ${plan.plan_type || null},
-              ${true},
-              ${new Date().toISOString()},
-              ${JSON.stringify(plan)}
-            )
-            ON CONFLICT (datamart_plan_id) 
-            DO UPDATE SET
+            INSERT INTO data_bundles (id, "networkId", "categoryId", name, "sizeMb", "validityHours", price, "isPopular", "isActive", "updatedAt")
+            VALUES (${bundleId}, ${dbNetworkId}, ${categoryId}, ${planName}, ${mb}, ${validityHours}, ${providerPrice}, false, ${pkg.inStock}, NOW())
+            ON CONFLICT (id) DO UPDATE SET
               name = EXCLUDED.name,
-              validity = EXCLUDED.validity,
-              validity_hours = EXCLUDED.validity_hours,
-              validity_days = EXCLUDED.validity_days,
+              "sizeMb" = EXCLUDED."sizeMb",
+              "validityHours" = EXCLUDED."validityHours",
               price = EXCLUDED.price,
-              original_price = EXCLUDED.original_price,
-              datamart_plan_type = EXCLUDED.datamart_plan_type,
-              synced_at = EXCLUDED.synced_at,
-              metadata = EXCLUDED.metadata,
-              updated_at = NOW()
-            WHERE data_bundles.price_override IS NULL
+              "isActive" = EXCLUDED."isActive",
+              "updatedAt" = NOW()
           `;
 
           syncedCount++;
         } catch (planError) {
-          console.error(`Failed to sync plan ${plan.id}:`, planError);
+          console.error(`Failed to sync package ${code}_${pkg.capacity}GB:`, planError);
         }
       }
     } catch (networkError) {
-      console.error(`Failed to process network ${net.name}:`, networkError);
+      console.error(`Failed to process network ${code}:`, networkError);
     }
   }
 
-  if (syncedCount === 0 && targetNetworks.length > 0) {
+  if (syncedCount === 0 && networkCodes.length > 0) {
     return { 
       success: false, 
       error: "No plans could be synced from DataMart",
@@ -298,7 +298,7 @@ export async function GET(request: NextRequest) {
           { status: adminCheck.status }
         );
       }
-      const result = await getAccountInfo();
+      const result = await getBalance();
       return NextResponse.json(result.success
         ? { success: true, data: result.data }
         : { success: false, error: result.error, code: result.errorCode }

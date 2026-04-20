@@ -104,6 +104,7 @@ const navItems: NavItem[] = [
     children: [
       { title: "Networks", href: "/admin/networks", icon: Network },
       { title: "Data Bundles", href: "/admin/data-bundles", icon: Wifi },
+      { title: "Bundle Pricing", href: "/admin/data-bundles-pricing", icon: DollarSign },
       { title: "Bundle Categories", href: "/admin/bundle-categories", icon: Layers },
       { title: "Result Checkers", href: "/admin/result-checkers", icon: CreditCard },
     ]

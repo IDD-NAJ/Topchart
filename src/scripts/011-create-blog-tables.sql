@@ -78,8 +78,8 @@ INSERT INTO posts (slug, title, excerpt, author, category_id, gradient, icon_col
  TRUE),
 
 ('500k-users-milestone', 
- 'Topchart Reaches 500,000 Users in Ghana', 
- 'A major milestone in our journey to build the ultimate digital infrastructure for Ghana.', 
+ 'Topchart Reaches 500,000 Users in ', 
+ 'A major milestone in our journey to build the ultimate digital infrastructure for .', 
  'Press Office',
  (SELECT id FROM blog_categories WHERE name = 'Company News'),
  'from-blue-500/30 via-indigo-400/20 to-blue-500/5',

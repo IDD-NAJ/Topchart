@@ -74,7 +74,7 @@ export default function AboutPage() {
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/15 bg-white/8 text-white/60 text-xs font-semibold uppercase tracking-widest mb-8"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--marketing-accent)]" />
-              Est. 2023 · Accra, Ghana
+              Est. 2023 · Accra, 
             </motion.div>
             <motion.h1
               initial={{ opacity: 0, y: 24 }}
@@ -82,7 +82,7 @@ export default function AboutPage() {
               transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
               className="font-heading text-5xl sm:text-6xl lg:text-7xl font-normal text-white leading-[1.05] tracking-tight max-w-3xl mx-auto text-balance"
             >
-              Building Ghana&apos;s digital infrastructure
+              Building &apos;s digital infrastructure
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 24 }}
@@ -90,7 +90,7 @@ export default function AboutPage() {
               transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="mt-6 text-lg text-white/50 leading-relaxed max-w-2xl mx-auto font-body"
             >
-              Topchart is on a mission to make every digital service in Ghana instant, affordable, and accessible to everyone.
+              Topchart is on a mission to make every digital service in  instant, affordable, and accessible to everyone.
             </motion.p>
           </div>
         </section>
@@ -123,7 +123,7 @@ export default function AboutPage() {
               <ScrollReveal>
                 <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#FF5630] mb-4">Our Mission</p>
                 <h2 className="font-heading text-4xl lg:text-5xl font-normal text-neutral-900 tracking-tight mb-8 text-balance">
-                  Eliminating friction in digital services across Ghana.
+                  Eliminating friction in digital services across .
                 </h2>
                 <p className="text-base text-[#6B7280] leading-relaxed mb-8 font-body">
                   We believe digital services should work for everyone — from a student checking exam results to a business owner reselling airtime. Topchart builds infrastructure that is fast, transparent, and always available.
@@ -198,7 +198,7 @@ export default function AboutPage() {
               <ScrollReveal className="order-1 lg:order-2">
                 <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#FF5630] mb-4">Our Team</p>
                 <h2 className="font-heading text-4xl lg:text-5xl font-normal text-neutral-900 tracking-tight mb-8 text-balance">
-                  Built by Ghanaians, for Ghana.
+                  Built by ians, for .
                 </h2>
                 <p className="text-base text-[#6B7280] leading-relaxed mb-8 font-body">
                   Our team spans engineering, product, design, and support — united by a shared belief that technology should remove barriers, not create them.
@@ -230,7 +230,7 @@ export default function AboutPage() {
                 Ready to experience Topchart?
               </h2>
               <p className="text-base text-white/45 mb-10 max-w-xl mx-auto font-body leading-relaxed">
-                Join 500,000+ Ghanaians using our platform. Free to sign up, no subscription fees.
+                Join 500,000+ ians using our platform. Free to sign up, no subscription fees.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button asChild size="lg"

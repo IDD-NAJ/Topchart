@@ -114,7 +114,7 @@ export async function initializePaystackTransaction(
             {
               display_name: "Platform",
               variable_name: "platform",
-              value: "Topchart Ghana",
+              value: "Topchart ",
             },
           ],
         },

@@ -20,9 +20,10 @@ export async function GET() {
 
     // Verify session and get user
     const sessions = await sql`
-      SELECT s.user_id, u.wallet_balance
+      SELECT s.user_id, COALESCE(w."availableBalance", u.wallet_balance) as wallet_balance
       FROM auth_sessions s
       JOIN users u ON s.user_id::text = u.id::text
+      LEFT JOIN wallets w ON s.user_id::text = w."userId"
       WHERE s.token = ${sessionToken}
         AND s.expires_at > NOW()
       LIMIT 1

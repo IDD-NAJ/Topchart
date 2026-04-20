@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { RecentRecipient, formatPhoneNumber, GHANA_NETWORKS } from "@/lib/purchase-data";
+import { RecentRecipient, formatPhoneNumber, _NETWORKS } from "@/lib/purchase-data";
 import { History, User, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -29,7 +29,7 @@ export function RecentRecipients({
 
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
         {recipients.map((recipient) => {
-          const network = GHANA_NETWORKS.find(
+          const network = _NETWORKS.find(
             (n) => n.id === recipient.networkId
           );
 

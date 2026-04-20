@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql, withTransaction } from "@/lib/db";
-import { purchaseDataBundle, resolveNetworkCode } from "@/lib/datamart";
+import { purchaseDataBundle, resolveNetworkCode, getOrderStatus } from "@/lib/datamart";
 import { logServiceEvent, apiResponse } from "@/lib/api-utils";
 
 export const runtime = "nodejs";
@@ -60,6 +60,11 @@ export async function POST(request: NextRequest) {
 
     if (!phone || !networkId || !planPrice || (!planId && !planName)) {
       return apiResponse(false, "Missing required fields: phone, networkId, planId, planPrice", { status: 400, correlationId });
+    }
+
+    const normalizedPhone = String(phone).replace(/\s+/g, "");
+    if (!/^0\d{9}$/.test(normalizedPhone) && ! /^\d{12}$/.test(normalizedPhone) && !/^\+?233\d{9}$/.test(normalizedPhone)) {
+      return apiResponse(false, "Invalid phone number format. Use Ghana format: 0XXXXXXXXX", { status: 400, code: "INVALID_PHONE", correlationId });
     }
 
     const purchaseType = "DATA";
@@ -152,28 +157,48 @@ export async function POST(request: NextRequest) {
     let providerSuccess = false;
     let providerMessage = "";
     let providerOrderId: string | number | undefined;
+    let providerOrderRef: string | undefined;
     let providerName = "datamart";
 
     {
       const datamartNetwork = resolveNetworkCode(networkId);
+      const capacityGb = planSize ? String(parseInt(String(planSize), 10) || 1) : "1";
       const result = await purchaseDataBundle({
-        networkCode: datamartNetwork,
-        phoneNumber: phone,
-        planId: String(planId),
+        phoneNumber: normalizedPhone,
+        network: datamartNetwork,
+        capacity: capacityGb,
       });
 
       if (result.success && result.data) {
-        const status = result.data.Status?.toLowerCase();
-        providerSuccess = status === "successful";
-        providerMessage = result.data.message || result.data.api_response || "";
-        providerOrderId = result.data.id;
+        const orderStatus = result.data.orderStatus?.toLowerCase();
+        providerSuccess = orderStatus === "completed";
+        providerMessage = result.data.orderStatus || "";
+        providerOrderId = result.data.purchaseId;
+        providerOrderRef = result.data.orderReference;
         providerName = "datamart";
 
-        if (!providerSuccess && status === "pending") providerMessage = "Order queued with provider";
+        if (!providerSuccess && (orderStatus === "pending" || orderStatus === "waiting" || orderStatus === "processing")) {
+          providerMessage = "Order queued with provider";
+        }
         
         logServiceEvent("datamart", "purchase_data", providerSuccess ? "success" : "pending", { 
-          reference, status, providerOrderId 
+          reference, orderStatus, providerOrderId, providerOrderRef 
         });
+
+        if (!providerSuccess && providerOrderRef) {
+          try {
+            await new Promise(r => setTimeout(r, 3000));
+            const statusResult = await getOrderStatus(providerOrderRef);
+            if (statusResult.success && statusResult.data) {
+              const polledStatus = statusResult.data.orderStatus?.toLowerCase();
+              if (polledStatus === "completed") {
+                providerSuccess = true;
+                providerMessage = "completed";
+                logServiceEvent("datamart", "purchase_poll", "success", { reference, providerOrderRef });
+              }
+            }
+          } catch {}
+        }
       } else {
         providerMessage = result.error || "DataMart request failed";
         logServiceEvent("datamart", "purchase_data", "failed", { reference, error: providerMessage });
@@ -192,6 +217,7 @@ export async function POST(request: NextRequest) {
               provider: providerName || "datamart",
               state: providerSuccess ? "success" : isReconciliation ? "reconciliation_needed" : "provider_submitted",
               provider_order_id: providerOrderId,
+              provider_order_ref: providerOrderRef,
               provider_message: providerMessage,
               fulfilled_at: providerSuccess ? new Date().toISOString() : undefined,
             })}::jsonb,

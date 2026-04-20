@@ -17,6 +17,9 @@ tsconfig.tsbuildinfo
 .netlify
 
 # Large video files (exceeds GitHub 100MB limit)
+*.mp4
+*.mov
+*.avi
 public/*.mp4
 public/*.mov
 public/*.avi

@@ -231,7 +231,7 @@ export default function ReloadlySettingsPage() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <Globe className="w-4 h-4 text-[#F38F20]" />
-              Ghana Operators ({operators.length})
+               Operators ({operators.length})
             </CardTitle>
             <Button
               variant="outline"
@@ -249,7 +249,7 @@ export default function ReloadlySettingsPage() {
             </Button>
           </div>
           <CardDescription>
-            Available operators for Ghana airtime purchases
+            Available operators for  airtime purchases
           </CardDescription>
         </CardHeader>
         <CardContent>

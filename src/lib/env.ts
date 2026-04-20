@@ -25,6 +25,10 @@ const envSchema = z.object({
   NINEPROXY_API_KEY: z.string().optional(),
   NINEPROXY_BASE_URL: z.string().url().optional(),
   NINEPROXY_SANDBOX: z.enum(["true", "false"]).optional(),
+  AIRALO_CLIENT_ID: z.string().optional(),
+  AIRALO_CLIENT_SECRET: z.string().optional(),
+  AIRALO_WEBHOOK_SECRET: z.string().optional(),
+  AIRALO_SANDBOX: z.enum(["true", "false"]).optional(),
 });
 
 type ServerEnv = z.infer<typeof envSchema>;
@@ -65,6 +69,8 @@ type SupabaseStorageEnv = z.infer<typeof supabaseStorageEnvSchema>;
 const datamartEnvSchema = z.object({
   DATAMART_API_KEY: z.string().min(1, "DATAMART_API_KEY is required"),
   DATAMART_BASE_URL: z.string().url().optional(),
+  DATAMART_WEBHOOK_SECRET: z.string().optional(),
+  DATAMART_SIGNING_SECRET: z.string().optional(),
 });
 type DatamartEnv = z.infer<typeof datamartEnvSchema>;
 
@@ -85,6 +91,14 @@ const nineproxyEnvSchema = z.object({
 });
 type NineProxyEnv = z.infer<typeof nineproxyEnvSchema>;
 
+const airaloEnvSchema = z.object({
+  AIRALO_CLIENT_ID: z.string().min(1, "AIRALO_CLIENT_ID is required"),
+  AIRALO_CLIENT_SECRET: z.string().min(1, "AIRALO_CLIENT_SECRET is required"),
+  AIRALO_WEBHOOK_SECRET: z.string().optional(),
+  AIRALO_SANDBOX: z.enum(["true", "false"]).optional(),
+});
+type AiraloEnv = z.infer<typeof airaloEnvSchema>;
+
 let cachedEnv: ServerEnv | null = null;
 let cachedDatabaseEnv: DatabaseEnv | null = null;
 let cachedPaystackEnv: PaystackEnv | null = null;
@@ -92,6 +106,7 @@ let cachedSupabaseStorageEnv: SupabaseStorageEnv | null = null;
 let cachedDatamartEnv: DatamartEnv | null = null;
 let cachedReloadlyEnv: ReloadlyEnv | null = null;
 let cachedNineProxyEnv: NineProxyEnv | null = null;
+let cachedAiraloEnv: AiraloEnv | null = null;
 
 export function getServerEnv(): ServerEnv {
   if (cachedEnv) {
@@ -231,4 +246,24 @@ export function getNineProxyEnv(): NineProxyEnv {
 
   cachedNineProxyEnv = parsed.data;
   return cachedNineProxyEnv;
+}
+
+export function getAiraloEnv(): AiraloEnv {
+  if (cachedAiraloEnv) {
+    return cachedAiraloEnv;
+  }
+
+  const parsed = airaloEnvSchema.safeParse(process.env);
+  if (!parsed.success) {
+    const missingFields = parsed.error.issues
+      .filter((issue) => issue.code === "invalid_type")
+      .map((issue) => issue.path.join("."));
+    const message = missingFields.length > 0
+      ? `Missing required environment variables: ${missingFields.join(", ")}`
+      : `Invalid Airalo environment: ${parsed.error.issues.map((issue) => issue.message).join(", ")}`;
+    throw new Error(message);
+  }
+
+  cachedAiraloEnv = parsed.data;
+  return cachedAiraloEnv;
 }

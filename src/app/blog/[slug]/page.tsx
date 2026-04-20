@@ -16,7 +16,7 @@ const posts = [
     title: "Expanding our Network: New Data Bundles for 2026",
     excerpt: "We are excited to announce a range of new, more affordable data bundles across all networks.",
     content: `
-      <p>We're thrilled to announce a major expansion of our data bundle offerings across all major networks in Ghana. Starting this month, Topchart users will have access to a wider range of data packages designed to meet every need and budget.</p>
+      <p>We're thrilled to announce a major expansion of our data bundle offerings across all major networks in . Starting this month, Topchart users will have access to a wider range of data packages designed to meet every need and budget.</p>
       
       <h3>What's New?</h3>
       <p>We've worked closely with MTN, Vodafone, and AirtelTigo to bring you:</p>
@@ -40,7 +40,7 @@ const posts = [
         <li>Complete payment and receive instant delivery</li>
       </ol>
 
-      <p>We're committed to making digital connectivity accessible to all Ghanaians. Stay tuned for more exciting updates!</p>
+      <p>We're committed to making digital connectivity accessible to all ians. Stay tuned for more exciting updates!</p>
     `,
     date: "Jan 15, 2026",
     author: "Product Team",
@@ -94,10 +94,10 @@ const posts = [
   },
   {
     slug: "500k-users-milestone",
-    title: "Topchart Reaches 500,000 Users in Ghana",
-    excerpt: "A major milestone in our journey to build the ultimate digital infrastructure for Ghana.",
+    title: "Topchart Reaches 500,000 Users in ",
+    excerpt: "A major milestone in our journey to build the ultimate digital infrastructure for .",
     content: `
-      <p>Today marks a monumental milestone for our team and community: Topchart now serves over 500,000 registered users across Ghana! This achievement represents more than just a number—it's a testament to the trust you've placed in us to handle your digital transactions.</p>
+      <p>Today marks a monumental milestone for our team and community: Topchart now serves over 500,000 registered users across ! This achievement represents more than just a number—it's a testament to the trust you've placed in us to handle your digital transactions.</p>
 
       <h3>Our Journey So Far</h3>
       <p>Since our launch, we've:</p>
@@ -105,7 +105,7 @@ const posts = [
         <li>Processed over 2 million transactions</li>
         <li>Maintained 99.9% uptime</li>
         <li>Expanded from 3 to 10 team members</li>
-        <li>Partnered with all major Ghanaian networks</li>
+        <li>Partnered with all major ian networks</li>
         <li>Launched our dispute resolution system</li>
       </ul>
 

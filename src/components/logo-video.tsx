@@ -11,7 +11,7 @@ interface LogoVideoProps {
 export function LogoVideo({ width = 140, height = 40, className }: LogoVideoProps) {
   return (
     <video
-      src="/logo.mp4"
+      src="/IMG_7731.MP4"
       autoPlay
       muted
       loop

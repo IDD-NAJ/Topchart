@@ -6,7 +6,7 @@ const EMAIL_HOST = env.EMAIL_HOST;
 const EMAIL_PORT = parseInt(env.EMAIL_PORT || "587");
 const EMAIL_USER = env.EMAIL_USER;
 const EMAIL_PASS = env.EMAIL_PASS;
-const EMAIL_FROM = env.EMAIL_FROM || "Topchart Ghana <noreply@topchart.gh>";
+const EMAIL_FROM = env.EMAIL_FROM || "Topchart  <noreply@topchart.gh>";
 
 function createTransporter() {
   if (!EMAIL_HOST || !EMAIL_USER || !EMAIL_PASS) {
@@ -54,7 +54,7 @@ export async function sendResellerApprovalEmail(
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px">
         <div style="background:#0052CC;padding:24px;border-radius:8px 8px 0 0;text-align:center">
-          <h1 style="color:#fff;margin:0;font-size:24px">Topchart Ghana</h1>
+          <h1 style="color:#fff;margin:0;font-size:24px">Topchart </h1>
         </div>
         <div style="background:#f9f9f9;padding:32px;border-radius:0 0 8px 8px;border:1px solid #e5e7eb">
           <h2 style="color:#111827;margin-top:0">Congratulations, ${businessName}!</h2>
@@ -74,7 +74,7 @@ export async function sendResellerApprovalEmail(
             Go to Reseller Dashboard
           </a>
           <p style="color:#9ca3af;font-size:12px;margin-top:32px">
-            Topchart Ghana · Your trusted mobile top-up platform
+            Topchart  · Your trusted mobile top-up platform
           </p>
         </div>
       </div>
@@ -93,7 +93,7 @@ export async function sendResellerRejectionEmail(
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px">
         <div style="background:#0052CC;padding:24px;border-radius:8px 8px 0 0;text-align:center">
-          <h1 style="color:#fff;margin:0;font-size:24px">Topchart Ghana</h1>
+          <h1 style="color:#fff;margin:0;font-size:24px">Topchart </h1>
         </div>
         <div style="background:#f9f9f9;padding:32px;border-radius:0 0 8px 8px;border:1px solid #e5e7eb">
           <h2 style="color:#111827;margin-top:0">Application Update for ${businessName}</h2>
@@ -112,7 +112,7 @@ export async function sendResellerRejectionEmail(
             Apply Again
           </a>
           <p style="color:#9ca3af;font-size:12px;margin-top:32px">
-            Topchart Ghana · Your trusted mobile top-up platform
+            Topchart  · Your trusted mobile top-up platform
           </p>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
-import { getGhanaOperators, getOperatorsByCountry } from "@/lib/reloadly";
-import { GHANA_RELOADLY_OPERATORS, getNetworkName } from "@/lib/reloadly-networks";
+import { getOperators, getOperatorsByCountry } from "@/lib/reloadly";
+import { _RELOADLY_OPERATORS, getNetworkName } from "@/lib/reloadly-networks";
 
 export const runtime = "nodejs";
 
@@ -20,10 +20,10 @@ export async function GET(request: NextRequest) {
     const localOnly = searchParams.get("localOnly") === "true";
 
     if (localOnly) {
-      // Return only the local Ghana operator mappings
+      // Return only the local  operator mappings
       return NextResponse.json({
         success: true,
-        data: Object.entries(GHANA_RELOADLY_OPERATORS).map(([key, op]) => ({
+        data: Object.entries(_RELOADLY_OPERATORS).map(([key, op]) => ({
           network: key,
           id: op.id,
           name: op.name,
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch operators from Reloadly API
     const result = country === "GH"
-      ? await getGhanaOperators()
+      ? await getOperators()
       : await getOperatorsByCountry(country, { includeBundles: true, includeData: true, includePin: true });
 
     if (result.success && result.data) {
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     // Fallback to local mappings if API fails
     return NextResponse.json({
       success: true,
-      data: Object.entries(GHANA_RELOADLY_OPERATORS).map(([key, op]) => ({
+      data: Object.entries(_RELOADLY_OPERATORS).map(([key, op]) => ({
         network: key,
         id: op.id,
         name: op.name,

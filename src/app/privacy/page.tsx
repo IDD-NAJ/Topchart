@@ -222,7 +222,7 @@ export default function PrivacyPage() {
             <div className="mt-3 space-y-1">
               <p className="text-sm">Email: privacy@Topchart.com</p>
               <p className="text-sm">Phone: +233 24 123 4567</p>
-              <p className="text-sm">Address: Accra, Ghana</p>
+              <p className="text-sm">Address: Accra, </p>
             </div>
           </CardContent>
         </Card>

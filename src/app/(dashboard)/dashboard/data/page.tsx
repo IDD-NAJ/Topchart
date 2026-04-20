@@ -15,7 +15,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { AlertCircle, CheckCircle2, Loader2, ArrowLeft, Star, Zap, ShieldCheck, Target, CreditCard, Users, Smartphone, Receipt, Check, Database } from "lucide-react"
+import { AlertCircle, CheckCircle2, Loader2, ArrowLeft, Star, Zap, ShieldCheck, Target, CreditCard, Users, Smartphone, Receipt, Check, Database, Clock } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
@@ -71,7 +71,7 @@ export default function DataPage() {
   const searchParams = useSearchParams()
   const { user: authUser, refreshUser } = useAuth()
 
-  const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null)
+  const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(() => networks.find(n => n.id === "mtn") || null)
   const [selectedPlan, setSelectedPlan] = useState<DatamartPlan | null>(null)
   const [phone, setPhone] = useState(searchParams.get("phone") || "")
   const [step, setStep] = useState<Step>("form")
@@ -266,6 +266,16 @@ export default function DataPage() {
           </div>
         </div>
         <p className="text-muted-foreground">Purchase direct data bundles across all major networks.</p>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2 text-sm font-semibold text-muted-foreground">
+          <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary">
+            <Clock className="w-4 h-4" />
+            Delivery: 3–15 minutes
+          </span>
+          <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 text-destructive">
+            <AlertCircle className="w-4 h-4" />
+            No refunds for wrong numbers
+          </span>
+        </div>
       </div>
 
       {step === "confirm" ? (
@@ -424,11 +434,11 @@ export default function DataPage() {
               <CardHeader className="bg-muted/30 pb-4 border-b">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-sm font-bold">2</span>
+                    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-base font-bold">2</span>
                     Select Plan
                   </CardTitle>
                   {selectedNetwork && !plansLoading && plans.length > 0 && (
-                    <span className="text-xs font-medium text-muted-foreground px-2 py-1 bg-muted rounded-full">
+                    <span className="text-sm font-medium text-muted-foreground px-2.5 py-1 bg-muted rounded-full">
                       {filteredPlans.length} available
                     </span>
                   )}
@@ -462,7 +472,7 @@ export default function DataPage() {
                     <p className="font-medium text-muted-foreground">Select a network above to view plans.</p>
                   </div>
                 ) : (
-                  <div className="p-4 space-y-4">
+                  <div className="p-2 space-y-2">
                     {planTypes.length > 2 && (
                       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                         {planTypes.map((type) => (
@@ -482,15 +492,15 @@ export default function DataPage() {
                       </div>
                     )}
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {filteredPlans.map((plan) => (
                         <div
                           key={plan.id}
                           className={cn(
-                            "rounded-2xl transition-all cursor-pointer",
+                            "rounded-md transition-all cursor-pointer",
                             selectedPlan?.id === plan.id 
-                              ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.01]" 
-                              : "hover:scale-[1.01]"
+                              ? "ring-2 ring-primary ring-offset-1 ring-offset-background" 
+                              : ""
                           )}
                           onClick={() => setSelectedPlan(plan)}
                         >

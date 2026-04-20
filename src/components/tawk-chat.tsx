@@ -6,14 +6,20 @@ import { useAuth } from "@/lib/auth-context"
 import TawkMessengerReact from "@tawk.to/tawk-messenger-react"
 
 export function TawkChat() {
-  const propertyId = process.env.NEXT_PUBLIC_TAWK_PROPERTY_ID
-  const widgetId = process.env.NEXT_PUBLIC_TAWK_WIDGET_ID
+  const propertyId = process.env.NEXT_PUBLIC_TAWK_PROPERTY_ID?.trim()
+  const widgetId = process.env.NEXT_PUBLIC_TAWK_WIDGET_ID?.trim()
   const { user } = useAuth()
   // @ts-ignore
   const tawkRef = useRef(null)
+  const hasValidConfig = Boolean(
+    propertyId &&
+    widgetId &&
+    propertyId !== "your-tawk-property-id" &&
+    widgetId !== "your-tawk-widget-id"
+  )
 
   useEffect(() => {
-    if (!user) return
+    if (!hasValidConfig || !user) return
     const trySetAttributes = () => {
       // @ts-ignore
       const api = window.Tawk_API
@@ -27,9 +33,9 @@ export function TawkChat() {
       }
     }
     trySetAttributes()
-  }, [user])
+  }, [hasValidConfig, user])
 
-  if (!propertyId || !widgetId) {
+  if (!hasValidConfig) {
     return null
   }
 
@@ -57,6 +63,7 @@ export function TawkChat() {
       onVisitorNameChanged={() => {}}
       onFileUpload={() => {}}
       onTagsUpdated={() => {}}
+      onUnreadCountChanged={() => {}}
     />
   )
 }

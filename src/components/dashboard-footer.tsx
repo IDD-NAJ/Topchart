@@ -19,7 +19,7 @@ export function DashboardFooter() {
               <span className="text-lg font-bold text-foreground">Topchart</span>
             </Link>
             <p className="mt-3 text-sm text-muted-foreground">
-              Fast, reliable data top-ups for Ghanaian networks.
+              Fast, reliable data top-ups for ian networks.
             </p>
           </div>
 
@@ -39,7 +39,7 @@ export function DashboardFooter() {
             <p className="text-sm font-semibold text-foreground">Support & legal</p>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Mail className="h-4 w-4" />
-              <span>support@Topchartghana.com</span>
+              <span>support@Topchart.com</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <ShieldCheck className="h-4 w-4" />

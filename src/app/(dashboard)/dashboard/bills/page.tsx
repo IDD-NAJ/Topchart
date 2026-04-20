@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -19,17 +19,19 @@ import {
   ArrowLeft,
   CreditCard,
   AlertCircle,
+  Wallet,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
 type Step = "select" | "form" | "confirm" | "processing" | "success" | "failed"
+type PaymentMethod = "wallet" | "paystack"
 
 interface BillProvider {
   id: string
   name: string
   category: string
-  icon: React.ElementType
+  icon: string
   color: string
   accountLabel: string
   accountPlaceholder: string
@@ -44,15 +46,13 @@ const CATEGORY_TABS = [
   { id: "internet", label: "Internet", icon: Wifi },
 ]
 
-const BILL_PROVIDERS: BillProvider[] = [
-  { id: "ecg-prepaid", name: "ECG Prepaid", category: "electricity", icon: ZapIcon, color: "text-yellow-600 bg-yellow-50", accountLabel: "Meter Number", accountPlaceholder: "e.g., 1234567890", minAmount: 10, maxAmount: 500 },
-  { id: "ecg-postpaid", name: "ECG Postpaid", category: "electricity", icon: ZapIcon, color: "text-yellow-600 bg-yellow-50", accountLabel: "Account Number", accountPlaceholder: "e.g., 9876543210", minAmount: 10, maxAmount: 5000 },
-  { id: "dstv", name: "DSTV", category: "tv", icon: Tv, color: "text-blue-600 bg-blue-50", accountLabel: "Smart Card Number", accountPlaceholder: "e.g., 2012345678", minAmount: 25, maxAmount: 500 },
-  { id: "gotv", name: "GOtv", category: "tv", icon: Tv, color: "text-orange-600 bg-orange-50", accountLabel: "ICU Number", accountPlaceholder: "e.g., 2012345678", minAmount: 20, maxAmount: 300 },
-  { id: "gwcl", name: "Ghana Water (GWCL)", category: "water", icon: Droplets, color: "text-cyan-600 bg-cyan-50", accountLabel: "Account Number", accountPlaceholder: "e.g., 1234567", minAmount: 10, maxAmount: 1000 },
-  { id: "mtn-fibre", name: "MTN Fibre", category: "internet", icon: Wifi, color: "text-[#FFC300] bg-yellow-50", accountLabel: "Account Number", accountPlaceholder: "e.g., 024XXXXXXX", minAmount: 50, maxAmount: 500 },
-  { id: "vodafone-broadband", name: "Telecel Broadband", category: "internet", icon: Wifi, color: "text-red-600 bg-red-50", accountLabel: "Account Number", accountPlaceholder: "e.g., 020XXXXXXX", minAmount: 50, maxAmount: 500 },
-]
+const ICON_MAP: Record<string, React.ElementType> = {
+  Zap: ZapIcon,
+  Tv: Tv,
+  Droplets: Droplets,
+  Wifi: Wifi,
+  Receipt: Receipt,
+}
 
 export default function BillsPage() {
   const { user } = useAuth()
@@ -61,9 +61,56 @@ export default function BillsPage() {
   const [selectedProvider, setSelectedProvider] = useState<BillProvider | null>(null)
   const [accountNumber, setAccountNumber] = useState("")
   const [amount, setAmount] = useState("")
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("wallet")
+  const [walletBalance, setWalletBalance] = useState<number>(0)
+  const [loadingBalance, setLoadingBalance] = useState(false)
   const [error, setError] = useState("")
 
-  const filteredProviders = BILL_PROVIDERS.filter((p) => p.category === selectedCategory)
+  const [providers, setProviders] = useState<BillProvider[]>([])
+  const [loadingProviders, setLoadingProviders] = useState(true)
+
+  const currentAmount = parseFloat(amount) || 0
+  const canAfford = walletBalance >= currentAmount
+
+  const filteredProviders = providers.filter((p) => p.category === selectedCategory)
+
+  useEffect(() => {
+    const fetchProviders = async () => {
+      try {
+        setLoadingProviders(true)
+        const res = await fetch("/api/bills/providers", { credentials: "include" })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success) setProviders(data.data)
+        }
+      } catch {
+        toast.error("Failed to load bill providers")
+      } finally {
+        setLoadingProviders(false)
+      }
+    }
+    fetchProviders()
+  }, [])
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        setLoadingBalance(true)
+        const res = await fetch("/api/wallet", { credentials: "include" })
+        if (res.ok) {
+          const result = await res.json()
+          if (result.success) setWalletBalance(result.data.balance ?? 0)
+        }
+      } catch { /* ignore */ } finally {
+        setLoadingBalance(false)
+      }
+    }
+    if (user) fetchBalance()
+  }, [user])
+
+  const getIcon = (iconName: string): React.ElementType => {
+    return ICON_MAP[iconName] || Receipt
+  }
 
   const handleOrder = async () => {
     if (!selectedProvider || !accountNumber || !amount) return
@@ -71,6 +118,11 @@ export default function BillsPage() {
     const numAmount = parseFloat(amount)
     if (isNaN(numAmount) || numAmount < selectedProvider.minAmount || numAmount > selectedProvider.maxAmount) {
       toast.error(`Amount must be between ₵${selectedProvider.minAmount} and ₵${selectedProvider.maxAmount}`)
+      return
+    }
+
+    if (paymentMethod === "wallet" && !canAfford) {
+      toast.error("Insufficient wallet balance. Please top up or use Paystack.")
       return
     }
 
@@ -85,12 +137,17 @@ export default function BillsPage() {
           providerId: selectedProvider.id,
           accountNumber,
           amount: numAmount,
+          paymentMethod,
         }),
       })
 
       const data = await res.json()
 
       if (data.success) {
+        if (paymentMethod === "paystack" && data.authorizationUrl) {
+          window.location.href = data.authorizationUrl
+          return
+        }
         setStep("success")
         toast.success("Bill payment successful!")
       } else {
@@ -155,40 +212,53 @@ export default function BillsPage() {
               })}
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredProviders.map((provider) => {
-                const Icon = provider.icon
-                return (
-                  <Card
-                    key={provider.id}
-                    className={cn(
-                      "cursor-pointer transition-all hover:shadow-md border-2",
-                      selectedProvider?.id === provider.id
-                        ? "border-[color:var(--marketing-accent)] shadow-md"
-                        : "border-transparent hover:border-[color:var(--marketing-accent)]/30"
-                    )}
-                    onClick={() => {
-                      setSelectedProvider(provider)
-                      setStep("form")
-                    }}
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center gap-3">
-                        <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center", provider.color)}>
-                          <Icon className="h-5 w-5" />
+            {loadingProviders ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-[color:var(--marketing-accent)]" />
+                <span className="ml-3 text-muted-foreground">Loading providers...</span>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredProviders.map((provider) => {
+                  const Icon = getIcon(provider.icon)
+                  return (
+                    <Card
+                      key={provider.id}
+                      className={cn(
+                        "cursor-pointer transition-all hover:shadow-md border-2",
+                        selectedProvider?.id === provider.id
+                          ? "border-[color:var(--marketing-accent)] shadow-md"
+                          : "border-transparent hover:border-[color:var(--marketing-accent)]/30"
+                      )}
+                      onClick={() => {
+                        setSelectedProvider(provider)
+                        setStep("form")
+                      }}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center", provider.color)}>
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <CardTitle className="text-base">{provider.name}</CardTitle>
                         </div>
-                        <CardTitle className="text-base">{provider.name}</CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">
-                        ₵{provider.minAmount} – ₵{provider.maxAmount}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">
+                          ₵{provider.minAmount} – ₵{provider.maxAmount}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+                {filteredProviders.length === 0 && !loadingProviders && (
+                  <div className="col-span-full text-center py-12 text-muted-foreground">
+                    <Receipt className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                    <p>No providers available for this category.</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {step === "form" && selectedProvider && (
               <Card className="border-2 border-[color:var(--marketing-accent)]/20 mt-4">
@@ -224,6 +294,45 @@ export default function BillsPage() {
                     </p>
                   </div>
 
+                  <div className="space-y-2">
+                    <Label>Payment Method</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setPaymentMethod("wallet")}
+                        className={cn(
+                          "flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left",
+                          paymentMethod === "wallet"
+                            ? "border-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/5"
+                            : "border-muted hover:border-[color:var(--marketing-accent)]/30"
+                        )}
+                      >
+                        <Wallet className="h-5 w-5 text-[color:var(--marketing-accent)]" />
+                        <div>
+                          <p className="text-sm font-medium">Wallet</p>
+                          <p className="text-xs text-muted-foreground">Balance: ₵{loadingBalance ? "..." : walletBalance.toFixed(2)}</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => setPaymentMethod("paystack")}
+                        className={cn(
+                          "flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left",
+                          paymentMethod === "paystack"
+                            ? "border-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/5"
+                            : "border-muted hover:border-[color:var(--marketing-accent)]/30"
+                        )}
+                      >
+                        <CreditCard className="h-5 w-5 text-[color:var(--marketing-accent)]" />
+                        <div>
+                          <p className="text-sm font-medium">Paystack</p>
+                          <p className="text-xs text-muted-foreground">Card / Mobile Money</p>
+                        </div>
+                      </button>
+                    </div>
+                    {paymentMethod === "wallet" && !canAfford && currentAmount > 0 && (
+                      <p className="text-xs text-red-500">Insufficient balance. Top up your wallet or use Paystack.</p>
+                    )}
+                  </div>
+
                   <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
                     <span className="font-medium">Total</span>
                     <span className="text-2xl font-bold text-[color:var(--marketing-accent)]">
@@ -235,11 +344,11 @@ export default function BillsPage() {
                     <Button variant="outline" onClick={() => setStep("select")} className="flex-1">Back</Button>
                     <Button
                       onClick={handleOrder}
-                      disabled={!accountNumber || !amount}
+                      disabled={!accountNumber || !amount || (paymentMethod === "wallet" && !canAfford)}
                       className="flex-1 bg-[color:var(--marketing-accent)] hover:bg-[color:var(--marketing-accent)]/90"
                     >
                       <CreditCard className="h-4 w-4 mr-2" />
-                      Pay Bill
+                      {paymentMethod === "paystack" ? "Pay with Paystack" : "Pay Bill"}
                     </Button>
                   </div>
                 </CardContent>

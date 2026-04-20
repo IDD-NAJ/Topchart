@@ -1,7 +1,7 @@
 {
-  "name": "Topchart Ghana",
+  "name": "Topchart ",
   "short_name": "Topchart",
-  "description": "Buy airtime and data bundles instantly for MTN, Telecel, and AirtelTigo in Ghana.",
+  "description": "Buy airtime and data bundles instantly for MTN, Telecel, and AirtelTigo in .",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FAF9F7",

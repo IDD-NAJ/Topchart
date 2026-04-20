@@ -71,7 +71,7 @@ export default function ResellerMarketingPage() {
   };
 
   const shareViaWhatsApp = (url: string) => {
-    const text = `Join Topchart Ghana and get amazing deals on airtime and data! Use my referral link: ${url}`;
+    const text = `Join Topchart  and get amazing deals on airtime and data! Use my referral link: ${url}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 

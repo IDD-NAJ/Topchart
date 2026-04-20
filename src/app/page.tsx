@@ -81,7 +81,7 @@ const SERVICES = [
   {
     icon: CreditCard,
     title: "Pay Bills",
-    description: "Electricity, TV, water & internet bill payments in Ghana.",
+    description: "Electricity, TV, water & internet bill payments in .",
     href: "/dashboard/bills",
     label: "Pay now",
   },
@@ -436,7 +436,6 @@ export default function HomePage() {
           </video>
           <div className="absolute inset-0 bg-gradient-to-b from-[#0d1627]/80 via-[#0d1627]/60 to-[#0d1627] pointer-events-none" />
           <ConnectionsGrid />
-          <FloatingCards />
           
           {/* Bottom fade blending into the next white section */}
           <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-white to-transparent pointer-events-none z-10" />
@@ -449,7 +448,7 @@ export default function HomePage() {
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               className="font-serif text-balance text-5xl leading-[1.1] tracking-tight text-white sm:text-6xl lg:text-[5.5rem]"
             >
-              Ghana&apos;s Complete <br className="hidden md:block" />
+             Complete <br className="hidden md:block" />
               <motion.span
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
