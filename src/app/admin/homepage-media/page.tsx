@@ -241,6 +241,8 @@ export default function AdminHomepageMediaPage() {
                 altText={altText}
                 sortOrder={sortOrder}
                 onSuccess={loadMedia}
+                onSectionChange={setSectionKey}
+                sectionOptions={sectionOptions}
               />
             </TabsContent>
           </Tabs>
@@ -345,12 +347,16 @@ function StorageFileSelector({
   altText,
   sortOrder,
   onSuccess,
+  onSectionChange,
+  sectionOptions,
 }: {
   sectionKey: string;
   assetType: "image" | "video";
   altText: string;
   sortOrder: number;
   onSuccess: () => void;
+  onSectionChange: (section: string) => void;
+  sectionOptions: string[];
 }) {
   const [files, setFiles] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -382,10 +388,19 @@ function StorageFileSelector({
   }, []);
 
   const handleAssign = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      toast.error("Please select a file first");
+      return;
+    }
 
     setIsAssigning(true);
     try {
+      console.log("[ASSIGN] Starting assignment:", {
+        sectionKey,
+        storagePath: selectedFile.path,
+        assetType: selectedFile.type || assetType,
+      });
+
       const response = await fetch("/api/admin/storage-files", {
         method: "POST",
         credentials: "include",
@@ -401,14 +416,17 @@ function StorageFileSelector({
       });
 
       const payload = await response.json();
+      console.log("[ASSIGN] Response:", payload);
+
       if (!response.ok || !payload?.success) {
         throw new Error(payload?.error || "Failed to assign file");
       }
 
-      toast.success("File assigned to section successfully");
+      toast.success(`File assigned to "${sectionKey}" successfully`);
       setSelectedFile(null);
       onSuccess();
     } catch (error) {
+      console.error("[ASSIGN] Error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to assign file");
     } finally {
       setIsAssigning(false);
@@ -508,21 +526,54 @@ function StorageFileSelector({
           </div>
 
           {selectedFile && (
-            <div className="flex items-center gap-4 rounded-lg border bg-muted/50 p-4">
-              <div className="flex-1">
-                <p className="text-sm font-medium">Selected: {selectedFile.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  Will be assigned to <strong>{sectionKey}</strong>
-                </p>
+            <div className="space-y-4 rounded-lg border bg-muted/50 p-4">
+              <div className="flex items-start gap-4">
+                {selectedFile.type === "video" ? (
+                  <video
+                    src={selectedFile.publicUrl}
+                    className="h-20 w-32 rounded-md object-cover"
+                    preload="metadata"
+                  />
+                ) : (
+                  <div className="relative h-20 w-32 overflow-hidden rounded-md">
+                    <Image
+                      src={selectedFile.publicUrl}
+                      alt={selectedFile.name}
+                      fill
+                      className="object-cover"
+                      sizes="128px"
+                    />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Type: {selectedFile.type} • Size: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Label className="text-xs">Assign to:</Label>
+                    <select
+                      value={sectionKey}
+                      onChange={(e) => onSectionChange(e.target.value)}
+                      className="h-7 rounded-md border border-input bg-background px-2 text-xs"
+                    >
+                      {sectionOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex justify-end gap-2">
                 <Button variant="outline" size="sm" onClick={() => setSelectedFile(null)}>
                   <X className="mr-2 h-4 w-4" />
                   Cancel
                 </Button>
                 <Button size="sm" onClick={handleAssign} disabled={isAssigning}>
                   <Check className="mr-2 h-4 w-4" />
-                  {isAssigning ? "Assigning..." : "Assign to Section"}
+                  {isAssigning ? "Assigning..." : `Assign to "${sectionKey}"`}
                 </Button>
               </div>
             </div>
