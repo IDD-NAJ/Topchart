@@ -28,6 +28,7 @@ interface RequestOptions extends RequestInit {
   timeoutMs?: number;
   retries?: number;
   retryDelayMs?: number;
+  skipRetry?: boolean;
 }
 
 const RETRYABLE_STATUSES = new Set([429, 502, 503, 504]);
@@ -56,8 +57,9 @@ export async function providerRequest<T>(
   const timeoutMs = options.timeoutMs ?? 12000;
   const retries = options.retries ?? 2;
   const retryDelayMs = options.retryDelayMs ?? 500;
+  const skipRetry = options.skipRetry ?? false;
   const method = (options.method || "GET").toUpperCase();
-  const canRetry = method === "GET";
+  const canRetry = method === "GET" && !skipRetry;
   const maxAttempts = canRetry ? retries + 1 : 1;
 
   let lastError: ProviderHttpError | undefined;
