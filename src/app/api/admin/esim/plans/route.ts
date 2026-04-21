@@ -15,6 +15,7 @@ export async function GET() {
       SELECT 
         id,
         name,
+        description,
         price,
         minutes,
         sms,
@@ -34,6 +35,7 @@ export async function GET() {
       data: plans.map((p: any) => ({
         id: p.id,
         name: p.name,
+        description: p.description,
         price: parseFloat(p.price),
         minutes: p.minutes,
         sms: p.sms,
@@ -68,6 +70,7 @@ export async function POST(request: NextRequest) {
     const planSchema = z.object({
       id: z.string().min(1).max(50).optional(),
       name: z.string().min(1).max(100),
+      description: z.string().max(200).optional(),
       price: z.number().positive(),
       minutes: z.number().int().min(0),
       sms: z.number().int().min(0),
@@ -93,6 +96,7 @@ export async function POST(request: NextRequest) {
       INSERT INTO esim_phone_plans (
         id,
         name,
+        description,
         price,
         minutes,
         sms,
@@ -104,6 +108,7 @@ export async function POST(request: NextRequest) {
       ) VALUES (
         ${planId},
         ${data.name},
+        ${data.description || null},
         ${data.price},
         ${data.minutes},
         ${data.sms},
@@ -115,6 +120,7 @@ export async function POST(request: NextRequest) {
       )
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
+        description = EXCLUDED.description,
         price = EXCLUDED.price,
         minutes = EXCLUDED.minutes,
         sms = EXCLUDED.sms,
@@ -132,6 +138,7 @@ export async function POST(request: NextRequest) {
       data: {
         id: plan.id,
         name: plan.name,
+        description: plan.description,
         price: parseFloat(plan.price),
         minutes: plan.minutes,
         sms: plan.sms,
@@ -173,6 +180,7 @@ export async function PUT(request: NextRequest) {
       UPDATE esim_phone_plans
       SET 
         name = ${updates.name ?? sql`name`},
+        description = ${updates.description ?? sql`description`},
         price = ${updates.price ?? sql`price`},
         minutes = ${updates.minutes ?? sql`minutes`},
         sms = ${updates.sms ?? sql`sms`},
@@ -198,6 +206,7 @@ export async function PUT(request: NextRequest) {
       data: {
         id: plan.id,
         name: plan.name,
+        description: plan.description,
         price: parseFloat(plan.price),
         minutes: plan.minutes,
         sms: plan.sms,

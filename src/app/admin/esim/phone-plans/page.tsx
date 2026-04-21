@@ -36,6 +36,7 @@ import {
 interface PhonePlan {
   id: string;
   name: string;
+  description?: string;
   price: number;
   minutes: number;
   sms: number;
@@ -45,6 +46,23 @@ interface PhonePlan {
   popular: boolean;
   sortOrder: number;
 }
+
+const PRESET_FEATURES = [
+  "US phone number",
+  "Call forwarding",
+  "SMS receive",
+  "Unlimited incoming SMS",
+  "Voicemail",
+  "Multi-device support",
+  "30-day validity",
+  "90-day validity",
+  "24/7 Support",
+  "Number porting",
+  "Caller ID",
+  "Call waiting",
+  "Conference calling",
+  "International calling",
+];
 
 function PlanItem({ 
   plan, 
@@ -152,11 +170,49 @@ function PlanItem({
           </div>
 
           <div className="space-y-2">
-            <Label>Features (comma-separated)</Label>
+            <Label>Description (optional)</Label>
             <Input 
-              value={(editData.features || []).join(", ")} 
-              onChange={(e) => onUpdateEditData({ features: e.target.value.split(",").map(f => f.trim()).filter(Boolean) })}
-              placeholder="US phone number, Call forwarding, SMS receive, 30-day validity"
+              value={editData.description || ""} 
+              onChange={(e) => onUpdateEditData({ description: e.target.value })}
+              placeholder="Brief description shown to customers"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Features</Label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {PRESET_FEATURES.map((feature) => {
+                const isSelected = (editData.features || []).includes(feature);
+                return (
+                  <button
+                    key={feature}
+                    onClick={() => {
+                      const current = editData.features || [];
+                      if (isSelected) {
+                        onUpdateEditData({ features: current.filter(f => f !== feature) });
+                      } else {
+                        onUpdateEditData({ features: [...current, feature] });
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                    }`}
+                  >
+                    {isSelected ? "✓ " : "+ "}{feature}
+                  </button>
+                );
+              })}
+            </div>
+            <Input 
+              value={(editData.features || []).filter(f => !PRESET_FEATURES.includes(f)).join(", ")} 
+              onChange={(e) => {
+                const customFeatures = e.target.value.split(",").map(f => f.trim()).filter(Boolean);
+                const presetFeatures = (editData.features || []).filter(f => PRESET_FEATURES.includes(f));
+                onUpdateEditData({ features: [...presetFeatures, ...customFeatures] });
+              }}
+              placeholder="Add custom features (comma-separated)"
             />
           </div>
         </CardContent>
@@ -250,6 +306,7 @@ export default function AdminPhonePlansPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [newPlan, setNewPlan] = useState<Partial<PhonePlan>>({
     name: "",
+    description: "",
     price: 0,
     minutes: 0,
     sms: 0,
@@ -485,6 +542,14 @@ export default function AdminPhonePlansPage() {
                 />
               </div>
               <div className="space-y-2">
+                <Label>Description</Label>
+                <Input 
+                  value={newPlan.description || ""} 
+                  onChange={(e) => setNewPlan({ ...newPlan, description: e.target.value })}
+                  placeholder="Brief description"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label>Price (₵)</Label>
                 <Input 
                   type="number" 
@@ -523,11 +588,40 @@ export default function AdminPhonePlansPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Features (comma-separated)</Label>
+              <Label>Features</Label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {PRESET_FEATURES.map((feature) => {
+                  const isSelected = (newPlan.features || []).includes(feature);
+                  return (
+                    <button
+                      key={feature}
+                      onClick={() => {
+                        const current = newPlan.features || [];
+                        if (isSelected) {
+                          setNewPlan({ ...newPlan, features: current.filter(f => f !== feature) });
+                        } else {
+                          setNewPlan({ ...newPlan, features: [...current, feature] });
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                        isSelected
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                      }`}
+                    >
+                      {isSelected ? "✓ " : "+ "}{feature}
+                    </button>
+                  );
+                })}
+              </div>
               <Input 
-                value={(newPlan.features || []).join(", ")} 
-                onChange={(e) => setNewPlan({ ...newPlan, features: e.target.value.split(",").map(f => f.trim()).filter(Boolean) })}
-                placeholder="US phone number, Call forwarding, SMS receive, 30-day validity"
+                value={(newPlan.features || []).filter(f => !PRESET_FEATURES.includes(f)).join(", ")} 
+                onChange={(e) => {
+                  const customFeatures = e.target.value.split(",").map(f => f.trim()).filter(Boolean);
+                  const presetFeatures = (newPlan.features || []).filter(f => PRESET_FEATURES.includes(f));
+                  setNewPlan({ ...newPlan, features: [...presetFeatures, ...customFeatures] });
+                }}
+                placeholder="Add custom features (comma-separated)"
               />
             </div>
 

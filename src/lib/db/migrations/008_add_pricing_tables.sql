@@ -5,6 +5,7 @@
 CREATE TABLE IF NOT EXISTS esim_phone_plans (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
+  description TEXT,
   price DECIMAL(10,2) NOT NULL,
   minutes INTEGER NOT NULL DEFAULT 0,
   sms INTEGER NOT NULL DEFAULT 0,
@@ -70,10 +71,10 @@ CREATE INDEX idx_gift_card_products_active ON gift_card_products(is_active);
 CREATE INDEX idx_gift_card_products_category ON gift_card_products(category);
 
 -- Insert seed data for eSIM phone plans (matching current hardcoded values)
-INSERT INTO esim_phone_plans (id, name, price, minutes, sms, validity_days, features, is_active, popular, sort_order) VALUES
-('us-basic', 'US Basic', 120, 100, 100, 30, '["US phone number", "Call forwarding", "SMS receive", "30-day validity"]', true, false, 1),
-('us-premium', 'US Premium', 200, 500, 500, 30, '["US phone number", "Unlimited incoming SMS", "Call forwarding", "Voicemail", "30-day validity"]', true, true, 2),
-('us-business', 'US Business', 350, 999, 999, 90, '["US phone number", "Unlimited SMS & calls", "Call forwarding", "Voicemail", "Multi-device support", "90-day validity"]', true, false, 3)
+INSERT INTO esim_phone_plans (id, name, description, price, minutes, sms, validity_days, features, is_active, popular, sort_order) VALUES
+('us-basic', 'US Basic', 'Perfect for occasional calls and messages', 120, 100, 100, 30, '["US phone number", "Call forwarding", "SMS receive", "30-day validity"]', true, false, 1),
+('us-premium', 'US Premium', 'Most popular choice for regular usage', 200, 500, 500, 30, '["US phone number", "Unlimited incoming SMS", "Call forwarding", "Voicemail", "30-day validity"]', true, true, 2),
+('us-business', 'US Business', 'Heavy usage with extended validity', 350, 999, 999, 90, '["US phone number", "Unlimited SMS & calls", "Call forwarding", "Voicemail", "Multi-device support", "90-day validity"]', true, false, 3)
 ON CONFLICT (id) DO NOTHING;
 
 -- Insert seed data for eSIM data packages
