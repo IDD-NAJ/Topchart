@@ -452,3 +452,107 @@ export async function updateWalletBalance(
     return { success: false, error: "Failed to update wallet balance" };
   }
 }
+
+export async function handleGoogleAuth(profile: {
+  email: string;
+  firstName: string;
+  lastName: string;
+}): Promise<AuthResult> {
+  try {
+    const { email, firstName, lastName } = profile;
+    const normalizedEmail = email.toLowerCase();
+    
+    // Check if user exists
+    let result = await sql`
+      SELECT id, email, phone, password_hash, first_name, last_name, wallet_balance, is_verified, role, created_at
+      FROM users WHERE email = ${normalizedEmail}
+    `;
+
+    let user: any;
+
+    if (result.length === 0) {
+      // Create new user
+      const userId = uuidv4();
+      const newReferralCode = userId.slice(0, 8).toUpperCase();
+      const now = new Date().toISOString();
+      const placeholderPhone = "0000000000"; 
+      const placeholderHash = await bcrypt.hash(uuidv4(), 10);
+
+      try {
+        result = await sql`
+          INSERT INTO users (id, email, phone, password_hash, first_name, last_name, wallet_balance, is_verified, role, referral_code, referral_earnings, total_deposits, created_at, updated_at)
+          VALUES (${userId}, ${normalizedEmail}, ${placeholderPhone}, ${placeholderHash}, ${firstName}, ${lastName}, 0.00, true, ${ROLES.USER}, ${newReferralCode}, 0.00, 0.00, ${now}, ${now})
+          RETURNING id, email, phone, first_name, last_name, wallet_balance, is_verified, role, referral_code, created_at
+        `;
+      } catch (error: any) {
+        const message = `${error?.message || ""}`.toLowerCase();
+        const missingColumn =
+          error?.code === "42703" ||
+          message.includes("column") ||
+          message.includes("does not exist");
+
+        if (!missingColumn) throw error;
+        
+        try {
+          result = await sql`
+            INSERT INTO users (id, email, phone, password_hash, first_name, last_name, wallet_balance, is_verified, role, referral_code, created_at, updated_at)
+            VALUES (${userId}, ${normalizedEmail}, ${placeholderPhone}, ${placeholderHash}, ${firstName}, ${lastName}, 0.00, true, ${ROLES.USER}, ${newReferralCode}, ${now}, ${now})
+            RETURNING id, email, phone, first_name, last_name, wallet_balance, is_verified, role, referral_code, created_at
+          `;
+        } catch (fallbackError: any) {
+          const fallbackMessage = `${fallbackError?.message || ""}`.toLowerCase();
+          const referralCodeMissing =
+            fallbackError?.code === "42703" ||
+            fallbackMessage.includes("referral_code");
+
+          if (!referralCodeMissing) throw fallbackError;
+
+          result = await sql`
+            INSERT INTO users (id, email, phone, password_hash, first_name, last_name, wallet_balance, is_verified, role, created_at, updated_at)
+            VALUES (${userId}, ${normalizedEmail}, ${placeholderPhone}, ${placeholderHash}, ${firstName}, ${lastName}, 0.00, true, ${ROLES.USER}, ${now}, ${now})
+            RETURNING id, email, phone, first_name, last_name, wallet_balance, is_verified, role, NULL::text AS referral_code, created_at
+          `;
+        }
+      }
+    }
+
+    user = result[0];
+
+    // Create session
+    const token = uuidv4();
+    const sessionId = uuidv4();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const nowIso = new Date().toISOString();
+
+    await insertSessionRecord({
+      sessionId,
+      userId: user.id,
+      token,
+      expiresAtIso: expiresAt.toISOString(),
+      nowIso,
+    });
+    await pruneUserSessions(user.id);
+
+    const userResponse: User = {
+      id: user.id,
+      email: user.email,
+      phone: user.phone,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      wallet_balance: Number(user.wallet_balance),
+      is_verified: user.is_verified,
+      role: user.role,
+      created_at: user.created_at,
+    };
+
+    return { 
+      success: true, 
+      user: userResponse,
+      token,
+      expiresAt
+    };
+  } catch (error: unknown) {
+    console.error("[handleGoogleAuth] Error:", error);
+    return { success: false, error: "Failed to authenticate with Google." };
+  }
+}

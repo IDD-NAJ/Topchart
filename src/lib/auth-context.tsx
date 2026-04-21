@@ -49,6 +49,31 @@ function fetchMe(): Promise<MeFetchResult> {
   return _meInFlight;
 }
 
+// Fetch NextAuth session
+async function fetchNextAuthSession(): Promise<User | null> {
+  try {
+    const response = await fetch("/api/auth/session", { credentials: "include" });
+    if (!response.ok) return null;
+    const session = await response.json();
+    if (session?.user?.id) {
+      return {
+        id: session.user.id,
+        email: session.user.email,
+        firstName: session.user.firstName || session.user.name?.split(' ')[0] || '',
+        lastName: session.user.lastName || session.user.name?.split(' ').slice(1).join(' ') || '',
+        phone: session.user.phone || '',
+        walletBalance: session.user.walletBalance || 0,
+        isVerified: session.user.isVerified || false,
+        role: session.user.role || 'USER',
+        createdAt: session.user.createdAt || new Date().toISOString(),
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export interface User {
   id: string;
   email: string;
@@ -124,6 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
+      // First try legacy session
       const result = await fetchMe();
       if (result.kind === "network") {
         console.warn("Network error during user refresh");
@@ -133,11 +159,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const body = result.payload;
         if (body?.success && body.user) {
           setUser(mapServerUser(body.user));
-        } else {
-          setUser(null);
+          return;
         }
+      }
+      
+      // If no legacy session, try NextAuth session
+      const nextAuthUser = await fetchNextAuthSession();
+      if (nextAuthUser) {
+        setUser(nextAuthUser);
         return;
       }
+      
       if (result.status !== 401) {
         console.error("Failed to refresh user:", result.status);
       }
@@ -267,6 +299,13 @@ const register = async (
 
   const logout = async () => {
     try {
+      // Sign out from NextAuth
+      await fetch("/api/auth/signout", {
+        method: "POST",
+        credentials: "include",
+        cache: "no-store",
+      });
+      
       // Use API route so we can logout without server redirects
       await fetch("/api/auth/logout", {
         method: "POST",
@@ -311,10 +350,10 @@ const register = async (
     clearAllTimers();
     setShowWarning(false);
 
-    // Set warning timer (show warning 30 seconds before logout)
+    // Set warning timer (show warning 60 seconds before logout)
     warningTimerRef.current = setTimeout(() => {
       setShowWarning(true);
-      setSecondsRemaining(30);
+      setSecondsRemaining(60);
       
       // Start countdown
       countdownIntervalRef.current = setInterval(() => {

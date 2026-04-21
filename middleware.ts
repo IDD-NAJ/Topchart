@@ -25,7 +25,11 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  
+  // Check both legacy session token and NextAuth session token
   const sessionToken = request.cookies.get("session_token")?.value;
+  const nextAuthToken = request.cookies.get("next-auth.session-token")?.value;
+  const hasSession = Boolean(sessionToken || nextAuthToken);
 
   const isServerAction = request.headers.get("next-action");
   if (isServerAction) {
@@ -34,7 +38,7 @@ export async function middleware(request: NextRequest) {
 
   // Dashboard protection
   if (pathname.startsWith("/dashboard")) {
-    if (!sessionToken) {
+    if (!hasSession) {
       return applySecurityHeaders(
         NextResponse.redirect(new URL(LOGIN, request.url))
       );
@@ -43,7 +47,7 @@ export async function middleware(request: NextRequest) {
 
   // Admin protection
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
-    if (!sessionToken) {
+    if (!hasSession) {
       return applySecurityHeaders(
         NextResponse.redirect(new URL(ADMIN_LOGIN, request.url))
       );

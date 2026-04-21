@@ -5,10 +5,12 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
+import { GoogleSignInButton } from "@/components/google-signin-button"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { motion } from "framer-motion"
+import { GoogleAuthButton } from "@/components/google-auth-button"
 import { 
   AlertCircle, 
   Eye, 
@@ -219,10 +221,27 @@ export default function RegisterPage() {
             </motion.div>
           </div>
 
-          <motion.form 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <GoogleAuthButton text="Sign up with Google" />
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border/50" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[color:var(--marketing-cream-alt)] px-2 text-muted-foreground">Or sign up with email</span>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.form 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
             onSubmit={handleSubmit} 
             className="space-y-6"
           >
@@ -232,6 +251,17 @@ export default function RegisterPage() {
                 <span>{error}</span>
               </div>
             )}
+
+            <GoogleSignInButton mode="signup" callbackUrl="/dashboard" />
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border/50" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[color:var(--marketing-cream-alt)] px-2 text-muted-foreground">Or register with email</span>
+              </div>
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

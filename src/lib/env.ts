@@ -29,6 +29,11 @@ const envSchema = z.object({
   AIRALO_CLIENT_SECRET: z.string().optional(),
   AIRALO_WEBHOOK_SECRET: z.string().optional(),
   AIRALO_SANDBOX: z.enum(["true", "false"]).optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  AUTH_SECRET: z.string().optional(),
+  AUTH_GOOGLE_ID: z.string().optional(),
+  AUTH_GOOGLE_SECRET: z.string().optional(),
 });
 
 type ServerEnv = z.infer<typeof envSchema>;
@@ -99,6 +104,12 @@ const airaloEnvSchema = z.object({
 });
 type AiraloEnv = z.infer<typeof airaloEnvSchema>;
 
+const googleAuthEnvSchema = z.object({
+  GOOGLE_CLIENT_ID: z.string().min(1, "GOOGLE_CLIENT_ID is required").optional(),
+  GOOGLE_CLIENT_SECRET: z.string().min(1, "GOOGLE_CLIENT_SECRET is required").optional(),
+});
+type GoogleAuthEnv = z.infer<typeof googleAuthEnvSchema>;
+
 let cachedEnv: ServerEnv | null = null;
 let cachedDatabaseEnv: DatabaseEnv | null = null;
 let cachedPaystackEnv: PaystackEnv | null = null;
@@ -107,6 +118,7 @@ let cachedDatamartEnv: DatamartEnv | null = null;
 let cachedReloadlyEnv: ReloadlyEnv | null = null;
 let cachedNineProxyEnv: NineProxyEnv | null = null;
 let cachedAiraloEnv: AiraloEnv | null = null;
+let cachedGoogleAuthEnv: GoogleAuthEnv | null = null;
 
 export function getServerEnv(): ServerEnv {
   if (cachedEnv) {
@@ -266,4 +278,24 @@ export function getAiraloEnv(): AiraloEnv {
 
   cachedAiraloEnv = parsed.data;
   return cachedAiraloEnv;
+}
+
+export function getGoogleAuthEnv(): GoogleAuthEnv {
+  if (cachedGoogleAuthEnv) {
+    return cachedGoogleAuthEnv;
+  }
+
+  const parsed = googleAuthEnvSchema.safeParse(process.env);
+  if (!parsed.success) {
+    const missingFields = parsed.error.issues
+      .filter((issue) => issue.code === "invalid_type")
+      .map((issue) => issue.path.join("."));
+    const message = missingFields.length > 0
+      ? `Missing required environment variables: ${missingFields.join(", ")}`
+      : `Invalid Google Auth environment: ${parsed.error.issues.map((issue) => issue.message).join(", ")}`;
+    throw new Error(message);
+  }
+
+  cachedGoogleAuthEnv = parsed.data;
+  return cachedGoogleAuthEnv;
 }

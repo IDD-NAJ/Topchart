@@ -33,7 +33,7 @@ export function InactivityWarningModal({
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [isOpen, onStayActive])
 
-  const percentage = (secondsRemaining / 30) * 100
+  const percentage = (secondsRemaining / 60) * 100
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>

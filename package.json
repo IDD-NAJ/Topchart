@@ -9,6 +9,8 @@
     "start": "next start"
   },
   "dependencies": {
+    "@auth/core": "^0.34.3",
+    "@auth/nextjs": "^0.0.0-380f8d56",
     "@fontsource-variable/inter": "^5.2.8",
     "@fontsource/dm-serif-display": "^5.2.8",
     "@hookform/resolvers": "^3.10.0",

@@ -5,11 +5,13 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
+import { GoogleSignInButton } from "@/components/google-signin-button"
 import { isAdmin } from "@/lib/roles"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { motion } from "framer-motion"
+import { GoogleAuthButton } from "@/components/google-auth-button"
 import { 
   AlertCircle, 
   Eye, 
@@ -145,6 +147,17 @@ export default function LoginPage() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="space-y-6"
           >
+            <GoogleAuthButton text="Sign in with Google" />
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border/50" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[color:var(--marketing-cream-alt)] px-2 text-muted-foreground">Or continue with email</span>
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
                 <motion.div 
@@ -219,6 +232,17 @@ export default function LoginPage() {
                   "Sign in"
                 )}
               </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border/50" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-[color:var(--marketing-cream-alt)] px-2 text-muted-foreground">Or</span>
+                </div>
+              </div>
+
+              <GoogleSignInButton mode="signin" callbackUrl="/dashboard" />
             </form>
 
             <div className="relative">
