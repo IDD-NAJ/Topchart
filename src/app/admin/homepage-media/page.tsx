@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Upload, RefreshCw, Trash2 } from "lucide-react";
+import { Upload, RefreshCw, Trash2, FolderOpen, Check, X } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type HomepageMediaRecord = {
   id: string;
@@ -41,6 +42,10 @@ export default function AdminHomepageMediaPage() {
   const [altText, setAltText] = useState("");
   const [sortOrder, setSortOrder] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [storageFiles, setStorageFiles] = useState<any[]>([]);
+  const [isLoadingStorage, setIsLoadingStorage] = useState(false);
+  const [selectedStorageFile, setSelectedStorageFile] = useState<any | null>(null);
+  const [isSelectingFromStorage, setIsSelectingFromStorage] = useState(false);
 
   const grouped = useMemo(() => {
     return media.reduce<Record<string, HomepageMediaRecord[]>>((acc, item) => {
@@ -162,58 +167,83 @@ export default function AdminHomepageMediaPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Upload Media</CardTitle>
-          <CardDescription>Choose section, file type, and upload.</CardDescription>
+          <CardTitle>Add Media</CardTitle>
+          <CardDescription>Upload new file or select from existing storage.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Section key</Label>
-            <select
-              value={sectionKey}
-              onChange={(e) => setSectionKey(e.target.value)}
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-            >
-              {sectionOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-2">
-            <Label>Asset type</Label>
-            <select
-              value={assetType}
-              onChange={(e) => setAssetType(e.target.value as "image" | "video")}
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="image">image</option>
-              <option value="video">video</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <Label>Alt text</Label>
-            <Input value={altText} onChange={(e) => setAltText(e.target.value)} placeholder="Descriptive alt text" />
-          </div>
-          <div className="space-y-2">
-            <Label>Sort order</Label>
-            <Input
-              type="number"
-              value={sortOrder}
-              onChange={(e) => setSortOrder(Number(e.target.value))}
-              placeholder="0"
-            />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label>File</Label>
-            <Input type="file" accept={assetType === "video" ? "video/*" : "image/*"} onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
-          </div>
-          <div className="md:col-span-2">
-            <Button onClick={handleUpload} disabled={isUploading || !selectedFile}>
-              <Upload className="mr-2 h-4 w-4" />
-              {isUploading ? "Uploading..." : "Upload"}
-            </Button>
-          </div>
+        <CardContent>
+          <Tabs defaultValue="upload" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="upload">
+                <Upload className="mr-2 h-4 w-4" />
+                Upload New
+              </TabsTrigger>
+              <TabsTrigger value="storage">
+                <FolderOpen className="mr-2 h-4 w-4" />
+                From Storage
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="upload" className="grid gap-4 md:grid-cols-2 mt-4">
+              <div className="space-y-2">
+                <Label>Section key</Label>
+                <select
+                  value={sectionKey}
+                  onChange={(e) => setSectionKey(e.target.value)}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  {sectionOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Asset type</Label>
+                <select
+                  value={assetType}
+                  onChange={(e) => setAssetType(e.target.value as "image" | "video")}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="image">image</option>
+                  <option value="video">video</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Alt text</Label>
+                <Input value={altText} onChange={(e) => setAltText(e.target.value)} placeholder="Descriptive alt text" />
+              </div>
+              <div className="space-y-2">
+                <Label>Sort order</Label>
+                <Input
+                  type="number"
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(Number(e.target.value))}
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>File</Label>
+                <Input type="file" accept={assetType === "video" ? "video/*" : "image/*"} onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
+              </div>
+              <div className="md:col-span-2">
+                <Button onClick={handleUpload} disabled={isUploading || !selectedFile}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  {isUploading ? "Uploading..." : "Upload"}
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="storage" className="mt-4">
+              <StorageFileSelector
+                sectionKey={sectionKey}
+                assetType={assetType}
+                altText={altText}
+                sortOrder={sortOrder}
+                onSuccess={loadMedia}
+              />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
@@ -304,6 +334,201 @@ export default function AdminHomepageMediaPage() {
           </Card>
         ))}
       </div>
+    </div>
+  );
+}
+
+// Storage File Selector Component
+function StorageFileSelector({
+  sectionKey,
+  assetType,
+  altText,
+  sortOrder,
+  onSuccess,
+}: {
+  sectionKey: string;
+  assetType: "image" | "video";
+  altText: string;
+  sortOrder: number;
+  onSuccess: () => void;
+}) {
+  const [files, setFiles] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<any | null>(null);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [filter, setFilter] = useState<"all" | "image" | "video">("all");
+
+  const loadFiles = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/admin/storage-files", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.error || "Failed to load storage files");
+      }
+      setFiles(payload.files || []);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to load storage files");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadFiles();
+  }, []);
+
+  const handleAssign = async () => {
+    if (!selectedFile) return;
+
+    setIsAssigning(true);
+    try {
+      const response = await fetch("/api/admin/storage-files", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          section_key: sectionKey,
+          storage_path: selectedFile.path,
+          asset_type: selectedFile.type || assetType,
+          alt_text: altText || selectedFile.name,
+          sort_order: sortOrder,
+          is_active: true,
+        }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.error || "Failed to assign file");
+      }
+
+      toast.success("File assigned to section successfully");
+      setSelectedFile(null);
+      onSuccess();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to assign file");
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const filteredFiles = files.filter((f) => {
+    if (f.isFolder) return false;
+    if (filter === "all") return true;
+    return f.type === filter;
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Label>Filter:</Label>
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as "all" | "image" | "video")}
+            className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+          >
+            <option value="all">All Files</option>
+            <option value="image">Images</option>
+            <option value="video">Videos</option>
+          </select>
+        </div>
+        <Button variant="outline" size="sm" onClick={loadFiles} disabled={isLoading}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+      </div>
+
+      {files.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-8 text-center">
+          <FolderOpen className="mx-auto h-12 w-12 text-muted-foreground" />
+          <p className="mt-2 text-sm text-muted-foreground">No files in storage yet.</p>
+          <p className="text-xs text-muted-foreground">Upload files using the Upload New tab first.</p>
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-h-[400px] overflow-y-auto">
+            {filteredFiles.map((file) => (
+              <div
+                key={file.path}
+                className={`relative rounded-lg border p-3 cursor-pointer transition-all ${
+                  selectedFile?.path === file.path
+                    ? "border-primary bg-primary/5 ring-2 ring-primary"
+                    : "border-border hover:border-primary/50"
+                }`}
+                onClick={() => setSelectedFile(file)}
+              >
+                {selectedFile?.path === file.path && (
+                  <div className="absolute right-2 top-2">
+                    <Check className="h-5 w-5 text-primary" />
+                  </div>
+                )}
+
+                {file.type === "video" ? (
+                  <video
+                    src={file.publicUrl}
+                    className="mb-2 h-24 w-full rounded-md object-cover"
+                    preload="metadata"
+                  />
+                ) : (
+                  <div className="relative mb-2 h-24 w-full overflow-hidden rounded-md bg-muted">
+                    <Image
+                      src={file.publicUrl}
+                      alt={file.name}
+                      fill
+                      className="object-cover"
+                      sizes="200px"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <p className="truncate text-xs font-medium">{file.name}</p>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span className="uppercase">{file.type}</span>
+                    <span>{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    {new Date(file.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {selectedFile && (
+            <div className="flex items-center gap-4 rounded-lg border bg-muted/50 p-4">
+              <div className="flex-1">
+                <p className="text-sm font-medium">Selected: {selectedFile.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  Will be assigned to <strong>{sectionKey}</strong>
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setSelectedFile(null)}>
+                  <X className="mr-2 h-4 w-4" />
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleAssign} disabled={isAssigning}>
+                  <Check className="mr-2 h-4 w-4" />
+                  {isAssigning ? "Assigning..." : "Assign to Section"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
