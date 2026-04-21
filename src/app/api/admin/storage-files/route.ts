@@ -28,62 +28,56 @@ export async function GET() {
 
     const bucketName = env.SUPABASE_BUCKET_HOMEPAGE_MEDIA || "homepage-media";
 
-    // List all files in the bucket recursively
-    const { data: files, error } = await client.storage
-      .from(bucketName)
-      .list("homepage", {
-        limit: 1000,
-        offset: 0,
-        sortBy: { column: "created_at", order: "desc" },
-      });
+    console.log("[STORAGE_FILES] Listing files from bucket:", bucketName);
 
-    if (error) {
-      console.error("[STORAGE_FILES] Error listing files:", error);
-      return NextResponse.json({
-        success: false,
-        error: `Failed to list files: ${error.message}`
-      }, { status: 500 });
-    }
+    // Recursive function to list all files
+    const listAllFiles = async (folderPath: string = ""): Promise<any[]> => {
+      const { data: items, error } = await client.storage
+        .from(bucketName)
+        .list(folderPath, {
+          limit: 1000,
+          offset: 0,
+        });
 
-    // Flatten the file list and get public URLs
-    const flattenFiles = (items: any[], prefix = ""): any[] => {
-      let result: any[] = [];
-      
+      if (error) {
+        console.error(`[STORAGE_FILES] Error listing ${folderPath}:`, error);
+        return [];
+      }
+
+      let files: any[] = [];
+
       for (const item of items || []) {
-        const path = prefix ? `${prefix}/${item.name}` : item.name;
+        const fullPath = folderPath ? `${folderPath}/${item.name}` : item.name;
         
         if (item.id) {
-          // It's a file
+          // It's a file - item.id exists for files
           const { data: publicUrlData } = client.storage
             .from(bucketName)
-            .getPublicUrl(`homepage/${path}`);
+            .getPublicUrl(fullPath);
           
-          result.push({
+          files.push({
             name: item.name,
-            path: `homepage/${path}`,
-            fullPath: path,
+            path: fullPath,
+            fullPath: fullPath,
             size: item.metadata?.size || 0,
             createdAt: item.created_at,
             updatedAt: item.updated_at,
             publicUrl: publicUrlData.publicUrl,
             type: getFileType(item.name, item.metadata?.mimetype),
           });
-        } else if (item.name) {
-          // It's a folder - need to list its contents
-          // For now, just add as folder marker
-          result.push({
-            name: item.name,
-            path: `homepage/${path}`,
-            isFolder: true,
-            itemCount: item.metadata?.itemCount || 0,
-          });
+        } else if (!item.id && item.name) {
+          // It's a folder - recursively list
+          const subFiles = await listAllFiles(fullPath);
+          files = files.concat(subFiles);
         }
       }
-      
-      return result;
+
+      return files;
     };
 
-    const fileList = flattenFiles(files || []);
+    // Start listing from root
+    const fileList = await listAllFiles("");
+    console.log("[STORAGE_FILES] Found files:", fileList.length);
 
     return NextResponse.json({
       success: true,
