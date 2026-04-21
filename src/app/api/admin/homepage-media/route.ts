@@ -5,6 +5,12 @@ import { uploadHomepageMedia, type HomepageMediaAssetType } from "@/lib/supabase
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
+// Increase body size limit for video uploads
+export const bodyParser = {
+  sizeLimit: "100mb",
+};
 
 export async function GET() {
   const requestId = crypto.randomUUID();
@@ -65,10 +71,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "file is required" }, { status: 400 });
     }
 
-    const MAX_FILE_SIZE = 50 * 1024 * 1024;
+    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
     if (file.size > MAX_FILE_SIZE) {
       console.error("[UPLOAD] File too large", { requestId, size: file.size, maxSize: MAX_FILE_SIZE });
-      return NextResponse.json({ success: false, error: "File size exceeds 50MB limit" }, { status: 400 });
+      return NextResponse.json({ success: false, error: "File size exceeds 100MB limit" }, { status: 400 });
     }
 
     const uploadStartTime = Date.now();

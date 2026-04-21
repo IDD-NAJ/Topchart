@@ -35,7 +35,7 @@ const nextConfig: NextConfig = {
         "localhost:3000",
         "localhost",
       ],
-      bodySizeLimit: "10mb",
+      bodySizeLimit: "100mb",
     },
     optimizePackageImports: ["lucide-react", "framer-motion", "@radix-ui/react-icons"],
   },
