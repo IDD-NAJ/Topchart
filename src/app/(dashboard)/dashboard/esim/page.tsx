@@ -11,37 +11,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Smartphone,
-  Globe,
-  CheckCircle2,
-  Loader2,
-  ArrowLeft,
-  Zap,
   ShieldCheck,
-  Wifi,
   Phone,
   MessageSquare,
   Clock,
   CreditCard,
   Wallet,
+  CheckCircle2,
+  Loader2,
+  ArrowLeft,
+  Zap,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
-type ProductTab = "phone-number" | "travel-data"
+type ProductTab = "phone-number"
 type Step = "catalog" | "processing" | "success" | "failed"
 type PaymentMethod = "wallet" | "paystack"
 
-interface ESIMPackage {
-  id: string
-  country: string
-  countryCode: string
-  flag: string
-  dataAllowance: string
-  validity: string
-  price: number
-  network: string
-  speed: string
-}
+
 
 interface PhoneNumberPlan {
   id: string
@@ -57,19 +45,11 @@ const DEFAULT_AREA_CODES = [
   { code: "random", city: "Any available" },
 ]
 
-// Static region tabs
-const REGION_TABS = [
-  { id: "africa", label: "Africa", icon: Globe },
-  { id: "europe", label: "Europe", icon: Globe },
-  { id: "americas", label: "Americas", icon: Globe },
-  { id: "middle_east", label: "Middle East", icon: Globe },
-  { id: "asia", label: "Asia", icon: Globe },
-]
 
 
 export default function ESIMPage() {
   const { user } = useAuth()
-  const [productTab, setProductTab] = useState<ProductTab>("phone-number")
+  const [productTab] = useState<ProductTab>("phone-number")
   const [step, setStep] = useState<Step>("catalog")
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("wallet")
   const [walletBalance, setWalletBalance] = useState<number>(0)
@@ -77,12 +57,8 @@ export default function ESIMPage() {
 
   // API-fetched data
   const [phonePlans, setPhonePlans] = useState<PhoneNumberPlan[]>([])
-  const [dataPackages, setDataPackages] = useState<ESIMPackage[]>([])
   const [loadingPlans, setLoadingPlans] = useState(true)
-  const [loadingPackages, setLoadingPackages] = useState(true)
 
-  const [selectedRegion, setSelectedRegion] = useState("africa")
-  const [selectedPackage, setSelectedPackage] = useState<ESIMPackage | null>(null)
   const [selectedPhonePlan, setSelectedPhonePlan] = useState<PhoneNumberPlan | null>(null)
   const [areaCode, setAreaCode] = useState("random")
   const [customAreaCode, setCustomAreaCode] = useState("")
@@ -128,46 +104,12 @@ export default function ESIMPage() {
     fetchPlans()
   }, [])
 
-  // Fetch data packages from API
-  useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        setLoadingPackages(true)
-        const res = await fetch("/api/esim/packages", { credentials: "include" })
-        if (res.ok) {
-          const data = await res.json()
-          if (data.success) setDataPackages(data.data)
-        }
-      } catch {
-        toast.error("Failed to load data packages")
-      } finally {
-        setLoadingPackages(false)
-      }
-    }
-    fetchPackages()
-  }, [])
 
-  const getPackagesByRegion = useCallback((region: string) => {
-    const regionMap: Record<string, string[]> = {
-      africa: ["GH", "NG", "KE", "ZA"],
-      europe: ["GB", "DE", "FR", "IT", "ES", "NL"],
-      americas: ["US", "CA", "BR", "MX"],
-      middle_east: ["AE", "SA", "QA", "KW"],
-      asia: ["IN", "JP", "KR", "SG", "TH", "CN"],
-    }
-    const codes = regionMap[region] || []
-    return dataPackages.filter((p) => codes.includes(p.countryCode))
-  }, [dataPackages])
-
-  const filteredPackages = getPackagesByRegion(selectedRegion)
-  const currentAmount = productTab === "phone-number"
-    ? (selectedPhonePlan?.price ?? 0)
-    : (selectedPackage?.price ?? 0)
+  const currentAmount = selectedPhonePlan?.price ?? 0
   const canAfford = walletBalance >= currentAmount
 
   const handleOrder = async () => {
-    if (productTab === "phone-number" && !selectedPhonePlan) return
-    if (productTab === "travel-data" && !selectedPackage) return
+    if (!selectedPhonePlan) return
     if (paymentMethod === "wallet" && !canAfford) {
       toast.error("Insufficient wallet balance. Please top up or use Paystack.")
       return
@@ -183,16 +125,11 @@ export default function ESIMPage() {
         planType: productTab,
       }
 
-      if (productTab === "phone-number") {
-        payload.planId = selectedPhonePlan!.id
-        payload.amount = selectedPhonePlan!.price
-        payload.areaCode = useCustomAreaCode && customAreaCode ? customAreaCode : areaCode
-        payload.fullName = fullName
-        payload.comments = comments
-      } else {
-        payload.packageId = selectedPackage!.id
-        payload.amount = selectedPackage!.price
-      }
+      payload.planId = selectedPhonePlan!.id
+      payload.amount = selectedPhonePlan!.price
+      payload.areaCode = useCustomAreaCode && customAreaCode ? customAreaCode : areaCode
+      payload.fullName = fullName
+      payload.comments = comments
 
       const res = await fetch("/api/purchases/esim", {
         method: "POST",
@@ -208,7 +145,7 @@ export default function ESIMPage() {
           return
         }
         setStep("success")
-        toast.success(productTab === "phone-number" ? "Phone number order placed!" : "eSIM order placed!")
+        toast.success("Phone number order placed!")
       } else {
         setStep("failed")
         setError(data.error || "Order failed. Please try again.")
@@ -223,7 +160,6 @@ export default function ESIMPage() {
 
   const reset = () => {
     setStep("catalog")
-    setSelectedPackage(null)
     setSelectedPhonePlan(null)
     setError("")
   }
@@ -283,34 +219,7 @@ export default function ESIMPage() {
         </div>
       </div>
 
-      {step === "catalog" && (
-        <div className="flex items-center gap-2 p-1 rounded-xl bg-muted/50">
-          <button
-            onClick={() => { setProductTab("phone-number"); reset() }}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all",
-              productTab === "phone-number"
-                ? "bg-[color:var(--marketing-accent)] text-white shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Phone className="h-4 w-4" />
-            Americas Phone Number
-          </button>
-          <button
-            onClick={() => { setProductTab("travel-data"); reset() }}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all",
-              productTab === "travel-data"
-                ? "bg-[color:var(--marketing-accent)] text-white shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Wifi className="h-4 w-4" />
-            Travel Data eSIM
-          </button>
-        </div>
-      )}
+
 
       <AnimatePresence mode="wait">
         {step === "catalog" && productTab === "phone-number" && (
@@ -472,141 +381,7 @@ export default function ESIMPage() {
           </motion.div>
         )}
 
-        {step === "catalog" && productTab === "travel-data" && (
-          <motion.div key="travel-catalog" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
-            <div className="flex items-center gap-2 p-1 rounded-xl bg-muted/50">
-              {REGION_TABS.map((tab) => {
-                const Icon = tab.icon
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setSelectedRegion(tab.id)}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                      selectedRegion === tab.id
-                        ? "bg-[color:var(--marketing-accent)] text-white shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {tab.label}
-                  </button>
-                )
-              })}
-            </div>
 
-            {loadingPackages ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-[color:var(--marketing-accent)]" />
-                <span className="ml-3 text-muted-foreground">Loading data packages...</span>
-              </div>
-            ) : (
-              <>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {filteredPackages.map((pkg) => (
-                    <Card
-                      key={pkg.id}
-                      className={cn(
-                        "cursor-pointer transition-all hover:shadow-md border-2",
-                        selectedPackage?.id === pkg.id
-                          ? "border-[color:var(--marketing-accent)] shadow-md"
-                          : "border-transparent hover:border-[color:var(--marketing-accent)]/30"
-                      )}
-                      onClick={() => setSelectedPackage(pkg)}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-2xl">{pkg.flag}</span>
-                            <CardTitle className="text-base">{pkg.country}</CardTitle>
-                          </div>
-                          <Badge variant="secondary" className="text-xs">{pkg.speed}</Badge>
-                        </div>
-                        <CardDescription className="text-xs">{pkg.network}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm">
-                            <Wifi className="h-4 w-4 text-[color:var(--marketing-accent)]" />
-                            <span className="font-semibold">{pkg.dataAllowance}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Smartphone className="h-4 w-4" />
-                            <span>Valid for {pkg.validity}</span>
-                          </div>
-                          <div className="pt-2 border-t">
-                            <span className="text-2xl font-bold text-[color:var(--marketing-accent)]">₵{pkg.price}</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-
-                {filteredPackages.length === 0 && (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Globe className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                    <p>No eSIM packages available for this region yet.</p>
-                  </div>
-                )}
-              </>
-            )}
-
-            {selectedPackage && (
-              <Card className="border-2 border-[color:var(--marketing-accent)]/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <span className="text-2xl">{selectedPackage.flag}</span>
-                    {selectedPackage.country} eSIM
-                  </CardTitle>
-                  <CardDescription>Review your order & select payment</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="space-y-1">
-                      <span className="text-muted-foreground">Data</span>
-                      <p className="font-semibold">{selectedPackage.dataAllowance}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-muted-foreground">Validity</span>
-                      <p className="font-semibold">{selectedPackage.validity}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-muted-foreground">Network</span>
-                      <p className="font-semibold">{selectedPackage.network}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-muted-foreground">Speed</span>
-                      <p className="font-semibold">{selectedPackage.speed}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Delivery Email</Label>
-                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" />
-                    <p className="text-xs text-muted-foreground">eSIM QR code will be sent to this email</p>
-                  </div>
-
-                  <PaymentToggle />
-
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-                    <span className="font-medium">Total</span>
-                    <span className="text-2xl font-bold text-[color:var(--marketing-accent)]">₵{selectedPackage.price}</span>
-                  </div>
-
-                  <Button
-                    onClick={handleOrder}
-                    disabled={paymentMethod === "wallet" && !canAfford}
-                    className="w-full bg-[color:var(--marketing-accent)] hover:bg-[color:var(--marketing-accent)]/90"
-                  >
-                    <Zap className="h-4 w-4 mr-2" />
-                    {paymentMethod === "paystack" ? "Pay with Paystack" : "Place Order"}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </motion.div>
-        )}
 
         {step === "processing" && (
           <motion.div key="processing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex flex-col items-center justify-center py-20">
@@ -622,23 +397,11 @@ export default function ESIMPage() {
               <CheckCircle2 className="h-8 w-8 text-green-600" />
             </div>
             <h2 className="text-xl font-bold">Order Placed!</h2>
-            {productTab === "phone-number" ? (
-              <>
-                <p className="text-muted-foreground mt-1">Your US phone number request has been received.</p>
-                <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4 text-amber-500" />
-                  <span>Admin will assign your number and notify you via email.</span>
-                </div>
-              </>
-            ) : selectedPackage && (
-              <>
-                <p className="text-muted-foreground mt-1">Your {selectedPackage.country} eSIM will be delivered to {email}</p>
-                <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                  <ShieldCheck className="h-4 w-4 text-green-600" />
-                  <span>QR code and activation instructions will be emailed shortly</span>
-                </div>
-              </>
-            )}
+            <p className="text-muted-foreground mt-1">Your US phone number request has been received.</p>
+            <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4 text-amber-500" />
+              <span>Admin will assign your number and notify you via email.</span>
+            </div>
             <Button onClick={reset} className="mt-6">Order Another</Button>
           </motion.div>
         )}

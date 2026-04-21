@@ -14,15 +14,15 @@ import './globals.css'
 export const metadata: Metadata = {
   metadataBase: new URL('https://topchart.gh'),
   title: {
-    default: 'Topchart  — Digital Services Platform',
-    template: '%s | Topchart ',
+    default: 'Topchart — Digital Services Platform',
+    template: '%s | Topchart',
   },
-  description: '\complete digital services platform. Buy data bundles, verification numbers, check exam results, and join our reseller programme — instantly and securely.',
-  applicationName: 'Topchart ',
-  keywords: ['data bundles ', 'verification numbers ', 'WAEC result checker', 'BECE result checker', 'reseller programme ', 'MTN', 'Telecel', 'AirtelTigo', 'mobile data', 'buy data online ', 'OTP verification number '],
-  authors: [{ name: 'Topchart ', url: 'https://topchart.gh' }],
-  creator: 'Topchart ',
-  publisher: 'Topchart ',
+  description: 'Topchart is Ghana\'s premier complete digital services platform. Buy data bundles, verification numbers, check exam results, and join our reseller programme — instantly and securely.',
+  applicationName: 'Topchart',
+  keywords: ['buy data online ghana', 'instant airtime top up ghana', 'cheap mobile data ghana', 'data bundles ghana', 'verification numbers ghana', 'WAEC result checker', 'BECE result checker', 'reseller programme ghana', 'MTN', 'Telecel', 'AirtelTigo', 'OTP verification number'],
+  authors: [{ name: 'Topchart', url: 'https://topchart.gh' }],
+  creator: 'Topchart',
+  publisher: 'Topchart',
   robots: {
     index: true,
     follow: true,
@@ -38,15 +38,15 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_GH',
     url: 'https://topchart.gh',
-    siteName: 'Topchart ',
-    title: 'Topchart  — Digital Services Platform',
-    description: '\complete digital services platform — data, verification numbers, exam results, and reseller programme.',
+    siteName: 'Topchart',
+    title: 'Topchart — Digital Services Platform',
+    description: 'Complete digital services platform — data, verification numbers, exam results, and reseller programme.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Topchart  — Instant Data & Services',
+        alt: 'Topchart — Instant Data & Services',
       },
     ],
   },
@@ -54,42 +54,52 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     site: '@topchartgh',
     creator: '@topchartgh',
-    title: 'Topchart  — Digital Services Platform',
-    description: '\complete digital services platform — data, verification numbers, exam results, and reseller programme.',
+    title: 'Topchart — Digital Services Platform',
+    description: 'Complete digital services platform — data, verification numbers, exam results, and reseller programme.',
     images: ['/og-image.png'],
   },
-  alternates: {
-    canonical: 'https://topchart.gh',
-  },
   other: {
-    'script:ld+json': JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'Organization',
-      name: 'Topchart ',
-      alternateName: 'Topchart',
-      url: 'https://topchart.gh',
-      logo: 'https://topchart.gh/logo.svg',
-      description: '\'s tal services platform for data bundles, verification numbers, result checkers, and reseller services.',
-      contactPoint: [
-        {
-          '@type': 'ContactPoint',
-          telephone: '+233-20-000-0000',
-          contactType: 'customer service',
-          areaServed: 'GH',
-          availableLanguage: 'English',
+    'script:ld+json': JSON.stringify([
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: 'Topchart',
+        alternateName: 'Topchart Ghana',
+        url: 'https://topchart.gh',
+        logo: 'https://topchart.gh/logo.svg',
+        description: 'Ghana\'s digital services platform for data bundles, verification numbers, result checkers, and reseller services.',
+        contactPoint: [
+          {
+            '@type': 'ContactPoint',
+            telephone: '+233-20-000-0000',
+            contactType: 'customer service',
+            areaServed: 'GH',
+            availableLanguage: 'English',
+          },
+        ],
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Accra',
+          addressCountry: 'GH',
+          streetAddress: 'East Legon',
         },
-      ],
-      address: {
-        '@type': 'PostalAddress',
-        addressLocality: 'Accra',
-        addressCountry: 'GH',
-        streetAddress: 'East Legon',
+        sameAs: [
+          'https://twitter.com/topchartgh',
+          'https://linkedin.com/company/topchartgh',
+        ],
       },
-      sameAs: [
-        'https://twitter.com/topchartgh',
-        'https://linkedin.com/company/topchartgh',
-      ],
-    }),
+      {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        url: 'https://topchart.gh',
+        name: 'Topchart',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: 'https://topchart.gh/search?q={search_term_string}',
+          'query-input': 'required name=search_term_string'
+        }
+      }
+    ]),
   },
   icons: {
     icon: [
