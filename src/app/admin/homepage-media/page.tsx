@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -266,7 +265,19 @@ export default function AdminHomepageMediaPage() {
                   </div>
                   {item.asset_type === "image" ? (
                     <div className="relative mb-3 aspect-video overflow-hidden rounded-md bg-muted">
-                      <Image src={item.public_url} alt={item.alt_text || item.section_key} fill className="object-cover" sizes="(max-width: 768px) 100vw, 33vw" />
+                      <img 
+                        src={item.public_url} 
+                        alt={item.alt_text || item.section_key} 
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          const parent = (e.target as HTMLImageElement).parentElement;
+                          if (parent) {
+                            parent.innerHTML = `<div class="flex h-full w-full items-center justify-center bg-muted text-xs text-muted-foreground">No Preview</div>`;
+                          }
+                        }}
+                      />
                     </div>
                   ) : (
                     <video src={item.public_url} controls className="mb-3 w-full rounded-md" />
@@ -498,15 +509,24 @@ function StorageFileSelector({
                     src={file.publicUrl}
                     className="mb-2 h-24 w-full rounded-md object-cover"
                     preload="metadata"
+                    onError={(e) => {
+                      (e.target as HTMLVideoElement).style.display = 'none';
+                    }}
                   />
                 ) : (
                   <div className="relative mb-2 h-24 w-full overflow-hidden rounded-md bg-muted">
-                    <Image
+                    <img
                       src={file.publicUrl}
                       alt={file.name}
-                      fill
-                      className="object-cover"
-                      sizes="200px"
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        const parent = (e.target as HTMLImageElement).parentElement;
+                        if (parent) {
+                          parent.innerHTML = `<div class="flex h-full w-full items-center justify-center bg-muted text-xs text-muted-foreground">Image</div>`;
+                        }
+                      }}
                     />
                   </div>
                 )}
@@ -533,15 +553,21 @@ function StorageFileSelector({
                     src={selectedFile.publicUrl}
                     className="h-20 w-32 rounded-md object-cover"
                     preload="metadata"
+                    controls
                   />
                 ) : (
-                  <div className="relative h-20 w-32 overflow-hidden rounded-md">
-                    <Image
+                  <div className="relative h-20 w-32 overflow-hidden rounded-md bg-muted">
+                    <img
                       src={selectedFile.publicUrl}
                       alt={selectedFile.name}
-                      fill
-                      className="object-cover"
-                      sizes="128px"
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        const parent = (e.target as HTMLImageElement).parentElement;
+                        if (parent) {
+                          parent.innerHTML = `<div class="flex h-full w-full items-center justify-center text-xs text-muted-foreground">No Preview</div>`;
+                        }
+                      }}
                     />
                   </div>
                 )}
