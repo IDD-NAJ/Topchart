@@ -176,6 +176,7 @@ const navItems: NavItem[] = [
     title: "New Services",
     icon: Globe2,
     children: [
+      { title: "eSIM Management", href: "/admin/esim", icon: Smartphone },
       { title: "eSIM Orders", href: "/admin/esim-orders", icon: Smartphone },
       { title: "Proxy Orders", href: "/admin/proxy-orders", icon: Shield },
       { title: "Gift Card Orders", href: "/admin/giftcard-orders", icon: Gift },
