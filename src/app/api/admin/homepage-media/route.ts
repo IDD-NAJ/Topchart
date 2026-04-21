@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 import { uploadHomepageMedia, type HomepageMediaAssetType } from "@/lib/supabase-storage";
+import { getSupabaseStorageEnv } from "@/lib/env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,6 +53,16 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Check Supabase config first
+    const env = getSupabaseStorageEnv();
+    if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("[UPLOAD] Supabase not configured", { hasUrl: !!env.SUPABASE_URL, hasKey: !!env.SUPABASE_SERVICE_ROLE_KEY });
+      return NextResponse.json({ 
+        success: false, 
+        error: "Storage not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local" 
+      }, { status: 500 });
+    }
+
     const form = await request.formData();
     const sectionKey = String(form.get("section_key") || "").trim();
     const assetType = String(form.get("asset_type") || "image").trim() as HomepageMediaAssetType;
@@ -60,6 +71,8 @@ export async function POST(request: Request) {
     const isActiveRaw = String(form.get("is_active") || "true").trim().toLowerCase();
     const isActive = isActiveRaw !== "false";
     const file = form.get("file");
+
+    console.log("[UPLOAD] Received request", { requestId, sectionKey, assetType, fileSize: file instanceof File ? file.size : 'not a file', fileType: file instanceof File ? file.type : 'unknown' });
 
     if (!sectionKey) {
       return NextResponse.json({ success: false, error: "section_key is required" }, { status: 400 });
