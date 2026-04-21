@@ -227,11 +227,13 @@ export async function confirmPurchase(reference: string): Promise<{ success: boo
     }
 
     const row = tx[0] as any;
-    if (row.type !== "AIRTIME" && row.type !== "DATA") {
+    const type = (row.type || "").toUpperCase();
+    if (type !== "AIRTIME" && type !== "DATA") {
       return { success: false, error: "Not an airtime or data transaction" };
     }
 
-    if (row.status !== "PENDING") {
+    const status = (row.status || "").toUpperCase();
+    if (status !== "PENDING") {
       return { success: false, error: "Transaction is not pending" };
     }
 
