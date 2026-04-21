@@ -79,11 +79,20 @@ export async function GET() {
     const fileList = await listAllFiles("");
     console.log("[STORAGE_FILES] Found files:", fileList.length);
 
+    // Get bucket info to check if public
+    const { data: buckets } = await client.storage.listBuckets();
+    const bucketInfo = buckets?.find(b => b.name === bucketName);
+
     return NextResponse.json({
       success: true,
       files: fileList,
       count: fileList.length,
-      bucket: bucketName,
+      bucket: {
+        name: bucketName,
+        public: bucketInfo?.public,
+        exists: !!bucketInfo,
+      },
+      sampleUrl: fileList[0]?.publicUrl || null,
     });
 
   } catch (error) {

@@ -375,6 +375,8 @@ function StorageFileSelector({
   const [isAssigning, setIsAssigning] = useState(false);
   const [filter, setFilter] = useState<"all" | "image" | "video">("all");
 
+  const [bucketInfo, setBucketInfo] = useState<any>(null);
+
   const loadFiles = async () => {
     setIsLoading(true);
     try {
@@ -387,6 +389,12 @@ function StorageFileSelector({
         throw new Error(payload?.error || "Failed to load storage files");
       }
       setFiles(payload.files || []);
+      setBucketInfo(payload.bucket);
+      
+      // Show warning if bucket is not public
+      if (payload.bucket && !payload.bucket.public) {
+        toast.warning("Storage bucket is not public. Images may not display.");
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load storage files");
     } finally {
@@ -479,6 +487,15 @@ function StorageFileSelector({
         </Button>
       </div>
 
+      {bucketInfo && !bucketInfo.public && (
+        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 mb-4">
+          <p className="text-sm text-yellow-800">
+            <strong>Warning:</strong> Storage bucket "{bucketInfo.name}" is not public. 
+            Images may not display. Make the bucket public in Supabase Dashboard → Storage.
+          </p>
+        </div>
+      )}
+
       {files.length === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-center">
           <FolderOpen className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -532,7 +549,7 @@ function StorageFileSelector({
                 )}
 
                 <div className="space-y-1">
-                  <p className="truncate text-xs font-medium">{file.name}</p>
+                  <p className="truncate text-xs font-medium" title={file.name}>{file.name}</p>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span className="uppercase">{file.type}</span>
                     <span>{(file.size / 1024 / 1024).toFixed(2)} MB</span>
@@ -540,6 +557,15 @@ function StorageFileSelector({
                   <p className="text-[10px] text-muted-foreground">
                     {new Date(file.createdAt).toLocaleDateString()}
                   </p>
+                  <a 
+                    href={file.publicUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-blue-500 hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Test URL →
+                  </a>
                 </div>
               </div>
             ))}
