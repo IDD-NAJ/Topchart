@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
+import { useMedia } from "@/hooks/use-media"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import {
@@ -35,7 +36,7 @@ interface HomepageMediaItem {
   media_type: "image" | "video";
   file_url: string;
   alt_text: string | null;
-  is_active: boolean;
+  status: "active" | "inactive" | "archived";
 }
 
 const serviceLinks: { href: string; label: string; description: string; icon: LucideIcon }[] = [
@@ -108,38 +109,9 @@ export function Header() {
   const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [servicesOpen, setServicesOpen] = useState(false)
-  const [headerMedia, setHeaderMedia] = useState<HomepageMediaItem | null>(null)
+  const { data: headerMediaData, loading: headerMediaLoading } = useMedia("header", "header_logo")
 
-  useEffect(() => {
-    const fetchHeaderMedia = async () => {
-      try {
-        const response = await fetch("/api/media?section=header&slot_key=header_logo", { cache: "no-store" })
-        const payload = await response.json()
-        // #region agent log
-        debugLog("baseline", "H4", "src/components/header.tsx:116", "header_media_api_response", {
-          ok: response.ok,
-          success: Boolean(payload?.success),
-          mediaCount: Array.isArray(payload?.media) ? payload.media.length : -1,
-        });
-        // #endregion
-        if (payload?.success && Array.isArray(payload.media)) {
-          const headerLogo = payload.media.find((m: HomepageMediaItem) => m.is_active)
-          if (headerLogo) {
-            // #region agent log
-            debugLog("baseline", "H4", "src/components/header.tsx:125", "header_media_selected", {
-              type: headerLogo.media_type,
-              url: headerLogo.file_url,
-            });
-            // #endregion
-            setHeaderMedia(headerLogo)
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch header media:", error)
-      }
-    }
-    fetchHeaderMedia()
-  }, [])
+  const headerMedia = headerMediaData?.find((m) => m.status === "active") || null
 
   return (
     <header
@@ -164,7 +136,6 @@ export function Header() {
                   // #region agent log
                   debugLog("baseline", "H4", "src/components/header.tsx:161", "header_video_on_error", { url: headerMedia.file_url });
                   // #endregion
-                  setHeaderMedia(null);
                 }}
               />
             ) : (
@@ -178,7 +149,6 @@ export function Header() {
                   // #region agent log
                   debugLog("baseline", "H4", "src/components/header.tsx:174", "header_image_on_error", { url: headerMedia.file_url });
                   // #endregion
-                  setHeaderMedia(null);
                 }}
               />
             )

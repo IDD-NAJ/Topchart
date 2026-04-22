@@ -5,6 +5,7 @@ import Image from "next/image"
 import { useEffect, useState } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { useMedia } from "@/hooks/use-media"
 import {
   Accordion,
   AccordionContent,
@@ -369,70 +370,54 @@ export default function HomePage() {
   const [networkLogos, setNetworkLogos] = useState<NetworkLogoConfig[]>(DEFAULT_NETWORK_LOGOS)
   const [developerImage, setDeveloperImage] = useState(DEFAULT_DEVELOPER_IMAGE)
   const [heroMedia, setHeroMedia] = useState<{ type: "image" | "video"; url: string }>({
-    type: "video",
-    url: "/13046977_3840_2160_30fps.mp4",
+    type: "image",
+    url: "/images/technical-partnership.jpg",
   })
   const [scaleMedia, setScaleMedia] = useState<{ type: "image" | "video"; url: string }>({
-    type: "video",
-    url: "/7490425-uhd_3840_2160_25fps.mp4",
+    type: "image",
+    url: "/images/topchart-way.jpg",
   })
+  const [logoErrorKeys, setLogoErrorKeys] = useState<Record<string, boolean>>({})
+  const { data: mediaData, loading: mediaLoading } = useMedia()
 
   useEffect(() => {
-    let active = true
+    if (!mediaData || mediaLoading) return
 
-    const loadHomepageMedia = async () => {
-      try {
-        const response = await fetch("/api/media", { cache: "no-store" })
-        const payload = await response.json()
-        if (!active || !payload?.success || !Array.isArray(payload.media)) return
-
-        const imageMap = new Map<string, string>()
-        const videoMap = new Map<string, string>()
-        
-        for (const item of payload.media as Array<{ slot_key?: string; section_key?: string; public_url?: string; file_url?: string; asset_type?: string; media_type?: string }>) {
-          const key = item.slot_key || item.section_key
-          const url = item.file_url || item.public_url
-          const type = item.media_type || item.asset_type
-          if (key && url) {
-            if (type === "image") {
-              imageMap.set(key, url)
-            } else if (type === "video") {
-              videoMap.set(key, url)
-            }
-          }
+    const imageMap = new Map<string, string>()
+    const videoMap = new Map<string, string>()
+    
+    for (const item of mediaData) {
+      const key = item.slot_key
+      const url = item.file_url
+      const type = item.media_type
+      if (key && url) {
+        if (type === "image") {
+          imageMap.set(key, url)
+        } else if (type === "video") {
+          videoMap.set(key, url)
         }
-
-        setNetworkLogos((current) =>
-          current.map((logo) => ({
-            ...logo,
-            image: imageMap.get(logo.key) || logo.image,
-          }))
-        )
-
-        setDeveloperImage(imageMap.get("developer_community_image") || DEFAULT_DEVELOPER_IMAGE)
-        if (videoMap.get("hero_background") || videoMap.get("hero_background_video")) {
-          setHeroMedia({ type: "video", url: videoMap.get("hero_background") || videoMap.get("hero_background_video")! })
-        } else if (imageMap.get("hero_background")) {
-          setHeroMedia({ type: "image", url: imageMap.get("hero_background")! })
-        }
-        if (videoMap.get("scale_background_video")) {
-          setScaleMedia({ type: "video", url: videoMap.get("scale_background_video")! })
-        } else if (imageMap.get("scale_background_video")) {
-          setScaleMedia({ type: "image", url: imageMap.get("scale_background_video")! })
-        }
-      } catch {
-        setNetworkLogos(DEFAULT_NETWORK_LOGOS)
-        setDeveloperImage(DEFAULT_DEVELOPER_IMAGE)
-        setHeroMedia({ type: "video", url: "/13046977_3840_2160_30fps.mp4" })
-        setScaleMedia({ type: "video", url: "/7490425-uhd_3840_2160_25fps.mp4" })
       }
     }
 
-    loadHomepageMedia()
-    return () => {
-      active = false
+    setNetworkLogos((current) =>
+      current.map((logo) => ({
+        ...logo,
+        image: imageMap.get(logo.key) || logo.image,
+      }))
+    )
+
+    setDeveloperImage(imageMap.get("developer_community_image") || DEFAULT_DEVELOPER_IMAGE)
+    if (videoMap.get("hero_background") || videoMap.get("hero_background_video")) {
+      setHeroMedia({ type: "video", url: videoMap.get("hero_background") || videoMap.get("hero_background_video")! })
+    } else if (imageMap.get("hero_background")) {
+      setHeroMedia({ type: "image", url: imageMap.get("hero_background")! })
     }
-  }, [])
+    if (videoMap.get("scale_background_video")) {
+      setScaleMedia({ type: "video", url: videoMap.get("scale_background_video")! })
+    } else if (imageMap.get("scale_background_video")) {
+      setScaleMedia({ type: "image", url: imageMap.get("scale_background_video")! })
+    }
+  }, [mediaData, mediaLoading])
 
   return (
     <PageTransition className="min-h-screen flex flex-col bg-[color:var(--marketing-cream)]">
@@ -443,7 +428,15 @@ export default function HomePage() {
           className="relative overflow-hidden px-4 pb-32 pt-20 sm:px-6 sm:pb-40 sm:pt-28 lg:pt-36 selection:bg-primary/30 selection:text-white flex min-h-[85vh] flex-col items-center justify-center bg-[#0d1627]"
         >
           {heroMedia && heroMedia.type === "video" ? (
-            <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover opacity-40" preload="metadata">
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 h-full w-full object-cover opacity-40"
+              preload="metadata"
+              onError={() => setHeroMedia({ type: "image", url: "/images/technical-partnership.jpg" })}
+            >
               <source src={heroMedia.url} type="video/mp4" />
             </video>
           ) : heroMedia && heroMedia.type === "image" ? (
@@ -545,14 +538,11 @@ export default function HomePage() {
                       fill
                       className="object-contain"
                       sizes="32px"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        const fallback = target.parentElement?.querySelector('.fallback-dot') as HTMLElement;
-                        if (fallback) fallback.style.display = 'flex';
+                      onError={() => {
+                        setLogoErrorKeys((prev) => ({ ...prev, [network.key]: true }));
                       }}
                     />
-                    <div className="fallback-dot hidden h-8 w-8 items-center justify-center">
+                    <div className={`${logoErrorKeys[network.key] ? "flex" : "hidden"} h-8 w-8 items-center justify-center`}>
                       <div className={`h-3 w-3 rounded-full ${network.color}`} />
                     </div>
                   </div>
@@ -622,7 +612,15 @@ export default function HomePage() {
             <ScrollReveal once={false} amount={0.22}>
               <div className="relative aspect-video overflow-hidden rounded-3xl bg-neutral-200/80 shadow-lg">
                 {scaleMedia && scaleMedia.type === "video" ? (
-                  <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover" preload="metadata">
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="absolute inset-0 h-full w-full object-cover"
+                    preload="metadata"
+                    onError={() => setScaleMedia({ type: "image", url: "/images/topchart-way.jpg" })}
+                  >
                     <source src={scaleMedia.url} type="video/mp4" />
                   </video>
                 ) : scaleMedia && scaleMedia.type === "image" ? (
