@@ -6,8 +6,26 @@ const ADMIN_LOGIN = "/admin/login";
 
 function getSecurityHeaders(request: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://topchart.store";
-  const appDomain = new URL(appUrl).hostname;
+  const url = new URL(appUrl);
+  const appDomain = url.hostname;
+  const appProtocol = url.protocol; // http: or https:
   
+  const connectSources = [
+    "'self'",
+    "https://*.supabase.co",
+    "https://cibtsrkdatuymjpzcfol.supabase.co",
+    `${appProtocol}//${appDomain}`,
+    `${appProtocol}//api.${appDomain}`,
+    "https://*.tawk.to"
+  ];
+
+  // If we are on a subdomain (like netlify), allow it too
+  const host = request.headers.get("host") || "";
+  if (host && !host.includes(appDomain)) {
+    connectSources.push(`https://${host}`);
+    connectSources.push(`http://${host}`);
+  }
+
   return {
     "X-Frame-Options": "DENY",
     "X-Content-Type-Options": "nosniff",
@@ -18,13 +36,13 @@ function getSecurityHeaders(request: NextRequest) {
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "Content-Security-Policy": [
       "default-src 'self'",
-      `connect-src 'self' https://*.supabase.co https://cibtsrkdatuymjpzcfol.supabase.co https://${appDomain} https://api.${appDomain} https://*.tawk.to`,
-      "img-src 'self' data: blob: https://*.supabase.co https://cibtsrkdatuymjpzcfol.supabase.co",
+      `connect-src ${connectSources.join(" ")}`,
+      "img-src 'self' data: blob: https://*.supabase.co https://cibtsrkdatuymjpzcfol.supabase.co https://*.tawk.to",
       "media-src 'self' blob: https://*.supabase.co https://cibtsrkdatuymjpzcfol.supabase.co",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.tawk.to",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
-      "frame-src https://*.tawk.to",
+      "frame-src 'self' https://*.tawk.to",
     ].join("; "),
   };
 }

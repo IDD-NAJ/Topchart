@@ -313,3 +313,33 @@ CREATE TABLE IF NOT EXISTS verification_sms (
   received_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_verification_sms_number_id ON verification_sms(number_id);
+
+-- homepage_media: stores metadata for homepage visual assets
+CREATE TABLE IF NOT EXISTS homepage_media (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  section        TEXT NOT NULL,
+  slot_key       TEXT NOT NULL,
+  media_type     TEXT NOT NULL, -- 'image' or 'video'
+  file_url       TEXT NOT NULL,
+  storage_source TEXT NOT NULL DEFAULT 'supabase', -- 'local' or 'supabase'
+  file_name      TEXT,
+  mime_type      TEXT,
+  file_size      BIGINT,
+  storage_path   TEXT,
+  public_url     TEXT,
+  section_key    TEXT, -- Legacy compatibility
+  asset_type     TEXT, -- Legacy compatibility
+  alt_text       TEXT,
+  priority       INTEGER NOT NULL DEFAULT 0,
+  status         TEXT NOT NULL DEFAULT 'active', -- 'active', 'inactive', 'archived'
+  is_active      BOOLEAN NOT NULL DEFAULT true, -- Legacy compatibility
+  version        INTEGER NOT NULL DEFAULT 1,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_homepage_media_section ON homepage_media(section);
+CREATE INDEX IF NOT EXISTS idx_homepage_media_slot_key ON homepage_media(slot_key);
+CREATE INDEX IF NOT EXISTS idx_homepage_media_status ON homepage_media(status);
+CREATE INDEX IF NOT EXISTS idx_homepage_media_active ON homepage_media(is_active);
+CREATE INDEX IF NOT EXISTS idx_homepage_media_priority ON homepage_media(priority);
+

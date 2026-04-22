@@ -11,6 +11,7 @@ interface HealthStatus {
     paystack: string;
     datamart: string;
     reloadly: string;
+    supabase_storage: string;
   };
   timestamp: string;
 }
@@ -98,6 +99,12 @@ export function HealthCheck() {
             <span className="text-muted-foreground">Reloadly</span>
             <div className="flex items-center gap-1">
               {getStatusIcon(health?.apis.reloadly || "")}
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-[10px]">
+            <span className="text-muted-foreground">Supabase Storage</span>
+            <div className="flex items-center gap-1">
+              {getStatusIcon(health?.apis.supabase_storage || "")}
             </div>
           </div>
         </div>

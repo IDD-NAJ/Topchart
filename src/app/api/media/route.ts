@@ -17,43 +17,51 @@ export async function GET(request: Request) {
     let media: any[];
     if (section && slotKey) {
       media = await sql`
-        SELECT id, section, slot_key, media_type, file_url, alt_text, priority, storage_source, file_name, mime_type, file_size, status, version
+        SELECT id, section, slot_key, media_type, file_url, alt_text, priority, storage_source, file_name, mime_type, file_size, status, is_active, version
         FROM homepage_media
         WHERE status = 'active' AND section = ${section} AND slot_key = ${slotKey}
         ORDER BY priority ASC, created_at ASC
       `;
     } else if (section) {
       media = await sql`
-        SELECT id, section, slot_key, media_type, file_url, alt_text, priority, storage_source, file_name, mime_type, file_size, status, version
+        SELECT id, section, slot_key, media_type, file_url, alt_text, priority, storage_source, file_name, mime_type, file_size, status, is_active, version
         FROM homepage_media
         WHERE status = 'active' AND section = ${section}
         ORDER BY priority ASC, created_at ASC
       `;
     } else if (slotKey) {
       media = await sql`
-        SELECT id, section, slot_key, media_type, file_url, alt_text, priority, storage_source, file_name, mime_type, file_size, status, version
+        SELECT id, section, slot_key, media_type, file_url, alt_text, priority, storage_source, file_name, mime_type, file_size, status, is_active, version
         FROM homepage_media
         WHERE status = 'active' AND slot_key = ${slotKey}
         ORDER BY priority ASC, created_at ASC
       `;
     } else {
       media = await sql`
-        SELECT id, section, slot_key, media_type, file_url, alt_text, priority, storage_source, file_name, mime_type, file_size, status, version
+        SELECT id, section, slot_key, media_type, file_url, alt_text, priority, storage_source, file_name, mime_type, file_size, status, is_active, version
         FROM homepage_media
         WHERE status = 'active'
         ORDER BY section ASC, slot_key ASC, priority ASC, created_at ASC
       `;
     }
 
-    const compatMedia = media.map((item) => ({
-      ...item,
-      section_key: toLegacySectionKey(item.slot_key),
-      asset_type: item.media_type,
-      public_url: item.file_url,
-    }));
+    if (!media || !Array.isArray(media)) {
+      console.warn("[MEDIA_GET] No media array returned from DB");
+      return NextResponse.json({ success: true, media: [] });
+    }
+
+    const compatMedia = media.map((item) => {
+      if (!item) return null;
+      return {
+        ...item,
+        section_key: toLegacySectionKey(item.slot_key || ""),
+        asset_type: item.media_type,
+        public_url: item.file_url,
+      };
+    }).filter(Boolean);
 
     return NextResponse.json(
-      { success: true, media: compatMedia || [] },
+      { success: true, media: compatMedia },
       {
         status: 200,
         headers: {
@@ -62,6 +70,7 @@ export async function GET(request: Request) {
       }
     );
   } catch (error: unknown) {
+    console.error("[MEDIA_GET_ERROR] Detailed error:", error);
     const message = String((error as { message?: string })?.message || "");
     const code = (error as { code?: string })?.code || "";
     

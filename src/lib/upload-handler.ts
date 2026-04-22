@@ -108,7 +108,7 @@ async function uploadToSupabase(
   const env = getSupabaseStorageEnv();
   
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error("Supabase not configured");
+    throw new Error("Supabase storage is not configured. Please check your environment variables.");
   }
 
   const client = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
@@ -118,16 +118,25 @@ async function uploadToSupabase(
   const bucketName = env.SUPABASE_BUCKET_HOMEPAGE_MEDIA || "homepage-media";
   const sanitizedFileName = sanitizeFileName(file.name);
   const uniqueFileName = `${uuidv4()}_${sanitizedFileName}`;
-  const storagePath = `${sectionKey}/${uniqueFileName}`;
+  
+  // Use a consistent folder structure
+  const storagePath = `homepage/${sectionKey}/${uniqueFileName}`;
+  const mimeType = detectMimeType(file);
+
+  // Convert File to Buffer for reliable server-side upload
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
 
   const { data, error } = await client.storage
     .from(bucketName)
-    .upload(storagePath, file, {
+    .upload(storagePath, buffer, {
       upsert: false,
-      contentType: detectMimeType(file),
-    });
+      contentType: mimeType,
+      duplex: 'half' // Required for some Node.js fetch implementations
+    } as any);
 
   if (error) {
+    console.error("[SUPABASE_UPLOAD_ERROR]", error);
     throw new Error(`Supabase upload failed: ${error.message}`);
   }
 
@@ -139,7 +148,7 @@ async function uploadToSupabase(
     storagePath,
     publicUrl: publicUrlData.publicUrl,
     fileName: file.name,
-    mimeType: detectMimeType(file),
+    mimeType,
     fileSize: file.size,
     source: "supabase",
   };

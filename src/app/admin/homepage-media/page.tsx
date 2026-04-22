@@ -79,10 +79,17 @@ export default function AdminHomepageMediaPage() {
     setLoading(true);
     try {
       const response = await fetch("/api/admin/media", { cache: "no-store", credentials: "include" });
+      if (!response.ok) {
+        console.error("[MEDIA_LOAD] Fetch failed with status:", response.status, response.statusText);
+        const text = await response.text();
+        console.error("[MEDIA_LOAD] Error response body:", text);
+        throw new Error(`Failed to load: ${response.status} ${response.statusText}`);
+      }
       const payload = await response.json();
-      if (!response.ok || !payload?.success) throw new Error(payload?.error ?? "Failed to load");
+      if (!payload?.success) throw new Error(payload?.error ?? "Failed to load");
       setMedia(payload.media ?? []);
     } catch (error) {
+      console.error("[MEDIA_LOAD] Detailed error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to load media");
     } finally {
       setLoading(false);

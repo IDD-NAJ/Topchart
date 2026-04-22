@@ -75,18 +75,21 @@ export async function POST(request: NextRequest) {
     if (!allowsMultipleForSlot(section, slot_key) && isActive) {
       await sql`
         UPDATE homepage_media
-        SET status = 'inactive'
+        SET status = 'inactive', is_active = false
         WHERE section = ${section} AND slot_key = ${slot_key} AND status = 'active'
       `;
     }
 
     const inserted = await sql`
       INSERT INTO homepage_media (
-        section, slot_key, media_type, file_url, storage_source, file_name, mime_type, file_size,
-        storage_path, public_url, section_key, asset_type, alt_text, priority, status, version
+        section, slot_key, media_type, file_url, storage_source, 
+        file_name, mime_type, file_size, storage_path, public_url, 
+        section_key, asset_type, alt_text, priority, status, is_active, version
       ) VALUES (
-        ${section}, ${slot_key}, ${mediaType}, ${finalUrl}, ${finalSource}, ${file_name}, ${mime_type}, ${file_size},
-        ${finalPath}, ${finalUrl}, ${slot_key}, ${mediaType}, ${alt_text}, ${Number.isFinite(priority) ? priority : 0}, ${status}, 1
+        ${section}, ${slot_key}, ${mediaType}, ${finalUrl}, ${finalSource}, 
+        ${file_name}, ${mime_type}, ${file_size}, ${finalPath}, ${finalUrl}, 
+        ${slot_key}, ${mediaType}, ${alt_text}, ${Number.isFinite(priority) ? priority : 0}, 
+        ${status}, ${isActive}, 1
       )
       RETURNING *
     `;

@@ -9,6 +9,7 @@ async function getHomepageMedia() {
     const media = await sql`
       SELECT 
         id, 
+        section,
         section_key, 
         slot_key, 
         media_type, 
@@ -18,7 +19,8 @@ async function getHomepageMedia() {
         file_url, 
         alt_text, 
         priority, 
-        status as is_active 
+        status,
+        is_active
       FROM homepage_media 
       WHERE status = 'active' 
       ORDER BY priority DESC, created_at DESC

@@ -38,7 +38,7 @@ export async function PATCH(
     if (status === "active" && !allowsMultipleForSlot(item.section, item.slot_key)) {
       await sql`
         UPDATE homepage_media
-        SET status = 'inactive'
+        SET status = 'inactive', is_active = false
         WHERE section = ${item.section} AND slot_key = ${item.slot_key} AND status = 'active' AND id <> ${id}
       `;
     }
@@ -47,6 +47,11 @@ export async function PATCH(
       UPDATE homepage_media
       SET
         status = COALESCE(${status}, status),
+        is_active = CASE 
+          WHEN ${status} IS NULL THEN is_active
+          WHEN ${status} = 'active' THEN true 
+          ELSE false 
+        END,
         priority = COALESCE(${priority}, priority),
         alt_text = COALESCE(${altText}, alt_text),
         updated_at = NOW()
@@ -58,7 +63,8 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: "Media not found" }, { status: 404 });
     }
     return NextResponse.json({ success: true, media: updated[0] });
-  } catch {
+  } catch (error) {
+    console.error("[MEDIA_PATCH] Error:", error);
     return NextResponse.json({ success: false, error: "Failed to update media" }, { status: 500 });
   }
 }
