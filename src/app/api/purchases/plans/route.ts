@@ -148,7 +148,7 @@ async function fetchPlansFromCache(network?: string): Promise<{ success: true; d
       .map(p => new Date(p.syncedAt!).getTime())
       .sort((a, b) => a - b)[0];
     
-    const isStale = !oldestSync || Date.now() - oldestSync > 24 * 60 * 60 * 1000;
+    const isStale = !oldestSync || Date.now() - oldestSync > 48 * 60 * 60 * 1000;
     const fetchedAt = oldestSync ? new Date(oldestSync).toISOString() : null;
 
     return { success: true, data: plans, stale: isStale, fetchedAt };
