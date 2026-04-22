@@ -20,19 +20,40 @@ export function TawkChat() {
 
   useEffect(() => {
     if (!hasValidConfig || !user) return
+    
+    // Suppress Tawk console errors
+    // @ts-ignore
+    const originalConsoleError = console.error
+    // @ts-ignore
+    console.error = (...args) => {
+      if (args[0] && typeof args[0] === 'string' && args[0].includes('[Tawk/Logger]')) {
+        return
+      }
+      originalConsoleError.apply(console, args)
+    }
+    
     const trySetAttributes = () => {
-      // @ts-ignore
-      const api = window.Tawk_API
-      if (api?.setAttributes) {
-        api.setAttributes({
-          name: `${user.firstName} ${user.lastName}`,
-          email: user.email,
-        })
-      } else {
-        setTimeout(trySetAttributes, 1000)
+      try {
+        // @ts-ignore
+        const api = window.Tawk_API
+        if (api?.setAttributes) {
+          api.setAttributes({
+            name: `${user.firstName} ${user.lastName}`,
+            email: user.email,
+          })
+        } else {
+          setTimeout(trySetAttributes, 1000)
+        }
+      } catch (error) {
+        console.warn("Tawk API error:", error)
       }
     }
     trySetAttributes()
+    
+    return () => {
+      // @ts-ignore
+      console.error = originalConsoleError
+    }
   }, [hasValidConfig, user])
 
   if (!hasValidConfig) {
