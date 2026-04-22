@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sql } from "@/lib/db";
+import { sql, sqlUnsafe } from "@/lib/db";
 import { getCurrentUser } from "@/lib/actions/auth";
 
 export const runtime = "nodejs";
@@ -29,7 +29,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       return NextResponse.json({ success: false, error: "No fields to update" }, { status: 400 });
     }
 
-    const result = await sql.unsafe(`
+    const result = await sqlUnsafe(`
       UPDATE esim_products
       SET ${updateFields.join(', ')}, updated_at = NOW()
       WHERE id = '${id}'

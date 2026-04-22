@@ -191,7 +191,7 @@ export async function getBillersByCountry(countryCode: string): Promise<ApiRespo
   if (result.success && result.data) {
     return { success: true, data: result.data.content };
   }
-  return result as ApiResponse<ReloadlyBiller[]>;
+  return { success: false, error: result.error || "Failed to fetch billers" };
 }
 
 export async function getBillerById(billerId: number): Promise<ApiResponse<ReloadlyBiller>> {

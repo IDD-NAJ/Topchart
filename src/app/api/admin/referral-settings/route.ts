@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { sql } from "@/lib/db"
+import { sql, sqlUnsafe } from "@/lib/db"
 import { getCurrentUser } from "@/lib/actions/auth"
 
 export const runtime = "nodejs"
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (updates.length > 0) {
-      await sql.unsafe(`
+      await sqlUnsafe(`
         INSERT INTO referral_settings (id, referral_reward_amount, min_referrals_required, min_deposit_amount)
         VALUES (1, 5.00, 10, 20.00)
         ON CONFLICT (id) DO UPDATE SET 
