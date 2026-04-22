@@ -26,14 +26,28 @@ export async function PATCH(
   const isActive = typeof body.is_active === "boolean" ? body.is_active : null;
 
   try {
+    if (isActive === true) {
+      const current = await sql`
+        SELECT section_key FROM homepage_media WHERE id = ${id} LIMIT 1
+      `;
+      if (current.length) {
+        const targetSection = sectionKey ?? current[0].section_key;
+        await sql`
+          UPDATE homepage_media
+          SET is_active = FALSE, updated_at = NOW()
+          WHERE section_key = ${targetSection} AND id != ${id}
+        `;
+      }
+    }
+
     const updated = await sql`
       UPDATE homepage_media
       SET
         section_key = COALESCE(${sectionKey}, section_key),
-        alt_text = COALESCE(${altText}, alt_text),
-        sort_order = COALESCE(${sortOrder}, sort_order),
-        is_active = COALESCE(${isActive}, is_active),
-        updated_at = NOW()
+        alt_text    = COALESCE(${altText},    alt_text),
+        sort_order  = COALESCE(${sortOrder},  sort_order),
+        is_active   = COALESCE(${isActive},   is_active),
+        updated_at  = NOW()
       WHERE id = ${id}
       RETURNING id, section_key, asset_type, storage_path, public_url, alt_text, sort_order, is_active, created_at, updated_at
     `;
