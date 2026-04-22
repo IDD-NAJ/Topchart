@@ -5,7 +5,6 @@ import Image from "next/image"
 import { useEffect, useState } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { useMedia } from "@/hooks/use-media"
 import {
   Accordion,
   AccordionContent,
@@ -378,46 +377,6 @@ export default function HomePage() {
     url: "/istockphoto-1438853103-640_adpp_is.mp4",
   })
   const [logoErrorKeys, setLogoErrorKeys] = useState<Record<string, boolean>>({})
-  const { data: mediaData, loading: mediaLoading } = useMedia()
-
-  useEffect(() => {
-    if (!mediaData || mediaLoading) return
-
-    const imageMap = new Map<string, string>()
-    const videoMap = new Map<string, string>()
-    
-    for (const item of mediaData) {
-      const key = item.slot_key
-      const url = item.file_url
-      const type = item.media_type
-      if (key && url) {
-        if (type === "image") {
-          imageMap.set(key, url)
-        } else if (type === "video") {
-          videoMap.set(key, url)
-        }
-      }
-    }
-
-    setNetworkLogos((current) =>
-      current.map((logo) => ({
-        ...logo,
-        image: imageMap.get(logo.key) || logo.image,
-      }))
-    )
-
-    setDeveloperImage(imageMap.get("developer_community_image") || DEFAULT_DEVELOPER_IMAGE)
-    if (videoMap.get("hero_background") || videoMap.get("hero_background_video")) {
-      setHeroMedia({ type: "video", url: videoMap.get("hero_background") || videoMap.get("hero_background_video")! })
-    } else if (imageMap.get("hero_background")) {
-      setHeroMedia({ type: "image", url: imageMap.get("hero_background")! })
-    }
-    if (videoMap.get("scale_background_video")) {
-      setScaleMedia({ type: "video", url: videoMap.get("scale_background_video")! })
-    } else if (imageMap.get("scale_background_video")) {
-      setScaleMedia({ type: "image", url: imageMap.get("scale_background_video")! })
-    }
-  }, [mediaData, mediaLoading])
 
   return (
     <PageTransition className="min-h-screen flex flex-col bg-[color:var(--marketing-cream)]">

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
-import { useMedia } from "@/hooks/use-media"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import {
@@ -30,14 +29,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
-interface HomepageMediaItem {
-  slot_key: string;
-  media_type: "image" | "video";
-  file_url: string;
-  alt_text: string | null;
-  status: "active" | "inactive" | "archived";
-}
 
 const serviceLinks: { href: string; label: string; description: string; icon: LucideIcon }[] = [
   {
@@ -109,9 +100,6 @@ export function Header() {
   const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [servicesOpen, setServicesOpen] = useState(false)
-  const { data: headerMediaData, loading: headerMediaLoading } = useMedia("header", "header_logo")
-
-  const headerMedia = headerMediaData?.find((m) => m.status === "active") || null
 
   return (
     <header
@@ -121,49 +109,16 @@ export function Header() {
 
         {/* LOGO */}
         <Link href="/" className="shrink-0 flex items-center group relative z-10">
-          {headerMedia ? (
-            headerMedia.media_type === "video" ? (
-              <video
-                src={headerMedia.file_url}
-                autoPlay
-                loop
-                muted
-                playsInline
-                width={240}
-                height={60}
-                className="h-14 w-auto"
-                onError={() => {
-                  // #region agent log
-                  debugLog("baseline", "H4", "src/components/header.tsx:161", "header_video_on_error", { url: headerMedia.file_url });
-                  // #endregion
-                }}
-              />
-            ) : (
-              <img
-                src={headerMedia.file_url}
-                alt={headerMedia.alt_text || "Topchart Logo"}
-                width={240}
-                height={60}
-                className="h-14 w-auto"
-                onError={() => {
-                  // #region agent log
-                  debugLog("baseline", "H4", "src/components/header.tsx:174", "header_image_on_error", { url: headerMedia.file_url });
-                  // #endregion
-                }}
-              />
-            )
-          ) : (
-            <video
-              src="/IMG_7731.MP4"
-              autoPlay
-              loop
-              muted
-              playsInline
-              width={240}
-              height={60}
-              className="h-14 w-auto"
-            />
-          )}
+          <video
+            src="/IMG_7731.MP4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            width={240}
+            height={60}
+            className="h-14 w-auto"
+          />
         </Link>
 
         {/* DESKTOP NAV */}

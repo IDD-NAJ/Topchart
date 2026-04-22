@@ -49,6 +49,15 @@ function humanSize(bytes?: number | null) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+type StorageFile = {
+  name: string;
+  id: string;
+  size: number;
+  mimeType: string;
+  path: string;
+  publicUrl: string;
+};
+
 export default function AdminHomepageMediaPage() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [section, setSection] = useState<HomepageSection>("hero");
@@ -59,6 +68,10 @@ export default function AdminHomepageMediaPage() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [useExistingFile, setUseExistingFile] = useState(false);
+  const [storageFiles, setStorageFiles] = useState<StorageFile[]>([]);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [loadingFiles, setLoadingFiles] = useState(false);
 
   const loadMedia = async () => {
     setLoading(true);
