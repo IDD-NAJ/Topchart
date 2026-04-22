@@ -116,9 +116,7 @@ export default function DataPage() {
         setPlans(json.data)
         setPlansStale(Boolean(json.stale))
         setPlansFetchedAt(String(json.fetchedAt || ""))
-        if (json.stale && json.providerError) {
-          setPlansError(`Showing cached plans: ${json.providerError}`)
-        }
+        setPlansError(null)
       } else {
         setPlansError(json.error || "Failed to load plans from provider.")
         setPlans([])

@@ -50,13 +50,23 @@ function humanSize(bytes?: number | null) {
 }
 
 type StorageFile = {
-  name: string;
   id: string;
-  size: number;
-  mimeType: string;
+  name: string;
   path: string;
   publicUrl: string;
+  size: number;
+  mimeType: string;
+  source: "local" | "supabase";
+  folder: string;
 };
+
+function humanSize(bytes: number) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
 
 export default function AdminHomepageMediaPage() {
   const [media, setMedia] = useState<MediaItem[]>([]);
@@ -70,7 +80,7 @@ export default function AdminHomepageMediaPage() {
   const [uploading, setUploading] = useState(false);
   const [useExistingFile, setUseExistingFile] = useState(false);
   const [storageFiles, setStorageFiles] = useState<StorageFile[]>([]);
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   const [loadingFiles, setLoadingFiles] = useState(false);
 
   const loadMedia = async () => {
@@ -141,6 +151,67 @@ export default function AdminHomepageMediaPage() {
     }
   };
 
+  const loadFiles = async () => {
+    if (storageFiles.length > 0) return;
+    setLoadingFiles(true);
+    try {
+      const response = await fetch("/api/admin/media/files", { cache: "no-store", credentials: "include" });
+      const payload = await response.json();
+      if (!response.ok || !payload?.success) throw new Error(payload?.error ?? "Failed to load files");
+      setStorageFiles(payload.files ?? []);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to load files");
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
+
+  useEffect(() => {
+    if (useExistingFile) {
+      loadFiles();
+    }
+  }, [useExistingFile]);
+
+  const submitSelection = async () => {
+    if (!selectedFileId) {
+      toast.error("Select a file from the library");
+      return;
+    }
+    const selectedFile = storageFiles.find((f) => f.id === selectedFileId);
+    if (!selectedFile) return;
+
+    setUploading(true);
+    try {
+      const response = await fetch("/api/admin/media/select", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          section,
+          slot_key: slotKey,
+          priority,
+          alt_text: altText,
+          file_url: selectedFile.publicUrl,
+          source: selectedFile.source,
+          file_name: selectedFile.name,
+          mime_type: selectedFile.mimeType,
+          file_size: selectedFile.size,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload?.success) throw new Error(payload?.error ?? "Selection failed");
+      setSelectedFileId(null);
+      setAltText("");
+      setPriority(0);
+      await loadMedia();
+      toast.success(selectedFile.source === "local" ? "Local file migrated to Supabase & saved!" : "Existing media selected!");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Selection failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const toggleMedia = async (id: string, isActive: boolean) => {
     const response = await fetch(`/api/admin/media/${id}`, {
       method: "PATCH",
@@ -190,8 +261,16 @@ export default function AdminHomepageMediaPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Upload className="h-4 w-4" /> Upload media</CardTitle>
-          <CardDescription>Supports `.jpg`, `.png`, `.webp`, `.mp4` to local or Supabase.</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2"><Upload className="h-4 w-4" /> Add Media to Slot</CardTitle>
+              <CardDescription>Upload a new file or browse existing files from Supabase/Local.</CardDescription>
+            </div>
+            <div className="flex items-center gap-2 rounded-md border p-1 bg-muted">
+              <Button size="sm" variant={!useExistingFile ? "secondary" : "ghost"} onClick={() => setUseExistingFile(false)}>Upload New</Button>
+              <Button size="sm" variant={useExistingFile ? "secondary" : "ghost"} onClick={() => setUseExistingFile(true)}>Select Existing</Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
@@ -213,13 +292,15 @@ export default function AdminHomepageMediaPage() {
               <Input value={slotKey} onChange={(e) => setSlotKey(e.target.value)} placeholder="hero_background" />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>Source</Label>
-            <select className="h-10 w-full rounded-md border px-3" value={storageSource} onChange={(e) => setStorageSource(e.target.value as "local" | "supabase")}>
-              <option value="supabase">Supabase (recommended — works in production)</option>
-              <option value="local">Local (dev only — files are gitignored, will 404 on Netlify)</option>
-            </select>
-          </div>
+          {!useExistingFile && (
+            <div className="space-y-2">
+              <Label>Source</Label>
+              <select className="h-10 w-full rounded-md border px-3" value={storageSource} onChange={(e) => setStorageSource(e.target.value as "local" | "supabase")}>
+                <option value="supabase">Supabase (recommended — works in production)</option>
+                <option value="local">Local (dev only — files are gitignored, will 404 on Netlify)</option>
+              </select>
+            </div>
+          )}
           <div className="space-y-2">
             <Label>Priority</Label>
             <Input type="number" value={priority} onChange={(e) => setPriority(Number(e.target.value))} />
@@ -228,14 +309,60 @@ export default function AdminHomepageMediaPage() {
             <Label>Alt text</Label>
             <Input value={altText} onChange={(e) => setAltText(e.target.value)} />
           </div>
-          <div className="space-y-2">
-            <Label>File</Label>
-            <Input type="file" accept=".jpg,.jpeg,.png,.webp,.mp4" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-          </div>
+          
+          {!useExistingFile ? (
+            <div className="space-y-2 md:col-span-3">
+              <Label>File Upload</Label>
+              <Input type="file" accept=".jpg,.jpeg,.png,.webp,.mp4" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            </div>
+          ) : (
+            <div className="space-y-4 md:col-span-3 mt-4 border-t pt-4">
+              <div className="flex items-center justify-between">
+                <Label>Select from Media Library</Label>
+                <Button variant="outline" size="sm" onClick={() => loadFiles()} disabled={loadingFiles}>
+                  {loadingFiles ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />} Refresh Library
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-h-[300px] overflow-y-auto p-1">
+                {storageFiles.length === 0 && !loadingFiles && (
+                  <p className="text-sm text-muted-foreground col-span-full">No existing files found.</p>
+                )}
+                {storageFiles.map((f) => (
+                  <div 
+                    key={f.id} 
+                    onClick={() => setSelectedFileId(f.id)}
+                    className={`cursor-pointer border rounded-md overflow-hidden relative group transition-all ${selectedFileId === f.id ? "ring-2 ring-primary border-primary" : "hover:border-primary/50"}`}
+                  >
+                    <div className="aspect-video bg-muted flex items-center justify-center overflow-hidden">
+                      {f.mimeType.startsWith("video") ? (
+                        <video className="w-full h-full object-cover" src={f.publicUrl} />
+                      ) : (
+                        <img className="w-full h-full object-cover" src={f.publicUrl} loading="lazy" />
+                      )}
+                    </div>
+                    <div className="p-2 bg-background border-t">
+                      <p className="text-xs truncate font-medium" title={f.name}>{f.name}</p>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-[10px] text-muted-foreground">{humanSize(f.size)}</span>
+                        <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">{f.source}</Badge>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="md:col-span-3">
-            <Button onClick={submitUpload} disabled={!file || uploading}>
-              {uploading ? "Uploading..." : "Upload"}
-            </Button>
+            {!useExistingFile ? (
+              <Button onClick={submitUpload} disabled={!file || uploading}>
+                {uploading ? "Uploading..." : "Upload New File"}
+              </Button>
+            ) : (
+              <Button onClick={submitSelection} disabled={!selectedFileId || uploading}>
+                {uploading ? "Saving..." : "Save Selected Media to Slot"}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
