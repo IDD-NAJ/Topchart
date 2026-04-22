@@ -148,7 +148,7 @@ async function fetchPlansFromCache(network?: string): Promise<{ success: true; d
       .map(p => new Date(p.syncedAt!).getTime())
       .sort((a, b) => a - b)[0];
     
-    const isStale = oldestSync ? Date.now() - oldestSync > 24 * 60 * 60 * 1000 : true;
+    const isStale = !oldestSync || Date.now() - oldestSync > 24 * 60 * 60 * 1000;
     const fetchedAt = oldestSync ? new Date(oldestSync).toISOString() : null;
 
     return { success: true, data: plans, stale: isStale, fetchedAt };
@@ -317,7 +317,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const syncResult = await syncPlansFromDataMart(network || undefined);
+    let syncResult;
+    try {
+      syncResult = await syncPlansFromDataMart(network || undefined);
+    } catch (syncError) {
+      console.error("DataMart sync error:", syncError);
+      syncResult = { success: false, error: syncError instanceof Error ? syncError.message : "Sync failed", errorCode: "PROVIDER_SYNC_ERROR" };
+    }
 
     if (syncResult.success) {
       const freshCache = await fetchPlansFromCache(network || undefined);
@@ -370,8 +376,9 @@ export async function GET(request: NextRequest) {
     );
   } catch (err) {
     console.error("Plans API error:", err);
+    console.error("Error details:", err instanceof Error ? err.stack : String(err));
     return NextResponse.json(
-      { success: false, error: "Internal server error" },
+      { success: false, error: err instanceof Error ? err.message : "Internal server error" },
       { status: 500 }
     );
   }
