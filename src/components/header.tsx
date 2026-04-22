@@ -30,6 +30,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+interface HomepageMediaItem {
+  section_key: string;
+  asset_type: "image" | "video";
+  public_url: string;
+  alt_text: string | null;
+  is_active: boolean;
+}
+
 const serviceLinks: { href: string; label: string; description: string; icon: LucideIcon }[] = [
   {
     href: "/dashboard",
@@ -91,6 +99,27 @@ export function Header() {
   const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [servicesOpen, setServicesOpen] = useState(false)
+  const [headerMedia, setHeaderMedia] = useState<HomepageMediaItem | null>(null)
+
+  useEffect(() => {
+    const fetchHeaderMedia = async () => {
+      try {
+        const response = await fetch("/api/content/homepage-media", { cache: "no-store" })
+        const payload = await response.json()
+        if (payload?.success && Array.isArray(payload.media)) {
+          const headerLogo = payload.media.find((m: HomepageMediaItem) => 
+            m.section_key === "header_logo" && m.is_active
+          )
+          if (headerLogo) {
+            setHeaderMedia(headerLogo)
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch header media:", error)
+      }
+    }
+    fetchHeaderMedia()
+  }, [])
 
   return (
     <header
@@ -100,11 +129,34 @@ export function Header() {
 
         {/* LOGO */}
         <Link href="/" className="shrink-0 flex items-center group relative z-10">
-          <LogoVideo
-            width={160}
-            height={40}
-            className="h-10 w-auto"
-          />
+          {headerMedia ? (
+            headerMedia.asset_type === "video" ? (
+              <video
+                src={headerMedia.public_url}
+                autoPlay
+                loop
+                muted
+                playsInline
+                width={160}
+                height={40}
+                className="h-10 w-auto"
+              />
+            ) : (
+              <img
+                src={headerMedia.public_url}
+                alt={headerMedia.alt_text || "Topchart Logo"}
+                width={160}
+                height={40}
+                className="h-10 w-auto"
+              />
+            )
+          ) : (
+            <LogoVideo
+              width={160}
+              height={40}
+              className="h-10 w-auto"
+            />
+          )}
         </Link>
 
         {/* DESKTOP NAV */}
