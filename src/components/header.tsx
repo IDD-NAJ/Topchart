@@ -129,9 +129,9 @@ export function Header() {
                 loop
                 muted
                 playsInline
-                width={160}
-                height={40}
-                className="h-10 w-auto"
+                width={240}
+                height={60}
+                className="h-14 w-auto"
                 onError={() => {
                   // #region agent log
                   debugLog("baseline", "H4", "src/components/header.tsx:161", "header_video_on_error", { url: headerMedia.file_url });
@@ -142,9 +142,9 @@ export function Header() {
               <img
                 src={headerMedia.file_url}
                 alt={headerMedia.alt_text || "Topchart Logo"}
-                width={160}
-                height={40}
-                className="h-10 w-auto"
+                width={240}
+                height={60}
+                className="h-14 w-auto"
                 onError={() => {
                   // #region agent log
                   debugLog("baseline", "H4", "src/components/header.tsx:174", "header_image_on_error", { url: headerMedia.file_url });
@@ -154,9 +154,9 @@ export function Header() {
             )
           ) : (
             <LogoVideo
-              width={160}
-              height={40}
-              className="h-10 w-auto"
+              width={240}
+              height={60}
+              className="h-14 w-auto"
             />
           )}
         </Link>
