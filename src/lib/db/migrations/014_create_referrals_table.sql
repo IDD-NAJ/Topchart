@@ -35,6 +35,24 @@ BEGIN
     END IF;
 END $$;
 
+-- Drop old constraints that are now duplicates
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE table_name = 'referrals' AND constraint_name = 'referrals_referred_user_id_fkey'
+    ) THEN
+        ALTER TABLE referrals DROP CONSTRAINT referrals_referred_user_id_fkey;
+    END IF;
+    
+    IF EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE table_name = 'referrals' AND constraint_name = 'referrals_referred_user_id_key'
+    ) THEN
+        ALTER TABLE referrals DROP CONSTRAINT referrals_referred_user_id_key;
+    END IF;
+END $$;
+
 -- Add unique constraint if missing
 DO $$
 BEGIN
