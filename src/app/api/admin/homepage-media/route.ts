@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
-import { uploadHomepageMedia, type HomepageMediaAssetType } from "@/lib/supabase-storage";
+import { uploadMedia, type UploadSource } from "@/lib/upload-handler";
 import { getSupabaseStorageEnv } from "@/lib/env";
 
 export const runtime = "nodejs";
@@ -24,9 +24,9 @@ export async function GET() {
 
   try {
     const media = await sql`
-      SELECT id, section_key, asset_type, storage_path, public_url, alt_text, sort_order, is_active, created_at, updated_at
+      SELECT id, section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size, created_at, updated_at
       FROM homepage_media
-      ORDER BY section_key ASC, sort_order ASC, created_at ASC
+      ORDER BY section_key ASC, priority ASC, created_at ASC
     `;
     const duration = Date.now() - startTime;
     console.log("[HOMEPAGE_MEDIA] GET completed", { requestId, count: media.length, duration });
@@ -53,26 +53,17 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Check Supabase config first
-    const env = getSupabaseStorageEnv();
-    if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error("[UPLOAD] Supabase not configured", { hasUrl: !!env.SUPABASE_URL, hasKey: !!env.SUPABASE_SERVICE_ROLE_KEY });
-      return NextResponse.json({ 
-        success: false, 
-        error: "Storage not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local" 
-      }, { status: 500 });
-    }
-
     const form = await request.formData();
     const sectionKey = String(form.get("section_key") || "").trim();
-    const assetType = String(form.get("asset_type") || "image").trim() as HomepageMediaAssetType;
+    const assetType = String(form.get("asset_type") || "image").trim() as "image" | "video";
     const altText = String(form.get("alt_text") || "").trim() || null;
-    const sortOrder = Number(form.get("sort_order") || 0);
+    const priority = Number(form.get("priority") || 0);
+    const storageSource = String(form.get("storage_source") || "supabase").trim() as UploadSource;
     const isActiveRaw = String(form.get("is_active") || "true").trim().toLowerCase();
     const isActive = isActiveRaw !== "false";
     const file = form.get("file");
 
-    console.log("[UPLOAD] Received request", { requestId, sectionKey, assetType, fileSize: file instanceof File ? file.size : 'not a file', fileType: file instanceof File ? file.type : 'unknown' });
+    console.log("[UPLOAD] Received request", { requestId, sectionKey, assetType, storageSource, fileSize: file instanceof File ? file.size : 'not a file', fileType: file instanceof File ? file.type : 'unknown' });
 
     if (!sectionKey) {
       return NextResponse.json({ success: false, error: "section_key is required" }, { status: 400 });
@@ -84,15 +75,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "file is required" }, { status: 400 });
     }
 
-    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
-    if (file.size > MAX_FILE_SIZE) {
-      console.error("[UPLOAD] File too large", { requestId, size: file.size, maxSize: MAX_FILE_SIZE });
-      return NextResponse.json({ success: false, error: "File size exceeds 100MB limit" }, { status: 400 });
-    }
-
     const uploadStartTime = Date.now();
     const uploaded = await Promise.race([
-      uploadHomepageMedia({ file, sectionKey, assetType }),
+      uploadMedia(file, sectionKey, storageSource),
       new Promise<never>((_, reject) => 
         setTimeout(() => reject(new Error("Upload timeout")), 60000)
       )
@@ -101,9 +86,9 @@ export async function POST(request: Request) {
     console.log("[UPLOAD] Storage upload completed", { requestId, duration: uploadDuration, size: file.size });
 
     const inserted = await sql`
-      INSERT INTO homepage_media (section_key, asset_type, storage_path, public_url, alt_text, sort_order, is_active)
-      VALUES (${sectionKey}, ${assetType}, ${uploaded.storagePath}, ${uploaded.publicUrl}, ${altText}, ${sortOrder}, ${isActive})
-      RETURNING id, section_key, asset_type, storage_path, public_url, alt_text, sort_order, is_active, created_at, updated_at
+      INSERT INTO homepage_media (section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size)
+      VALUES (${sectionKey}, ${assetType}, ${uploaded.storagePath}, ${uploaded.publicUrl}, ${altText}, ${priority}, ${isActive}, ${uploaded.source}, ${uploaded.fileName}, ${uploaded.mimeType}, ${uploaded.fileSize})
+      RETURNING id, section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size, created_at, updated_at
     `;
 
     const totalDuration = Date.now() - startTime;
@@ -123,6 +108,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Upload timed out. Please try again with a smaller file." }, { status: 504 });
     }
     
-    return NextResponse.json({ success: false, error: "Failed to upload homepage media" }, { status: 500 });
+    return NextResponse.json({ success: false, error: err?.message || "Failed to upload homepage media" }, { status: 500 });
   }
 }
