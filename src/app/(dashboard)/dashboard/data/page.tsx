@@ -116,7 +116,7 @@ export default function DataPage() {
         setPlans(json.data)
         setPlansStale(Boolean(json.stale))
         setPlansFetchedAt(String(json.fetchedAt || ""))
-        setPlansError(null)
+        setPlansError("")
       } else {
         setPlansError(json.error || "Failed to load plans from provider.")
         setPlans([])
@@ -443,13 +443,6 @@ export default function DataPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                {plansStale && plansFetchedAt && (
-                  <div className="p-3 bg-amber-50 text-amber-800 text-xs font-medium border-b border-amber-100 flex items-center justify-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    Provider is slow. Showing cached plans from {new Date(plansFetchedAt).toLocaleTimeString()}.
-                  </div>
-                )}
-
                 {plansLoading ? (
                   <div className="p-12 flex flex-col items-center gap-4">
                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
