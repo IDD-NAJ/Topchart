@@ -74,7 +74,7 @@ async function createTestSession() {
     
     console.log('\n📋 Instructions:');
     console.log('1. Start the development server: npm run dev');
-    console.log('2. Navigate to: http://localhost:3000/login');
+    console.log('2. Navigate to: /login');
     console.log('3. Login with:');
     console.log('   Email: najeebiddrisu79@gmail.com');
     console.log('   Password: Gold4me.471@1761');

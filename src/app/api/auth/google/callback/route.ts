@@ -24,9 +24,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL("/login?error=Google+Auth+not+configured", request.url));
     }
 
-    const host = request.headers.get("host") || "localhost:3000";
-    const protocol = host.includes("localhost") ? "http" : "https";
-    const redirectUri = `${protocol}://${host}/api/auth/google/callback`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") || "https://topchart.gh";
+    const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     // Exchange code for token
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {

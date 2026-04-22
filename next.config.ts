@@ -18,9 +18,6 @@ const nextConfig: NextConfig = {
     "*.orchids.cloud",
     "*.daytona.works",
     "*.proxy.daytona.works",
-    "localhost:3000",
-    "127.0.0.1:3000",
-    "127.0.0.1",
   ],
   experimental: {
     serverActions: {
@@ -30,10 +27,6 @@ const nextConfig: NextConfig = {
         "*.proxy.daytona.works",
         "topchart.gh",
         "www.topchart.gh",
-        "127.0.0.1:53869",
-        "127.0.0.1",
-        "localhost:3000",
-        "localhost",
       ],
       bodySizeLimit: "100mb",
     },

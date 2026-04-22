@@ -88,14 +88,6 @@ const topLinks = [
 ] as const
 
 export function Header() {
-  // #region agent log
-  const debugLog = (runId: string, hypothesisId: string, location: string, message: string, data: Record<string, unknown>) =>
-    fetch("http://127.0.0.1:7505/ingest/8f2aa6f2-5ac2-46a8-bc1c-0440fc874c90", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "920650" },
-      body: JSON.stringify({ sessionId: "920650", runId, hypothesisId, location, message, data, timestamp: Date.now() }),
-    }).catch(() => {});
-  // #endregion
 
   const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)

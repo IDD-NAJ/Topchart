@@ -11,9 +11,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Google Auth is not configured" }, { status: 501 });
     }
 
-    const host = request.headers.get("host") || "localhost:3000";
-    const protocol = host.includes("localhost") ? "http" : "https";
-    const redirectUri = `${protocol}://${host}/api/auth/google/callback`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") || "https://topchart.gh";
+    const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     authUrl.searchParams.append("client_id", env.GOOGLE_CLIENT_ID);

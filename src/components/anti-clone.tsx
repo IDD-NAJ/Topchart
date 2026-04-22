@@ -5,8 +5,6 @@ import { useEffect } from "react";
 const ALLOWED_HOSTS = [
   "topchart.gh",
   "www.topchart.gh",
-  "localhost",
-  "127.0.0.1",
 ];
 
 function isAllowedHost(hostname: string): boolean {

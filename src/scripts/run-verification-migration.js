@@ -185,7 +185,7 @@ async function runMigration() {
     
     console.log('Next steps:');
     console.log('1. 🔄 Restart your Next.js dev server (Ctrl+C, then npm run dev)');
-    console.log('2. 🌐 Go to http://localhost:3000/admin/verification');
+    console.log('2. 🌐 Go to /admin/verification');
     console.log('3. 🔄 Click "Sync Services" to load live data from PVADeals');
     console.log('4. 💰 Go to /admin/verification/pricing to configure markups\n');
     
