@@ -267,11 +267,15 @@ export default function DataPage() {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2 text-sm font-semibold text-muted-foreground">
           <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary">
             <Clock className="w-4 h-4" />
-            Delivery: 3–15 minutes
+            Delivery: 2–15 minutes
           </span>
           <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 text-destructive">
             <AlertCircle className="w-4 h-4" />
             No refunds for wrong numbers
+          </span>
+          <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 text-destructive">
+            <AlertCircle className="w-4 h-4" />
+            Services Available 24/7
           </span>
         </div>
       </div>
