@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { isHomepageSection, toLegacySectionKey } from "@/lib/homepage-media";
+import { appendFile } from "node:fs/promises";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,12 +10,21 @@ export const revalidate = 120;
 export async function GET(request: Request) {
   try {
     // #region agent log
+    const writeDebugFile = async (payload: Record<string, unknown>) => {
+      try {
+        await appendFile("debug-920650.log", `${JSON.stringify(payload)}\n`, "utf8");
+      } catch {}
+    };
     const debugLog = (runId: string, hypothesisId: string, location: string, message: string, data: Record<string, unknown>) =>
       fetch("http://127.0.0.1:7505/ingest/8f2aa6f2-5ac2-46a8-bc1c-0440fc874c90", {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "920650" },
         body: JSON.stringify({ sessionId: "920650", runId, hypothesisId, location, message, data, timestamp: Date.now() }),
-      }).catch(() => {});
+      })
+        .catch(() => {})
+        .finally(() => {
+          void writeDebugFile({ sessionId: "920650", runId, hypothesisId, location, message, data, timestamp: Date.now() });
+        });
     // #endregion
 
     const { searchParams } = new URL(request.url);
