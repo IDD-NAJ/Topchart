@@ -137,6 +137,24 @@ export default function RootLayout({
           <TawkChat />
         </AuthProvider>
         <Analytics />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const originalError = window.onerror;
+                window.onerror = function(message, source, lineno, colno, error) {
+                  if (typeof message === 'string' && (message.includes('NotFoundError') || message.includes('removeChild'))) {
+                    return true;
+                  }
+                  if (originalError) {
+                    return originalError(message, source, lineno, colno, error);
+                  }
+                  return false;
+                };
+              })();
+            `,
+          }}
+        />
       </body>
     </html>
   )
