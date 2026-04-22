@@ -366,13 +366,13 @@ export default function AdminHomepageMediaPage() {
         </CardContent>
       </Card>
 
-      <Tabs value={section} onValueChange={(value) => setSection(value as HomepageSection)}>
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="hero">Hero</TabsTrigger>
-          <TabsTrigger value="header">Header</TabsTrigger>
-          <TabsTrigger value="logo">Logos</TabsTrigger>
-          <TabsTrigger value="background">Backgrounds</TabsTrigger>
-          <TabsTrigger value="banner">Banners</TabsTrigger>
+      <Tabs value={section} onValueChange={(value) => setSection(value as HomepageSection)} className="w-full">
+        <TabsList className="w-full h-auto p-1 bg-muted/50 flex overflow-x-auto no-scrollbar justify-start sm:justify-center">
+          <TabsTrigger value="hero" className="flex-none px-4 py-2">Hero</TabsTrigger>
+          <TabsTrigger value="header" className="flex-none px-4 py-2">Header</TabsTrigger>
+          <TabsTrigger value="logo" className="flex-none px-4 py-2">Logos</TabsTrigger>
+          <TabsTrigger value="background" className="flex-none px-4 py-2">Backgrounds</TabsTrigger>
+          <TabsTrigger value="banner" className="flex-none px-4 py-2">Banners</TabsTrigger>
         </TabsList>
         {(["hero", "header", "logo", "background", "banner"] as HomepageSection[]).map((tab) => (
           <TabsContent value={tab} key={tab}>

@@ -512,52 +512,52 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link
               href="/admin"
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg transition-colors min-w-[56px] min-h-[44px]",
-                pathname === "/admin" ? "text-[color:var(--marketing-accent)]" : "text-muted-foreground"
+                "flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-[64px] min-h-[44px]",
+                pathname === "/admin" ? "text-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/5 scale-105" : "text-muted-foreground hover:text-[color:var(--marketing-accent)]"
               )}
             >
               <LayoutDashboard className="h-5 w-5 shrink-0" />
-              <span className="text-[10px] font-medium leading-none">Dashboard</span>
+              <span className="text-[10px] font-semibold leading-none">Dashboard</span>
             </Link>
             <Link
               href="/admin/users"
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg transition-colors min-w-[56px] min-h-[44px]",
-                pathname.startsWith("/admin/users") ? "text-[color:var(--marketing-accent)]" : "text-muted-foreground"
+                "flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-[64px] min-h-[44px]",
+                pathname.startsWith("/admin/users") ? "text-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/5 scale-105" : "text-muted-foreground hover:text-[color:var(--marketing-accent)]"
               )}
             >
               <Users className="h-5 w-5 shrink-0" />
-              <span className="text-[10px] font-medium leading-none">Users</span>
+              <span className="text-[10px] font-semibold leading-none">Users</span>
             </Link>
             <Link
               href="/admin/transactions"
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg transition-colors min-w-[56px] min-h-[44px]",
-                pathname.startsWith("/admin/transactions") ? "text-[color:var(--marketing-accent)]" : "text-muted-foreground"
+                "flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-[64px] min-h-[44px]",
+                pathname.startsWith("/admin/transactions") ? "text-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/5 scale-105" : "text-muted-foreground hover:text-[color:var(--marketing-accent)]"
               )}
             >
               <CreditCard className="h-5 w-5 shrink-0" />
-              <span className="text-[10px] font-medium leading-none">Txns</span>
+              <span className="text-[10px] font-semibold leading-none">Txns</span>
             </Link>
             <Link
               href="/admin/tickets"
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg transition-colors min-w-[56px] min-h-[44px]",
-                pathname.startsWith("/admin/tickets") ? "text-[#FF5630]" : "text-muted-foreground"
+                "flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-[64px] min-h-[44px]",
+                pathname.startsWith("/admin/tickets") ? "text-[#FF5630] bg-[#FF5630]/5 scale-105" : "text-muted-foreground hover:text-[#FF5630]"
               )}
             >
               <MessageSquare className="h-5 w-5 shrink-0" />
-              <span className="text-[10px] font-medium leading-none">Tickets</span>
+              <span className="text-[10px] font-semibold leading-none">Support</span>
             </Link>
             <button
               onClick={async () => {
                 await fetch("/api/auth/logout", { method: "POST", credentials: "include" })
                 router.replace("/admin/login")
               }}
-              className="flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg text-muted-foreground min-w-[56px] min-h-[44px]"
+              className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl text-muted-foreground transition-all duration-200 min-w-[64px] min-h-[44px] hover:text-destructive hover:bg-destructive/5"
             >
               <LogOut className="h-5 w-5 shrink-0" />
-              <span className="text-[10px] font-medium leading-none">Logout</span>
+              <span className="text-[10px] font-semibold leading-none">Logout</span>
             </button>
           </div>
           {/* Safe area padding for mobile devices */}

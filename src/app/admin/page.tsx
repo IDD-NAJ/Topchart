@@ -499,42 +499,47 @@ export default function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3 font-medium">Type</th>
-                    <th className="text-left p-3 font-medium">User</th>
-                    <th className="text-left p-3 font-medium">Phone</th>
-                    <th className="text-left p-3 font-medium">Amount</th>
-                    <th className="text-left p-3 font-medium">Created</th>
-                    <th className="text-left p-3 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingPurchases.map((p) => (
-                    <tr key={p.reference} className="border-b">
-                      <td className="p-3 capitalize">{p.type}</td>
-                      <td className="p-3">
-                        <div className="font-medium">{p.user?.first_name} {p.user?.last_name}</div>
-                        <div className="text-xs text-muted-foreground">{p.user?.email}</div>
-                      </td>
-                      <td className="p-3">{p.phoneNumber || p.metadata?.phoneNumber || p.user?.phone}</td>
-                      <td className="p-3">GH₵{Number(p.amount || 0).toFixed(2)}</td>
-                      <td className="p-3">{p.created_at ? new Date(p.created_at).toLocaleString() : "-"}</td>
-                      <td className="p-3">
-                        <Button
-                          size="sm"
-                          onClick={() => confirmPendingPurchase(p.reference)}
-                          disabled={confirmingRef === p.reference}
-                        >
-                          {confirmingRef === p.reference ? "..." : "Confirm"}
-                        </Button>
-                      </td>
+            <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 scroll-indicator-right sm:after:hidden">
+              <div className="min-w-[700px] sm:min-w-0">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3 font-medium">Type</th>
+                      <th className="text-left p-3 font-medium">User</th>
+                      <th className="text-left p-3 font-medium">Phone</th>
+                      <th className="text-left p-3 font-medium">Amount</th>
+                      <th className="text-left p-3 font-medium">Created</th>
+                      <th className="text-left p-3 font-medium">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {pendingPurchases.map((p) => (
+                      <tr key={p.reference} className="border-b hover:bg-muted/30">
+                        <td className="p-3">
+                          <Badge variant="outline" className="capitalize">{p.type}</Badge>
+                        </td>
+                        <td className="p-3">
+                          <div className="font-medium whitespace-nowrap">{p.user?.first_name} {p.user?.last_name}</div>
+                          <div className="text-xs text-muted-foreground truncate max-w-[150px]">{p.user?.email}</div>
+                        </td>
+                        <td className="p-3 whitespace-nowrap">{p.phoneNumber || p.metadata?.phoneNumber || p.user?.phone}</td>
+                        <td className="p-3 font-semibold">GH₵{Number(p.amount || 0).toFixed(2)}</td>
+                        <td className="p-3 text-xs whitespace-nowrap">{p.created_at ? new Date(p.created_at).toLocaleString() : "-"}</td>
+                        <td className="p-3">
+                          <Button
+                            size="sm"
+                            className="h-8"
+                            onClick={() => confirmPendingPurchase(p.reference)}
+                            disabled={confirmingRef === p.reference}
+                          >
+                            {confirmingRef === p.reference ? "..." : "Confirm"}
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -981,61 +986,61 @@ export default function AdminDashboard() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-            <div className="min-w-[600px] sm:min-w-0">
+          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 scroll-indicator-right sm:after:hidden">
+            <div className="min-w-[700px] sm:min-w-0">
               <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-3 font-medium">User</th>
-                  <th className="text-left p-3 font-medium">Phone</th>
-                  <th className="text-left p-3 font-medium">Balance</th>
-                  <th className="text-left p-3 font-medium">Status</th>
-                  <th className="text-left p-3 font-medium">Role</th>
-                  <th className="text-left p-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.slice(0, 10).map((user) => (
-                  <tr key={user.id} className="border-b hover:bg-muted/50">
-                    <td className="p-3">
-                      <div className="font-medium">{user.first_name} {user.last_name}</div>
-                      <div className="text-xs text-muted-foreground">{user.email}</div>
-                    </td>
-                    <td className="p-3">{user.phone}</td>
-                    <td className="p-3">GH₵{Number(user.wallet_balance || 0).toFixed(2)}</td>
-                    <td className="p-3">
-                      <Badge variant={user.is_verified ? "default" : "secondary"}>
-                        {user.is_verified ? "Verified" : "Unverified"}
-                      </Badge>
-                    </td>
-                    <td className="p-3">
-                      <select
-                        value={user.role || "USER"}
-                        onChange={(e) => updateUserRole(user.id, e.target.value)}
-                        disabled={updatingRoleId === user.id}
-                        className="h-8 rounded-md border border-input bg-background px-2 text-sm"
-                      >
-                        <option value="USER">USER</option>
-                        <option value="ADMIN">ADMIN</option>
-                      </select>
-                    </td>
-                    <td className="p-3">
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => openUserDialog(user, "view")}>
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => openUserDialog(user, "edit")}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(user)}>
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </td>
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-3 font-medium">User</th>
+                    <th className="text-left p-3 font-medium">Phone</th>
+                    <th className="text-left p-3 font-medium">Balance</th>
+                    <th className="text-left p-3 font-medium">Status</th>
+                    <th className="text-left p-3 font-medium">Role</th>
+                    <th className="text-left p-3 font-medium">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredUsers.slice(0, 10).map((user) => (
+                    <tr key={user.id} className="border-b hover:bg-muted/50 transition-colors">
+                      <td className="p-3">
+                        <div className="font-medium whitespace-nowrap">{user.first_name} {user.last_name}</div>
+                        <div className="text-xs text-muted-foreground truncate max-w-[150px]">{user.email}</div>
+                      </td>
+                      <td className="p-3 whitespace-nowrap">{user.phone}</td>
+                      <td className="p-3 font-medium">GH₵{Number(user.wallet_balance || 0).toFixed(2)}</td>
+                      <td className="p-3">
+                        <Badge variant={user.is_verified ? "default" : "secondary"}>
+                          {user.is_verified ? "Verified" : "Unverified"}
+                        </Badge>
+                      </td>
+                      <td className="p-3">
+                        <select
+                          value={user.role || "USER"}
+                          onChange={(e) => updateUserRole(user.id, e.target.value)}
+                          disabled={updatingRoleId === user.id}
+                          className="h-8 rounded-md border border-input bg-background px-2 text-sm focus:ring-1 focus:ring-primary outline-none"
+                        >
+                          <option value="USER">USER</option>
+                          <option value="ADMIN">ADMIN</option>
+                        </select>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openUserDialog(user, "view")}>
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openUserDialog(user, "edit")}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteTarget(user)}>
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
           {filteredUsers.length > 10 && (

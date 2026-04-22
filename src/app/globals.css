@@ -250,7 +250,8 @@
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
     overflow-x: hidden;
-    zoom: 0.85;
+    /* Zoom out all pages by 13% as per user request */
+    zoom: 0.87;
   }
   
   /* Typography - No Serif, all clean tech styling */
@@ -351,6 +352,30 @@
   
   .dark .glass {
     background: rgba(28, 37, 44, 0.9);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scroll-indicator-right {
+    position: relative;
+  }
+  .scroll-indicator-right::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 24px;
+    background: linear-gradient(to right, transparent, var(--background));
+    pointer-events: none;
+    opacity: 0.6;
+    z-index: 10;
   }
 }
 

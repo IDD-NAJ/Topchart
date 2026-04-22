@@ -45,6 +45,7 @@ import {
   MoreVertical,
   Inbox,
   AlertCircle,
+  X,
 } from "lucide-react"
 
 interface Column {
@@ -461,7 +462,7 @@ export function DataTable({
             </div>
           )}
           {!error && (
-            <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+            <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 scroll-indicator-right sm:after:hidden">
               <div className="min-w-[480px] sm:min-w-0">
                 <table className="w-full text-sm">
                   <thead>
@@ -811,30 +812,36 @@ export function DataTable({
 
       {/* Floating Bulk Actions Toolbar */}
       {selectedRows.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 sm:px-0 max-w-[calc(100%-2rem)]">
-          <div className="bg-background border rounded-lg shadow-lg px-3 sm:px-4 py-3 flex items-center gap-2 sm:gap-4">
-            <div className="flex items-center gap-2">
+        <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 w-full max-w-md pointer-events-none">
+          <div className="bg-background/95 backdrop-blur-md border border-primary/20 rounded-full shadow-2xl px-4 py-3 flex items-center justify-between gap-4 pointer-events-auto ring-1 ring-black/5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="flex items-center gap-3">
               <Checkbox
                 checked={true}
                 onCheckedChange={clearSelection}
                 aria-label="Clear selection"
+                className="h-5 w-5 border-primary/50"
               />
-              <span className="text-sm font-medium">{selectedRows.size} selected</span>
+              <span className="text-sm font-semibold whitespace-nowrap">
+                {selectedRows.size} <span className="hidden xs:inline">selected</span>
+              </span>
             </div>
-            <div className="h-6 w-px bg-border" />
-            <div className="flex items-center gap-1 sm:gap-2">
+            
+            <div className="flex items-center gap-2">
               {allowBulkEdit && bulkEditableColumns.length > 0 && (
-                <Button variant="outline" size="sm" onClick={openBulkEdit} className="h-8 px-2 sm:px-3">
-                  <Pencil className="h-4 w-4 sm:mr-1" />
+                <Button variant="outline" size="sm" onClick={openBulkEdit} className="h-9 rounded-full px-3 border-primary/20 hover:bg-primary/5">
+                  <Pencil className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Edit</span>
                 </Button>
               )}
               {allowBulkDelete && (
-                <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} className="h-8 px-2 sm:px-3">
-                  <Trash2 className="h-4 w-4 sm:mr-1" />
+                <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} className="h-9 rounded-full px-3 shadow-sm">
+                  <Trash2 className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Delete</span>
                 </Button>
               )}
+              <Button variant="ghost" size="icon" onClick={clearSelection} className="h-9 w-9 rounded-full ml-1">
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </div>
