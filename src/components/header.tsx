@@ -221,6 +221,7 @@ export function Header() {
             open={isOpen}
             onOpenChange={(open) => {
               setIsOpen(open)
+              if (open) setServicesOpen(true)
               if (!open) setServicesOpen(false)
             }}
           >
