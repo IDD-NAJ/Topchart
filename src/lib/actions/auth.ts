@@ -146,14 +146,26 @@ export async function register(formData: {
     // Look up reseller referrer if referral code provided
     let referredBy: string | null = null;
     let referrerResellerId: string | null = null;
+    let referrerUserId: string | null = null;
     if (referralCode) {
+      const codeUpper = referralCode.toUpperCase();
       const referrer = await sql`
         SELECT id, user_id, reseller_code FROM reseller_profiles
-        WHERE reseller_code = ${referralCode.toUpperCase()}
+        WHERE reseller_code = ${codeUpper}
       `;
       if (referrer.length > 0) {
         referredBy = referrer[0].reseller_code;
         referrerResellerId = referrer[0].id;
+        referrerUserId = referrer[0].user_id;
+      } else {
+        const userReferrer = await sql`
+          SELECT id, referral_code FROM users
+          WHERE referral_code = ${codeUpper}
+        `;
+        if (userReferrer.length > 0) {
+          referredBy = userReferrer[0].referral_code;
+          referrerUserId = userReferrer[0].id;
+        }
       }
     }
 
@@ -203,6 +215,18 @@ export async function register(formData: {
     }
 
     const user = result[0] as User;
+
+    // Insert referral record
+    if (referrerUserId) {
+      try {
+        await sql`
+          INSERT INTO referrals (referrer_id, referred_user_id, status, created_at)
+          VALUES (${referrerUserId}, ${user.id}, 'pending', ${now})
+        `;
+      } catch (err) {
+        console.error("Failed to insert pending referral:", err);
+      }
+    }
 
     // Update reseller stats if referred
     if (referrerResellerId) {

@@ -13,20 +13,24 @@ export async function GET() {
     }
 
     const rows = await sql`
-      SELECT key, value FROM app_settings
-      WHERE key IN ('referral_reward_amount', 'referral_min_invites')
+      SELECT referral_reward_amount, min_referrals_required, min_deposit_amount
+      FROM referral_settings
+      WHERE id = 1
     `
 
-    const settings: Record<string, string> = {}
-    for (const row of rows) {
-      settings[row.key] = row.value
+    if (rows.length === 0) {
+       return NextResponse.json({
+         success: true,
+         data: { rewardAmount: 5.00, minInvites: 10, minDeposit: 20.00 },
+       })
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        rewardAmount: parseFloat(settings["referral_reward_amount"] || "5.00"),
-        minInvites: parseInt(settings["referral_min_invites"] || "10"),
+        rewardAmount: parseFloat(rows[0].referral_reward_amount),
+        minInvites: parseInt(rows[0].min_referrals_required),
+        minDeposit: parseFloat(rows[0].min_deposit_amount),
       },
     })
   } catch (error) {
@@ -43,30 +47,29 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { rewardAmount, minInvites } = body
+    const { rewardAmount, minInvites, minDeposit } = body
 
-    if (rewardAmount !== undefined) {
-      const amount = parseFloat(rewardAmount)
-      if (isNaN(amount) || amount < 0) {
-        return NextResponse.json({ success: false, error: "Invalid reward amount" }, { status: 400 })
-      }
-      await sql`
-        INSERT INTO app_settings (key, value, updated_at)
-        VALUES ('referral_reward_amount', ${String(amount)}, NOW())
-        ON CONFLICT (key) DO UPDATE SET value = ${String(amount)}, updated_at = NOW()
-      `
+    let updates = []
+    let values = []
+
+    if (rewardAmount !== undefined && !isNaN(parseFloat(rewardAmount))) {
+      updates.push(`referral_reward_amount = ${parseFloat(rewardAmount)}`)
+    }
+    if (minInvites !== undefined && !isNaN(parseInt(minInvites))) {
+      updates.push(`min_referrals_required = ${parseInt(minInvites)}`)
+    }
+    if (minDeposit !== undefined && !isNaN(parseFloat(minDeposit))) {
+      updates.push(`min_deposit_amount = ${parseFloat(minDeposit)}`)
     }
 
-    if (minInvites !== undefined) {
-      const invites = parseInt(minInvites)
-      if (isNaN(invites) || invites < 1) {
-        return NextResponse.json({ success: false, error: "Invalid min invites" }, { status: 400 })
-      }
-      await sql`
-        INSERT INTO app_settings (key, value, updated_at)
-        VALUES ('referral_min_invites', ${String(invites)}, NOW())
-        ON CONFLICT (key) DO UPDATE SET value = ${String(invites)}, updated_at = NOW()
-      `
+    if (updates.length > 0) {
+      await sql.unsafe(`
+        INSERT INTO referral_settings (id, referral_reward_amount, min_referrals_required, min_deposit_amount)
+        VALUES (1, 5.00, 10, 20.00)
+        ON CONFLICT (id) DO UPDATE SET 
+          ${updates.join(', ')},
+          updated_at = NOW()
+      `)
     }
 
     return NextResponse.json({ success: true, message: "Referral settings updated." })

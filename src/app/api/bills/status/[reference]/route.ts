@@ -5,7 +5,7 @@ import { sql } from "@/lib/db";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { reference: string } }
+  context: { params: Promise<{ reference: string }> }
 ) {
   try {
     const session = await requireAuth();
@@ -16,7 +16,7 @@ export async function GET(
       );
     }
 
-    const { reference } = params;
+    const { reference } = await context.params;
 
     // Check database first
     const [dbRecord] = await sql`

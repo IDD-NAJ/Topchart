@@ -11,6 +11,7 @@ import { Loader2, Save } from "lucide-react"
 export default function ReferralSettingsPage() {
   const [rewardAmount, setRewardAmount] = useState("5.00")
   const [minInvites, setMinInvites] = useState("10")
+  const [minDeposit, setMinDeposit] = useState("20.00")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -25,6 +26,7 @@ export default function ReferralSettingsPage() {
       if (data.success) {
         setRewardAmount(data.data.rewardAmount.toString())
         setMinInvites(data.data.minInvites.toString())
+        setMinDeposit(data.data.minDeposit.toString())
       }
     } catch (error) {
       console.error("Failed to load settings:", error)
@@ -42,7 +44,8 @@ export default function ReferralSettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           rewardAmount: parseFloat(rewardAmount),
-          minInvites: parseInt(minInvites)
+          minInvites: parseInt(minInvites),
+          minDeposit: parseFloat(minDeposit),
         })
       })
       const data = await res.json()
@@ -110,6 +113,22 @@ export default function ReferralSettingsPage() {
             />
             <p className="text-sm text-muted-foreground">
               Number of qualified referrals required before referral rewards can be withdrawn
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="minDeposit">Minimum Deposit Requirement (GH₵)</Label>
+            <Input
+              id="minDeposit"
+              type="number"
+              step="0.01"
+              min="0"
+              value={minDeposit}
+              onChange={(e) => setMinDeposit(e.target.value)}
+              placeholder="20.00"
+            />
+            <p className="text-sm text-muted-foreground">
+              Amount the referred user must deposit in a single transaction to become qualified
             </p>
           </div>
 

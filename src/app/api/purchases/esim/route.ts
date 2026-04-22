@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
           UPDATE users SET wallet_balance = wallet_balance - ${price} WHERE id = ${userId}
         `
 
-        const txId = `TX_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`.toUpperCase()
+        const txId = crypto.randomUUID()
         const status = "pending"
 
         await sql`
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
       const chargeAmount = Number((price + surcharge).toFixed(2))
       const reference = `ESIM-PS-${generatePaystackReference()}`
 
-      const txId = `TX_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`.toUpperCase()
+      const txId = crypto.randomUUID()
       const status = planType === "phone-number" ? "pending" : "pending"
 
       await sql`

@@ -5,54 +5,105 @@ import { finalizeResellerApplicationPayment } from "@/lib/reseller-payment";
 
 async function getReferralSettings() {
   const rows = await sql`
-    SELECT key, value FROM app_settings
-    WHERE key IN ('referral_reward_amount', 'referral_min_invites')
+    SELECT referral_reward_amount, min_referrals_required, min_deposit_amount
+    FROM referral_settings
+    WHERE id = 1
   `
   
-  const settings: Record<string, string> = {}
-  for (const row of rows) {
-    settings[row.key] = row.value
+  if (rows.length === 0) {
+    return {
+      rewardAmount: 5.00,
+      minInvites: 10,
+      minDeposit: 20.00
+    }
   }
-  
+
   return {
-    rewardAmount: parseFloat(settings["referral_reward_amount"] || "5.00"),
-    minInvites: parseInt(settings["referral_min_invites"] || "10"),
+    rewardAmount: parseFloat(rows[0].referral_reward_amount),
+    minInvites: parseInt(rows[0].min_referrals_required),
+    minDeposit: parseFloat(rows[0].min_deposit_amount),
   }
 }
-
-const MIN_DEPOSIT_FOR_REFERRAL = 10;
 
 async function checkAndCreditReferrer(userId: string, depositAmount: number) {
   try {
     const settings = await getReferralSettings();
+    const MIN_DEPOSIT_FOR_REFERRAL = settings.minDeposit;
     const referralReward = settings.rewardAmount;
 
-    const user = await sql`
-      SELECT id, referred_by, total_deposits FROM users WHERE id = ${userId}
+    // Get true referrer_id from referrals table for this user
+    const pendingReferral = await sql`
+      SELECT id, referrer_id FROM referrals 
+      WHERE referred_user_id = ${userId} AND status = 'pending'
     `;
     
-    if (user.length === 0 || !user[0].referred_by) return;
+    if (pendingReferral.length === 0) return;
     
-    const referrerId = user[0].referred_by;
+    const referrerId = pendingReferral[0].referrer_id;
+    const refId = pendingReferral[0].id;
+
+    const user = await sql`SELECT total_deposits FROM users WHERE id = ${userId}`;
+    if (user.length === 0) return;
+    
     const currentTotalDeposits = parseFloat(user[0].total_deposits || "0");
     const newTotalDeposits = currentTotalDeposits + depositAmount;
     
+    // Check if they crossed the minimum deposit threshold for the FIRST time
     if (currentTotalDeposits < MIN_DEPOSIT_FOR_REFERRAL && newTotalDeposits >= MIN_DEPOSIT_FOR_REFERRAL) {
+      // 1. Mark referral as qualified
+      await sql`
+        UPDATE referrals 
+        SET status = 'qualified', qualified_at = NOW()
+        WHERE id = ${refId}
+      `;
+
+      // 2. Update qualified counts
       await sql`
         UPDATE users 
-        SET referral_reward_balance = COALESCE(referral_reward_balance, 0) + ${referralReward},
-            referral_earnings = COALESCE(referral_earnings, 0) + ${referralReward},
-            qualified_referral_count = COALESCE(qualified_referral_count, 0) + 1
+        SET qualified_referral_count = COALESCE(qualified_referral_count, 0) + 1
         WHERE id = ${referrerId}
       `;
-      
-      try {
+
+      // 3. Auto-reward logic check
+      const qualified = await sql`
+        SELECT id FROM referrals 
+        WHERE referrer_id = ${referrerId} AND status = 'qualified'
+      `;
+
+      if (qualified.length >= settings.minInvites) {
+        const totalReward = qualified.length * referralReward;
+        
+        // Mark all qualified as rewarded
         await sql`
-          INSERT INTO referral_visits (referrer_id, referred_user_id, credited, amount_credited, deposit_qualified)
-          VALUES (${referrerId}, ${userId}, true, ${referralReward}, true)
+          UPDATE referrals 
+          SET status = 'rewarded'
+          WHERE referrer_id = ${referrerId} AND status = 'qualified'
         `;
-      } catch (err) {
-        console.error("Referral visit log error:", err);
+
+        // Credit wallet instead of holding balance
+        await sql`
+          UPDATE users 
+          SET wallet_balance = wallet_balance + ${totalReward},
+              referral_earnings = COALESCE(referral_earnings, 0) + ${totalReward}
+          WHERE id = ${referrerId}
+        `;
+
+        // Log transaction
+        const ref = `REF-AUTO-${Date.now()}-${crypto.randomUUID().substring(0, 8)}`;
+        await sql`
+          INSERT INTO transactions (id, type, status, amount, user_id, reference, description, created_at, updated_at)
+          VALUES (
+            gen_random_uuid()::text,
+            'referral_reward',
+            'success',
+            ${totalReward},
+            ${referrerId}::text,
+            ${ref},
+            ${'Referral reward for ' + qualified.length + ' qualified invites'},
+            NOW(),
+            NOW()
+          )
+        `;
       }
     }
   } catch (error) {

@@ -34,7 +34,8 @@ async function setupReferrals() {
     `);
 
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS referrals (
+      DROP TABLE IF EXISTS referrals CASCADE;
+      CREATE TABLE referrals (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         referrer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         referred_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

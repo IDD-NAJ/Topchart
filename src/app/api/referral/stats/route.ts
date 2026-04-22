@@ -20,39 +20,39 @@ export async function GET() {
     const referralCode = user.referral_code || user.id.slice(0, 8).toUpperCase();
 
     // Get referral stats: total referred, qualified (made at least 1 successful tx), and earnings
-    const [stats, qualifiedResult] = await Promise.all([
+    const [stats, earnings] = await Promise.all([
       sql`
         SELECT 
           COUNT(*) as total_referrals,
-          COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '30 days') as recent_referrals,
-          COALESCE(SUM(referral_earnings), 0) as total_earnings
-        FROM users
-        WHERE referred_by = ${referralCode}
+          SUM(CASE WHEN created_at > NOW() - INTERVAL '30 days' THEN 1 ELSE 0 END) as recent_referrals,
+          SUM(CASE WHEN status IN ('qualified', 'rewarded') THEN 1 ELSE 0 END) as qualified_count
+        FROM referrals
+        WHERE referrer_id = ${user.id}
       `,
       sql`
-        SELECT COUNT(DISTINCT u.id) as qualified_count
-        FROM users u
-        INNER JOIN transactions t ON t.user_id = u.id::text AND t.status = 'success'
-        WHERE u.referred_by = ${referralCode}
+        SELECT COALESCE(referral_earnings, 0) as total_earnings
+        FROM users
+        WHERE id = ${user.id}
       `,
     ])
 
     const result = stats[0] || {
       total_referrals: 0,
       recent_referrals: 0,
-      total_earnings: 0
+      qualified_count: 0
     }
+    const total_earnings = earnings[0]?.total_earnings || 0;
 
     return NextResponse.json(
       {
         success: true,
         data: {
           referralCode: referralCode,
-          totalReferrals: parseInt(result.total_referrals),
-          totalReferred: parseInt(result.total_referrals),
-          recentReferrals: parseInt(result.recent_referrals),
-          totalEarnings: parseFloat(result.total_earnings),
-          qualifiedReferrals: parseInt(qualifiedResult[0]?.qualified_count ?? 0),
+          totalReferrals: parseInt(result.total_referrals) || 0,
+          totalReferred: parseInt(result.total_referrals) || 0,
+          recentReferrals: parseInt(result.recent_referrals) || 0,
+          totalEarnings: parseFloat(total_earnings) || 0,
+          qualifiedReferrals: parseInt(result.qualified_count) || 0,
         }
       },
       { headers: { "Cache-Control": "private, max-age=60, stale-while-revalidate=120" } }
