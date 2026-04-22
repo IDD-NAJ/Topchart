@@ -25,7 +25,15 @@ export async function GET() {
     );
   } catch (error: unknown) {
     const message = String((error as { message?: string })?.message || "");
-    if (message.includes("does not exist") || message.includes("relation")) {
+    const code = (error as { code?: string })?.code || "";
+    
+    console.error("Homepage media fetch error:", {
+      message,
+      code,
+      error: error instanceof Error ? error.stack : String(error)
+    });
+    
+    if (message.includes("does not exist") || message.includes("relation") || code === "42P01") {
       return NextResponse.json(
         { success: true, media: [] },
         {
@@ -37,7 +45,6 @@ export async function GET() {
       );
     }
 
-    console.error("Homepage media fetch error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to load homepage media" },
       { status: 500 }
