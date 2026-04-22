@@ -376,7 +376,7 @@ export default function HomePage() {
 
     const loadHomepageMedia = async () => {
       try {
-        const response = await fetch("/api/content/homepage-media", { cache: "no-store" })
+        const response = await fetch("/api/media", { cache: "no-store" })
         const payload = await response.json()
         if (!active || !payload?.success || !Array.isArray(payload.media)) return
 

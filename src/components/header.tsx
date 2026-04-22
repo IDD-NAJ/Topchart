@@ -104,12 +104,10 @@ export function Header() {
   useEffect(() => {
     const fetchHeaderMedia = async () => {
       try {
-        const response = await fetch("/api/content/homepage-media", { cache: "no-store" })
+        const response = await fetch("/api/media?section=header_logo", { cache: "no-store" })
         const payload = await response.json()
         if (payload?.success && Array.isArray(payload.media)) {
-          const headerLogo = payload.media.find((m: HomepageMediaItem) => 
-            m.section_key === "header_logo" && m.is_active
-          )
+          const headerLogo = payload.media.find((m: HomepageMediaItem) => m.is_active)
           if (headerLogo) {
             setHeaderMedia(headerLogo)
           }
