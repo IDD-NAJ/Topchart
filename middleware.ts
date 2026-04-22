@@ -18,9 +18,9 @@ function getSecurityHeaders(request: NextRequest) {
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "Content-Security-Policy": [
       "default-src 'self'",
-      `connect-src 'self' https://*.supabase.co https://${appDomain} https://api.${appDomain} https://*.tawk.to`,
-      "img-src 'self' data: blob: https://*.supabase.co",
-      "media-src 'self' blob: https://*.supabase.co",
+      `connect-src 'self' https://*.supabase.co https://cibtsrkdatuymjpzcfol.supabase.co https://${appDomain} https://api.${appDomain} https://*.tawk.to`,
+      "img-src 'self' data: blob: https://*.supabase.co https://cibtsrkdatuymjpzcfol.supabase.co",
+      "media-src 'self' blob: https://*.supabase.co https://cibtsrkdatuymjpzcfol.supabase.co",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.tawk.to",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",

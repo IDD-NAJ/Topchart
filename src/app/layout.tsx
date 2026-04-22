@@ -2,7 +2,6 @@ import React from "react"
 import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/lib/auth-context'
-import { AntiClone } from '@/components/anti-clone'
 import { PreloadWrapper } from '@/components/preload-wrapper'
 import { TawkChat } from '@/components/tawk-chat'
 import '@fontsource-variable/inter'
@@ -130,7 +129,6 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className="font-sans antialiased">
         <AuthProvider>
-          <AntiClone />
           <PreloadWrapper>
             {children}
           </PreloadWrapper>
