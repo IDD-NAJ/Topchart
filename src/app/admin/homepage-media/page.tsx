@@ -60,14 +60,6 @@ type StorageFile = {
   folder: string;
 };
 
-function humanSize(bytes: number) {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
 export default function AdminHomepageMediaPage() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [section, setSection] = useState<HomepageSection>("hero");
