@@ -369,14 +369,13 @@ export default function HomePage() {
   const [networkLogos, setNetworkLogos] = useState<NetworkLogoConfig[]>(DEFAULT_NETWORK_LOGOS)
   const [developerImage, setDeveloperImage] = useState(DEFAULT_DEVELOPER_IMAGE)
   const [heroMedia, setHeroMedia] = useState<{ type: "image" | "video"; url: string }>({
-    type: "image",
-    url: "/images/technical-partnership.jpg",
+    type: "video",
+    url: "/13046977_3840_2160_30fps.mp4",
   })
   const [scaleMedia, setScaleMedia] = useState<{ type: "image" | "video"; url: string }>({
-    type: "image",
-    url: "/images/topchart-way.jpg",
+    type: "video",
+    url: "/7490425-uhd_3840_2160_25fps.mp4",
   })
-  const [logoErrorKeys, setLogoErrorKeys] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     let active = true
@@ -424,8 +423,8 @@ export default function HomePage() {
       } catch {
         setNetworkLogos(DEFAULT_NETWORK_LOGOS)
         setDeveloperImage(DEFAULT_DEVELOPER_IMAGE)
-        setHeroMedia({ type: "image", url: "/images/technical-partnership.jpg" })
-        setScaleMedia({ type: "image", url: "/images/topchart-way.jpg" })
+        setHeroMedia({ type: "video", url: "/13046977_3840_2160_30fps.mp4" })
+        setScaleMedia({ type: "video", url: "/7490425-uhd_3840_2160_25fps.mp4" })
       }
     }
 
@@ -444,15 +443,7 @@ export default function HomePage() {
           className="relative overflow-hidden px-4 pb-32 pt-20 sm:px-6 sm:pb-40 sm:pt-28 lg:pt-36 selection:bg-primary/30 selection:text-white flex min-h-[85vh] flex-col items-center justify-center bg-[#0d1627]"
         >
           {heroMedia && heroMedia.type === "video" ? (
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="absolute inset-0 h-full w-full object-cover opacity-40"
-              preload="metadata"
-              onError={() => setHeroMedia({ type: "image", url: "/images/technical-partnership.jpg" })}
-            >
+            <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover opacity-40" preload="metadata">
               <source src={heroMedia.url} type="video/mp4" />
             </video>
           ) : heroMedia && heroMedia.type === "image" ? (
@@ -464,20 +455,33 @@ export default function HomePage() {
           {/* Bottom fade blending into the next white section */}
           <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-white to-transparent pointer-events-none z-10" />
 
-          <div className="relative z-[2] mx-auto flex max-w-4xl flex-col items-center text-center">
+          <div className="relative z-[2] mx-auto flex max-w-6xl flex-col items-center text-center">
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-500/10 px-4 py-1.5 backdrop-blur-sm"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-400"></span>
+              </span>
+              <span className="text-xs font-medium text-sky-200">Ghana's #1 Digital Platform</span>
+            </motion.div>
 
             <motion.h1
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="font-serif text-balance text-5xl leading-[1.1] tracking-tight text-white sm:text-6xl lg:text-[5.5rem]"
+              transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-8 font-serif text-balance text-5xl leading-[1.1] tracking-tight text-white sm:text-6xl lg:text-[6rem]"
             >
-             Complete <br className="hidden md:block" />
+              Complete <br className="hidden md:block" />
               <motion.span
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="text-sky-200 inline-block"
+                transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                className="text-transparent bg-clip-text bg-gradient-to-r from-sky-200 to-blue-400 inline-block"
               >
                 Digital Services
               </motion.span>{" "}
@@ -487,16 +491,16 @@ export default function HomePage() {
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="mt-6 max-w-2xl text-[15px] sm:text-base leading-relaxed text-[#8a9ba8]"
             >
-              Airtime, dirtime, data bundles, verification numbers, exam results, and a full reseller programme — all in one secure platform.
+              Airtime, data bundles, verification numbers, exam results, and a full reseller programme — all in one secure platform.
             </motion.p>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.6, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
               className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
             >
               <motion.div
@@ -506,7 +510,7 @@ export default function HomePage() {
               >
                 <Link
                   href="/register"
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-[#0d1627] transition-all hover:bg-neutral-100 shadow-xl group"
+                  className="inline-flex h-12 items-center justify-center rounded-full bg-gradient-to-r from-sky-400 to-blue-500 px-8 text-sm font-semibold text-white transition-all hover:from-sky-500 hover:to-blue-600 shadow-xl shadow-sky-500/25 group"
                 >
                   Get started free
                   <motion.span
@@ -525,7 +529,7 @@ export default function HomePage() {
               >
                 <Link
                   href="/login"
-                  className="inline-flex h-12 items-center justify-center rounded-full border border-white/20 bg-transparent px-8 text-sm font-semibold text-white transition-all hover:bg-white/10"
+                  className="inline-flex h-12 items-center justify-center rounded-full border border-white/20 bg-white/5 px-8 text-sm font-semibold text-white transition-all hover:bg-white/10 backdrop-blur-sm"
                 >
                   Sign in to dashboard
                 </Link>
@@ -533,17 +537,48 @@ export default function HomePage() {
             </motion.div>
 
             <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-4 md:gap-6"
+            >
+              {[
+                { label: "Buy Data", href: "/dashboard/data", icon: "📱" },
+                { label: "Top Up Airtime", href: "/dashboard/airtime", icon: "📞" },
+                { label: "Verify Numbers", href: "/dashboard/verification", icon: "✓" },
+                { label: "Check Results", href: "/dashboard/results", icon: "📋" },
+              ].map((action, index) => (
+                <motion.a
+                  key={action.label}
+                  href={action.href}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.8 + index * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                  whileHover={{ scale: 1.05, y: -4 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="group relative flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:bg-white/10 hover:border-white/20"
+                >
+                  <span className="text-3xl">{action.icon}</span>
+                  <span className="text-sm font-medium text-white/90">{action.label}</span>
+                  <motion.div
+                    className="absolute inset-0 rounded-2xl bg-gradient-to-r from-sky-400/0 via-sky-400/10 to-sky-400/0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  />
+                </motion.a>
+              ))}
+            </motion.div>
+
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-16 flex flex-wrap items-center justify-center gap-4 sm:gap-6"
+              transition={{ duration: 0.6, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-12 flex flex-wrap items-center justify-center gap-4 sm:gap-6"
             >
               {networkLogos.map((network, index) => (
                 <motion.div
                   key={network.name}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, delay: 0.7 + index * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ duration: 0.4, delay: 1 + index * 0.1, ease: [0.16, 1, 0.3, 1] }}
                   whileHover={{ scale: 1.05 }}
                   className="relative flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-sm"
                 >
@@ -554,9 +589,14 @@ export default function HomePage() {
                       fill
                       className="object-contain"
                       sizes="32px"
-                      onError={() => setLogoErrorKeys((prev) => ({ ...prev, [network.key]: true }))}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const fallback = target.parentElement?.querySelector('.fallback-dot') as HTMLElement;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
                     />
-                    <div className={`${logoErrorKeys[network.key] ? "flex" : "hidden"} h-8 w-8 items-center justify-center`}>
+                    <div className="fallback-dot hidden h-8 w-8 items-center justify-center">
                       <div className={`h-3 w-3 rounded-full ${network.color}`} />
                     </div>
                   </div>
@@ -625,21 +665,13 @@ export default function HomePage() {
             </ScrollReveal>
             <ScrollReveal once={false} amount={0.22}>
               <div className="relative aspect-video overflow-hidden rounded-3xl bg-neutral-200/80 shadow-lg">
-                {scaleMedia.type === "video" ? (
-                  <video
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="absolute inset-0 h-full w-full object-cover"
-                    preload="metadata"
-                    onError={() => setScaleMedia({ type: "image", url: "/images/topchart-way.jpg" })}
-                  >
+                {scaleMedia && scaleMedia.type === "video" ? (
+                  <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover" preload="metadata">
                     <source src={scaleMedia.url} type="video/mp4" />
                   </video>
-                ) : (
+                ) : scaleMedia && scaleMedia.type === "image" ? (
                   <img src={scaleMedia.url} alt="Scale background" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
-                )}
+                ) : null}
               </div>
             </ScrollReveal>
           </div>
