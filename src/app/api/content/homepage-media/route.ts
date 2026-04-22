@@ -8,7 +8,7 @@ export const revalidate = 0;
 export async function GET() {
   try {
     const media = await sql`
-      SELECT section_key, asset_type, public_url, alt_text, sort_order
+      SELECT section_key, asset_type, public_url, alt_text, sort_order, is_active
       FROM homepage_media
       WHERE is_active = TRUE
       ORDER BY sort_order ASC, created_at ASC
