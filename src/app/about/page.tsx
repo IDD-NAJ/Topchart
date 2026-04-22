@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { useEffect, useState } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ArrowRight, CheckCircle2 } from "lucide-react"
@@ -46,6 +47,35 @@ const SERVICES_OFFERED = [
 ]
 
 export default function AboutPage() {
+  const [heroMedia, setHeroMedia] = useState<{ type: "image" | "video"; url: string }>({
+    type: "image",
+    url: "/images/topchart-way.jpg",
+  })
+
+  useEffect(() => {
+    let active = true
+
+    const loadHeroMedia = async () => {
+      try {
+        const response = await fetch("/api/media?section=hero&slot_key=about_hero_background", { cache: "no-store" })
+        const payload = await response.json()
+        const item = Array.isArray(payload?.media) ? payload.media[0] : null
+        if (!active || !payload?.success || !item) return
+
+        const type = item.media_type || item.asset_type
+        const url = item.file_url || item.public_url
+        if (url && (type === "image" || type === "video")) {
+          setHeroMedia({ type, url })
+        }
+      } catch {}
+    }
+
+    loadHeroMedia()
+    return () => {
+      active = false
+    }
+  }, [])
+
   return (
     <PageTransition className="min-h-screen flex flex-col bg-[color:var(--marketing-cream)]">
       <Header />
@@ -54,15 +84,24 @@ export default function AboutPage() {
 
         {/* ── HERO ── */}
         <section className="relative overflow-hidden bg-[color:var(--marketing-hero-dark)] pb-28 pt-[calc(72px+3rem)] sm:pt-[calc(72px+4rem)]">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 h-full w-full object-cover opacity-20"
-          >
-            <source src="/7490425-uhd_3840_2160_25fps.mp4" type="video/mp4" />
-          </video>
+          {heroMedia.type === "video" ? (
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+              className="absolute inset-0 h-full w-full object-cover opacity-20"
+              onError={() => setHeroMedia({ type: "image", url: "/images/topchart-way.jpg" })}
+            >
+              <source src={heroMedia.url} type="video/mp4" />
+            </video>
+          ) : (
+            <div
+              className="absolute inset-0 h-full w-full object-cover opacity-20 bg-center bg-cover"
+              style={{ backgroundImage: `url('${heroMedia.url}')` }}
+            />
+          )}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:56px_56px]" />
           <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-[color:var(--marketing-cream)] to-transparent" />
 

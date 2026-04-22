@@ -10,16 +10,13 @@ interface LogoVideoProps {
 
 export function LogoVideo({ width = 140, height = 40, className }: LogoVideoProps) {
   return (
-    <video
-      src="/IMG_7731.MP4"
-      autoPlay
-      muted
-      loop
-      playsInline
+    <img
+      src="/logo.svg"
+      alt="Topchart"
       width={width}
       height={height}
       className={cn("object-contain", className)}
-      aria-label="Topchart"
+      loading="eager"
     />
   )
 }

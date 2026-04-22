@@ -27,6 +27,8 @@ type LegacySectionMapping = {
 
 const LEGACY_TO_NEW: Record<string, LegacySectionMapping> = {
   hero_background_video: { section: "hero", slotKey: "hero_background" },
+  faq_hero_background: { section: "hero", slotKey: "faq_hero_background" },
+  about_hero_background: { section: "hero", slotKey: "about_hero_background" },
   header_logo: { section: "header", slotKey: "header_logo" },
   mtn_logo: { section: "logo", slotKey: "network_mtn_logo" },
   telecel_logo: { section: "logo", slotKey: "network_telecel_logo" },

@@ -10,6 +10,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, EyeOff, RefreshCw, Trash2, Upload } from "lucide-react";
 import { HOMEPAGE_SECTIONS, SECTION_LABELS, type HomepageSection } from "@/lib/homepage-media";
 
+const SLOT_OPTIONS: Record<HomepageSection, Array<{ value: string; label: string }>> = {
+  hero: [
+    { value: "hero_background", label: "Homepage Hero" },
+    { value: "faq_hero_background", label: "FAQ Hero" },
+    { value: "about_hero_background", label: "About Hero" },
+  ],
+  header: [{ value: "header_logo", label: "Header Logo" }],
+  logo: [
+    { value: "network_mtn_logo", label: "MTN Logo" },
+    { value: "network_telecel_logo", label: "Telecel Logo" },
+    { value: "network_airteltigo_logo", label: "AirtelTigo Logo" },
+  ],
+  banner: [{ value: "developer_community_image", label: "Developer Community Banner" }],
+  background: [{ value: "scale_background_video", label: "Scale Section Background" }],
+  footer: [],
+};
+
 type MediaItem = {
   id: string;
   section: HomepageSection;
@@ -59,6 +76,13 @@ export default function AdminHomepageMediaPage() {
   useEffect(() => {
     loadMedia();
   }, []);
+
+  useEffect(() => {
+    const nextSlot = SLOT_OPTIONS[section]?.[0]?.value;
+    if (nextSlot && !SLOT_OPTIONS[section].some((item) => item.value === slotKey)) {
+      setSlotKey(nextSlot);
+    }
+  }, [section, slotKey]);
 
   const byTab = useMemo(
     () =>
@@ -165,7 +189,16 @@ export default function AdminHomepageMediaPage() {
           </div>
           <div className="space-y-2">
             <Label>Slot key</Label>
-            <Input value={slotKey} onChange={(e) => setSlotKey(e.target.value)} placeholder="hero_background" />
+            <div className="space-y-2">
+              {SLOT_OPTIONS[section]?.length ? (
+                <select className="h-10 w-full rounded-md border px-3" value={slotKey} onChange={(e) => setSlotKey(e.target.value)}>
+                  {SLOT_OPTIONS[section].map((item) => (
+                    <option key={item.value} value={item.value}>{item.label}</option>
+                  ))}
+                </select>
+              ) : null}
+              <Input value={slotKey} onChange={(e) => setSlotKey(e.target.value)} placeholder="hero_background" />
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Source</Label>

@@ -27,6 +27,10 @@ export default function FAQPage() {
   const [faqs, setFaqs] = useState<FAQ[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [heroMedia, setHeroMedia] = useState<{ type: "image" | "video"; url: string }>({
+    type: "image",
+    url: "/images/topchart-way.jpg",
+  })
 
   useEffect(() => {
     const loadFAQs = async () => {
@@ -55,12 +59,54 @@ export default function FAQPage() {
     loadFAQs()
   }, [])
 
+  useEffect(() => {
+    let active = true
+
+    const loadHeroMedia = async () => {
+      try {
+        const response = await fetch("/api/media?section=hero&slot_key=faq_hero_background", { cache: "no-store" })
+        const payload = await response.json()
+        const item = Array.isArray(payload?.media) ? payload.media[0] : null
+        if (!active || !payload?.success || !item) return
+
+        const type = item.media_type || item.asset_type
+        const url = item.file_url || item.public_url
+        if (url && (type === "image" || type === "video")) {
+          setHeroMedia({ type, url })
+        }
+      } catch {}
+    }
+
+    loadHeroMedia()
+    return () => {
+      active = false
+    }
+  }, [])
+
   return (
     <PageTransition className="flex min-h-screen flex-col bg-[color:var(--marketing-cream)]">
       <Header />
 
       {/* ── PAGE HERO ── */}
       <section className="relative overflow-hidden bg-[color:var(--marketing-hero-dark)] pb-20 pt-[calc(72px+3rem)] sm:pt-[calc(72px+4rem)]">
+        {heroMedia.type === "video" ? (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            className="absolute inset-0 h-full w-full object-cover opacity-20"
+            onError={() => setHeroMedia({ type: "image", url: "/images/topchart-way.jpg" })}
+          >
+            <source src={heroMedia.url} type="video/mp4" />
+          </video>
+        ) : (
+          <div
+            className="absolute inset-0 h-full w-full object-cover opacity-20 bg-center bg-cover"
+            style={{ backgroundImage: `url('${heroMedia.url}')` }}
+          />
+        )}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:56px_56px]" />
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[color:var(--marketing-cream)] to-transparent" />
         <div className="relative z-10 container mx-auto px-4 text-center">

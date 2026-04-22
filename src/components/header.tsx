@@ -138,6 +138,7 @@ export function Header() {
                 width={160}
                 height={40}
                 className="h-10 w-auto"
+                onError={() => setHeaderMedia(null)}
               />
             ) : (
               <img
@@ -146,6 +147,7 @@ export function Header() {
                 width={160}
                 height={40}
                 className="h-10 w-auto"
+                onError={() => setHeaderMedia(null)}
               />
             )
           ) : (

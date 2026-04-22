@@ -369,13 +369,14 @@ export default function HomePage() {
   const [networkLogos, setNetworkLogos] = useState<NetworkLogoConfig[]>(DEFAULT_NETWORK_LOGOS)
   const [developerImage, setDeveloperImage] = useState(DEFAULT_DEVELOPER_IMAGE)
   const [heroMedia, setHeroMedia] = useState<{ type: "image" | "video"; url: string }>({
-    type: "video",
-    url: "/13046977_3840_2160_30fps.mp4",
+    type: "image",
+    url: "/images/technical-partnership.jpg",
   })
   const [scaleMedia, setScaleMedia] = useState<{ type: "image" | "video"; url: string }>({
-    type: "video",
-    url: "/7490425-uhd_3840_2160_25fps.mp4",
+    type: "image",
+    url: "/images/topchart-way.jpg",
   })
+  const [logoErrorKeys, setLogoErrorKeys] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     let active = true
@@ -423,8 +424,8 @@ export default function HomePage() {
       } catch {
         setNetworkLogos(DEFAULT_NETWORK_LOGOS)
         setDeveloperImage(DEFAULT_DEVELOPER_IMAGE)
-        setHeroMedia({ type: "video", url: "/13046977_3840_2160_30fps.mp4" })
-        setScaleMedia({ type: "video", url: "/7490425-uhd_3840_2160_25fps.mp4" })
+        setHeroMedia({ type: "image", url: "/images/technical-partnership.jpg" })
+        setScaleMedia({ type: "image", url: "/images/topchart-way.jpg" })
       }
     }
 
@@ -443,7 +444,15 @@ export default function HomePage() {
           className="relative overflow-hidden px-4 pb-32 pt-20 sm:px-6 sm:pb-40 sm:pt-28 lg:pt-36 selection:bg-primary/30 selection:text-white flex min-h-[85vh] flex-col items-center justify-center bg-[#0d1627]"
         >
           {heroMedia && heroMedia.type === "video" ? (
-            <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover opacity-40" preload="metadata">
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 h-full w-full object-cover opacity-40"
+              preload="metadata"
+              onError={() => setHeroMedia({ type: "image", url: "/images/technical-partnership.jpg" })}
+            >
               <source src={heroMedia.url} type="video/mp4" />
             </video>
           ) : heroMedia && heroMedia.type === "image" ? (
@@ -545,14 +554,9 @@ export default function HomePage() {
                       fill
                       className="object-contain"
                       sizes="32px"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        const fallback = target.parentElement?.querySelector('.fallback-dot') as HTMLElement;
-                        if (fallback) fallback.style.display = 'flex';
-                      }}
+                      onError={() => setLogoErrorKeys((prev) => ({ ...prev, [network.key]: true }))}
                     />
-                    <div className="fallback-dot hidden h-8 w-8 items-center justify-center">
+                    <div className={`${logoErrorKeys[network.key] ? "flex" : "hidden"} h-8 w-8 items-center justify-center`}>
                       <div className={`h-3 w-3 rounded-full ${network.color}`} />
                     </div>
                   </div>
@@ -622,7 +626,15 @@ export default function HomePage() {
             <ScrollReveal once={false} amount={0.22}>
               <div className="relative aspect-video overflow-hidden rounded-3xl bg-neutral-200/80 shadow-lg">
                 {scaleMedia.type === "video" ? (
-                  <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover" preload="metadata">
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="absolute inset-0 h-full w-full object-cover"
+                    preload="metadata"
+                    onError={() => setScaleMedia({ type: "image", url: "/images/topchart-way.jpg" })}
+                  >
                     <source src={scaleMedia.url} type="video/mp4" />
                   </video>
                 ) : (

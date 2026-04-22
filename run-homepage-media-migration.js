@@ -57,8 +57,10 @@ INSERT INTO homepage_media (section_key, asset_type, storage_path, public_url, a
 ('telecel_logo', 'image', 'seed/telecel-logo.svg', '/images/telecel-logo.svg', 'Telecel logo', 2, TRUE),
 ('airteltigo_logo', 'image', 'seed/airteltigo-logo.svg', '/images/airteltigo-logo.svg', 'AirtelTigo logo', 3, TRUE),
 ('developer_community_image', 'image', 'seed/technical-partnership.jpg', '/images/technical-partnership.jpg', 'A user looking at code metrics', 4, TRUE),
-('hero_background_video', 'video', 'public/13046977_3840_2160_30fps.mp4', '/13046977_3840_2160_30fps.mp4', 'Hero section background video', 5, TRUE),
-('scale_background_video', 'video', 'public/7490425-uhd_3840_2160_25fps.mp4', '/7490425-uhd_3840_2160_25fps.mp4', 'Scale section background video', 6, TRUE)
+('hero_background_video', 'image', 'seed/technical-partnership.jpg', '/images/technical-partnership.jpg', 'Hero section background image', 5, TRUE),
+('scale_background_video', 'image', 'seed/topchart-way.jpg', '/images/topchart-way.jpg', 'Scale section background image', 6, TRUE),
+('faq_hero_background', 'image', 'seed/topchart-way.jpg', '/images/topchart-way.jpg', 'FAQ hero background image', 7, TRUE),
+('about_hero_background', 'image', 'seed/topchart-way.jpg', '/images/topchart-way.jpg', 'About hero background image', 8, TRUE)
 ON CONFLICT DO NOTHING;
 `;
 
