@@ -370,8 +370,8 @@ export default function HomePage() {
   const [networkLogos, setNetworkLogos] = useState<NetworkLogoConfig[]>(DEFAULT_NETWORK_LOGOS)
   const [developerImage, setDeveloperImage] = useState(DEFAULT_DEVELOPER_IMAGE)
   const [heroMedia, setHeroMedia] = useState<{ type: "image" | "video"; url: string }>({
-    type: "image",
-    url: "/images/technical-partnership.jpg",
+    type: "video",
+    url: "/7490425-uhd_3840_2160_25fps.mp4",
   })
   const [scaleMedia, setScaleMedia] = useState<{ type: "image" | "video"; url: string }>({
     type: "image",
@@ -435,7 +435,7 @@ export default function HomePage() {
               playsInline
               className="absolute inset-0 h-full w-full object-cover opacity-40"
               preload="metadata"
-              onError={() => setHeroMedia({ type: "image", url: "/images/technical-partnership.jpg" })}
+              onError={() => setHeroMedia({ type: "video", url: "/7490425-uhd_3840_2160_25fps.mp4" })}
             >
               <source src={heroMedia.url} type="video/mp4" />
             </video>

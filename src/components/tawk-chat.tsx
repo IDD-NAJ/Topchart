@@ -2,6 +2,7 @@
 
 import { useRef, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
+import { usePathname } from "next/navigation"
 // @ts-ignore
 import TawkMessengerReact from "@tawk.to/tawk-messenger-react"
 
@@ -9,6 +10,7 @@ export function TawkChat() {
   const propertyId = process.env.NEXT_PUBLIC_TAWK_PROPERTY_ID?.trim()
   const widgetId = process.env.NEXT_PUBLIC_TAWK_WIDGET_ID?.trim()
   const { user } = useAuth()
+  const pathname = usePathname()
   // @ts-ignore
   const tawkRef = useRef(null)
   const hasValidConfig = Boolean(
@@ -17,6 +19,7 @@ export function TawkChat() {
     propertyId !== "your-tawk-property-id" &&
     widgetId !== "your-tawk-widget-id"
   )
+  const isAdminRoute = pathname?.startsWith("/admin")
   // #region agent log
   const logClientDebug = (payload: Record<string, unknown>) => {
     fetch("/api/debug-client-error", {
@@ -34,11 +37,12 @@ export function TawkChat() {
       kind: "tawk_effect_enter",
       hasValidConfig: Boolean(hasValidConfig),
       hasUser: Boolean(user),
+      isAdminRoute: Boolean(isAdminRoute),
       propertyIdPresent: Boolean(propertyId),
       widgetIdPresent: Boolean(widgetId),
     });
     // #endregion
-    if (!hasValidConfig || !user) return
+    if (!hasValidConfig || !user || isAdminRoute) return
     
     // Suppress Tawk console errors and DOM errors
     // @ts-ignore
@@ -105,7 +109,7 @@ export function TawkChat() {
       // @ts-ignore
       window.onerror = originalWindowError
     }
-  }, [hasValidConfig, user])
+  }, [hasValidConfig, user, isAdminRoute])
 
   useEffect(() => {
     // #region agent log
@@ -114,12 +118,13 @@ export function TawkChat() {
       kind: "tawk_render_state",
       hasValidConfig: Boolean(hasValidConfig),
       hasUser: Boolean(user),
-      willRenderWidget: Boolean(hasValidConfig),
+      isAdminRoute: Boolean(isAdminRoute),
+      willRenderWidget: Boolean(hasValidConfig && !isAdminRoute),
     });
     // #endregion
-  }, [hasValidConfig, user])
+  }, [hasValidConfig, user, isAdminRoute])
 
-  if (!hasValidConfig) {
+  if (!hasValidConfig || isAdminRoute) {
     return null
   }
 
