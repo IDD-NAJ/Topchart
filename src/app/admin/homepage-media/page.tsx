@@ -44,6 +44,7 @@ const SECTION_OPTIONS = [
   { value: "telecel_logo", label: "Telecel Logo", icon: ImageIcon },
   { value: "airteltigo_logo", label: "AirtelTigo Logo", icon: ImageIcon },
   { value: "developer_community_image", label: "Developer Section Image", icon: ImageIcon },
+  { value: "header_logo", label: "Header Logo/Video", icon: ImageIcon },
 ];
 
 const ACCEPTED_TYPES = {
@@ -179,14 +180,14 @@ function DropZone({
       <div className="text-center">
         <p className="text-sm font-medium">Drop file here or <span className="text-primary">browse</span></p>
         <p className="mt-1 text-xs text-muted-foreground">
-          {assetType === "video" ? "MP4, WebM, OGG" : "JPG, PNG, WebP, GIF, SVG"} · max {humanSize(MAX_FILE_SIZE)}
+          Images (JPG, PNG, WebP, SVG) or Videos (MP4, WebM, OGG) · max {humanSize(MAX_FILE_SIZE)}
         </p>
       </div>
       <input
         ref={inputRef}
         type="file"
         className="sr-only"
-        accept={assetType === "video" ? "video/*" : "image/*"}
+        accept="image/*,video/*"
         onChange={handleChange}
       />
     </div>

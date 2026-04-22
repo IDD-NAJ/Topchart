@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { motion } from "framer-motion"
 import {
   Phone,
@@ -45,6 +46,11 @@ import {
   ChevronDown,
   ChevronUp,
   Smartphone,
+  Twitter,
+  Facebook,
+  MessageCircle,
+  QrCode,
+  Check,
 } from "lucide-react"
 import { Suspense } from "react"
 import Loading from "./loading"
@@ -160,8 +166,11 @@ export default function DashboardPage() {
   const [showFundModal, setShowFundModal] = useState(false)
   const [pendingReference, setPendingReference] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [copiedCode, setCopiedCode] = useState(false)
   const [expandedTransaction, setExpandedTransaction] = useState<string | null>(null)
   const [referralStats, setReferralStats] = useState<ReferralStats | null>(null)
+  const [showShareMenu, setShowShareMenu] = useState(false)
+  const [showQrCode, setShowQrCode] = useState(false)
   const [referralError, setReferralError] = useState<string | null>(null)
   const [dashboardData, setDashboardData] = useState<{
     totals: {
@@ -833,39 +842,123 @@ export default function DashboardPage() {
                        }
                      }}
                    >
-                     {copied ? "Copied" : "Copy"}
+                     {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                   </Button>
+                   <Button 
+                     size="sm" 
+                     variant="outline"
+                     className="h-7 text-[10px] uppercase font-bold"
+                     onClick={async () => {
+                       const success = await copyToClipboard(referralCode)
+                       if (success) {
+                         setCopiedCode(true)
+                         toast.success("Referral code copied to clipboard")
+                         setTimeout(() => setCopiedCode(false), 1200)
+                       } else {
+                         toast.error("Failed to copy code")
+                       }
+                     }}
+                   >
+                     {copiedCode ? <Check className="w-3 h-3" /> : <span className="text-[10px]">Code</span>}
                    </Button>
                    <Button 
                      size="sm" 
                      className="h-7 text-[10px] uppercase font-bold"
-                     onClick={async () => {
-                       const shareData = {
-                         title: "Join Topchart ",
-                         text: "Scale your earnings by expanding our infrastructure network. Use my referral link to get started!",
-                         url: referralLink
-                       }
-                       
-                       if (navigator.share && navigator.canShare(shareData)) {
-                         try {
-                           await navigator.share(shareData)
-                           toast.success("Shared successfully")
-                         } catch (error) {
-                           if ((error as Error).name !== 'AbortError') {
-                             toast.error("Failed to share")
-                           }
-                         }
-                       } else {
-                         const success = await copyToClipboard(referralLink)
-                         if (success) {
-                           toast.success("Referral link copied to clipboard")
-                         } else {
-                           toast.error("Failed to copy link")
-                         }
-                       }
-                     }}
+                     onClick={() => setShowQrCode(true)}
                    >
-                     <Share2 className="w-3 h-3" />
+                     <QrCode className="w-3 h-3" />
                    </Button>
+                   <div className="relative">
+                     <Button 
+                       size="sm" 
+                       className="h-7 text-[10px] uppercase font-bold"
+                       onClick={() => setShowShareMenu(!showShareMenu)}
+                     >
+                       <Share2 className="w-3 h-3" />
+                     </Button>
+                     {showShareMenu && (
+                       <div className="absolute right-0 top-full mt-2 w-48 bg-background border border-border rounded-lg shadow-lg z-50">
+                         <div className="p-2 space-y-1">
+                           <Button
+                             size="sm"
+                             variant="ghost"
+                             className="w-full justify-start h-8 text-xs"
+                             onClick={() => {
+                               const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent("Join Topchart! Scale your earnings by expanding our infrastructure network. Use my referral link to get started!")}&url=${encodeURIComponent(referralLink)}`
+                               window.open(twitterUrl, '_blank')
+                               setShowShareMenu(false)
+                               toast.success("Opening Twitter...")
+                             }}
+                           >
+                             <Twitter className="w-3 h-3 mr-2" />
+                             Twitter
+                           </Button>
+                           <Button
+                             size="sm"
+                             variant="ghost"
+                             className="w-full justify-start h-8 text-xs"
+                             onClick={() => {
+                               const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}`
+                               window.open(facebookUrl, '_blank')
+                               setShowShareMenu(false)
+                               toast.success("Opening Facebook...")
+                             }}
+                           >
+                             <Facebook className="w-3 h-3 mr-2" />
+                             Facebook
+                           </Button>
+                           <Button
+                             size="sm"
+                             variant="ghost"
+                             className="w-full justify-start h-8 text-xs"
+                             onClick={() => {
+                               const whatsappUrl = `https://wa.me/?text=${encodeURIComponent("Join Topchart! Scale your earnings by expanding our infrastructure network. Use my referral link: " + referralLink)}`
+                               window.open(whatsappUrl, '_blank')
+                               setShowShareMenu(false)
+                               toast.success("Opening WhatsApp...")
+                             }}
+                           >
+                             <MessageCircle className="w-3 h-3 mr-2" />
+                             WhatsApp
+                           </Button>
+                           <Button
+                             size="sm"
+                             variant="ghost"
+                             className="w-full justify-start h-8 text-xs"
+                             onClick={async () => {
+                               const shareData = {
+                                 title: "Join Topchart",
+                                 text: "Scale your earnings by expanding our infrastructure network. Use my referral link to get started!",
+                                 url: referralLink
+                               }
+                               if (navigator.share && navigator.canShare(shareData)) {
+                                 try {
+                                   await navigator.share(shareData)
+                                   setShowShareMenu(false)
+                                   toast.success("Shared successfully")
+                                 } catch (error) {
+                                   if ((error as Error).name !== 'AbortError') {
+                                     toast.error("Failed to share")
+                                   }
+                                 }
+                               } else {
+                                 const success = await copyToClipboard(referralLink)
+                                 if (success) {
+                                   setShowShareMenu(false)
+                                   toast.success("Referral link copied to clipboard")
+                                 } else {
+                                   toast.error("Failed to copy link")
+                                 }
+                               }
+                             }}
+                           >
+                             <Share2 className="w-3 h-3 mr-2" />
+                             More Options
+                           </Button>
+                         </div>
+                       </div>
+                     )}
+                   </div>
                  </div>
                </div>
                <div className="grid grid-cols-2 gap-3">
@@ -880,6 +973,45 @@ export default function DashboardPage() {
                </div>
              </CardContent>
            </Card>
+
+           {showQrCode && (
+             <Dialog open={showQrCode} onOpenChange={setShowQrCode}>
+               <DialogContent className="sm:max-w-md">
+                 <DialogHeader>
+                   <DialogTitle>Referral QR Code</DialogTitle>
+                   <CardDescription>Scan to visit your referral link</CardDescription>
+                 </DialogHeader>
+                 <div className="flex flex-col items-center space-y-4 py-4">
+                   <div className="bg-white p-4 rounded-lg">
+                     <img 
+                       src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(referralLink)}`} 
+                       alt="Referral QR Code" 
+                       className="w-48 h-48"
+                     />
+                   </div>
+                   <div className="text-center space-y-2">
+                     <p className="text-sm font-medium">{referralCode}</p>
+                     <p className="text-xs text-muted-foreground">{referralLink}</p>
+                   </div>
+                   <Button 
+                     variant="outline" 
+                     className="w-full"
+                     onClick={async () => {
+                       const success = await copyToClipboard(referralLink)
+                       if (success) {
+                         toast.success("Referral link copied to clipboard")
+                       } else {
+                         toast.error("Failed to copy link")
+                       }
+                     }}
+                   >
+                     <Copy className="w-4 h-4 mr-2" />
+                     Copy Link
+                   </Button>
+                 </div>
+               </DialogContent>
+             </Dialog>
+           )}
 
            <Card>
              <CardHeader>
