@@ -11,7 +11,7 @@ import './globals.css'
 // Fallback standard CSS variable system for Great Vibes (fixes Turbopack internal/font compilation network flake issues)
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://topchart.gh'),
+  metadataBase: new URL('https://topchart.store'),
   title: {
     default: 'Topchart — Digital Services Platform',
     template: '%s | Topchart',
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   description: 'Topchart is Ghana\'s premier complete digital services platform. Buy data bundles, verification numbers, check exam results, and join our reseller programme — instantly and securely.',
   applicationName: 'Topchart',
   keywords: ['buy data online ghana', 'instant airtime top up ghana', 'cheap mobile data ghana', 'data bundles ghana', 'verification numbers ghana', 'WAEC result checker', 'BECE result checker', 'reseller programme ghana', 'MTN', 'Telecel', 'AirtelTigo', 'OTP verification number'],
-  authors: [{ name: 'Topchart', url: 'https://topchart.gh' }],
+  authors: [{ name: 'Topchart', url: 'https://topchart.store' }],
   creator: 'Topchart',
   publisher: 'Topchart',
   robots: {
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_GH',
-    url: 'https://topchart.gh',
+    url: 'https://topchart.store',
     siteName: 'Topchart',
     title: 'Topchart — Digital Services Platform',
     description: 'Complete digital services platform — data, verification numbers, exam results, and reseller programme.',
@@ -64,8 +64,8 @@ export const metadata: Metadata = {
         '@type': 'Organization',
         name: 'Topchart',
         alternateName: 'Topchart Ghana',
-        url: 'https://topchart.gh',
-        logo: 'https://topchart.gh/logo.svg',
+        url: 'https://topchart.store',
+        logo: 'https://topchart.store/logo.svg',
         description: 'Ghana\'s digital services platform for data bundles, verification numbers, result checkers, and reseller services.',
         contactPoint: [
           {
@@ -90,11 +90,11 @@ export const metadata: Metadata = {
       {
         '@context': 'https://schema.org',
         '@type': 'WebSite',
-        url: 'https://topchart.gh',
+        url: 'https://topchart.store',
         name: 'Topchart',
         potentialAction: {
           '@type': 'SearchAction',
-          target: 'https://topchart.gh/search?q={search_term_string}',
+          target: 'https://topchart.store/search?q={search_term_string}',
           'query-input': 'required name=search_term_string'
         }
       }

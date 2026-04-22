@@ -13,7 +13,7 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: 'https://topchart.gh/sitemap.xml',
-    host: 'https://topchart.gh',
+    sitemap: 'https://topchart.store/sitemap.xml',
+    host: 'https://topchart.store',
   }
 }

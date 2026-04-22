@@ -6,10 +6,10 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'About Topchart ',
     description: 'Our mission is to eliminate friction in purchasing digital services, providing enterprise-grade infrastructure for everyone.',
-    url: 'https://topchart.gh/about',
+    url: 'https://topchart.store/about',
   },
   alternates: {
-    canonical: 'https://topchart.gh/about',
+    canonical: 'https://topchart.store/about',
   },
 }
 

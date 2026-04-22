@@ -267,12 +267,12 @@ export default function PressPage() {
                     <p className="text-muted-foreground text-sm font-body">For media inquiries, interview requests, or to be added to our press list, please reach out to our communications team.</p>
                   </div>
                   <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-                    <Link href="mailto:press@topchart.gh">
+                    <Link href="mailto:press@topchart.store">
                       <Button
                         className="shrink-0 rounded-full text-white shadow-lg hover:opacity-95"
                         style={{ backgroundColor: "var(--marketing-accent)" }}
                       >
-                        press@topchart.gh
+                        press@topchart.store
                       </Button>
                     </Link>
                   </motion.div>

@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     `;
     
     const link = result[0];
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://topchart.gh';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://topchart.store';
     
     return NextResponse.json({
       success: true,

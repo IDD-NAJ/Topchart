@@ -10,10 +10,10 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Privacy Policy | Topchart ',
     description: 'How Topchart  collects, uses, and safeguards your personal information.',
-    url: 'https://topchart.gh/privacy',
+    url: 'https://topchart.store/privacy',
   },
   alternates: {
-    canonical: 'https://topchart.gh/privacy',
+    canonical: 'https://topchart.store/privacy',
   },
 }
 

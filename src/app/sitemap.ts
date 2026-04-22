@@ -21,7 +21,7 @@ const primaryKeywords = [
 const modifiers = ['instant', 'cheap', 'fast', 'secure']
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://topchart.gh'
+  const baseUrl = 'https://topchart.store'
   const now = new Date()
 
   // Standard Routes

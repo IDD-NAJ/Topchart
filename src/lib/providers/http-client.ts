@@ -1,3 +1,5 @@
+import { logger } from "@/lib/logger";
+
 export type ProviderErrorCode =
   | "PROVIDER_TIMEOUT"
   | "PROVIDER_RATE_LIMIT"
@@ -63,6 +65,9 @@ export async function providerRequest<T>(
   const maxAttempts = canRetry ? retries + 1 : 1;
 
   let lastError: ProviderHttpError | undefined;
+  
+  logger.debug({ message: `[HTTP] ${method} ${provider} request started`, provider, endpoint, attempt: 1 });
+
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -80,20 +85,24 @@ export async function providerRequest<T>(
         try {
           json = JSON.parse(textBody);
         } catch {
-          if (!response.ok) {
-            return {
-              success: false,
-              statusCode,
-              attempts: attempt,
-              error: {
-                code: "PROVIDER_BAD_RESPONSE",
-                provider,
-                endpoint,
-                statusCode,
-                retryable: false,
-                message: `Invalid JSON response (${statusCode})`,
-              },
-            };
+          // If we can't parse JSON, we'll handle it below.
+          // For successful responses, this might be a problem, but for errors, 
+          // we often get non-JSON bodies (HTML/Text).
+          if (response.ok) {
+             logger.error({ message: `[HTTP] Invalid JSON in successful response`, provider, endpoint, statusCode });
+             return {
+               success: false,
+               statusCode,
+               attempts: attempt,
+               error: {
+                 code: "PROVIDER_BAD_RESPONSE",
+                 provider,
+                 endpoint,
+                 statusCode,
+                 retryable: false,
+                 message: `Invalid JSON response (${statusCode})`,
+               },
+             };
           }
         }
       }
@@ -111,12 +120,17 @@ export async function providerRequest<T>(
         };
         if (retryable && canRetry && attempt < maxAttempts) {
           const jitter = Math.floor(Math.random() * 250);
-          await sleep(retryDelayMs * 2 ** (attempt - 1) + jitter);
+          const delay = retryDelayMs * 2 ** (attempt - 1) + jitter;
+          logger.warn({ message: `[HTTP] Retryable error ${statusCode}`, provider, endpoint, attempt, delay });
+          await sleep(delay);
           continue;
         }
+        
+        logger.error({ message: `[HTTP] Request failed`, provider, endpoint, statusCode, attempts: attempt, error: lastError });
         return { success: false, error: lastError, statusCode, attempts: attempt };
       }
 
+      logger.info({ message: `[HTTP] Request success`, provider, endpoint, statusCode, attempts: attempt });
       return {
         success: true,
         data: json as T,
@@ -134,9 +148,12 @@ export async function providerRequest<T>(
       };
       if (canRetry && attempt < maxAttempts) {
         const jitter = Math.floor(Math.random() * 250);
-        await sleep(retryDelayMs * 2 ** (attempt - 1) + jitter);
+        const delay = retryDelayMs * 2 ** (attempt - 1) + jitter;
+        logger.warn({ message: `[HTTP] Network error`, provider, endpoint, attempt, delay, errorMsg: lastError.message });
+        await sleep(delay);
         continue;
       }
+      logger.error({ message: `[HTTP] Max retries reached or non-retryable error`, provider, endpoint, attempts: attempt, errorMsg: lastError.message });
       return { success: false, error: lastError, attempts: attempt };
     }
   }

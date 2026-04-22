@@ -27,7 +27,7 @@ export function Footer() {
   ]
 
   const contactInfo = [
-    { icon: Mail, text: "support@topchart.gh" },
+    { icon: Mail, text: "support@topchart.store" },
     { icon: Phone, text: "+233 20 123 4567" },
     { icon: MapPin, text: "Accra, " },
   ]

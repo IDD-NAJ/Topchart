@@ -6,7 +6,7 @@ const EMAIL_HOST = env.EMAIL_HOST;
 const EMAIL_PORT = parseInt(env.EMAIL_PORT || "587");
 const EMAIL_USER = env.EMAIL_USER;
 const EMAIL_PASS = env.EMAIL_PASS;
-const EMAIL_FROM = env.EMAIL_FROM || "Topchart  <noreply@topchart.gh>";
+const EMAIL_FROM = env.EMAIL_FROM || "Topchart  <noreply@topchart.store>";
 
 function createTransporter() {
   if (!EMAIL_HOST || !EMAIL_USER || !EMAIL_PASS) {
@@ -69,7 +69,7 @@ export async function sendResellerApprovalEmail(
           <p style="color:#374151;line-height:1.6">
             Share your reseller code with customers to earn commissions on every purchase they make.
           </p>
-          <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://topchart.gh"}/dashboard/reseller"
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://topchart.store"}/dashboard/reseller"
              style="display:inline-block;background:#0052CC;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin-top:8px">
             Go to Reseller Dashboard
           </a>
@@ -107,7 +107,7 @@ export async function sendResellerRejectionEmail(
           <p style="color:#374151;line-height:1.6">
             You are welcome to address the above and reapply at any time from your dashboard.
           </p>
-          <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://topchart.gh"}/dashboard/reseller/apply"
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://topchart.store"}/dashboard/reseller/apply"
              style="display:inline-block;background:#0052CC;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin-top:8px">
             Apply Again
           </a>

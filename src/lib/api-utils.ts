@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "./logger";
 
 export type ErrorCategory = "AUTH_CONFIG" | "UPSTREAM_TIMEOUT" | "VALIDATION" | "PROVIDER_UNAVAILABLE" | "RECONCILIATION_NEEDED" | "UNKNOWN";
 
@@ -34,9 +35,60 @@ export async function safeParseJson<T>(response: Response): Promise<T | null> {
     }
     return JSON.parse(text) as T;
   } catch (error) {
-    console.warn(`[API] Failed to parse JSON:`, error);
+    logger.warn({ message: `[API] Failed to parse JSON`, error });
     return null;
   }
+}
+
+/**
+ * Fetch wrapper with timeout and automatic retry logic for transient errors.
+ */
+export async function fetchWithRetryAndTimeout(
+  url: string,
+  options: RequestInit = {},
+  retries = 2,
+  timeoutMs = 15000,
+  baseDelayMs = 1000
+): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    
+    try {
+      const res = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(id);
+      
+      // Retry on 5xx or 429
+      if (!res.ok && (res.status >= 500 || res.status === 429) && attempt < retries) {
+        const delay = baseDelayMs * Math.pow(2, attempt); // Exponential backoff
+        logger.warn({ message: `[API] Fetch failed with ${res.status}. Retrying in ${delay}ms...`, url, attempt, status: res.status });
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+      
+      return res;
+    } catch (error: any) {
+      clearTimeout(id);
+      lastError = error;
+      
+      const isTimeout = error.name === 'AbortError' || error.message.includes('timeout');
+      
+      if (attempt < retries) {
+        const delay = baseDelayMs * Math.pow(2, attempt);
+        logger.warn({ message: `[API] Fetch network/timeout error. Retrying in ${delay}ms...`, url, attempt, isTimeout, error: error.message });
+        await new Promise((r) => setTimeout(r, delay));
+      } else {
+        logger.error({ message: `[API] Fetch completely failed after ${retries} retries`, url, isTimeout, error: error.message });
+      }
+    }
+  }
+  
+  throw lastError || new Error(`Fetch failed after ${retries} retries`);
 }
 
 /**
@@ -52,14 +104,13 @@ export function logServiceEvent(
     service,
     step,
     status,
-    timestamp: new Date().toISOString(),
     ...details,
   };
 
   if (status === "failed") {
-    console.error(`[${service.toUpperCase()}] ${step} FAILED:`, JSON.stringify(logData, null, 2));
+    logger.error({ message: `[${service.toUpperCase()}] ${step} FAILED`, ...logData });
   } else {
-    console.log(`[${service.toUpperCase()}] ${step} ${status.toUpperCase()}`, details ? JSON.stringify(details) : "");
+    logger.info({ message: `[${service.toUpperCase()}] ${step} ${status.toUpperCase()}`, ...logData });
   }
 }
 

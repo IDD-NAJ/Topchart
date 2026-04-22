@@ -5,7 +5,7 @@ const LOGIN = "/login";
 const ADMIN_LOGIN = "/admin/login";
 
 function getSecurityHeaders(request: NextRequest) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://topchart.gh";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://topchart.store";
   const appDomain = new URL(appUrl).hostname;
   
   return {

@@ -6,10 +6,10 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'FAQ | Topchart ',
     description: 'Answers to the most common questions about Topchart — delivery time, payments, security, supported networks, and refunds.',
-    url: 'https://topchart.gh/faq',
+    url: 'https://topchart.store/faq',
   },
   alternates: {
-    canonical: 'https://topchart.gh/faq',
+    canonical: 'https://topchart.store/faq',
   },
 }
 

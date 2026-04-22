@@ -25,8 +25,8 @@ const nextConfig: NextConfig = {
         "*.orchids.cloud",
         "*.daytona.works",
         "*.proxy.daytona.works",
-        "topchart.gh",
-        "www.topchart.gh",
+        "topchart.store",
+        "www.topchart.store",
       ],
       bodySizeLimit: "100mb",
     },
@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'topchart.gh',
+        hostname: 'topchart.store',
       },
       {
         protocol: 'https',

@@ -6,10 +6,10 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Careers at Topchart ',
     description: 'Help us build the financial infrastructure for the next generation of ian businesses. View open engineering, design and operations roles.',
-    url: 'https://topchart.gh/careers',
+    url: 'https://topchart.store/careers',
   },
   alternates: {
-    canonical: 'https://topchart.gh/careers',
+    canonical: 'https://topchart.store/careers',
   },
 }
 

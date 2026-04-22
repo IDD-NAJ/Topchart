@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: titleFormat,
       description: description,
-      url: `https://topchart.gh/${slug}`,
+      url: `https://topchart.store/${slug}`,
     }
   }
 }
@@ -72,13 +72,13 @@ export default async function ProgrammaticPage({ params }: Props) {
         '@type': 'ListItem',
         position: 1,
         name: 'Home',
-        item: 'https://topchart.gh'
+        item: 'https://topchart.store'
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: formattedTitle,
-        item: `https://topchart.gh/${slug}`
+        item: `https://topchart.store/${slug}`
       }
     ]
   }

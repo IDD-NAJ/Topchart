@@ -23,13 +23,14 @@ interface UseHomepageMediaOptions {
   section?: string;
   autoRefresh?: boolean;
   refreshInterval?: number;
+  initialData?: HomepageMediaItem[];
 }
 
 export function useHomepageMedia(options: UseHomepageMediaOptions = {}) {
-  const { section, autoRefresh = false, refreshInterval = 30000 } = options;
+  const { section, autoRefresh = false, refreshInterval = 30000, initialData = [] } = options;
   
-  const [media, setMedia] = useState<HomepageMediaItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [media, setMedia] = useState<HomepageMediaItem[]>(initialData);
+  const [isLoading, setIsLoading] = useState(initialData.length === 0);
   const [error, setError] = useState<string | null>(null);
 
   const fetchMedia = useCallback(async () => {

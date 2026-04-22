@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL("/login?error=Google+Auth+not+configured", request.url));
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") || "https://topchart.gh";
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") || "https://topchart.store";
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     // Exchange code for token

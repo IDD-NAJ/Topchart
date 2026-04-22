@@ -10,10 +10,10 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Terms of Service | Topchart ',
     description: 'Terms and conditions for using Topchart \'s airtime and data top-up services.',
-    url: 'https://topchart.gh/terms',
+    url: 'https://topchart.store/terms',
   },
   alternates: {
-    canonical: 'https://topchart.gh/terms',
+    canonical: 'https://topchart.store/terms',
   },
 }
 

@@ -53,6 +53,7 @@ import {
   Image as ImageIcon,
   Video,
 } from "lucide-react"
+import { HealthCheck } from "@/components/admin/health-check"
 
 interface AdminUser {
   id: string
@@ -693,6 +694,8 @@ export default function AdminDashboard() {
 
       {/* Content Management */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <HealthCheck />
+
         <Link href="/admin/homepage-media">
           <Card className="cursor-pointer hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
