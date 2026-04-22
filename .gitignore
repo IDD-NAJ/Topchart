@@ -12,6 +12,7 @@ tsconfig.tsbuildinfo
 # Environment variables
 .env.local
 .env.*.local
+.env.production
 
 # Local Netlify folder
 .netlify
