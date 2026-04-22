@@ -18,13 +18,13 @@ function getSecurityHeaders(request: NextRequest) {
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "Content-Security-Policy": [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.tawk.to https://embed.tawk.to https://va.tawk.to https://va.vercel-scripts.com",
+      `connect-src 'self' https://*.supabase.co https://${appDomain} https://api.${appDomain} https://*.tawk.to`,
+      "img-src 'self' data: blob: https://*.supabase.co",
+      "media-src 'self' blob: https://*.supabase.co",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.tawk.to",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
-      "img-src 'self' data: blob: https: https://*.supabase.co https://images.pexels.com https://*.s3.amazonaws.com",
-      "media-src 'self' blob: https://*.supabase.co",
-      `connect-src 'self' https: wss: https://*.supabase.co https://${appDomain} https://api.paystack.co https://*.tawk.to https://embed.tawk.to https://va.tawk.to wss://chat.tawk.to`,
-      "frame-src https://*.tawk.to https://embed.tawk.to https://va.tawk.to https://checkout.paystack.com",
+      "frame-src https://*.tawk.to",
     ].join("; "),
   };
 }

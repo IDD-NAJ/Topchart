@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useEffect } from "react"
+import { useRef, useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { usePathname } from "next/navigation"
 // @ts-ignore
@@ -20,9 +20,14 @@ export function TawkChat() {
     widgetId !== "your-tawk-widget-id"
   )
   const isAdminRoute = pathname?.startsWith("/admin")
+  const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
-    if (!hasValidConfig || !user || isAdminRoute) return
+    setIsMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isMounted || !hasValidConfig || !user || isAdminRoute) return
 
     const originalConsoleError = console.error
     const originalWindowError = window.onerror
@@ -78,7 +83,7 @@ export function TawkChat() {
     }
   }, [hasValidConfig, user, isAdminRoute])
 
-  if (!hasValidConfig || isAdminRoute) {
+  if (!isMounted || !hasValidConfig || isAdminRoute) {
     return null
   }
 
