@@ -216,8 +216,8 @@ export default function AdminHomepageMediaPage() {
           <div className="space-y-2">
             <Label>Source</Label>
             <select className="h-10 w-full rounded-md border px-3" value={storageSource} onChange={(e) => setStorageSource(e.target.value as "local" | "supabase")}>
-              <option value="supabase">Supabase</option>
-              <option value="local">Local</option>
+              <option value="supabase">Supabase (recommended — works in production)</option>
+              <option value="local">Local (dev only — files are gitignored, will 404 on Netlify)</option>
             </select>
           </div>
           <div className="space-y-2">

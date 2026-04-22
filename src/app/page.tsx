@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
+import { useHomepageMedia } from "@/hooks/use-homepage-media"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import {
@@ -368,15 +369,55 @@ function PrimaryLink({
 export default function HomePage() {
   const [networkLogos, setNetworkLogos] = useState<NetworkLogoConfig[]>(DEFAULT_NETWORK_LOGOS)
   const [developerImage, setDeveloperImage] = useState(DEFAULT_DEVELOPER_IMAGE)
-  const [heroMedia, setHeroMedia] = useState<{ type: "image" | "video"; url: string }>({
-    type: "video",
-    url: "/7490425-uhd_3840_2160_25fps.mp4",
-  })
-  const [scaleMedia, setScaleMedia] = useState<{ type: "image" | "video"; url: string }>({
-    type: "video",
-    url: "/istockphoto-1438853103-640_adpp_is.mp4",
-  })
+  const [heroMedia, setHeroMedia] = useState<{ type: "image" | "video"; url: string } | null>(null)
+  const [scaleMedia, setScaleMedia] = useState<{ type: "image" | "video"; url: string } | null>(null)
   const [logoErrorKeys, setLogoErrorKeys] = useState<Record<string, boolean>>({})
+  const { media, isLoading: mediaLoading } = useHomepageMedia()
+
+  useEffect(() => {
+    if (mediaLoading || !media.length) return
+
+    const hero = media.find((m) =>
+      (m.slot_key === "hero_background" || m.section_key === "hero_background_video") && m.is_active
+    )
+    if (hero) {
+      const url = hero.file_url || hero.public_url || hero.storage_path
+      if (url) setHeroMedia({ type: hero.media_type ?? hero.asset_type ?? "video", url })
+    }
+
+    const scale = media.find((m) =>
+      (m.slot_key === "scale_background_video" || m.section_key === "scale_background_video") && m.is_active
+    )
+    if (scale) {
+      const url = scale.file_url || scale.public_url || scale.storage_path
+      if (url) setScaleMedia({ type: scale.media_type ?? scale.asset_type ?? "video", url })
+    }
+
+    const devImg = media.find((m) =>
+      (m.slot_key === "developer_community_image" || m.section_key === "developer_community_image") && m.is_active
+    )
+    if (devImg) {
+      const url = devImg.file_url || devImg.public_url || devImg.storage_path
+      if (url) setDeveloperImage(url)
+    }
+
+    const logoKeyMap: Record<string, string> = {
+      network_mtn_logo: "mtn_logo",
+      network_telecel_logo: "telecel_logo",
+      network_airteltigo_logo: "airteltigo_logo",
+    }
+    const updatedLogos = DEFAULT_NETWORK_LOGOS.map((logo) => {
+      const matched = media.find(
+        (m) => (logoKeyMap[m.slot_key ?? ""] === logo.key || m.slot_key === logo.key || m.section_key === logo.key) && m.is_active
+      )
+      if (matched) {
+        const url = matched.file_url || matched.public_url || matched.storage_path
+        if (url) return { ...logo, image: url }
+      }
+      return logo
+    })
+    setNetworkLogos(updatedLogos)
+  }, [media, mediaLoading])
 
   return (
     <PageTransition className="min-h-screen flex flex-col bg-[color:var(--marketing-cream)]">
@@ -394,7 +435,7 @@ export default function HomePage() {
               playsInline
               className="absolute inset-0 h-full w-full object-cover opacity-40"
               preload="metadata"
-              onError={() => setHeroMedia({ type: "video", url: "/7490425-uhd_3840_2160_25fps.mp4" })}
+              onError={() => setHeroMedia(null)}
             >
               <source src={heroMedia.url} type="video/mp4" />
             </video>
@@ -578,7 +619,7 @@ export default function HomePage() {
                     playsInline
                     className="absolute inset-0 h-full w-full object-cover"
                     preload="metadata"
-                    onError={() => setScaleMedia({ type: "video", url: "/istockphoto-1438853103-640_adpp_is.mp4" })}
+                    onError={() => setScaleMedia(null)}
                   >
                     <source src={scaleMedia.url} type="video/mp4" />
                   </video>
