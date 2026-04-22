@@ -4,12 +4,16 @@ import { useEffect, useState, useCallback } from "react";
 
 export interface HomepageMediaItem {
   id: string;
-  section_key: string;
-  asset_type: "image" | "video";
+  section_key?: string;
+  slot_key?: string;
+  asset_type?: "image" | "video";
+  media_type?: "image" | "video";
   storage_path: string;
-  public_url: string;
+  public_url?: string;
+  file_url?: string;
   alt_text: string | null;
-  sort_order: number;
+  sort_order?: number;
+  priority?: number;
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
@@ -34,8 +38,8 @@ export function useHomepageMedia(options: UseHomepageMediaOptions = {}) {
       setError(null);
       
       const url = section 
-        ? `/api/content/homepage-media?section=${encodeURIComponent(section)}`
-        : "/api/content/homepage-media";
+        ? `/api/media?slot_key=${encodeURIComponent(section)}`
+        : "/api/media";
       
       const response = await fetch(url, {
         cache: "no-store",
@@ -70,12 +74,12 @@ export function useHomepageMedia(options: UseHomepageMediaOptions = {}) {
   }, [fetchMedia, autoRefresh, refreshInterval]);
 
   const getMediaBySection = useCallback((sectionKey: string) => {
-    return media.filter((item) => item.section_key === sectionKey && item.is_active);
+    return media.filter((item) => (item.slot_key === sectionKey || item.section_key === sectionKey) && item.is_active);
   }, [media]);
 
   const getHeroMedia = useCallback(() => {
     return media.find((item) => 
-      item.section_key === "hero_background_video" && item.is_active
+      (item.slot_key === "hero_background" || item.section_key === "hero_background_video") && item.is_active
     ) || null;
   }, [media]);
 

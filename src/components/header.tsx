@@ -31,9 +31,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 interface HomepageMediaItem {
-  section_key: string;
-  asset_type: "image" | "video";
-  public_url: string;
+  slot_key: string;
+  media_type: "image" | "video";
+  file_url: string;
   alt_text: string | null;
   is_active: boolean;
 }
@@ -104,7 +104,7 @@ export function Header() {
   useEffect(() => {
     const fetchHeaderMedia = async () => {
       try {
-        const response = await fetch("/api/media?section=header_logo", { cache: "no-store" })
+        const response = await fetch("/api/media?section=header&slot_key=header_logo", { cache: "no-store" })
         const payload = await response.json()
         if (payload?.success && Array.isArray(payload.media)) {
           const headerLogo = payload.media.find((m: HomepageMediaItem) => m.is_active)
@@ -128,9 +128,9 @@ export function Header() {
         {/* LOGO */}
         <Link href="/" className="shrink-0 flex items-center group relative z-10">
           {headerMedia ? (
-            headerMedia.asset_type === "video" ? (
+            headerMedia.media_type === "video" ? (
               <video
-                src={headerMedia.public_url}
+                src={headerMedia.file_url}
                 autoPlay
                 loop
                 muted
@@ -141,7 +141,7 @@ export function Header() {
               />
             ) : (
               <img
-                src={headerMedia.public_url}
+                src={headerMedia.file_url}
                 alt={headerMedia.alt_text || "Topchart Logo"}
                 width={160}
                 height={40}

@@ -21,15 +21,35 @@ export function TawkChat() {
   useEffect(() => {
     if (!hasValidConfig || !user) return
     
-    // Suppress Tawk console errors
+    // Suppress Tawk console errors and DOM errors
     // @ts-ignore
     const originalConsoleError = console.error
+    // @ts-ignore
+    const originalWindowError = window.onerror
+    
     // @ts-ignore
     console.error = (...args) => {
       if (args[0] && typeof args[0] === 'string' && args[0].includes('[Tawk/Logger]')) {
         return
       }
+      if (args[0] && typeof args[0] === 'string' && args[0].includes('NotFoundError')) {
+        return
+      }
       originalConsoleError.apply(console, args)
+    }
+    
+    // @ts-ignore
+    window.onerror = (message, source, lineno, colno, error) => {
+      if (typeof message === 'string' && message.includes('NotFoundError')) {
+        return true
+      }
+      if (typeof message === 'string' && message.includes('removeChild')) {
+        return true
+      }
+      if (originalWindowError) {
+        return originalWindowError(message, source, lineno, colno, error)
+      }
+      return false
     }
     
     const trySetAttributes = () => {
@@ -53,6 +73,8 @@ export function TawkChat() {
     return () => {
       // @ts-ignore
       console.error = originalConsoleError
+      // @ts-ignore
+      window.onerror = originalWindowError
     }
   }, [hasValidConfig, user])
 

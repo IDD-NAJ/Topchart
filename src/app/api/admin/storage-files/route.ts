@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseStorageEnv } from "@/lib/env";
 import { createClient } from "@supabase/supabase-js";
+import { inferSectionFromSlotKey } from "@/lib/homepage-media";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -152,9 +153,9 @@ export async function POST(request: Request) {
     // Insert into database
     const { sql } = await import("@/lib/db");
     const inserted = await sql`
-      INSERT INTO homepage_media (section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size)
-      VALUES (${section_key}, ${asset_type || 'image'}, ${storage_path}, ${publicUrlData.publicUrl}, ${alt_text || null}, ${priority}, ${is_active}, 'supabase', ${file_name || null}, ${mime_type || null}, ${file_size || null})
-      RETURNING id, section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size, created_at, updated_at
+      INSERT INTO homepage_media (section, slot_key, media_type, file_url, section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size)
+      VALUES (${inferSectionFromSlotKey(section_key)}, ${section_key}, ${asset_type || 'image'}, ${publicUrlData.publicUrl}, ${section_key}, ${asset_type || 'image'}, ${storage_path}, ${publicUrlData.publicUrl}, ${alt_text || null}, ${priority}, ${is_active}, 'supabase', ${file_name || null}, ${mime_type || null}, ${file_size || null})
+      RETURNING id, section, slot_key, media_type, file_url, section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size, created_at, updated_at
     `;
 
     return NextResponse.json({

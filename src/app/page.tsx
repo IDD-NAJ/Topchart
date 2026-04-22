@@ -368,8 +368,14 @@ function PrimaryLink({
 export default function HomePage() {
   const [networkLogos, setNetworkLogos] = useState<NetworkLogoConfig[]>(DEFAULT_NETWORK_LOGOS)
   const [developerImage, setDeveloperImage] = useState(DEFAULT_DEVELOPER_IMAGE)
-  const [heroVideo, setHeroVideo] = useState("/13046977_3840_2160_30fps.mp4")
-  const [scaleVideo, setScaleVideo] = useState("/7490425-uhd_3840_2160_25fps.mp4")
+  const [heroMedia, setHeroMedia] = useState<{ type: "image" | "video"; url: string }>({
+    type: "video",
+    url: "/IMG_7731.MP4",
+  })
+  const [scaleMedia, setScaleMedia] = useState<{ type: "image" | "video"; url: string }>({
+    type: "video",
+    url: "/IMG_7731.MP4",
+  })
 
   useEffect(() => {
     let active = true
@@ -383,12 +389,15 @@ export default function HomePage() {
         const imageMap = new Map<string, string>()
         const videoMap = new Map<string, string>()
         
-        for (const item of payload.media as Array<{ section_key?: string; public_url?: string; asset_type?: string }>) {
-          if (item?.section_key && item?.public_url) {
-            if (item?.asset_type === "image") {
-              imageMap.set(item.section_key, item.public_url)
-            } else if (item?.asset_type === "video") {
-              videoMap.set(item.section_key, item.public_url)
+        for (const item of payload.media as Array<{ slot_key?: string; section_key?: string; public_url?: string; file_url?: string; asset_type?: string; media_type?: string }>) {
+          const key = item.slot_key || item.section_key
+          const url = item.file_url || item.public_url
+          const type = item.media_type || item.asset_type
+          if (key && url) {
+            if (type === "image") {
+              imageMap.set(key, url)
+            } else if (type === "video") {
+              videoMap.set(key, url)
             }
           }
         }
@@ -401,13 +410,21 @@ export default function HomePage() {
         )
 
         setDeveloperImage(imageMap.get("developer_community_image") || DEFAULT_DEVELOPER_IMAGE)
-        setHeroVideo(videoMap.get("hero_background_video") || "/13046977_3840_2160_30fps.mp4")
-        setScaleVideo(videoMap.get("scale_background_video") || "/7490425-uhd_3840_2160_25fps.mp4")
+        if (videoMap.get("hero_background") || videoMap.get("hero_background_video")) {
+          setHeroMedia({ type: "video", url: videoMap.get("hero_background") || videoMap.get("hero_background_video")! })
+        } else if (imageMap.get("hero_background")) {
+          setHeroMedia({ type: "image", url: imageMap.get("hero_background")! })
+        }
+        if (videoMap.get("scale_background_video")) {
+          setScaleMedia({ type: "video", url: videoMap.get("scale_background_video")! })
+        } else if (imageMap.get("scale_background_video")) {
+          setScaleMedia({ type: "image", url: imageMap.get("scale_background_video")! })
+        }
       } catch {
         setNetworkLogos(DEFAULT_NETWORK_LOGOS)
         setDeveloperImage(DEFAULT_DEVELOPER_IMAGE)
-        setHeroVideo("/13046977_3840_2160_30fps.mp4")
-        setScaleVideo("/7490425-uhd_3840_2160_25fps.mp4")
+        setHeroMedia({ type: "video", url: "/IMG_7731.MP4" })
+        setScaleMedia({ type: "video", url: "/IMG_7731.MP4" })
       }
     }
 
@@ -425,15 +442,13 @@ export default function HomePage() {
         <section
           className="relative overflow-hidden px-4 pb-32 pt-20 sm:px-6 sm:pb-40 sm:pt-28 lg:pt-36 selection:bg-primary/30 selection:text-white flex min-h-[85vh] flex-col items-center justify-center bg-[#0d1627]"
         >
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 h-full w-full object-cover opacity-40"
-          >
-            <source src={heroVideo} type="video/mp4" />
-          </video>
+          {heroMedia.type === "video" ? (
+            <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover opacity-40" preload="metadata">
+              <source src={heroMedia.url} type="video/mp4" />
+            </video>
+          ) : (
+            <div className="absolute inset-0 h-full w-full bg-cover bg-center opacity-40" style={{ backgroundImage: `url(${heroMedia.url})` }} />
+          )}
           <div className="absolute inset-0 bg-gradient-to-b from-[#0d1627]/80 via-[#0d1627]/60 to-[#0d1627] pointer-events-none" />
           <ConnectionsGrid />
           
@@ -606,15 +621,13 @@ export default function HomePage() {
             </ScrollReveal>
             <ScrollReveal once={false} amount={0.22}>
               <div className="relative aspect-video overflow-hidden rounded-3xl bg-neutral-200/80 shadow-lg">
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="absolute inset-0 h-full w-full object-cover"
-                >
-                  <source src={scaleVideo} type="video/mp4" />
-                </video>
+                {scaleMedia.type === "video" ? (
+                  <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover" preload="metadata">
+                    <source src={scaleMedia.url} type="video/mp4" />
+                  </video>
+                ) : (
+                  <img src={scaleMedia.url} alt="Scale background" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                )}
               </div>
             </ScrollReveal>
           </div>
