@@ -149,7 +149,7 @@ type NetworkLogoConfig = {
 }
 
 const DEFAULT_NETWORK_LOGOS: NetworkLogoConfig[] = [
-  { key: "mtn_logo", name: "MTN", image: "/images/mtn-logo.svg", color: "bg-yellow-400" },
+  { key: "mtn_logo", name: "MTN", image: "/download.png", color: "bg-yellow-400" },
   { key: "telecel_logo", name: "Telecel", image: "/images/telecel-logo.svg", color: "bg-red-500" },
   { key: "airteltigo_logo", name: "AirtelTigo", image: "/images/airteltigo-logo.svg", color: "bg-red-600" },
 ]
