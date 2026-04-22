@@ -153,7 +153,12 @@ export function Header() {
               />
             )
           ) : (
-            <LogoVideo
+            <video
+              src="/Top (1).mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
               width={240}
               height={60}
               className="h-14 w-auto"
