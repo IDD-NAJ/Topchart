@@ -18,8 +18,8 @@ export interface UploadResult {
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
 
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
-const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg"];
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ACCEPTED_VIDEO_TYPES = ["video/mp4"];
 
 function sanitizeFileName(fileName: string): string {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -44,6 +44,7 @@ function detectMimeType(file: File): string {
 
 function validateFile(file: File): { valid: boolean; error?: string } {
   const mimeType = detectMimeType(file);
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
   const isImage = mimeType.startsWith("image/");
   const isVideo = mimeType.startsWith("video/");
 
@@ -59,11 +60,11 @@ function validateFile(file: File): { valid: boolean; error?: string } {
     return { valid: false, error: "Video size exceeds 50MB limit" };
   }
 
-  if (isImage && !ACCEPTED_IMAGE_TYPES.includes(mimeType)) {
+  if (isImage && (!ACCEPTED_IMAGE_TYPES.includes(mimeType) || !["jpg", "jpeg", "png", "webp"].includes(ext))) {
     return { valid: false, error: "Unsupported image format" };
   }
 
-  if (isVideo && !ACCEPTED_VIDEO_TYPES.includes(mimeType)) {
+  if (isVideo && (!ACCEPTED_VIDEO_TYPES.includes(mimeType) || ext !== "mp4")) {
     return { valid: false, error: "Unsupported video format" };
   }
 

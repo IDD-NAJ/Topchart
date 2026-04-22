@@ -1,21 +1,39 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { toLegacySectionKey } from "@/lib/homepage-media";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const media = await sql`
-      SELECT section_key, asset_type, public_url, alt_text, sort_order, is_active
-      FROM homepage_media
-      WHERE is_active = TRUE
-      ORDER BY sort_order ASC, created_at ASC
-    `;
+    const { searchParams } = new URL(request.url);
+    const section = searchParams.get("section");
+    const media = section
+      ? await sql`
+          SELECT id, section, slot_key, media_type, file_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size
+          FROM homepage_media
+          WHERE is_active = TRUE AND slot_key = ${section}
+          ORDER BY priority ASC, created_at ASC
+        `
+      : await sql`
+          SELECT id, section, slot_key, media_type, file_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size
+          FROM homepage_media
+          WHERE is_active = TRUE
+          ORDER BY priority ASC, created_at ASC
+        `;
+
+    const compatMedia = media.map((item) => ({
+      ...item,
+      section_key: toLegacySectionKey(item.slot_key),
+      asset_type: item.media_type,
+      public_url: item.file_url,
+      sort_order: item.priority,
+    }));
 
     return NextResponse.json(
-      { success: true, media: media || [] },
+      { success: true, media: compatMedia || [] },
       {
         status: 200,
         headers: {

@@ -13,7 +13,7 @@ const SECURITY_HEADERS = {
   "X-DNS-Prefetch-Control": "off",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "Content-Security-Policy":
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://embed.tawk.to https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.paystack.co https://embed.tawk.to wss://chat.tawk.to https://va.vercel-scripts.com; frame-src https://embed.tawk.to https://checkout.paystack.com;",
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://embed.tawk.to https://va.tawk.to https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.paystack.co https://embed.tawk.to https://va.tawk.to wss://chat.tawk.to https://va.vercel-scripts.com; frame-src https://embed.tawk.to https://va.tawk.to https://checkout.paystack.com;",
 };
 
 function applySecurityHeaders(response: NextResponse): NextResponse {

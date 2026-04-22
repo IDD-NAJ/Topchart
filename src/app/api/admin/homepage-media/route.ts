@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 import { uploadMedia, type UploadSource } from "@/lib/upload-handler";
-import { getSupabaseStorageEnv } from "@/lib/env";
+import { inferSectionFromSlotKey } from "@/lib/homepage-media";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,9 +24,9 @@ export async function GET() {
 
   try {
     const media = await sql`
-      SELECT id, section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size, created_at, updated_at
+      SELECT id, section, slot_key, media_type, file_url, section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size, created_at, updated_at
       FROM homepage_media
-      ORDER BY section_key ASC, priority ASC, created_at ASC
+      ORDER BY section ASC, slot_key ASC, priority ASC, created_at ASC
     `;
     const duration = Date.now() - startTime;
     console.log("[HOMEPAGE_MEDIA] GET completed", { requestId, count: media.length, duration });
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
 
     const uploadStartTime = Date.now();
     const uploaded = await Promise.race([
-      uploadMedia(file, sectionKey, storageSource),
+      uploadMedia(file, inferSectionFromSlotKey(sectionKey), storageSource),
       new Promise<never>((_, reject) => 
         setTimeout(() => reject(new Error("Upload timeout")), 60000)
       )
@@ -86,9 +86,9 @@ export async function POST(request: Request) {
     console.log("[UPLOAD] Storage upload completed", { requestId, duration: uploadDuration, size: file.size });
 
     const inserted = await sql`
-      INSERT INTO homepage_media (section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size)
-      VALUES (${sectionKey}, ${assetType}, ${uploaded.storagePath}, ${uploaded.publicUrl}, ${altText}, ${priority}, ${isActive}, ${uploaded.source}, ${uploaded.fileName}, ${uploaded.mimeType}, ${uploaded.fileSize})
-      RETURNING id, section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size, created_at, updated_at
+      INSERT INTO homepage_media (section, slot_key, media_type, file_url, section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size)
+      VALUES (${inferSectionFromSlotKey(sectionKey)}, ${sectionKey}, ${assetType}, ${uploaded.publicUrl}, ${sectionKey}, ${assetType}, ${uploaded.storagePath}, ${uploaded.publicUrl}, ${altText}, ${priority}, ${isActive}, ${uploaded.source}, ${uploaded.fileName}, ${uploaded.mimeType}, ${uploaded.fileSize})
+      RETURNING id, section, slot_key, media_type, file_url, section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size, created_at, updated_at
     `;
 
     const totalDuration = Date.now() - startTime;

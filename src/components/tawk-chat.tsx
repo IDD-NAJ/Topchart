@@ -61,30 +61,32 @@ export function TawkChat() {
   }
 
   return (
-    <TawkMessengerReact
-      ref={tawkRef}
-      propertyId={propertyId}
-      widgetId={widgetId}
-      onLoad={() => {}}
-      onStatusChange={() => {}}
-      onBeforeLoad={() => {}}
-      onChatMaximized={() => {}}
-      onChatMinimized={() => {}}
-      onChatHidden={() => {}}
-      onChatStarted={() => {}}
-      onChatEnded={() => {}}
-      onPrechatSubmit={() => {}}
-      onOfflineSubmit={() => {}}
-      onChatMessageVisitor={() => {}}
-      onChatMessageAgent={() => {}}
-      onChatMessageSystem={() => {}}
-      onAgentJoinChat={() => {}}
-      onAgentLeaveChat={() => {}}
-      onChatSatisfaction={() => {}}
-      onVisitorNameChanged={() => {}}
-      onFileUpload={() => {}}
-      onTagsUpdated={() => {}}
-      onUnreadCountChanged={() => {}}
-    />
+    <div key="tawk-chat-container">
+      <TawkMessengerReact
+        ref={tawkRef}
+        propertyId={propertyId}
+        widgetId={widgetId}
+        onLoad={() => {}}
+        onStatusChange={() => {}}
+        onBeforeLoad={() => {}}
+        onChatMaximized={() => {}}
+        onChatMinimized={() => {}}
+        onChatHidden={() => {}}
+        onChatStarted={() => {}}
+        onChatEnded={() => {}}
+        onPrechatSubmit={() => {}}
+        onOfflineSubmit={() => {}}
+        onChatMessageVisitor={() => {}}
+        onChatMessageAgent={() => {}}
+        onChatMessageSystem={() => {}}
+        onAgentJoinChat={() => {}}
+        onAgentLeaveChat={() => {}}
+        onChatSatisfaction={() => {}}
+        onVisitorNameChanged={() => {}}
+        onFileUpload={() => {}}
+        onTagsUpdated={() => {}}
+        onUnreadCountChanged={() => {}}
+      />
+    </div>
   )
 }

@@ -23,19 +23,20 @@ export async function PATCH(
   const sectionKey = typeof body.section_key === "string" ? body.section_key : null;
   const altText = typeof body.alt_text === "string" ? body.alt_text : null;
   const sortOrder = typeof body.sort_order === "number" ? body.sort_order : null;
+  const priority = typeof body.priority === "number" ? body.priority : sortOrder;
   const isActive = typeof body.is_active === "boolean" ? body.is_active : null;
 
   try {
     if (isActive === true) {
       const current = await sql`
-        SELECT section_key FROM homepage_media WHERE id = ${id} LIMIT 1
+        SELECT slot_key, section_key FROM homepage_media WHERE id = ${id} LIMIT 1
       `;
       if (current.length) {
-        const targetSection = sectionKey ?? current[0].section_key;
+        const targetSection = sectionKey ?? current[0].slot_key ?? current[0].section_key;
         await sql`
           UPDATE homepage_media
           SET is_active = FALSE, updated_at = NOW()
-          WHERE section_key = ${targetSection} AND id != ${id}
+          WHERE COALESCE(slot_key, section_key) = ${targetSection} AND id != ${id}
         `;
       }
     }
@@ -44,12 +45,13 @@ export async function PATCH(
       UPDATE homepage_media
       SET
         section_key = COALESCE(${sectionKey}, section_key),
+        slot_key    = COALESCE(${sectionKey}, slot_key),
         alt_text    = COALESCE(${altText},    alt_text),
-        sort_order  = COALESCE(${sortOrder},  sort_order),
+        priority    = COALESCE(${priority},  priority),
         is_active   = COALESCE(${isActive},   is_active),
         updated_at  = NOW()
       WHERE id = ${id}
-      RETURNING id, section_key, asset_type, storage_path, public_url, alt_text, sort_order, is_active, created_at, updated_at
+      RETURNING id, section_key, slot_key, asset_type, media_type, storage_path, public_url, file_url, alt_text, priority, is_active, created_at, updated_at
     `;
 
     if (!updated.length) {
