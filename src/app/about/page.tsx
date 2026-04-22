@@ -55,11 +55,17 @@ export default function AboutPage() {
   useEffect(() => {
     let active = true
 
+    const pickHeroItem = (items: Array<{ slot_key?: string; media_type?: string; asset_type?: string; file_url?: string; public_url?: string }>) =>
+      items.find((entry) => entry.slot_key === "about_hero_background") ||
+      items.find((entry) => entry.slot_key === "hero_background") ||
+      items.find((entry) => entry.slot_key === "hero_background_video") ||
+      null
+
     const loadHeroMedia = async () => {
       try {
-        const response = await fetch("/api/media?section=hero&slot_key=about_hero_background", { cache: "no-store" })
+        const response = await fetch("/api/media?section=hero", { cache: "no-store" })
         const payload = await response.json()
-        const item = Array.isArray(payload?.media) ? payload.media[0] : null
+        const item = Array.isArray(payload?.media) ? pickHeroItem(payload.media) : null
         if (!active || !payload?.success || !item) return
 
         const type = item.media_type || item.asset_type

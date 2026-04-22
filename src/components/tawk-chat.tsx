@@ -17,8 +17,27 @@ export function TawkChat() {
     propertyId !== "your-tawk-property-id" &&
     widgetId !== "your-tawk-widget-id"
   )
+  // #region agent log
+  const logClientDebug = (payload: Record<string, unknown>) => {
+    fetch("/api/debug-client-error", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).catch(() => {});
+  };
+  // #endregion
 
   useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7505/ingest/8f2aa6f2-5ac2-46a8-bc1c-0440fc874c90',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'920650'},body:JSON.stringify({sessionId:'920650',runId:'baseline3',hypothesisId:'H8',location:'src/components/tawk-chat.tsx:21',message:'tawk_effect_enter',data:{hasValidConfig:Boolean(hasValidConfig),hasUser:Boolean(user),propertyIdPresent:Boolean(propertyId),widgetIdPresent:Boolean(widgetId)},timestamp:Date.now()})}).catch(()=>{});
+    logClientDebug({
+      kind: "tawk_effect_enter",
+      hasValidConfig: Boolean(hasValidConfig),
+      hasUser: Boolean(user),
+      propertyIdPresent: Boolean(propertyId),
+      widgetIdPresent: Boolean(widgetId),
+    });
+    // #endregion
     if (!hasValidConfig || !user) return
     
     // Suppress Tawk console errors and DOM errors
@@ -40,6 +59,16 @@ export function TawkChat() {
     
     // @ts-ignore
     window.onerror = (message, source, lineno, colno, error) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7505/ingest/8f2aa6f2-5ac2-46a8-bc1c-0440fc874c90',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'920650'},body:JSON.stringify({sessionId:'920650',runId:'baseline3',hypothesisId:'H8',location:'src/components/tawk-chat.tsx:42',message:'tawk_window_onerror_intercept',data:{message:String(message||''),source:String(source||''),lineno:Number(lineno||0),colno:Number(colno||0)},timestamp:Date.now()})}).catch(()=>{});
+      logClientDebug({
+        kind: "tawk_window_onerror_intercept",
+        message: String(message || ""),
+        source: String(source || ""),
+        lineno: Number(lineno || 0),
+        colno: Number(colno || 0),
+      });
+      // #endregion
       if (typeof message === 'string' && message.includes('NotFoundError')) {
         return true
       }
@@ -78,6 +107,18 @@ export function TawkChat() {
     }
   }, [hasValidConfig, user])
 
+  useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7505/ingest/8f2aa6f2-5ac2-46a8-bc1c-0440fc874c90',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'920650'},body:JSON.stringify({sessionId:'920650',runId:'baseline4',hypothesisId:'H9',location:'src/components/tawk-chat.tsx:82',message:'tawk_render_state',data:{hasValidConfig:Boolean(hasValidConfig),hasUser:Boolean(user),willRenderWidget:Boolean(hasValidConfig)},timestamp:Date.now()})}).catch(()=>{});
+    logClientDebug({
+      kind: "tawk_render_state",
+      hasValidConfig: Boolean(hasValidConfig),
+      hasUser: Boolean(user),
+      willRenderWidget: Boolean(hasValidConfig),
+    });
+    // #endregion
+  }, [hasValidConfig, user])
+
   if (!hasValidConfig) {
     return null
   }
@@ -88,7 +129,15 @@ export function TawkChat() {
         ref={tawkRef}
         propertyId={propertyId}
         widgetId={widgetId}
-        onLoad={() => {}}
+        onLoad={() => {
+          // #region agent log
+          fetch('http://127.0.0.1:7505/ingest/8f2aa6f2-5ac2-46a8-bc1c-0440fc874c90',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'920650'},body:JSON.stringify({sessionId:'920650',runId:'baseline4',hypothesisId:'H9',location:'src/components/tawk-chat.tsx:97',message:'tawk_on_load',data:{hasUser:Boolean(user)},timestamp:Date.now()})}).catch(()=>{});
+          logClientDebug({
+            kind: "tawk_on_load",
+            hasUser: Boolean(user),
+          });
+          // #endregion
+        }}
         onStatusChange={() => {}}
         onBeforeLoad={() => {}}
         onChatMaximized={() => {}}

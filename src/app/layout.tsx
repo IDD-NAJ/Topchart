@@ -141,7 +141,63 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
+                try {
+                  fetch('/api/debug-client-error', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      kind: 'client_boot',
+                      href: String(window.location.href || ''),
+                      userAgent: String(navigator.userAgent || ''),
+                    })
+                  }).catch(() => {});
+                } catch (_) {}
                 const originalError = window.onerror;
+                const captureErrorEvent = (event) => {
+                  try {
+                    const message = String(event?.message || '');
+                    const filename = String(event?.filename || '');
+                    const eventType = String(event?.type || '');
+                    const targetTag = String(event?.target?.tagName || '');
+                    const targetSrc = String(event?.target?.currentSrc || event?.target?.src || event?.target?.href || '');
+                    const hasUsefulSignal =
+                      Boolean(message) ||
+                      message.includes('NotFoundError') ||
+                      message.includes('removeChild') ||
+                      Boolean(targetSrc);
+                    if (!hasUsefulSignal) return;
+                    fetch('/api/debug-client-error', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        kind: 'error-event-listener',
+                        message,
+                        source: filename,
+                        eventType,
+                        targetTag,
+                        targetSrc,
+                        lineno: Number(event?.lineno || 0),
+                        colno: Number(event?.colno || 0),
+                      })
+                    }).catch(() => {});
+                  } catch (_) {}
+                };
+                window.addEventListener('error', captureErrorEvent, true);
+                window.addEventListener('unhandledrejection', function(event) {
+                  try {
+                    const reason = event && 'reason' in event ? event.reason : undefined;
+                    const reasonMessage = typeof reason === 'object' && reason && 'message' in reason ? String(reason.message) : String(reason || '');
+                    if (!reasonMessage) return;
+                    fetch('/api/debug-client-error', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        kind: 'unhandledrejection',
+                        message: reasonMessage,
+                      })
+                    }).catch(() => {});
+                  } catch (_) {}
+                });
                 window.onerror = function(message, source, lineno, colno, error) {
                   try {
                     fetch('/api/debug-client-error', {
@@ -167,6 +223,9 @@ export default function RootLayout({
                   }
                   return false;
                 };
+                window.addEventListener('beforeunload', () => {
+                  window.removeEventListener('error', captureErrorEvent, true);
+                });
               })();
             `,
           }}
