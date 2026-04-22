@@ -10,7 +10,7 @@ const client = new Client({
 
 async function run() {
   await client.connect();
-  const res = await client.query("SELECT column_name, is_nullable, data_type FROM information_schema.columns WHERE table_name = 'users'");
+  const res = await client.query("SELECT column_name, is_nullable, data_type FROM information_schema.columns WHERE table_name = 'homepage_media' ORDER BY ordinal_position");
   console.log(JSON.stringify(res.rows, null, 2));
   await client.end();
 }

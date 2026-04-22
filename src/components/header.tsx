@@ -96,6 +96,15 @@ const topLinks = [
 ] as const
 
 export function Header() {
+  // #region agent log
+  const debugLog = (runId: string, hypothesisId: string, location: string, message: string, data: Record<string, unknown>) =>
+    fetch("http://127.0.0.1:7505/ingest/8f2aa6f2-5ac2-46a8-bc1c-0440fc874c90", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "920650" },
+      body: JSON.stringify({ sessionId: "920650", runId, hypothesisId, location, message, data, timestamp: Date.now() }),
+    }).catch(() => {});
+  // #endregion
+
   const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [servicesOpen, setServicesOpen] = useState(false)
@@ -106,9 +115,22 @@ export function Header() {
       try {
         const response = await fetch("/api/media?section=header&slot_key=header_logo", { cache: "no-store" })
         const payload = await response.json()
+        // #region agent log
+        debugLog("baseline", "H4", "src/components/header.tsx:116", "header_media_api_response", {
+          ok: response.ok,
+          success: Boolean(payload?.success),
+          mediaCount: Array.isArray(payload?.media) ? payload.media.length : -1,
+        });
+        // #endregion
         if (payload?.success && Array.isArray(payload.media)) {
           const headerLogo = payload.media.find((m: HomepageMediaItem) => m.is_active)
           if (headerLogo) {
+            // #region agent log
+            debugLog("baseline", "H4", "src/components/header.tsx:125", "header_media_selected", {
+              type: headerLogo.media_type,
+              url: headerLogo.file_url,
+            });
+            // #endregion
             setHeaderMedia(headerLogo)
           }
         }
@@ -138,7 +160,12 @@ export function Header() {
                 width={160}
                 height={40}
                 className="h-10 w-auto"
-                onError={() => setHeaderMedia(null)}
+                onError={() => {
+                  // #region agent log
+                  debugLog("baseline", "H4", "src/components/header.tsx:161", "header_video_on_error", { url: headerMedia.file_url });
+                  // #endregion
+                  setHeaderMedia(null);
+                }}
               />
             ) : (
               <img
@@ -147,7 +174,12 @@ export function Header() {
                 width={160}
                 height={40}
                 className="h-10 w-auto"
-                onError={() => setHeaderMedia(null)}
+                onError={() => {
+                  // #region agent log
+                  debugLog("baseline", "H4", "src/components/header.tsx:174", "header_image_on_error", { url: headerMedia.file_url });
+                  // #endregion
+                  setHeaderMedia(null);
+                }}
               />
             )
           ) : (

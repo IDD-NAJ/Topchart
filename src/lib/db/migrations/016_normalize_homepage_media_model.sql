@@ -34,8 +34,8 @@ ALTER TABLE homepage_media
   ADD COLUMN IF NOT EXISTS file_size INTEGER;
 
 UPDATE homepage_media
-SET priority = COALESCE(priority, sort_order, 0)
-WHERE priority IS NULL OR priority <> COALESCE(priority, sort_order, 0);
+SET priority = COALESCE(priority, 0)
+WHERE priority IS NULL;
 
 UPDATE homepage_media
 SET

@@ -455,33 +455,20 @@ export default function HomePage() {
           {/* Bottom fade blending into the next white section */}
           <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-white to-transparent pointer-events-none z-10" />
 
-          <div className="relative z-[2] mx-auto flex max-w-6xl flex-col items-center text-center">
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-500/10 px-4 py-1.5 backdrop-blur-sm"
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-400"></span>
-              </span>
-              <span className="text-xs font-medium text-sky-200">Ghana's #1 Digital Platform</span>
-            </motion.div>
+          <div className="relative z-[2] mx-auto flex max-w-4xl flex-col items-center text-center">
 
             <motion.h1
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-8 font-serif text-balance text-5xl leading-[1.1] tracking-tight text-white sm:text-6xl lg:text-[6rem]"
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="font-serif text-balance text-5xl leading-[1.1] tracking-tight text-white sm:text-6xl lg:text-[5.5rem]"
             >
-              Complete <br className="hidden md:block" />
+             Complete <br className="hidden md:block" />
               <motion.span
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                className="text-transparent bg-clip-text bg-gradient-to-r from-sky-200 to-blue-400 inline-block"
+                transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className="text-sky-200 inline-block"
               >
                 Digital Services
               </motion.span>{" "}
@@ -491,16 +478,16 @@ export default function HomePage() {
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
               className="mt-6 max-w-2xl text-[15px] sm:text-base leading-relaxed text-[#8a9ba8]"
             >
-              Airtime, data bundles, verification numbers, exam results, and a full reseller programme — all in one secure platform.
+              Airtime, dirtime, data bundles, verification numbers, exam results, and a full reseller programme — all in one secure platform.
             </motion.p>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
             >
               <motion.div
@@ -510,7 +497,7 @@ export default function HomePage() {
               >
                 <Link
                   href="/register"
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-gradient-to-r from-sky-400 to-blue-500 px-8 text-sm font-semibold text-white transition-all hover:from-sky-500 hover:to-blue-600 shadow-xl shadow-sky-500/25 group"
+                  className="inline-flex h-12 items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-[#0d1627] transition-all hover:bg-neutral-100 shadow-xl group"
                 >
                   Get started free
                   <motion.span
@@ -529,7 +516,7 @@ export default function HomePage() {
               >
                 <Link
                   href="/login"
-                  className="inline-flex h-12 items-center justify-center rounded-full border border-white/20 bg-white/5 px-8 text-sm font-semibold text-white transition-all hover:bg-white/10 backdrop-blur-sm"
+                  className="inline-flex h-12 items-center justify-center rounded-full border border-white/20 bg-transparent px-8 text-sm font-semibold text-white transition-all hover:bg-white/10"
                 >
                   Sign in to dashboard
                 </Link>
@@ -537,48 +524,17 @@ export default function HomePage() {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-4 md:gap-6"
-            >
-              {[
-                { label: "Buy Data", href: "/dashboard/data", icon: "📱" },
-                { label: "Top Up Airtime", href: "/dashboard/airtime", icon: "📞" },
-                { label: "Verify Numbers", href: "/dashboard/verification", icon: "✓" },
-                { label: "Check Results", href: "/dashboard/results", icon: "📋" },
-              ].map((action, index) => (
-                <motion.a
-                  key={action.label}
-                  href={action.href}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.8 + index * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  whileHover={{ scale: 1.05, y: -4 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="group relative flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:bg-white/10 hover:border-white/20"
-                >
-                  <span className="text-3xl">{action.icon}</span>
-                  <span className="text-sm font-medium text-white/90">{action.label}</span>
-                  <motion.div
-                    className="absolute inset-0 rounded-2xl bg-gradient-to-r from-sky-400/0 via-sky-400/10 to-sky-400/0 opacity-0 group-hover:opacity-100 transition-opacity"
-                  />
-                </motion.a>
-              ))}
-            </motion.div>
-
-            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-12 flex flex-wrap items-center justify-center gap-4 sm:gap-6"
+              transition={{ duration: 0.6, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-16 flex flex-wrap items-center justify-center gap-4 sm:gap-6"
             >
               {networkLogos.map((network, index) => (
                 <motion.div
                   key={network.name}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, delay: 1 + index * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ duration: 0.4, delay: 0.7 + index * 0.1, ease: [0.16, 1, 0.3, 1] }}
                   whileHover={{ scale: 1.05 }}
                   className="relative flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-sm"
                 >

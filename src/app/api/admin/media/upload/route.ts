@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { sql } from "@/lib/db";
 import { uploadMedia, type UploadSource } from "@/lib/upload-handler";
-import { inferSectionFromSlotKey, isHomepageSection } from "@/lib/homepage-media";
+import { inferSectionFromSlotKey, isHomepageSection, isValidSlotKey, allowsMultipleForSlot } from "@/lib/homepage-media";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,16 +60,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "media_type must be image or video" }, { status: 400 });
     }
     const section = isHomepageSection(sectionInput) ? sectionInput : inferSectionFromSlotKey(slotKey);
+    
+    if (!isValidSlotKey(section, slotKey)) {
+      return NextResponse.json({ success: false, error: `Invalid slot_key "${slotKey}" for section "${section}"` }, { status: 400 });
+    }
 
     const uploaded = await uploadMedia(file, section, storageSource);
+
+    const status = isActive ? "active" : "inactive";
+
+    if (!allowsMultipleForSlot(section, slotKey) && isActive) {
+      await sql`
+        UPDATE homepage_media
+        SET status = 'inactive'
+        WHERE section = ${section} AND slot_key = ${slotKey} AND status = 'active'
+      `;
+    }
 
     const inserted = await sql`
       INSERT INTO homepage_media (
         section, slot_key, media_type, file_url, storage_source, file_name, mime_type, file_size,
-        storage_path, public_url, section_key, asset_type, alt_text, priority, is_active
+        storage_path, public_url, section_key, asset_type, alt_text, priority, status, version
       ) VALUES (
         ${section}, ${slotKey}, ${mediaType}, ${uploaded.publicUrl}, ${uploaded.source}, ${uploaded.fileName}, ${uploaded.mimeType}, ${uploaded.fileSize},
-        ${uploaded.storagePath}, ${uploaded.publicUrl}, ${slotKey}, ${mediaType}, ${altText}, ${Number.isFinite(priority) ? priority : 0}, ${isActive}
+        ${uploaded.storagePath}, ${uploaded.publicUrl}, ${slotKey}, ${mediaType}, ${altText}, ${Number.isFinite(priority) ? priority : 0}, ${status}, 1
       )
       RETURNING *
     `;

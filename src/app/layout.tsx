@@ -144,6 +144,9 @@ export default function RootLayout({
                 const originalError = window.onerror;
                 window.onerror = function(message, source, lineno, colno, error) {
                   if (typeof message === 'string' && (message.includes('NotFoundError') || message.includes('removeChild'))) {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7505/ingest/8f2aa6f2-5ac2-46a8-bc1c-0440fc874c90',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'920650'},body:JSON.stringify({sessionId:'920650',runId:'baseline',hypothesisId:'H5',location:'src/app/layout.tsx:146',message:'window_onerror_suppressed',data:{message:String(message),source:String(source||''),lineno:Number(lineno||0),colno:Number(colno||0)},timestamp:Date.now()})}).catch(()=>{});
+                    // #endregion
                     return true;
                   }
                   if (originalError) {
