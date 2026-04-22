@@ -259,7 +259,11 @@ export default function DashboardPage() {
         })
         setLastUpdated(new Date())
       } else {
-        setError(json?.error || `Dashboard API error: ${dashRes.status}`)
+        const errorMsg = json?.error || `Dashboard API error: ${dashRes.status}`
+        setError(errorMsg)
+        if (dashRes.status !== 503) {
+          toast.error(errorMsg)
+        }
       }
       
       if (!refRes.ok) {
@@ -274,6 +278,9 @@ export default function DashboardPage() {
           if (errJson?.error) errorMessage = errJson.error;
         } catch { /* ignore */ }
         setReferralError(errorMessage);
+        if (refRes.status !== 503) {
+          toast.error(errorMessage);
+        }
       } else {
         const refJson = await refRes.json()
         if (refJson?.success && refJson?.data) {
@@ -289,8 +296,10 @@ export default function DashboardPage() {
           setError("Request timed out. Please try again.")
         } else if (err.message.includes("Failed to fetch")) {
           setError("Network error. Check your connection and try again.")
+          toast.error("Network error. Please check your connection.")
         } else {
           setError(err.message)
+          toast.error(err.message)
         }
       } else {
         setError("An unexpected error occurred. Please try again.")
@@ -384,37 +393,6 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* Error Summary */}
-        {(error || referralError) && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Card className="border-destructive/50 bg-destructive/10">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center text-destructive text-base">
-                  <AlertCircle className="w-5 h-5 mr-2" />
-                  Data Loading Errors
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {error && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Dashboard: {error}</span>
-                    <Button size="sm" variant="outline" onClick={loadDashboardData}>Retry</Button>
-                  </div>
-                )}
-                {referralError && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Referrals: {referralError}</span>
-                    <Button size="sm" variant="outline" onClick={loadDashboardData}>Retry</Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
 
         {/* Financial Overview - Detail Section */}
         <motion.div 

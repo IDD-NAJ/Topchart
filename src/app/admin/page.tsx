@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -288,11 +289,14 @@ export default function AdminDashboard() {
           setUsersError(result.error || "Failed to load users")
         }
       } else {
-        setUsersError(`HTTP error: ${response.status}`)
+        const errorMsg = `HTTP error: ${response.status}`
+        setUsersError(errorMsg)
+        if (response.status !== 503) toast.error(errorMsg)
       }
     } catch (error) {
       console.error('Failed to load users:', error)
-      setUsersError("Network error. Please try again.")
+      setUsersError("Network error")
+      toast.error("Network error while loading users")
     }
   }
 
@@ -320,11 +324,14 @@ export default function AdminDashboard() {
           setStatsError(result.error || "Failed to load stats")
         }
       } else {
-        setStatsError(`HTTP error: ${response.status}`)
+        const errorMsg = `HTTP error: ${response.status}`
+        setStatsError(errorMsg)
+        if (response.status !== 503) toast.error(errorMsg)
       }
     } catch (error) {
       console.error('Failed to load stats:', error)
-      setStatsError("Network error. Please try again.")
+      setStatsError("Network error")
+      toast.error("Network error while loading stats")
     }
   }
 
@@ -344,11 +351,14 @@ export default function AdminDashboard() {
           setPurchasesError(result.error || "Failed to load purchases")
         }
       } else {
-        setPurchasesError(`HTTP error: ${response.status}`)
+        const errorMsg = `HTTP error: ${response.status}`
+        setPurchasesError(errorMsg)
+        if (response.status !== 503) toast.error(errorMsg)
       }
     } catch (error) {
       console.error('Failed to load pending purchases:', error)
-      setPurchasesError("Network error. Please try again.")
+      setPurchasesError("Network error")
+      toast.error("Network error while loading purchases")
     }
   }
 
@@ -458,37 +468,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Error Summary */}
-      {(usersError || statsError || purchasesError) && (
-        <Card className="border-destructive/50 bg-destructive/10">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-destructive text-base">
-              <AlertCircle className="w-5 h-5 mr-2" />
-              Data Loading Errors
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {usersError && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Users: {usersError}</span>
-                <Button size="sm" variant="outline" onClick={() => loadUsers(searchTerm)}>Retry</Button>
-              </div>
-            )}
-            {statsError && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Stats: {statsError}</span>
-                <Button size="sm" variant="outline" onClick={loadStats}>Retry</Button>
-              </div>
-            )}
-            {purchasesError && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Purchases: {purchasesError}</span>
-                <Button size="sm" variant="outline" onClick={loadPendingPurchases}>Retry</Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
       {/* Pending Purchases Alert */}
       {pendingPurchases.length > 0 && (
         <Card className="border-amber-500/50 bg-amber-500/10">
