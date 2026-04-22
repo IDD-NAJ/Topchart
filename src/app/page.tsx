@@ -374,8 +374,8 @@ export default function HomePage() {
     url: "/7490425-uhd_3840_2160_25fps.mp4",
   })
   const [scaleMedia, setScaleMedia] = useState<{ type: "image" | "video"; url: string }>({
-    type: "image",
-    url: "/images/topchart-way.jpg",
+    type: "video",
+    url: "/istockphoto-1438853103-640_adpp_is.mp4",
   })
   const [logoErrorKeys, setLogoErrorKeys] = useState<Record<string, boolean>>({})
   const { data: mediaData, loading: mediaLoading } = useMedia()
@@ -619,7 +619,7 @@ export default function HomePage() {
                     playsInline
                     className="absolute inset-0 h-full w-full object-cover"
                     preload="metadata"
-                    onError={() => setScaleMedia({ type: "image", url: "/images/topchart-way.jpg" })}
+                    onError={() => setScaleMedia({ type: "video", url: "/istockphoto-1438853103-640_adpp_is.mp4" })}
                   >
                     <source src={scaleMedia.url} type="video/mp4" />
                   </video>
