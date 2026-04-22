@@ -375,6 +375,9 @@ export default function DataPage() {
                           const matchedNetwork = networks.find((n) => n.id === recipient.networkId)
                           if (matchedNetwork) setSelectedNetwork(matchedNetwork)
                         }}
+                        onRemove={(recipient) => {
+                          setRecentRecipients(prev => prev.filter(r => r.id !== recipient.id))
+                        }}
                       />
                     </div>
                   )}
