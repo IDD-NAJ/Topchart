@@ -232,9 +232,9 @@ async function datamartRequest<T>(
     endpoint,
     {
       ...fetchOptions,
-      timeoutMs: timeoutMs ?? 15000,
-      retries: retries ?? 2,
-      retryDelayMs: retryDelayMs ?? 800,
+      timeoutMs: timeoutMs ?? 30000,
+      retries: retries ?? 3,
+      retryDelayMs: retryDelayMs ?? 1000,
       headers: {
         "X-API-Key": config.apiKey,
         "Content-Type": "application/json",
