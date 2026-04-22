@@ -32,8 +32,12 @@ type HomepageMediaRecord = {
   storage_path: string;
   public_url: string;
   alt_text: string | null;
-  sort_order: number;
+  priority: number;
   is_active: boolean;
+  storage_source: "local" | "supabase" | null;
+  file_name: string | null;
+  mime_type: string | null;
+  file_size: number | null;
   created_at: string;
 };
 
@@ -240,6 +244,16 @@ function MediaCard({
           {item.alt_text && (
             <p className="text-xs text-muted-foreground truncate">{item.alt_text}</p>
           )}
+          <div className="flex items-center gap-2 mt-1">
+            {item.storage_source && (
+              <Badge variant="outline" className="text-[10px] h-5 px-1">
+                {item.storage_source}
+              </Badge>
+            )}
+            {item.file_size && (
+              <span className="text-[10px] text-muted-foreground">{humanSize(item.file_size)}</span>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-2">
@@ -296,6 +310,8 @@ export default function AdminHomepageMediaPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [sectionKey, setSectionKey] = useState(SECTION_OPTIONS[0].value);
   const [altText, setAltText] = useState("");
+  const [storageSource, setStorageSource] = useState<"local" | "supabase">("supabase");
+  const [priority, setPriority] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [filterSection, setFilterSection] = useState<string>("all");
 
@@ -353,7 +369,8 @@ export default function AdminHomepageMediaPage() {
       formData.append("section_key", sectionKey);
       formData.append("asset_type", detectAssetType(selectedFile));
       formData.append("alt_text", altText);
-      formData.append("sort_order", "0");
+      formData.append("priority", String(priority));
+      formData.append("storage_source", storageSource);
       formData.append("is_active", "true");
 
       const res = await fetch("/api/admin/homepage-media", {
@@ -367,6 +384,7 @@ export default function AdminHomepageMediaPage() {
       toast.success("Media uploaded and set as active");
       clearFile();
       setAltText("");
+      setPriority(0);
       await loadMedia();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
@@ -514,11 +532,32 @@ export default function AdminHomepageMediaPage() {
                   </select>
                 </div>
                 <div className="space-y-2">
+                  <Label>Storage Source</Label>
+                  <select
+                    value={storageSource}
+                    onChange={(e) => setStorageSource(e.target.value as "local" | "supabase")}
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="supabase">Supabase Storage</option>
+                    <option value="local">Local Storage</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
                   <Label>Alt text / description</Label>
                   <Input
                     value={altText}
                     onChange={(e) => setAltText(e.target.value)}
                     placeholder="e.g. MTN logo for hero section"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Priority (lower = first)</Label>
+                  <Input
+                    type="number"
+                    value={priority}
+                    onChange={(e) => setPriority(Number(e.target.value))}
+                    placeholder="0"
+                    min="0"
                   />
                 </div>
               </div>
@@ -670,7 +709,7 @@ function StorageFileSelector({
           storage_path: selectedFile.path,
           asset_type: selectedFile.type,
           alt_text: altText || selectedFile.name,
-          sort_order: 0,
+          priority: 0,
           is_active: true,
         }),
       });

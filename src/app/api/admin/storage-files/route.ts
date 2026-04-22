@@ -129,7 +129,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { section_key, storage_path, asset_type, alt_text, sort_order = 0, is_active = true } = body;
+    const { section_key, storage_path, asset_type, alt_text, priority = 0, is_active = true, file_name, mime_type, file_size } = body;
 
     if (!section_key || !storage_path) {
       return NextResponse.json({
@@ -152,9 +152,9 @@ export async function POST(request: Request) {
     // Insert into database
     const { sql } = await import("@/lib/db");
     const inserted = await sql`
-      INSERT INTO homepage_media (section_key, asset_type, storage_path, public_url, alt_text, sort_order, is_active)
-      VALUES (${section_key}, ${asset_type || 'image'}, ${storage_path}, ${publicUrlData.publicUrl}, ${alt_text || null}, ${sort_order}, ${is_active})
-      RETURNING id, section_key, asset_type, storage_path, public_url, alt_text, sort_order, is_active, created_at, updated_at
+      INSERT INTO homepage_media (section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size)
+      VALUES (${section_key}, ${asset_type || 'image'}, ${storage_path}, ${publicUrlData.publicUrl}, ${alt_text || null}, ${priority}, ${is_active}, 'supabase', ${file_name || null}, ${mime_type || null}, ${file_size || null})
+      RETURNING id, section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size, created_at, updated_at
     `;
 
     return NextResponse.json({
