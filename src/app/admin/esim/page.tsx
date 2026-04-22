@@ -117,32 +117,6 @@ export default function ESIMAdminPage() {
         </CardContent>
       </Card>
 
-      {/* Quick Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Current Phone Plans Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="text-2xl font-bold text-primary">₵120</p>
-              <p className="text-sm text-muted-foreground">US Basic</p>
-              <p className="text-xs text-muted-foreground">100 min / 100 SMS</p>
-            </div>
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="text-2xl font-bold text-primary">₵200</p>
-              <p className="text-sm text-muted-foreground">US Premium</p>
-              <p className="text-xs text-muted-foreground">500 min / 500 SMS</p>
-              <Badge className="mt-1 bg-amber-500 text-[10px]">Popular</Badge>
-            </div>
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="text-2xl font-bold text-primary">₵350</p>
-              <p className="text-sm text-muted-foreground">US Business</p>
-              <p className="text-xs text-muted-foreground">999 min / 999 SMS</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

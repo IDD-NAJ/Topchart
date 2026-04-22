@@ -70,30 +70,30 @@ CREATE INDEX idx_esim_data_packages_region ON esim_data_packages(region);
 CREATE INDEX idx_gift_card_products_active ON gift_card_products(is_active);
 CREATE INDEX idx_gift_card_products_category ON gift_card_products(category);
 
--- Insert seed data for eSIM phone plans (matching current hardcoded values)
+-- Insert seed data for eSIM phone plans (matching current hardcoded values) - DEACTIVATED
 INSERT INTO esim_phone_plans (id, name, description, price, minutes, sms, validity_days, features, is_active, popular, sort_order) VALUES
-('us-basic', 'US Basic', 'Perfect for occasional calls and messages', 120, 100, 100, 30, '["US phone number", "Call forwarding", "SMS receive", "30-day validity"]', true, false, 1),
-('us-premium', 'US Premium', 'Most popular choice for regular usage', 200, 500, 500, 30, '["US phone number", "Unlimited incoming SMS", "Call forwarding", "Voicemail", "30-day validity"]', true, true, 2),
-('us-business', 'US Business', 'Heavy usage with extended validity', 350, 999, 999, 90, '["US phone number", "Unlimited SMS & calls", "Call forwarding", "Voicemail", "Multi-device support", "90-day validity"]', true, false, 3)
-ON CONFLICT (id) DO NOTHING;
+('us-basic', 'US Basic', 'Perfect for occasional calls and messages', 120, 100, 100, 30, '["US phone number", "Call forwarding", "SMS receive", "30-day validity"]', false, false, 1),
+('us-premium', 'US Premium', 'Most popular choice for regular usage', 200, 500, 500, 30, '["US phone number", "Unlimited incoming SMS", "Call forwarding", "Voicemail", "30-day validity"]', false, true, 2),
+('us-business', 'US Business', 'Heavy usage with extended validity', 350, 999, 999, 90, '["US phone number", "Unlimited SMS & calls", "Call forwarding", "Voicemail", "Multi-device support", "90-day validity"]', false, false, 3)
+ON CONFLICT (id) DO UPDATE SET is_active = EXCLUDED.is_active;
 
--- Insert seed data for eSIM data packages
+-- Insert seed data for eSIM data packages - DEACTIVATED
 INSERT INTO esim_data_packages (id, country, country_code, flag, data_allowance, validity, price, network, speed, region, is_active, sort_order) VALUES
-('gh-1gb-7d', '', 'GH', '🇬🇭', '1 GB', '7 Days', 15, 'MTN / Telecel', '4G/LTE', 'africa', true, 1),
-('gh-3gb-30d', '', 'GH', '🇬🇭', '3 GB', '30 Days', 35, 'MTN / Telecel', '4G/LTE', 'africa', true, 2),
-('gh-5gb-30d', '', 'GH', '🇬🇭', '5 GB', '30 Days', 55, 'MTN / Telecel', '4G/LTE', 'africa', true, 3),
-('ng-2gb-7d', 'Nigeria', 'NG', '🇳🇬', '2 GB', '7 Days', 20, 'MTN / Airtel', '4G/LTE', 'africa', true, 4),
-('ng-5gb-30d', 'Nigeria', 'NG', '🇳🇬', '5 GB', '30 Days', 50, 'MTN / Airtel', '4G/LTE', 'africa', true, 5),
-('ke-3gb-30d', 'Kenya', 'KE', '🇰🇪', '3 GB', '30 Days', 30, 'Safaricom', '4G/LTE', 'africa', true, 6),
-('za-2gb-30d', 'South Africa', 'ZA', '🇿🇦', '2 GB', '30 Days', 30, 'Vodacom / MTN', '4G/LTE', 'africa', true, 7),
-('uk-1gb-7d', 'United Kingdom', 'GB', '🇬🇧', '1 GB', '7 Days', 25, 'EE / Three', '5G/4G', 'europe', true, 8),
-('uk-5gb-30d', 'United Kingdom', 'GB', '🇬🇧', '5 GB', '30 Days', 65, 'EE / Three', '5G/4G', 'europe', true, 9),
-('us-3gb-7d', 'United States', 'US', '🇺🇸', '3 GB', '7 Days', 30, 'T-Mobile / AT&T', '5G/4G', 'americas', true, 10),
-('us-10gb-30d', 'United States', 'US', '🇺🇸', '10 GB', '30 Days', 80, 'T-Mobile / AT&T', '5G/4G', 'americas', true, 11),
-('ae-2gb-7d', 'UAE', 'AE', '🇦🇪', '2 GB', '7 Days', 35, 'Etisalat / du', '5G/4G', 'middle_east', true, 12),
-('ae-5gb-30d', 'UAE', 'AE', '🇦🇪', '5 GB', '30 Days', 75, 'Etisalat / du', '5G/4G', 'middle_east', true, 13),
-('in-3gb-30d', 'India', 'IN', '🇮🇳', '3 GB', '30 Days', 20, 'Jio / Airtel', '4G/LTE', 'asia', true, 14)
-ON CONFLICT (id) DO NOTHING;
+('gh-1gb-7d', '', 'GH', '🇬🇭', '1 GB', '7 Days', 15, 'MTN / Telecel', '4G/LTE', 'africa', false, 1),
+('gh-3gb-30d', '', 'GH', '🇬🇭', '3 GB', '30 Days', 35, 'MTN / Telecel', '4G/LTE', 'africa', false, 2),
+('gh-5gb-30d', '', 'GH', '🇬🇭', '5 GB', '30 Days', 55, 'MTN / Telecel', '4G/LTE', 'africa', false, 3),
+('ng-2gb-7d', 'Nigeria', 'NG', '🇳🇬', '2 GB', '7 Days', 20, 'MTN / Airtel', '4G/LTE', 'africa', false, 4),
+('ng-5gb-30d', 'Nigeria', 'NG', '🇳🇬', '5 GB', '30 Days', 50, 'MTN / Airtel', '4G/LTE', 'africa', false, 5),
+('ke-3gb-30d', 'Kenya', 'KE', '🇰🇪', '3 GB', '30 Days', 30, 'Safaricom', '4G/LTE', 'africa', false, 6),
+('za-2gb-30d', 'South Africa', 'ZA', '🇿🇦', '2 GB', '30 Days', 30, 'Vodacom / MTN', '4G/LTE', 'africa', false, 7),
+('uk-1gb-7d', 'United Kingdom', 'GB', '🇬🇧', '1 GB', '7 Days', 25, 'EE / Three', '5G/4G', 'europe', false, 8),
+('uk-5gb-30d', 'United Kingdom', 'GB', '🇬🇧', '5 GB', '30 Days', 65, 'EE / Three', '5G/4G', 'europe', false, 9),
+('us-3gb-7d', 'United States', 'US', '🇺🇸', '3 GB', '7 Days', 30, 'T-Mobile / AT&T', '5G/4G', 'americas', false, 10),
+('us-10gb-30d', 'United States', 'US', '🇺🇸', '10 GB', '30 Days', 80, 'T-Mobile / AT&T', '5G/4G', 'americas', false, 11),
+('ae-2gb-7d', 'UAE', 'AE', '🇦🇪', '2 GB', '7 Days', 35, 'Etisalat / du', '5G/4G', 'middle_east', false, 12),
+('ae-5gb-30d', 'UAE', 'AE', '🇦🇪', '5 GB', '30 Days', 75, 'Etisalat / du', '5G/4G', 'middle_east', false, 13),
+('in-3gb-30d', 'India', 'IN', '🇮🇳', '3 GB', '30 Days', 20, 'Jio / Airtel', '4G/LTE', 'asia', false, 14)
+ON CONFLICT (id) DO UPDATE SET is_active = EXCLUDED.is_active;
 
 -- Insert seed data for gift cards
 INSERT INTO gift_card_products (id, brand, category, region, denominations, image, markup_percentage, is_active, sort_order) VALUES
