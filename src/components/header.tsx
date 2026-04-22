@@ -154,7 +154,7 @@ export function Header() {
             )
           ) : (
             <video
-              src="/Top (1).mp4"
+              src="/Top.mp4"
               autoPlay
               loop
               muted
