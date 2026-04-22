@@ -37,8 +37,9 @@ type MediaItem = {
   file_name: string | null;
   mime_type: string | null;
   file_size: number | null;
-  is_active: boolean;
+  status: "active" | "inactive" | "archived";
   priority: number;
+  version: number;
 };
 
 function humanSize(bytes?: number | null) {
@@ -108,7 +109,6 @@ export default function AdminHomepageMediaPage() {
       form.append("storage_source", storageSource);
       form.append("priority", String(priority));
       form.append("alt_text", altText);
-      form.append("is_active", "true");
       const response = await fetch("/api/admin/media/upload", {
         method: "POST",
         credentials: "include",
@@ -133,7 +133,7 @@ export default function AdminHomepageMediaPage() {
       method: "PATCH",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ is_active: isActive }),
+      body: JSON.stringify({ status: isActive ? "active" : "inactive" }),
     });
     const payload = await response.json();
     if (!response.ok || !payload?.success) throw new Error(payload?.error ?? "Failed to update");
@@ -260,12 +260,12 @@ export default function AdminHomepageMediaPage() {
                         value={item.priority}
                         onChange={(e) => updatePriority(item.id, Number(e.target.value))}
                       />
-                      <Badge variant={item.is_active ? "default" : "secondary"}>{item.is_active ? "Active" : "Inactive"}</Badge>
+                      <Badge variant={item.status === "active" ? "default" : "secondary"}>{item.status === "active" ? "Active" : "Inactive"}</Badge>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => toggleMedia(item.id, !item.is_active)}>
-                        {item.is_active ? <EyeOff className="mr-2 h-3 w-3" /> : <Eye className="mr-2 h-3 w-3" />}
-                        {item.is_active ? "Disable" : "Enable"}
+                      <Button size="sm" variant="outline" onClick={() => toggleMedia(item.id, item.status !== "active")}>
+                        {item.status === "active" ? <EyeOff className="mr-2 h-3 w-3" /> : <Eye className="mr-2 h-3 w-3" />}
+                        {item.status === "active" ? "Disable" : "Enable"}
                       </Button>
                       <Button size="sm" variant="destructive" onClick={() => deleteMedia(item.id)}>
                         <Trash2 className="mr-2 h-3 w-3" /> Delete
