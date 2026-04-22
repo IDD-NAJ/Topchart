@@ -264,18 +264,21 @@ export default function DataPage() {
           </div>
         </div>
         <p className="text-muted-foreground">Purchase direct data bundles across all major networks.</p>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2 text-xs font-semibold text-muted-foreground">
-          <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary">
-            <Clock className="w-3 h-3" />
-            Delivery: 2–15 minutes
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 mt-2 text-xs sm:text-sm font-semibold text-muted-foreground">
+          <span className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-primary/10 text-primary">
+            <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Delivery: 2–15 minutes</span>
+            <span className="sm:hidden">2–15 min</span>
           </span>
-          <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 text-destructive">
-            <AlertCircle className="w-3 h-3" />
-            No refunds for wrong numbers
+          <span className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-destructive/10 text-destructive">
+            <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">No refunds for wrong numbers</span>
+            <span className="sm:hidden">No refunds</span>
           </span>
-          <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 text-destructive">
-            <AlertCircle className="w-3 h-3" />
-            Services Available 24/7
+          <span className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-destructive/10 text-destructive">
+            <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Services Available 24/7</span>
+            <span className="sm:hidden">24/7</span>
           </span>
         </div>
       </div>
