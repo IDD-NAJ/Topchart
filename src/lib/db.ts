@@ -2,8 +2,8 @@ import { Pool, neonConfig } from "@neondatabase/serverless";
 import { getDatabaseEnv } from "@/lib/env";
 
 // Query timeout in milliseconds - increased for admin operations
-const QUERY_TIMEOUT_MS = 30000;
-const CONNECTION_TIMEOUT_MS = 5000;
+const QUERY_TIMEOUT_MS = 60000; // Increased to 60s for stability
+const CONNECTION_TIMEOUT_MS = 20000; // Increased to 20s for Neon cold starts
 
 function getCleanConnectionString(): string {
   const dbEnv = getDatabaseEnv();
@@ -170,7 +170,7 @@ function normalizeDbError(err: unknown): Error {
   return wrapped;
 }
 
-async function withRetry<T>(fn: () => Promise<T>, operation: string, retries = 2, baseDelayMs = 500): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, operation: string, retries = 4, baseDelayMs = 1000): Promise<T> {
   const startTime = Date.now();
   let lastError: unknown;
   
@@ -263,7 +263,7 @@ function sql(strings: TemplateStringsArray, ...values: unknown[]): Promise<any[]
     const pool = getPool();
     const { rows } = await queryWithTimeout(pool, queryText, values, QUERY_TIMEOUT_MS);
     return rows;
-  }, `sql:${queryPreview}`, 2, 500);
+  }, `sql:${queryPreview}`, 4, 1000);
 }
 
 async function sqlUnsafe(queryText: string, params?: unknown[]): Promise<unknown[]> {
@@ -272,7 +272,7 @@ async function sqlUnsafe(queryText: string, params?: unknown[]): Promise<unknown
     const pool = getPool();
     const { rows } = await queryWithTimeout(pool, queryText, params || [], QUERY_TIMEOUT_MS);
     return rows;
-  }, `sqlUnsafe:${queryPreview}`, 2, 500);
+  }, `sqlUnsafe:${queryPreview}`, 4, 1000);
 }
 
 export function isPgMissingRelation(error: unknown): boolean {
