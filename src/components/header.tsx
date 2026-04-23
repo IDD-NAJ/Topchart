@@ -101,16 +101,34 @@ export function Header() {
 
         {/* LOGO */}
         <Link href="/" className="shrink-0 flex items-center group relative z-10">
-          <video
-            src="/IMG_7731.MP4"
-            autoPlay
-            loop
-            muted
-            playsInline
-            width={240}
-            height={60}
-            className="h-14 w-auto"
-          />
+          <div className="relative h-14 w-auto flex items-center">
+            <video
+              src="/IMG_7731.MP4"
+              autoPlay
+              loop
+              muted
+              playsInline
+              poster="/icon.png"
+              className="h-14 w-auto"
+              onCanPlay={(e) => {
+                const target = e.target as HTMLVideoElement;
+                target.style.opacity = '1';
+              }}
+              onError={(e) => {
+                const target = e.target as HTMLVideoElement;
+                target.style.display = 'none';
+                const fallback = target.nextElementSibling as HTMLElement;
+                if (fallback) fallback.style.display = 'block';
+              }}
+              style={{ opacity: 0, transition: 'opacity 0.3s ease' }}
+            />
+            <span 
+              className="text-xl font-black tracking-tighter text-primary hidden"
+              style={{ display: 'none' }}
+            >
+              TOPCHART
+            </span>
+          </div>
         </Link>
 
         {/* DESKTOP NAV */}
