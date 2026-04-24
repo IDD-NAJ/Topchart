@@ -48,7 +48,8 @@ import {
   Smartphone,
   LayoutGrid,
   Globe2,
-  Server
+  Server,
+  Sparkles
 } from "lucide-react"
 
 interface NavItem {
@@ -154,6 +155,7 @@ const navItems: NavItem[] = [
     title: "Reseller Config",
     icon: Sliders,
     children: [
+      { title: "Service Status", href: "/admin/service-status", icon: Sparkles },
       { title: "Analytics", href: "/admin/analytics", icon: BarChart3 },
       { title: "Tiers", href: "/admin/tiers", icon: Trophy },
       { title: "Fraud Alerts", href: "/admin/fraud-alerts", icon: ShieldAlert },
