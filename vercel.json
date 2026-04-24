@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/admin/sync-datamart-plans-scheduled",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}

@@ -122,6 +122,14 @@ const googleAuthEnvSchema = z.object({
 });
 type GoogleAuthEnv = z.infer<typeof googleAuthEnvSchema>;
 
+const pvadealsEnvSchema = z.object({
+  PVADEALS_API_KEY: z.string().min(1, "PVADEALS_API_KEY is required"),
+  PVADEALS_BASE_URL: z.string().url().optional(),
+  PVADEALS_MARKUP_PERCENT: z.string().optional(),
+  USD_TO_GHS_RATE: z.string().optional(),
+});
+type PvadealsEnv = z.infer<typeof pvadealsEnvSchema>;
+
 let cachedEnv: ServerEnv | null = null;
 let cachedDatabaseEnv: DatabaseEnv | null = null;
 let cachedPaystackEnv: PaystackEnv | null = null;
@@ -132,6 +140,7 @@ let cachedNineProxyEnv: NineProxyEnv | null = null;
 let cachedAiraloEnv: AiraloEnv | null = null;
 let cachedVtpassEnv: VtpassEnv | null = null;
 let cachedGoogleAuthEnv: GoogleAuthEnv | null = null;
+let cachedPvadealsEnv: PvadealsEnv | null = null;
 
 export function getServerEnv(): ServerEnv {
   if (cachedEnv) {
@@ -331,4 +340,32 @@ export function getGoogleAuthEnv(): GoogleAuthEnv {
 
   cachedGoogleAuthEnv = parsed.data;
   return cachedGoogleAuthEnv;
+}
+
+export function getPvadealsEnv(): PvadealsEnv {
+  if (cachedPvadealsEnv) {
+    return cachedPvadealsEnv;
+  }
+
+  const parsed = pvadealsEnvSchema.safeParse(process.env);
+  if (!parsed.success) {
+    const missingFields = parsed.error.issues
+      .filter((issue) => issue.code === "invalid_type")
+      .map((issue) => issue.path.join("."));
+    const message = missingFields.length > 0
+      ? `Missing required environment variables: ${missingFields.join(", ")}`
+      : `Invalid PVAdeals environment: ${parsed.error.issues.map((issue) => issue.message).join(", ")}`;
+    throw new Error(message);
+  }
+
+  cachedPvadealsEnv = parsed.data;
+  return cachedPvadealsEnv;
+}
+
+/**
+ * Check if PVAdeals is configured (API key exists).
+ * Does not throw if unconfigured.
+ */
+export function isPvadealsConfigured(): boolean {
+  return Boolean(process.env.PVADEALS_API_KEY?.trim());
 }

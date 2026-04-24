@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { sql } from "@/lib/db";
 import { finalizeResellerApplicationPayment } from "@/lib/reseller-payment";
+import { validatePaystackWebhook } from "@/lib/paystack-utils";
 
 async function getReferralSettings() {
   const rows = await sql`
@@ -115,19 +116,15 @@ export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
     const signature = req.headers.get("x-paystack-signature") ?? "";
-    const secret = process.env.PAYSTACK_SECRET_KEY ?? "";
-    if (!secret) {
-      return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
-    }
 
-    const hash = crypto.createHmac("sha512", secret).update(rawBody).digest("hex");
-
-    if (hash !== signature) {
+    // Use centralized webhook validation utility
+    if (!validatePaystackWebhook(rawBody, signature)) {
+      console.error("[Paystack Webhook] Signature validation failed");
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
     const event = JSON.parse(rawBody);
-    console.log("Paystack event:", event.event);
+    console.log("[Paystack Webhook] Event received:", event.event);
 
     if (event.event === "charge.success") {
       const data = event.data;
@@ -149,11 +146,19 @@ export async function POST(req: NextRequest) {
           type?: string;
           metadata?: Record<string, unknown>;
         };
+        
+        // Idempotency check: Skip if already successfully processed
+        if (transaction.status === "success") {
+          console.log(`[Paystack Webhook] Transaction ${reference} already processed successfully, skipping`);
+          return NextResponse.json({ received: true, skipped: true }, { status: 200 });
+        }
+        
         const paymentType = String(
           transaction.metadata?.payment_type || transaction.type || ""
         ).toLowerCase();
 
         if (paymentType === "reseller_application") {
+          console.log(`[Paystack Webhook] Processing reseller application payment: ${reference}`);
           await finalizeResellerApplicationPayment({
             reference,
             transactionId: transaction.id,
@@ -164,6 +169,8 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
+        // Process wallet deposit
+        console.log(`[Paystack Webhook] Processing wallet deposit: ${reference}, amount: ${paidAmount}`);
         if (transaction.status !== "success") {
           await sql`
             WITH updated_tx AS (
@@ -203,7 +210,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error) {
-    console.error("Webhook error:", error);
+    console.error("[Paystack Webhook] Processing error:", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }
 }

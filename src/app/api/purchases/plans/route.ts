@@ -155,10 +155,27 @@ async function fetchPlansFromCache(network?: string): Promise<{ success: true; d
   } catch (error) {
     const e = error as { code?: string; message?: string };
     if (e?.code === "42P01") {
-      return { success: false, error: "Database table not found" };
+      console.error("[Plans API] Database table not found - migrations may be required");
+      return { 
+        success: false, 
+        error: "Database table not found. Please run migrations.",
+        errorCode: "MIGRATION_REQUIRED" 
+      };
     }
-    console.error("Cache fetch error:", error);
-    return { success: false, error: "Failed to fetch from cache" };
+    if (e?.code === "ECONNREFUSED" || e?.code === "ENOTFOUND") {
+      console.error("[Plans API] Database connection failed:", e.message);
+      return { 
+        success: false, 
+        error: "Database connection failed",
+        errorCode: "DB_CONNECTION_ERROR" 
+      };
+    }
+    console.error("[Plans API] Cache fetch error:", error);
+    return { 
+      success: false, 
+      error: e?.message || "Failed to fetch from cache",
+      errorCode: "CACHE_ERROR" 
+    };
   }
 }
 
