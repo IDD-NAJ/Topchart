@@ -14,11 +14,22 @@ const DATAMART_TO_DB_NETWORK: Record<string, string> = {
 };
 
 export async function GET(request: NextRequest) {
-  const cronSecret = request.headers.get("x-cron-secret");
+  // Support both Vercel Cron (Authorization: Bearer) and custom header (x-cron-secret)
+  const authHeader = request.headers.get("authorization");
+  const cronSecretHeader = request.headers.get("x-cron-secret");
+  const cronSecret = process.env.CRON_SECRET;
   
-  if (cronSecret !== process.env.CRON_SECRET) {
+  // Validate: either Authorization: Bearer <secret> or x-cron-secret: <secret>
+  const isValidAuth = 
+    (authHeader && cronSecret && authHeader === `Bearer ${cronSecret}`) ||
+    (cronSecretHeader && cronSecret && cronSecretHeader === cronSecret);
+  
+  if (!cronSecret || !isValidAuth) {
+    console.error("[Datamart Sync] Unauthorized cron request");
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
+  
+  console.log("[Datamart Sync] Starting scheduled sync...");
 
   try {
     let syncedCount = 0;
@@ -100,12 +111,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    console.log(`[Datamart Sync] Completed. Synced: ${syncedCount}, Errors: ${errorCount}`);
+    
     return NextResponse.json({
       success: true,
       message: `Scheduled sync completed. Synced ${syncedCount} plans, ${errorCount} errors.`,
       syncedCount,
       errorCount,
-      errors: errors.slice(0, 10)
+      errors: errors.slice(0, 10),
+      syncedAt: new Date().toISOString()
     });
   } catch (error) {
     console.error("Scheduled sync error:", error);

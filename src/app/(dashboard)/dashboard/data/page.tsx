@@ -445,12 +445,37 @@ export default function DataPage() {
                     <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-base font-bold">2</span>
                     Select Plan
                   </CardTitle>
-                  {selectedNetwork && !plansLoading && plans.length > 0 && (
-                    <span className="text-sm font-medium text-muted-foreground px-2.5 py-1 bg-muted rounded-full">
-                      {filteredPlans.length} available
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {plansStale && !plansLoading && plans.length > 0 && (
+                      <span className="text-xs font-medium text-amber-600 dark:text-amber-500 px-2 py-1 bg-amber-50 dark:bg-amber-900/20 rounded-full flex items-center gap-1.5">
+                        <Clock className="w-3 h-3" />
+                        Cached data
+                      </span>
+                    )}
+                    {selectedNetwork && !plansLoading && plans.length > 0 && (
+                      <span className="text-sm font-medium text-muted-foreground px-2.5 py-1 bg-muted rounded-full">
+                        {filteredPlans.length} available
+                      </span>
+                    )}
+                    {!plansLoading && plans.length > 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => fetchPlans()}
+                        className="h-7 px-2 text-xs"
+                        title="Refresh plans"
+                      >
+                        <Database className="w-3.5 h-3.5 mr-1" />
+                        Refresh
+                      </Button>
+                    )}
+                  </div>
                 </div>
+                {plansStale && plansFetchedAt && (
+                  <p className="text-xs text-amber-600 dark:text-amber-500 mt-2">
+                    Provider is temporarily unavailable. Showing cached plans from {new Date(plansFetchedAt).toLocaleDateString()}.
+                  </p>
+                )}
               </CardHeader>
               <CardContent className="p-0">
                 {plansLoading ? (

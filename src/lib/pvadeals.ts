@@ -1,8 +1,15 @@
-import { getServerEnv } from "@/lib/env";
+import { getPvadealsEnv, isPvadealsConfigured } from "@/lib/env";
 
-const env = getServerEnv();
-const PVADEALS_BASE_URL = env.PVADEALS_BASE_URL || "https://prod-v3.pvadeals.com";
-const PVADEALS_API_KEY = env.PVADEALS_API_KEY || "";
+// Lazy config loading - prevents startup crashes if env not set
+function getPvadealsConfig() {
+  const env = getPvadealsEnv();
+  return {
+    baseUrl: env.PVADEALS_BASE_URL || "https://prod-v3.pvadeals.com",
+    apiKey: env.PVADEALS_API_KEY,
+    markupPercent: parseFloat(env.PVADEALS_MARKUP_PERCENT || "40"),
+    exchangeRate: parseFloat(env.USD_TO_GHS_RATE || "15.5"),
+  };
+}
 
 export interface PVAService {
   _id: string;
@@ -46,38 +53,98 @@ interface ApiResponse<T> {
   error?: string;
 }
 
+interface PvaRequestOptions extends Omit<RequestInit, 'signal'> {
+  timeoutMs?: number;
+  retries?: number;
+}
+
+/**
+ * Make a request to the PVAdeals API with retry and timeout support.
+ */
 async function pvaRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: PvaRequestOptions = {}
 ): Promise<ApiResponse<T>> {
-  if (!PVADEALS_API_KEY) {
-    return { success: false, error: "PVADeals API key not configured. Set PVADEALS_API_KEY in .env.local" };
+  const { timeoutMs = 30000, retries = 2, ...fetchOptions } = options;
+
+  // Check if configured before making any request
+  if (!isPvadealsConfigured()) {
+    return { 
+      success: false, 
+      error: "PVADeals API key not configured. Set PVADEALS_API_KEY in environment variables." 
+    };
   }
 
-  try {
-    const url = `${PVADEALS_BASE_URL}${endpoint}`;
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        Authorization: `Bearer ${PVADEALS_API_KEY}`,
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
+  const config = getPvadealsConfig();
+  const url = `${config.baseUrl}${endpoint}`;
+  let lastError: string | undefined;
 
-    const json = await response.json();
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-    if (!response.ok) {
-      const errMsg = json?.message || json?.error || `API error ${response.status}`;
-      console.error(`PVADeals API error (${response.status}) ${endpoint}:`, errMsg);
-      return { success: false, error: errMsg };
+    try {
+      const response = await fetch(url, {
+        ...fetchOptions,
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${config.apiKey}`,
+          "Content-Type": "application/json",
+          ...fetchOptions.headers,
+        },
+      });
+
+      clearTimeout(timeout);
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        const errMsg = json?.message || json?.error || `API error ${response.status}`;
+        console.error(`[PVADeals] API error (${response.status}) ${endpoint}:`, errMsg);
+        
+        // Don't retry on 4xx client errors (except 429 rate limit)
+        if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+          return { success: false, error: errMsg };
+        }
+        
+        lastError = errMsg;
+        
+        // Continue to retry for 5xx or 429
+        if (attempt < retries) {
+          const backoffMs = 1000 * Math.pow(2, attempt);
+          console.log(`[PVADeals] Retrying in ${backoffMs}ms (attempt ${attempt + 1}/${retries})`);
+          await new Promise(r => setTimeout(r, backoffMs));
+          continue;
+        }
+        
+        return { success: false, error: lastError };
+      }
+
+      return { success: true, data: json.data, message: json.message };
+    } catch (err) {
+      clearTimeout(timeout);
+      
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') {
+          lastError = `Request timed out after ${timeoutMs}ms`;
+        } else {
+          lastError = err.message;
+        }
+      } else {
+        lastError = "Request failed";
+      }
+      
+      console.error(`[PVADeals] Request failed (attempt ${attempt + 1}/${retries + 1}):`, lastError);
+      
+      if (attempt < retries) {
+        const backoffMs = 1000 * Math.pow(2, attempt);
+        await new Promise(r => setTimeout(r, backoffMs));
+        continue;
+      }
     }
-
-    return { success: true, data: json.data, message: json.message };
-  } catch (err) {
-    console.error("PVADeals request failed:", err);
-    return { success: false, error: err instanceof Error ? err.message : "Request failed" };
   }
+
+  return { success: false, error: lastError || "Request failed after retries" };
 }
 
 export async function getBalance(): Promise<ApiResponse<PVABalance>> {
@@ -104,19 +171,19 @@ export async function getAllAreaCodes(): Promise<ApiResponse<{ areaCodes: AreaCo
 }
 
 export async function getPopularServiceAreaCodes(): Promise<ApiResponse<{ areaCodes: AreaCodeInfo[] }>> {
-  console.log("Fetching all services to find area codes");
+  console.log("[PVADeals] Fetching all services to find area codes");
   const allServicesResult = await getAllServices();
   
   if (!allServicesResult.success) {
-    console.error("Failed to fetch services for area codes:", allServicesResult.error);
+    console.error("[PVADeals] Failed to fetch services for area codes:", allServicesResult.error);
     return { success: false, error: allServicesResult.error || "Failed to fetch services" };
   }
   
   const services = allServicesResult.data?.services || [];
-  console.log(`Trying ${services.length} services for area codes`);
+  console.log(`[PVADeals] Trying ${services.length} services for area codes`);
   
   if (services.length === 0) {
-    console.error("No services available");
+    console.error("[PVADeals] No services available");
     return { success: false, error: "No services available" };
   }
   
@@ -124,20 +191,20 @@ export async function getPopularServiceAreaCodes(): Promise<ApiResponse<{ areaCo
   
   for (const service of popularServices) {
     try {
-      console.log(`Fetching area codes for service: ${service.name} (${service._id})`);
+      console.log(`[PVADeals] Fetching area codes for service: ${service.name} (${service._id})`);
       const result = await getServiceAreaCodes(service._id);
-      console.log(`Area codes result for ${service.name}:`, result.success, result.data?.areaCodes?.length || 0);
+      console.log(`[PVADeals] Area codes result for ${service.name}:`, result.success, result.data?.areaCodes?.length || 0);
       if (result.success && result.data?.areaCodes && result.data.areaCodes.length > 0) {
-        console.log(`Found ${result.data.areaCodes.length} area codes from service ${service.name}`);
+        console.log(`[PVADeals] Found ${result.data.areaCodes.length} area codes from service ${service.name}`);
         return result;
       }
     } catch (error) {
-      console.log(`Failed to fetch area codes for service ${service.name}:`, error);
+      console.log(`[PVADeals] Failed to fetch area codes for service ${service.name}:`, error);
       continue;
     }
   }
   
-  console.error("No area codes available from any service");
+  console.error("[PVADeals] No area codes available from any service");
   return { success: false, error: "No area codes available from any service" };
 }
 
@@ -256,5 +323,17 @@ export function mapCategoryByName(name: string): string {
   return "social_media";
 }
 
-export const USD_TO_GHS_RATE = parseFloat(env.USD_TO_GHS_RATE || "15.5");
-export const DEFAULT_MARKUP_PERCENT = parseFloat(env.PVADEALS_MARKUP_PERCENT || "40");
+// Lazy-loaded exchange rate and markup values
+export function getUsdToGhsRate(): number {
+  if (!isPvadealsConfigured()) return 15.5;
+  return getPvadealsConfig().exchangeRate;
+}
+
+export function getDefaultMarkupPercent(): number {
+  if (!isPvadealsConfigured()) return 40;
+  return getPvadealsConfig().markupPercent;
+}
+
+// Legacy exports for backward compatibility
+export const USD_TO_GHS_RATE = 15.5;
+export const DEFAULT_MARKUP_PERCENT = 40;
