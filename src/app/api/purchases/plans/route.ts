@@ -56,7 +56,7 @@ const FRONTEND_TO_DB_NETWORK: Record<string, string> = {
   glo: "GLO",
 };
 
-async function fetchPlansFromCache(network?: string): Promise<{ success: true; data: CachedPlan[]; stale: boolean; fetchedAt: string | null } | { success: false; error: string; errorCode?: string }> {
+async function fetchPlansFromCache(network?: string): Promise<{ success: true; data: CachedPlan[]; stale: boolean; fetchedAt: string | null } | { success: false; error: string }> {
   try {
     const dbNetworkCode = network ? (FRONTEND_TO_DB_NETWORK[network.toLowerCase()] || network.toUpperCase()) : undefined;
 
@@ -156,26 +156,14 @@ async function fetchPlansFromCache(network?: string): Promise<{ success: true; d
     const e = error as { code?: string; message?: string };
     if (e?.code === "42P01") {
       console.error("[Plans API] Database table not found - migrations may be required");
-      return { 
-        success: false, 
-        error: "Database table not found. Please run migrations.",
-        errorCode: "MIGRATION_REQUIRED" 
-      };
+      return { success: false, error: "[MIGRATION_REQUIRED] Database table not found. Please run migrations." };
     }
     if (e?.code === "ECONNREFUSED" || e?.code === "ENOTFOUND") {
       console.error("[Plans API] Database connection failed:", e.message);
-      return { 
-        success: false, 
-        error: "Database connection failed",
-        errorCode: "DB_CONNECTION_ERROR" 
-      };
+      return { success: false, error: "[DB_CONNECTION_ERROR] Database connection failed" };
     }
     console.error("[Plans API] Cache fetch error:", error);
-    return { 
-      success: false, 
-      error: e?.message || "Failed to fetch from cache",
-      errorCode: "CACHE_ERROR" 
-    };
+    return { success: false, error: e?.message || "Failed to fetch from cache" };
   }
 }
 
