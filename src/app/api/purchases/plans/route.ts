@@ -56,7 +56,7 @@ const FRONTEND_TO_DB_NETWORK: Record<string, string> = {
   glo: "GLO",
 };
 
-async function fetchPlansFromCache(network?: string): Promise<{ success: true; data: CachedPlan[]; stale: boolean; fetchedAt: string | null } | { success: false; error: string }> {
+async function fetchPlansFromCache(network?: string): Promise<{ success: true; data: CachedPlan[]; stale: boolean; fetchedAt: string | null } | { success: false; error: string; errorCode?: string }> {
   try {
     const dbNetworkCode = network ? (FRONTEND_TO_DB_NETWORK[network.toLowerCase()] || network.toUpperCase()) : undefined;
 
