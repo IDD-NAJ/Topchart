@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { sql } from "@/lib/db";
 import { isHomepageSection, toLegacySectionKey } from "@/lib/homepage-media";
 
 
@@ -7,8 +6,31 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 120;
 
+function isDatabaseConfigured(): boolean {
+  return Boolean(
+    process.env.DATABASE_URL?.trim() ||
+    process.env.NEON_DATABASE_URL?.trim() ||
+    process.env.NETLIFY_DATABASE_URL?.trim()
+  );
+}
+
 export async function GET(request: Request) {
+  // Return empty media if database is not configured
+  if (!isDatabaseConfigured()) {
+    return NextResponse.json(
+      { success: true, media: [], message: "Database not configured" },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+        },
+      }
+    );
+  }
+  
   try {
+    // Dynamic import to avoid crashes when DB is not configured
+    const { sql } = await import("@/lib/db");
     const { searchParams } = new URL(request.url);
     const sectionParam = searchParams.get("section");
     const slotKey = searchParams.get("slot_key");
