@@ -17,6 +17,12 @@ interface HealthStatus {
     nineproxy: string;
     textverified: string;
   };
+  media: {
+    totalCount: number;
+    activeCount: number;
+    recentUploads24h: number;
+    storageHealth: string;
+  };
   environment: {
     cronSecret: boolean;
     sessionSecret: boolean;
@@ -121,6 +127,60 @@ async function testDatabaseConnectivity(): Promise<{ status: string; latencyMs?:
   }
 }
 
+/**
+ * Get media health statistics from the database.
+ */
+async function getMediaHealthStats(): Promise<{
+  totalCount: number;
+  activeCount: number;
+  recentUploads24h: number;
+  storageHealth: string;
+}> {
+  try {
+    // Get total and active counts
+    const [countResult] = await sql<{ total: string; active: string }[]>`
+      SELECT 
+        COUNT(*)::text as total,
+        COUNT(*) FILTER (WHERE status = 'active' AND is_active = true)::text as active
+      FROM homepage_media
+    `;
+    
+    // Get recent uploads (last 24 hours)
+    const [recentResult] = await sql<{ recent: string }[]>`
+      SELECT COUNT(*)::text as recent
+      FROM homepage_media
+      WHERE created_at > NOW() - INTERVAL '24 hours'
+    `;
+    
+    const totalCount = parseInt(countResult?.total || "0", 10);
+    const activeCount = parseInt(countResult?.active || "0", 10);
+    const recentUploads24h = parseInt(recentResult?.recent || "0", 10);
+    
+    // Determine storage health based on data
+    let storageHealth = "healthy";
+    if (totalCount === 0) {
+      storageHealth = "empty";
+    } else if (activeCount === 0) {
+      storageHealth = "no_active_media";
+    }
+    
+    return {
+      totalCount,
+      activeCount,
+      recentUploads24h,
+      storageHealth,
+    };
+  } catch (error) {
+    logger.error({ message: "Health check: Media stats failed", error });
+    return {
+      totalCount: 0,
+      activeCount: 0,
+      recentUploads24h: 0,
+      storageHealth: "error",
+    };
+  }
+}
+
 export async function GET(request: NextRequest) {
   const admin = await requireAdmin();
   if (!admin.ok) {
@@ -138,6 +198,12 @@ export async function GET(request: NextRequest) {
       nineproxy: "unknown",
       textverified: "unknown",
     },
+    media: {
+      totalCount: 0,
+      activeCount: 0,
+      recentUploads24h: 0,
+      storageHealth: "unknown",
+    },
     environment: {
       cronSecret: Boolean(process.env.CRON_SECRET),
       sessionSecret: Boolean(process.env.SESSION_SECRET),
@@ -148,10 +214,11 @@ export async function GET(request: NextRequest) {
   };
 
   // Run connectivity tests in parallel for better performance
-  const [dbResult, paystackResult, pvadealsResult] = await Promise.all([
+  const [dbResult, paystackResult, pvadealsResult, mediaStats] = await Promise.all([
     testDatabaseConnectivity(),
     testPaystackConnectivity(),
     testPvadealsConnectivity(),
+    getMediaHealthStats(),
   ]);
 
   // Database
@@ -165,6 +232,9 @@ export async function GET(request: NextRequest) {
   // PVAdeals
   health.apis.pvadeals = pvadealsResult.status;
   if (pvadealsResult.latencyMs) health.latency!.pvadeals = pvadealsResult.latencyMs;
+
+  // Media statistics
+  health.media = mediaStats;
 
   // Datamart (config check only - actual test would require more complex validation)
   health.apis.datamart = process.env.DATAMART_API_KEY ? "configured" : "missing";

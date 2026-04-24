@@ -4,6 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useEffect, useState, useCallback } from "react"
 import { useHomepageMedia } from "@/hooks/use-homepage-media"
+import { ResponsiveMedia } from "@/components/responsive-media"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import {
@@ -427,27 +428,23 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
         <section
           className="relative overflow-hidden px-4 pb-32 pt-20 sm:px-6 sm:pb-40 sm:pt-28 lg:pt-36 selection:bg-primary/30 selection:text-white flex min-h-[85vh] flex-col items-center justify-center bg-[#0d1627]"
         >
-          {heroMedia && heroMedia.type === "video" ? (
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="absolute inset-0 h-full w-full object-cover opacity-40"
-              preload="metadata"
-              onError={() => setHeroMedia(null)}
-            >
-              <source src={heroMedia.url} type="video/mp4" />
-            </video>
-          ) : heroMedia && heroMedia.type === "image" ? (
+          {heroMedia ? (
             <div className="absolute inset-0 h-full w-full opacity-40">
-              <Image
+              <ResponsiveMedia
                 src={heroMedia.url}
                 alt="Topchart Hero Background"
+                type={heroMedia.type}
                 fill
                 priority
+                loadingPriority="eager"
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
                 className="object-cover"
                 sizes="100vw"
+                onError={() => setHeroMedia(null)}
               />
             </div>
           ) : null}
@@ -620,20 +617,22 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
             </ScrollReveal>
             <ScrollReveal once={false} amount={0.22}>
               <div className="relative aspect-video overflow-hidden rounded-3xl bg-neutral-200/80 shadow-lg">
-                {scaleMedia && scaleMedia.type === "video" ? (
-                  <video
+                {scaleMedia ? (
+                  <ResponsiveMedia
+                    src={scaleMedia.url}
+                    alt="Scale with Confidence"
+                    type={scaleMedia.type}
+                    fill
                     autoPlay
                     loop
                     muted
                     playsInline
-                    className="absolute inset-0 h-full w-full object-cover"
                     preload="metadata"
+                    loadingPriority="lazy"
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 50vw"
                     onError={() => setScaleMedia(null)}
-                  >
-                    <source src={scaleMedia.url} type="video/mp4" />
-                  </video>
-                ) : scaleMedia && scaleMedia.type === "image" ? (
-                  <img src={scaleMedia.url} alt="Scale background" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                  />
                 ) : null}
               </div>
             </ScrollReveal>
