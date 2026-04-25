@@ -233,10 +233,11 @@ export default function VerificationPage() {
         }
         setError(null)
       } else {
-        setError(data?.error || "Failed to load services")
+        const errorMsg = data?.error || (res.status === 401 ? "Please sign in to view services" : "Failed to load services")
+        setError(errorMsg)
       }
     } catch {
-      setError("Failed to load services")
+      setError("Failed to load services. Check your connection and try again.")
     }
   }, [])
 

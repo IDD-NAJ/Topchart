@@ -44,13 +44,14 @@ export async function GET(request: NextRequest) {
     const pvaResult = await getAllServices();
 
     if (!pvaResult.success || !pvaResult.data) {
+      console.error("[Verification Services] PVADeals fetch failed:", pvaResult.error);
       return NextResponse.json(
         { success: false, error: pvaResult.error || "Failed to fetch services from provider" },
         { status: 502 }
       );
     }
 
-    const pvaServices: PVAService[] = pvaResult.data.services;
+    const pvaServices: PVAService[] = pvaResult.data.services || [];
 
     // Load our DB overrides for category assignment and markup
     let dbOverrides: Record<string, { category: string; markup_percentage: number; is_active: boolean }> = {};
@@ -77,10 +78,19 @@ export async function GET(request: NextRequest) {
         SELECT value FROM app_settings WHERE key = 'exchange_rate'
       `;
       if (settings.length > 0) {
-        exchangeRate = parseFloat(settings[0].value) || exchangeRate;
+        exchangeRate = parseFloat((settings[0] as any).value) || exchangeRate;
       }
     } catch {
-      // Table might not exist yet — use default
+      try {
+        const settings = await sql`
+          SELECT "configValue" as value FROM "AppSetting" WHERE "configKey" = 'exchange_rate'
+        `;
+        if (settings.length > 0) {
+          exchangeRate = parseFloat((settings[0] as any).value) || exchangeRate;
+        }
+      } catch {
+        // Neither table exists — use default
+      }
     }
 
     // Build enriched services
@@ -136,9 +146,11 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Get verification services error:", error);
+    const errMsg = error instanceof Error ? error.message : String(error);
+    const errCode = (error as any)?.code;
+    console.error("[Verification Services] Error:", { message: errMsg, code: errCode });
     return NextResponse.json(
-      { success: false, error: "Failed to fetch services" },
+      { success: false, error: errCode === "42P01" ? "Database tables not found. Run migrations first." : "Failed to fetch services" },
       { status: 500 }
     );
   }

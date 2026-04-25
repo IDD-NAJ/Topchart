@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getNetworks, getBalance, resolveNetworkCode, type DatamartNetworkCode } from "@/lib/datamart";
 import { requireAdmin } from "@/lib/admin-auth";
-import { sql } from "@/lib/db";
+import { sql, sqlUnsafe } from "@/lib/db";
 import { syncDatamartPlans } from "@/lib/datamart-sync";
 
 export const revalidate = 60;
@@ -49,11 +49,11 @@ function calculateEffectivePrice(
 
 const FRONTEND_TO_DB_NETWORK: Record<string, string> = {
   mtn: "MTN",
-  vodafone: "VODAFONE",
-  telecel: "VODAFONE",
-  airteltigo: "AIRTELTIGO",
-  "airtel-tigo": "AIRTELTIGO",
-  at: "AIRTELTIGO",
+  vodafone: "Telecel",
+  telecel: "Telecel",
+  airteltigo: "AirtelTigo",
+  "airtel-tigo": "AirtelTigo",
+  at: "AirtelTigo",
   glo: "GLO",
 };
 
@@ -71,48 +71,51 @@ async function fetchPlansFromCache(network?: string): Promise<{ success: true; d
     const dbNetworkCode = network ? (FRONTEND_TO_DB_NETWORK[network.toLowerCase()] || network.toUpperCase()) : undefined;
 
     const rows = dbNetworkCode
-      ? sql`
-          SELECT 
+      ? sqlUnsafe(
+          `SELECT 
             b.id,
-            b.network_id,
+            COALESCE(n.name, b.network_id) as network_id,
             b.name,
-            b.size_mb,
-            b.validity_hours,
+            COALESCE(b."sizeMb", b.size_mb) as size_mb,
+            COALESCE(b."validityHours", b.validity_hours) as validity_hours,
             b.price as "providerPrice",
-            b.price_override as "priceOverride",
-            b.markup_percent as "markupPercent",
-            b.is_popular as "isPopular",
-            b.is_active as "isActive",
-            b.is_featured as "isFeatured",
-            b.datamart_plan_id as "datamartPlanId",
-            b.datamart_plan_type as "datamartPlanType",
-            b.synced_at as "syncedAt",
-            b.updated_at
+            COALESCE(b."priceOverride", b.price_override) as "priceOverride",
+            COALESCE(b."markupPercent", b.markup_percent) as "markupPercent",
+            COALESCE(b."isPopular", b.is_popular) as "isPopular",
+            COALESCE(b."isActive", b.is_active, true) as "isActive",
+            COALESCE(b."isFeatured", b.is_featured) as "isFeatured",
+            COALESCE(b."datamartPlanId", b.datamart_plan_id) as "datamartPlanId",
+            COALESCE(b."datamartPlanType", b.datamart_plan_type) as "datamartPlanType",
+            COALESCE(b."syncedAt", b.synced_at) as "syncedAt",
+            COALESCE(b."updatedAt", b.updated_at) as updated_at
           FROM data_bundles b
-          WHERE b.is_active = true AND b.network_id = ${dbNetworkCode}
-          ORDER BY b.price ASC
-        `
-      : sql`
-          SELECT 
+          LEFT JOIN networks n ON b."networkId" = n.id
+          WHERE COALESCE(b."isActive", b.is_active, true) = true AND n.name = $1
+          ORDER BY b.price ASC`,
+          [dbNetworkCode]
+        )
+      : sqlUnsafe(
+          `SELECT 
             b.id,
-            b.network_id,
+            COALESCE(n.name, b.network_id) as network_id,
             b.name,
-            b.size_mb,
-            b.validity_hours,
+            COALESCE(b."sizeMb", b.size_mb) as size_mb,
+            COALESCE(b."validityHours", b.validity_hours) as validity_hours,
             b.price as "providerPrice",
-            b.price_override as "priceOverride",
-            b.markup_percent as "markupPercent",
-            b.is_popular as "isPopular",
-            b.is_active as "isActive",
-            b.is_featured as "isFeatured",
-            b.datamart_plan_id as "datamartPlanId",
-            b.datamart_plan_type as "datamartPlanType",
-            b.synced_at as "syncedAt",
-            b.updated_at
+            COALESCE(b."priceOverride", b.price_override) as "priceOverride",
+            COALESCE(b."markupPercent", b.markup_percent) as "markupPercent",
+            COALESCE(b."isPopular", b.is_popular) as "isPopular",
+            COALESCE(b."isActive", b.is_active, true) as "isActive",
+            COALESCE(b."isFeatured", b.is_featured) as "isFeatured",
+            COALESCE(b."datamartPlanId", b.datamart_plan_id) as "datamartPlanId",
+            COALESCE(b."datamartPlanType", b.datamart_plan_type) as "datamartPlanType",
+            COALESCE(b."syncedAt", b.synced_at) as "syncedAt",
+            COALESCE(b."updatedAt", b.updated_at) as updated_at
           FROM data_bundles b
-          WHERE b.is_active = true
-          ORDER BY b.network_id, b.price ASC
-        `;
+          LEFT JOIN networks n ON b."networkId" = n.id
+          WHERE COALESCE(b."isActive", b.is_active, true) = true
+          ORDER BY n.name, b.price ASC`
+        );
 
     const result = await rows;
 
@@ -120,7 +123,7 @@ async function fetchPlansFromCache(network?: string): Promise<{ success: true; d
       return { success: false, error: "No cached plans found" };
     }
 
-    const plans: CachedPlan[] = result.map((row: Record<string, unknown>) => {
+    const plans: CachedPlan[] = (result as Record<string, unknown>[]).map((row) => {
       const providerPrice = Number(row.providerPrice);
       const priceOverride = row.priceOverride ? Number(row.priceOverride) : null;
       const markupPercent = row.markupPercent ? Number(row.markupPercent) : null;
@@ -152,7 +155,7 @@ async function fetchPlansFromCache(network?: string): Promise<{ success: true; d
       .sort((a, b) => a - b)[0];
     
     const isStale = !oldestSync || Date.now() - oldestSync > 48 * 60 * 60 * 1000;
-    const fetchedAt = result[0]?.updated_at ? new Date(String(result[0].updated_at)).toISOString() : null;
+    const fetchedAt = (result[0] as any)?.updated_at ? new Date(String((result[0] as any).updated_at)).toISOString() : null;
 
     return { success: true, data: plans, stale: isStale, fetchedAt };
   } catch (error) {
