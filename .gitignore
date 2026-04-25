@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Build artifacts
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+# Environment variables
+.env.local
+.env.*.local
+.env.production
+
+# Local Netlify folder
+.netlify
+
+# Large video files (exceeds GitHub 100MB limit)
+*.mp4
+*.mov
+*.avi
+public/*.mp4
+public/*.mov
+public/*.avi
+public/homepage/hero_background_video/
