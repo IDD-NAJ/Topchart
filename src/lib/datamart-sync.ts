@@ -54,30 +54,42 @@ async function ensureColumns(): Promise<SyncSchema> {
     throw new Error("Required tables data_bundles and data_bundle_categories are missing. Run database migrations first.");
   }
 
-  await sql`
-    ALTER TABLE data_bundle_categories
-    ADD COLUMN IF NOT EXISTS network VARCHAR(50),
-    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-  `;
+  try {
+    await sql`
+      ALTER TABLE data_bundle_categories
+      ADD COLUMN IF NOT EXISTS network VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    `;
+  } catch (alterErr) {
+    console.warn("[DataMart Sync] ALTER TABLE data_bundle_categories failed (columns may already exist):", alterErr instanceof Error ? alterErr.message : String(alterErr));
+  }
 
-  await sql`
-    ALTER TABLE data_bundles
-    ADD COLUMN IF NOT EXISTS category_id VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS network VARCHAR(50),
-    ADD COLUMN IF NOT EXISTS size_mb INTEGER,
-    ADD COLUMN IF NOT EXISTS validity_hours INTEGER DEFAULT 2160,
-    ADD COLUMN IF NOT EXISTS datamart_plan_id VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS datamart_plan_type VARCHAR(100),
-    ADD COLUMN IF NOT EXISTS synced_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    ADD COLUMN IF NOT EXISTS is_popular BOOLEAN DEFAULT FALSE,
-    ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE,
-    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-  `;
+  try {
+    await sql`
+      ALTER TABLE data_bundles
+      ADD COLUMN IF NOT EXISTS category_id VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS network VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS size_mb INTEGER,
+      ADD COLUMN IF NOT EXISTS validity_hours INTEGER DEFAULT 2160,
+      ADD COLUMN IF NOT EXISTS datamart_plan_id VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS datamart_plan_type VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS synced_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      ADD COLUMN IF NOT EXISTS is_popular BOOLEAN DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE,
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    `;
+  } catch (alterErr) {
+    console.warn("[DataMart Sync] ALTER TABLE data_bundles failed (columns may already exist):", alterErr instanceof Error ? alterErr.message : String(alterErr));
+  }
 
-  await sql`
-    CREATE INDEX IF NOT EXISTS idx_data_bundles_network_plan_lookup
-    ON data_bundles(network_id, datamart_plan_id, datamart_plan_type)
-  `;
+  try {
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_data_bundles_network_plan_lookup
+      ON data_bundles(network_id, datamart_plan_id, datamart_plan_type)
+    `;
+  } catch (indexErr) {
+    console.warn("[DataMart Sync] CREATE INDEX failed (may already exist or insufficient permissions):", indexErr instanceof Error ? indexErr.message : String(indexErr));
+  }
 
   const [bundleIdColumn] = await sql`
     SELECT data_type
