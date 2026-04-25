@@ -143,6 +143,7 @@ export function Header() {
           <DropdownMenu>
             <DropdownMenuTrigger
               className="flex items-center gap-1.5 text-sm font-[family-name:var(--font-aesthetic)] font-medium text-slate-700 hover:text-[#F38F20] outline-none transition-colors group data-[state=open]:text-[#F38F20]"
+              suppressHydrationWarning
             >
               Services
               <ChevronDown className="h-4 w-4 opacity-70 group-data-[state=open]:rotate-180 transition-transform duration-200" aria-hidden />

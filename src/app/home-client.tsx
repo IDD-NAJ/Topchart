@@ -96,39 +96,6 @@ const SERVICES = [
   },
 ]
 
-const SEO_LINK_GROUPS = [
-  {
-    title: "Top Airtime & Data Links",
-    links: [
-      { href: "/buy-airtime-online-ghana", label: "Buy Airtime Online Ghana" },
-      { href: "/cheap-mobile-data-ghana", label: "Cheap Mobile Data Ghana" },
-      { href: "/buy-mtn-data-bundle-online-ghana", label: "Buy MTN Data Bundle Online" },
-      { href: "/vodafone-airtime-recharge-ghana", label: "Vodafone Airtime Recharge Ghana" },
-      { href: "/airtel-tigo-data-bundle-ghana", label: "AirtelTigo Data Bundle Ghana" },
-    ],
-  },
-  {
-    title: "Verification & Results",
-    links: [
-      { href: "/virtual-phone-number-for-verification", label: "Virtual Phone Number for Verification" },
-      { href: "/buy-usa-phone-number-online", label: "Buy USA Phone Number Online" },
-      { href: "/waec-result-checker", label: "WAEC Result Checker" },
-      { href: "/bece-result-checker", label: "BECE Result Checker" },
-      { href: "/faq", label: "Topchart FAQ" },
-    ],
-  },
-  {
-    title: "Business & Platform Pages",
-    links: [
-      { href: "/about", label: "About Topchart" },
-      { href: "/blog", label: "Blog & Updates" },
-      { href: "/terms", label: "Terms of Service" },
-      { href: "/privacy", label: "Privacy Policy" },
-      { href: "/press", label: "Press Kit" },
-    ],
-  },
-]
-
 const FAQS = [
   {
     q: "How fast is airtime ana dirtime and data delivery?",
@@ -594,34 +561,6 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
                 </motion.div>
               ))}
             </motion.div>
-          </div>
-        </section>
-
-        <section className="border-b border-neutral-200/60 bg-white px-4 py-12 sm:px-6">
-          <div className="mx-auto max-w-[1200px]">
-            <h2 className="text-2xl font-bold text-neutral-900 sm:text-3xl">Popular searches on Topchart</h2>
-            <p className="mt-3 max-w-4xl text-sm leading-relaxed text-neutral-600 sm:text-base">
-              Browse direct links for airtime top-up, data bundles, verification numbers, exam result checker vouchers, gift cards, and platform resources. These pages help you reach the exact service quickly.
-            </p>
-            <div className="mt-8 grid gap-6 md:grid-cols-3">
-              {SEO_LINK_GROUPS.map((group) => (
-                <div key={group.title} className="rounded-2xl border border-neutral-200 bg-[color:var(--marketing-cream)] p-5">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-900">{group.title}</h3>
-                  <ul className="mt-4 space-y-2">
-                    {group.links.map((item) => (
-                      <li key={item.href}>
-                        <Link
-                          href={item.href}
-                          className="text-sm text-primary underline-offset-4 hover:underline"
-                        >
-                          {item.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
           </div>
         </section>
 
