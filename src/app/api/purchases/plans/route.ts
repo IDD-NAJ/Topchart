@@ -66,7 +66,7 @@ function getScopedDatamartNetworks(network?: string): DatamartNetworkCode[] | un
   return undefined;
 }
 
-async function fetchPlansFromCache(network?: string): Promise<{ success: true; data: CachedPlan[]; stale: boolean; fetchedAt: string | null } | { success: false; error: string }> {
+async function fetchPlansFromCache(network?: string): Promise<{ success: true; data: CachedPlan[]; stale: boolean; staleWarning: boolean; fetchedAt: string | null } | { success: false; error: string }> {
   try {
     const dbNetworkCode = network ? (FRONTEND_TO_DB_NETWORK[network.toLowerCase()] || network.toUpperCase()) : undefined;
 
@@ -155,9 +155,10 @@ async function fetchPlansFromCache(network?: string): Promise<{ success: true; d
       .sort((a, b) => a - b)[0];
     
     const isStale = !oldestSync || Date.now() - oldestSync > 48 * 60 * 60 * 1000;
+    const isWarning = !oldestSync || Date.now() - oldestSync > 24 * 60 * 60 * 1000;
     const fetchedAt = (result[0] as any)?.updated_at ? new Date(String((result[0] as any).updated_at)).toISOString() : null;
 
-    return { success: true, data: plans, stale: isStale, fetchedAt };
+    return { success: true, data: plans, stale: isStale, staleWarning: isWarning && !isStale, fetchedAt };
   } catch (error) {
     const e = error as { code?: string; message?: string };
     if (e?.code === "42P01") {
@@ -227,6 +228,7 @@ export async function GET(request: NextRequest) {
         success: true,
         data: cacheResult.data,
         stale: false,
+        staleWarning: cacheResult.staleWarning || false,
         fromCache: true,
         fetchedAt: cacheResult.fetchedAt,
       });
@@ -261,6 +263,7 @@ export async function GET(request: NextRequest) {
           success: true,
           data: freshCache.data,
           stale: false,
+          staleWarning: false,
           fromCache: true,
           fetchedAt: freshCache.fetchedAt,
           syncedCount: syncResult.syncedCount,
@@ -269,10 +272,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (cacheResult.success) {
+      console.warn(`[Plans API] Fallback to DB cache for network=${network || "all"} — provider unavailable`);
       return NextResponse.json({
         success: true,
         data: cacheResult.data,
         stale: true,
+        staleWarning: cacheResult.staleWarning || false,
         fromCache: true,
         fetchedAt: cacheResult.fetchedAt,
         providerError: "Provider endpoint is unavailable; showing cached plans.",
@@ -281,10 +286,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (globalCache.datamartPlansCache) {
+      console.warn(`[Plans API] Fallback to in-memory cache for network=${network || "all"} — provider and DB unavailable`);
       return NextResponse.json({
         success: true,
         data: globalCache.datamartPlansCache.data,
         stale: true,
+        staleWarning: true,
         fetchedAt: globalCache.datamartPlansCache.fetchedAt,
         providerError: "Provider endpoint is unavailable; showing cached plans.",
         code: syncResult.errorCode || "PROVIDER_UNAVAILABLE",

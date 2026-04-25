@@ -36,12 +36,29 @@ function normalizeCategoryKey(value: unknown): string {
   return String(value || "").trim().toUpperCase();
 }
 
+export async function getLastSuccessfulSync(): Promise<{ syncedAt: string | null; hoursAgo: number | null; syncedCount: number }> {
+  try {
+    const [row] = await sql`
+      SELECT config_value FROM system_config WHERE config_key = 'datamart_last_sync'
+    ` as Array<{ config_value: string }>;
+    if (!row) return { syncedAt: null, hoursAgo: null, syncedCount: 0 };
+    const parsed = JSON.parse(row.config_value || "{}");
+    if (!parsed.success || !parsed.syncedAt) return { syncedAt: null, hoursAgo: null, syncedCount: 0 };
+    const hoursAgo = (Date.now() - new Date(parsed.syncedAt).getTime()) / (1000 * 60 * 60);
+    return { syncedAt: parsed.syncedAt, hoursAgo: Math.round(hoursAgo * 10) / 10, syncedCount: parsed.syncedCount || 0 };
+  } catch {
+    return { syncedAt: null, hoursAgo: null, syncedCount: 0 };
+  }
+}
+
 export interface SyncResult {
   syncedCount: number;
   errorCount: number;
   errors: string[];
   priceChanges: Array<{ bundleId: string; oldPrice: number; newPrice: number }>;
+  deactivatedCount: number;
   syncedAt: string;
+  lastSuccessfulSyncAt: string | null;
 }
 
 export interface SyncOptions {
@@ -198,8 +215,21 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
 
   let syncedCount = 0;
   let errorCount = 0;
+  let deactivatedCount = 0;
   const errors: string[] = [];
   const priceChanges: SyncResult["priceChanges"] = [];
+  const syncedPlanKeys: Set<string> = new Set();
+
+  let lastSuccessfulSyncAt: string | null = null;
+  try {
+    const [syncStatus] = await sql`
+      SELECT config_value FROM system_config WHERE config_key = 'datamart_last_sync'
+    `;
+    if (syncStatus) {
+      const parsed = JSON.parse((syncStatus as any).config_value || "{}");
+      if (parsed.syncedCount > 0) lastSuccessfulSyncAt = parsed.syncedAt;
+    }
+  } catch {}
 
   let categoryRows: any[];
   try {
@@ -227,6 +257,12 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
       }
 
       const packages_ = plansResult.data;
+      if (packages_.length === 0) {
+        console.warn(`[DataMart Sync] API returned 0 packages for ${code} — skipping to protect existing DB data`);
+        errorCount++;
+        errors.push(`API returned empty packages for ${code} — DB data preserved`);
+        continue;
+      }
       const displayName = getNetworkDisplayName(code);
       const dbNetworkCode = DATAMART_TO_DB_NETWORK[code];
       const networkUuid = networkUuidMap[dbNetworkCode.toUpperCase()];
@@ -333,6 +369,7 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
           }
 
           syncedCount++;
+          syncedPlanKeys.add(`${networkUuid}:${datamartPlanId}:${datamartPlanType}`);
         } catch (planError) {
           errorCount++;
           errors.push(`Failed to sync ${code}_${pkg.capacity}GB: ${planError instanceof Error ? planError.message : String(planError)}`);
@@ -344,17 +381,47 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
     }
   }
 
+  if (syncedCount > 0) {
+    try {
+      const activePlanKeys = await sqlUnsafe(
+        `SELECT ${col(c.bundleId)} as id, ${col(c.bundleNetworkId)} as nid, ${col(c.bundleDatamartPlanId)} as pid, ${col(c.bundleDatamartPlanType)} as ptype FROM data_bundles WHERE COALESCE(${col(c.bundleIsActive)}, true) = true`
+      ) as Array<{id: string; nid: string; pid: string; ptype: string}>;
+      for (const plan of activePlanKeys) {
+        const key = `${plan.nid}:${plan.pid}:${plan.ptype || ""}`;
+        if (!syncedPlanKeys.has(key)) {
+          try {
+            await sqlUnsafe(
+              `UPDATE data_bundles SET ${col(c.bundleIsActive)} = false, ${col(c.bundleUpdatedAt)} = NOW() WHERE ${col(c.bundleId)} = $1`,
+              [plan.id]
+            );
+            deactivatedCount++;
+          } catch {}
+        }
+      }
+      if (deactivatedCount > 0) {
+        console.log(`[DataMart Sync] Deactivated ${deactivatedCount} plans no longer in API`);
+      }
+    } catch (deactErr: any) {
+      console.warn("[DataMart Sync] Could not deactivate stale plans:", deactErr?.message || deactErr);
+    }
+  }
+
   const syncedAt = new Date().toISOString();
   const duration = Date.now() - startTime;
+  const wasSuccess = syncedCount > 0;
 
   try {
     await sql`
       INSERT INTO system_config (config_key, config_value, updated_at)
-      VALUES ('datamart_last_sync', ${JSON.stringify({ syncedCount, errorCount, syncedAt, duration, priceChanges: priceChanges.length })}, NOW())
+      VALUES ('datamart_last_sync', ${JSON.stringify({ syncedCount, errorCount, syncedAt, duration, priceChanges: priceChanges.length, deactivatedCount, success: wasSuccess })}, NOW())
       ON CONFLICT (config_key) DO UPDATE SET config_value = EXCLUDED.config_value, updated_at = NOW()
     `;
   } catch {
     console.warn("[DataMart Sync] Failed to update sync status in system_config");
+  }
+
+  if (wasSuccess) {
+    lastSuccessfulSyncAt = syncedAt;
   }
 
   console.log("[DataMart Sync] Completed", { requestId, syncedCount, errorCount, priceChanges: priceChanges.length, duration });
@@ -364,6 +431,8 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
     errorCount,
     errors: errors.slice(0, 20),
     priceChanges,
+    deactivatedCount,
     syncedAt,
+    lastSuccessfulSyncAt,
   };
 }
