@@ -1,5 +1,5 @@
 import { sql, sqlUnsafe } from "@/lib/db";
-import { getDataPackages, getNetworkDisplayName, type DatamartNetworkCode } from "@/lib/datamart";
+import { getDataPackages, getNetworkDisplayName, isDatamartReachable, type DatamartNetworkCode, type DatamartDataPackage } from "@/lib/datamart";
 
 const NETWORK_CODES: DatamartNetworkCode[] = ["YELLO", "TELECEL", "AT_PREMIUM"];
 
@@ -59,6 +59,7 @@ export interface SyncResult {
   deactivatedCount: number;
   syncedAt: string;
   lastSuccessfulSyncAt: string | null;
+  source: "api" | "website";
 }
 
 export interface SyncOptions {
@@ -200,6 +201,81 @@ function col(name: string): string {
   return `"${name}"`;
 }
 
+interface WebsitePlan {
+  network: string;
+  capacity: number;
+  mb: number;
+  basePrice: number;
+  sellingPrice: number;
+  inStock: boolean;
+}
+
+async function fetchPlansFromWebsite(): Promise<{ success: boolean; plans: Map<string, WebsitePlan[]>; error?: string }> {
+  const plansByNetwork = new Map<string, WebsitePlan[]>();
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch("https://www.datamartgh.shop/buy", {
+      method: "GET",
+      signal: controller.signal,
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; TopchartBot/1.0)", "Accept": "text/html" },
+    });
+    clearTimeout(timer);
+
+    if (!res.ok) {
+      return { success: false, plans: plansByNetwork, error: `Website returned HTTP ${res.status}` };
+    }
+
+    const html = await res.text();
+    const unescaped = html
+      .replace(/\\u0026/g, "&")
+      .replace(/\\n/g, "\n")
+      .replace(/\\\"/g, '"');
+
+    const regex = /"network":"(YELLO|TELECEL|AT_PREMIUM|at)".*?"capacity":(\d+).*?"mb":(\d+).*?"basePrice":([\d.]+).*?"sellingPrice":([\d.]+).*?"inStock":(true|false)/g;
+    let m;
+    while ((m = regex.exec(unescaped)) !== null) {
+      const [_, network, capacity, mb, basePrice, sellingPrice, inStock] = m;
+      const normalizedNetwork = network === "at" ? "AT_PREMIUM" : (network as DatamartNetworkCode);
+      if (!plansByNetwork.has(normalizedNetwork)) {
+        plansByNetwork.set(normalizedNetwork, []);
+      }
+      plansByNetwork.get(normalizedNetwork)!.push({
+        network: normalizedNetwork,
+        capacity: parseInt(capacity),
+        mb: parseInt(mb),
+        basePrice: parseFloat(basePrice),
+        sellingPrice: parseFloat(sellingPrice),
+        inStock: inStock === "true",
+      });
+    }
+
+    for (const [, plans] of plansByNetwork) {
+      plans.sort((a, b) => a.mb - b.mb);
+    }
+
+    const totalPlans = Array.from(plansByNetwork.values()).reduce((sum, plans) => sum + plans.length, 0);
+    if (totalPlans === 0) {
+      return { success: false, plans: plansByNetwork, error: "No plans found in website HTML" };
+    }
+
+    console.log(`[DataMart Sync] Website scraping found ${totalPlans} plans across ${plansByNetwork.size} networks`);
+    return { success: true, plans: plansByNetwork };
+  } catch (err: any) {
+    return { success: false, plans: plansByNetwork, error: `Website fetch failed: ${err?.message || "unknown"}` };
+  }
+}
+
+function websitePlanToDataPackage(plan: WebsitePlan): DatamartDataPackage {
+  return {
+    capacity: String(plan.capacity),
+    mb: String(plan.mb),
+    price: String(plan.sellingPrice),
+    network: plan.network,
+    inStock: plan.inStock,
+  };
+}
+
 export async function syncDatamartPlans(options: SyncOptions = {}): Promise<SyncResult> {
   const { force = false, networks } = options;
   const startTime = Date.now();
@@ -219,6 +295,7 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
   const errors: string[] = [];
   const priceChanges: SyncResult["priceChanges"] = [];
   const syncedPlanKeys: Set<string> = new Set();
+  let source: "api" | "website" = "api";
 
   let lastSuccessfulSyncAt: string | null = null;
   try {
@@ -381,6 +458,97 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
     }
   }
 
+  if (syncedCount === 0 && errorCount > 0) {
+    console.log("[DataMart Sync] API sync failed for all networks — trying website fallback");
+    const websiteResult = await fetchPlansFromWebsite();
+    if (websiteResult.success && websiteResult.plans.size > 0) {
+      source = "website";
+      for (const [networkCode, websitePlans] of websiteResult.plans) {
+        if (!targetNetworkCodes.includes(networkCode as DatamartNetworkCode)) continue;
+        const packages_ = websitePlans.map(websitePlanToDataPackage);
+        if (packages_.length === 0) continue;
+        const displayName = getNetworkDisplayName(networkCode);
+        const dbNetworkCode = DATAMART_TO_DB_NETWORK[networkCode];
+        const networkUuid = networkUuidMap[dbNetworkCode?.toUpperCase() || ""];
+        if (!networkUuid) continue;
+        const categoryName = `${dbNetworkCode} Data Bundles`;
+        const normalizedNameKey = normalizeCategoryKey(categoryName);
+        let categoryId = categoryMap[normalizedNameKey];
+        if (!categoryId) {
+          try {
+            if (c.categoryIdIsUuid) {
+              const catResult = await sqlUnsafe(
+                `INSERT INTO data_bundle_categories (${col(c.categoryNetworkId)}, ${col(c.categoryName)}, ${col(c.categorySortOrder)}, ${col(c.categoryIsActive)}, ${col(c.categoryUpdatedAt)}) VALUES ($1, $2, 0, true, NOW()) ON CONFLICT (${col(c.categoryName)}) DO UPDATE SET ${col(c.categoryNetworkId)} = EXCLUDED.${col(c.categoryNetworkId)}, ${col(c.categoryUpdatedAt)} = NOW() RETURNING ${col(c.categoryId)} as id`,
+                [networkUuid, categoryName]
+              ) as Array<{id: string}>;
+              categoryId = catResult[0]?.id;
+            } else {
+              const catId = `cat_${dbNetworkCode.toLowerCase()}`;
+              const catResult = await sqlUnsafe(
+                `INSERT INTO data_bundle_categories (${col(c.categoryId)}, ${col(c.categoryNetworkId)}, ${col(c.categoryName)}, ${col(c.categorySortOrder)}, ${col(c.categoryIsActive)}, ${col(c.categoryUpdatedAt)}) VALUES ($1, $2, $3, 0, true, NOW()) ON CONFLICT (${col(c.categoryId)}) DO UPDATE SET ${col(c.categoryName)} = EXCLUDED.${col(c.categoryName)}, ${col(c.categoryUpdatedAt)} = NOW() RETURNING ${col(c.categoryId)} as id`,
+                [catId, networkUuid, categoryName]
+              ) as Array<{id: string}>;
+              categoryId = catResult[0]?.id;
+            }
+          } catch { categoryId = categoryMap[normalizedNameKey]; }
+          if (categoryId) categoryMap[normalizedNameKey] = categoryId;
+        }
+        if (!categoryId) continue;
+        for (const pkg of packages_) {
+          try {
+            const mb = parseInt(pkg.mb, 10);
+            const providerPrice = parseFloat(pkg.price);
+            if (!Number.isFinite(mb) || mb <= 0 || !Number.isFinite(providerPrice) || providerPrice <= 0) continue;
+            const planName = `${pkg.capacity}GB ${displayName}`;
+            const bundleId = `dm_${networkCode}_${pkg.capacity}gb`;
+            const validityHours = 90 * 24;
+            const isActive = Boolean(pkg.inStock);
+            const datamartPlanId = String(pkg.capacity);
+            const datamartPlanType = "capacity";
+            const categoryIdForBundle = c.bundleCategoryIdIsUuid && !isUuidValue(categoryId) ? null : categoryId;
+            const [existingPlan] = await sqlUnsafe(
+              `SELECT ${col(c.bundleId)} as id, ${col(c.bundlePrice)} as price FROM data_bundles WHERE ${col(c.bundleNetworkId)} = $1 AND ${col(c.bundleDatamartPlanId)} = $2 AND (${col(c.bundleDatamartPlanType)} = $3 OR ${col(c.bundleDatamartPlanType)} IS NULL OR ${col(c.bundleDatamartPlanType)} = '') LIMIT 1`,
+              [networkUuid, datamartPlanId, datamartPlanType]
+            ) as Array<{id: string; price: number}>;
+            if (!existingPlan?.id) {
+              if (c.bundleIdIsUuid) {
+                await sqlUnsafe(
+                  `INSERT INTO data_bundles (${col(c.bundleNetworkId)}, ${col(c.bundleCategoryId)}, ${col(c.bundleName)}, ${col(c.bundleSizeMb)}, ${col(c.bundleValidityHours)}, ${col(c.bundlePrice)}, ${col(c.bundleIsPopular)}, ${col(c.bundleIsActive)}, ${col(c.bundleDatamartPlanId)}, ${col(c.bundleDatamartPlanType)}, ${col(c.bundleUpdatedAt)}) VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8, $9, NOW())`,
+                  [networkUuid, categoryIdForBundle, planName, mb, validityHours, providerPrice, isActive, datamartPlanId, datamartPlanType]
+                );
+              } else {
+                await sqlUnsafe(
+                  `INSERT INTO data_bundles (${col(c.bundleId)}, ${col(c.bundleNetworkId)}, ${col(c.bundleCategoryId)}, ${col(c.bundleName)}, ${col(c.bundleSizeMb)}, ${col(c.bundleValidityHours)}, ${col(c.bundlePrice)}, ${col(c.bundleIsPopular)}, ${col(c.bundleIsActive)}, ${col(c.bundleDatamartPlanId)}, ${col(c.bundleDatamartPlanType)}, ${col(c.bundleUpdatedAt)}) VALUES ($1, $2, $3, $4, $5, $6, $7, false, $8, $9, $10, NOW()) ON CONFLICT (${col(c.bundleId)}) DO UPDATE SET ${col(c.bundlePrice)} = EXCLUDED.${col(c.bundlePrice)}, ${col(c.bundleIsActive)} = EXCLUDED.${col(c.bundleIsActive)}, ${col(c.bundleUpdatedAt)} = NOW()`,
+                  [bundleId, networkUuid, categoryIdForBundle, planName, mb, validityHours, providerPrice, isActive, datamartPlanId, datamartPlanType]
+                );
+              }
+              syncedCount++;
+              syncedPlanKeys.add(`${networkUuid}:${datamartPlanId}:${datamartPlanType}`);
+            } else {
+              if (Number(existingPlan.price) !== providerPrice) {
+                priceChanges.push({ bundleId: String(existingPlan.id || bundleId), oldPrice: Number(existingPlan.price), newPrice: providerPrice });
+              }
+              await sqlUnsafe(
+                `UPDATE data_bundles SET ${col(c.bundlePrice)} = $1, ${col(c.bundleIsActive)} = $2, ${col(c.bundleUpdatedAt)} = NOW() WHERE ${col(c.bundleId)} = $3`,
+                [providerPrice, isActive, existingPlan.id]
+              );
+              syncedCount++;
+              syncedPlanKeys.add(`${networkUuid}:${datamartPlanId}:${datamartPlanType}`);
+            }
+          } catch (planError) {
+            errorCount++;
+            errors.push(`Website fallback: Failed to sync ${networkCode}_${pkg.capacity}GB: ${planError instanceof Error ? planError.message : String(planError)}`);
+          }
+        }
+      }
+      if (syncedCount > 0) {
+        console.log(`[DataMart Sync] Website fallback synced ${syncedCount} plans`);
+      }
+    } else {
+      errors.push(`Website fallback also failed: ${websiteResult.error}`);
+    }
+  }
+
   if (syncedCount > 0) {
     try {
       const activePlanKeys = await sqlUnsafe(
@@ -413,7 +581,7 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
   try {
     await sql`
       INSERT INTO system_config (config_key, config_value, updated_at)
-      VALUES ('datamart_last_sync', ${JSON.stringify({ syncedCount, errorCount, syncedAt, duration, priceChanges: priceChanges.length, deactivatedCount, success: wasSuccess })}, NOW())
+      VALUES ('datamart_last_sync', ${JSON.stringify({ syncedCount, errorCount, syncedAt, duration, priceChanges: priceChanges.length, deactivatedCount, success: wasSuccess, source })}, NOW())
       ON CONFLICT (config_key) DO UPDATE SET config_value = EXCLUDED.config_value, updated_at = NOW()
     `;
   } catch {
@@ -434,5 +602,6 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
     deactivatedCount,
     syncedAt,
     lastSuccessfulSyncAt,
+    source,
   };
 }

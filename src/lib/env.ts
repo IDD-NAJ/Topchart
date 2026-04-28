@@ -1,29 +1,33 @@
 import { z } from "zod";
 
+const optionalUrl = z.preprocess(
+  (val) => (typeof val === "string" && val.trim() === "" ? undefined : val),
+  z.string().url().optional()
+);
+
 const envSchema = z.object({
   DATABASE_URL: z.string().optional(),
   NEON_DATABASE_URL: z.string().optional(),
   NETLIFY_DATABASE_URL: z.string().optional(),
   NEXT_PUBLIC_DATABASE_URL: z.string().optional(),
   PAYSTACK_SECRET_KEY: z.string().optional(),
-  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+  NEXT_PUBLIC_APP_URL: optionalUrl,
   PVADEALS_API_KEY: z.string().optional(),
-  PVADEALS_BASE_URL: z.string().url().optional(),
+  PVADEALS_BASE_URL: optionalUrl,
   PVADEALS_MARKUP_PERCENT: z.string().optional(),
   DATAMART_API_KEY: z.string().optional(),
-  DATAMART_BASE_URL: z.string().url().optional(),
+  DATAMART_BASE_URL: optionalUrl,
   DATAMART_WEBHOOK_SECRET: z.string().optional(),
   DATAMART_SIGNING_SECRET: z.string().optional(),
-  NEXT_PUBLIC_DATAMART_API_KEY: z.string().optional(),
   NEXT_PUBLIC_WHATSAPP_NUMBER: z.string().optional(),
   NEXT_PUBLIC_WHATSAPP_ENABLED: z.enum(["true", "false"]).optional(),
   NEXT_PUBLIC_TAWK_ENABLED: z.enum(["true", "false"]).optional(),
   USD_TO_GHS_RATE: z.string().optional(),
   NEXT_PUBLIC_USD_TO_GHS_RATE: z.string().optional(),
   TEXTVERIFIED_API_KEY: z.string().optional(),
-  TEXTVERIFIED_API_URL: z.string().url().optional(),
+  TEXTVERIFIED_API_URL: optionalUrl,
   TEXTVERIFIED_WEBHOOK_SECRET: z.string().optional(),
-  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_URL: optionalUrl,
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   SUPABASE_BUCKET_HOMEPAGE_MEDIA: z.string().optional(),
   EMAIL_HOST: z.string().optional(),
@@ -32,7 +36,7 @@ const envSchema = z.object({
   EMAIL_PASS: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
   NINEPROXY_API_KEY: z.string().optional(),
-  NINEPROXY_BASE_URL: z.string().url().optional(),
+  NINEPROXY_BASE_URL: optionalUrl,
   NINEPROXY_SANDBOX: z.enum(["true", "false"]).optional(),
   AIRALO_CLIENT_ID: z.string().optional(),
   AIRALO_CLIENT_SECRET: z.string().optional(),
@@ -40,13 +44,13 @@ const envSchema = z.object({
   AIRALO_SANDBOX: z.enum(["true", "false"]).optional(),
   VTPASS_API_KEY: z.string().optional(),
   VTPASS_SECRET_KEY: z.string().optional(),
-  VTPASS_BASE_URL: z.string().url().optional(),
+  VTPASS_BASE_URL: optionalUrl,
   VTPASS_SANDBOX: z.enum(["true", "false"]).optional(),
   RELOADLY_CLIENT_ID: z.string().optional(),
   RELOADLY_CLIENT_SECRET: z.string().optional(),
-  RELOADLY_BASE_URL: z.string().url().optional(),
-  RELOADLY_API_BASE_URL: z.string().url().optional(),
-  RELOADLY_AUTH_URL: z.string().url().optional(),
+  RELOADLY_BASE_URL: optionalUrl,
+  RELOADLY_API_BASE_URL: optionalUrl,
+  RELOADLY_AUTH_URL: optionalUrl,
   RELOADLY_SANDBOX: z.enum(["true", "false"]).optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
@@ -79,7 +83,7 @@ const paystackEnvSchema = z.object({
 type PaystackEnv = z.infer<typeof paystackEnvSchema>;
 
 const supabaseStorageEnvSchema = z.object({
-  SUPABASE_URL: z.string().url("SUPABASE_URL must be a valid URL").optional(),
+  SUPABASE_URL: optionalUrl,
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required").optional(),
   SUPABASE_BUCKET_HOMEPAGE_MEDIA: z.string().optional(),
 }).refine(
@@ -94,7 +98,7 @@ type SupabaseStorageEnv = z.infer<typeof supabaseStorageEnvSchema>;
 
 const datamartEnvSchema = z.object({
   DATAMART_API_KEY: z.string().min(1, "DATAMART_API_KEY is required"),
-  DATAMART_BASE_URL: z.string().url().optional(),
+  DATAMART_BASE_URL: optionalUrl,
   DATAMART_WEBHOOK_SECRET: z.string().optional(),
   DATAMART_SIGNING_SECRET: z.string().optional(),
 });
@@ -103,16 +107,16 @@ type DatamartEnv = z.infer<typeof datamartEnvSchema>;
 const reloadlyEnvSchema = z.object({
   RELOADLY_CLIENT_ID: z.string().min(1, "RELOADLY_CLIENT_ID is required"),
   RELOADLY_CLIENT_SECRET: z.string().min(1, "RELOADLY_CLIENT_SECRET is required"),
-  RELOADLY_BASE_URL: z.string().url().optional(),
-  RELOADLY_API_BASE_URL: z.string().url().optional(), // Legacy support
-  RELOADLY_AUTH_URL: z.string().url().optional(),
+  RELOADLY_BASE_URL: optionalUrl,
+  RELOADLY_API_BASE_URL: optionalUrl,
+  RELOADLY_AUTH_URL: optionalUrl,
   RELOADLY_SANDBOX: z.enum(["true", "false"]).optional(),
 });
 type ReloadlyEnv = z.infer<typeof reloadlyEnvSchema>;
 
 const nineproxyEnvSchema = z.object({
   NINEPROXY_API_KEY: z.string().min(1, "NINEPROXY_API_KEY is required"),
-  NINEPROXY_BASE_URL: z.string().url().optional(),
+  NINEPROXY_BASE_URL: optionalUrl,
   NINEPROXY_SANDBOX: z.enum(["true", "false"]).optional(),
 });
 type NineProxyEnv = z.infer<typeof nineproxyEnvSchema>;
@@ -128,7 +132,7 @@ type AiraloEnv = z.infer<typeof airaloEnvSchema>;
 const vtpassEnvSchema = z.object({
   VTPASS_API_KEY: z.string().min(1, "VTPASS_API_KEY is required"),
   VTPASS_SECRET_KEY: z.string().min(1, "VTPASS_SECRET_KEY is required"),
-  VTPASS_BASE_URL: z.string().url().optional(),
+  VTPASS_BASE_URL: optionalUrl,
   VTPASS_SANDBOX: z.enum(["true", "false"]).optional(),
 });
 type VtpassEnv = z.infer<typeof vtpassEnvSchema>;
@@ -141,7 +145,7 @@ type GoogleAuthEnv = z.infer<typeof googleAuthEnvSchema>;
 
 const pvadealsEnvSchema = z.object({
   PVADEALS_API_KEY: z.string().min(1, "PVADEALS_API_KEY is required"),
-  PVADEALS_BASE_URL: z.string().url().optional(),
+  PVADEALS_BASE_URL: optionalUrl,
   PVADEALS_MARKUP_PERCENT: z.string().optional(),
   USD_TO_GHS_RATE: z.string().optional(),
 });

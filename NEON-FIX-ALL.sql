@@ -154,21 +154,32 @@ ALTER TABLE data_bundle_categories ADD COLUMN IF NOT EXISTS network VARCHAR(50);
 ALTER TABLE data_bundle_categories ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 
 -- 10. Fix data_bundles
+ALTER TABLE data_bundles ADD COLUMN IF NOT EXISTS network_id VARCHAR(50);
 ALTER TABLE data_bundles ADD COLUMN IF NOT EXISTS category_id VARCHAR(255);
 ALTER TABLE data_bundles ADD COLUMN IF NOT EXISTS size_mb INTEGER;
 ALTER TABLE data_bundles ADD COLUMN IF NOT EXISTS validity_hours INTEGER DEFAULT 2160;
+ALTER TABLE data_bundles ADD COLUMN IF NOT EXISTS price_override DECIMAL(10,2);
+ALTER TABLE data_bundles ADD COLUMN IF NOT EXISTS markup_percent DECIMAL(5,2) DEFAULT 0;
+ALTER TABLE data_bundles ADD COLUMN IF NOT EXISTS is_popular BOOLEAN DEFAULT FALSE;
+ALTER TABLE data_bundles ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT FALSE;
+ALTER TABLE data_bundles ADD COLUMN IF NOT EXISTS datamart_plan_id VARCHAR(255);
+ALTER TABLE data_bundles ADD COLUMN IF NOT EXISTS datamart_plan_type VARCHAR(100);
+ALTER TABLE data_bundles ADD COLUMN IF NOT EXISTS synced_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 ALTER TABLE data_bundles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 
--- 11. Seed categories
+-- 11. Seed categories (using current network naming: MTN, Telecel, AirtelTigo)
 INSERT INTO data_bundle_categories (id, network, name, sort_order, is_active, updated_at)
 VALUES ('cat_mtn', 'MTN', 'MTN Data Bundles', 1, TRUE, NOW())
 ON CONFLICT (id) DO UPDATE SET network = EXCLUDED.network, name = EXCLUDED.name, updated_at = NOW();
 INSERT INTO data_bundle_categories (id, network, name, sort_order, is_active, updated_at)
-VALUES ('cat_vodafone', 'VODAFONE', 'Vodafone Data Bundles', 2, TRUE, NOW())
+VALUES ('cat_telecel', 'Telecel', 'Telecel Data Bundles', 2, TRUE, NOW())
 ON CONFLICT (id) DO UPDATE SET network = EXCLUDED.network, name = EXCLUDED.name, updated_at = NOW();
 INSERT INTO data_bundle_categories (id, network, name, sort_order, is_active, updated_at)
-VALUES ('cat_airteltigo', 'AIRTELTIGO', 'AirtelTigo Data Bundles', 3, TRUE, NOW())
+VALUES ('cat_airteltigo', 'AirtelTigo', 'AirtelTigo Data Bundles', 3, TRUE, NOW())
 ON CONFLICT (id) DO UPDATE SET network = EXCLUDED.network, name = EXCLUDED.name, updated_at = NOW();
+
+-- 11b. Fix any legacy VODAFONE category rows to Telecel
+UPDATE data_bundle_categories SET network = 'Telecel', name = REPLACE(name, 'Vodafone', 'Telecel'), updated_at = NOW() WHERE network = 'VODAFONE' OR network = 'Vodafone';
 
 -- 12. Create missing indexes
 CREATE UNIQUE INDEX IF NOT EXISTS idx_verification_services_pvadeals_id ON verification_services(pvadeals_service_id);

@@ -7,6 +7,8 @@ import { TawkChat } from '@/components/tawk-chat'
 import { WhatsAppFAB } from '@/components/whatsapp-fab'
 import '@fontsource-variable/inter'
 import '@fontsource/dm-serif-display'
+import '@fontsource/great-vibes/400.css'
+import '@fontsource-variable/space-grotesk/index.css'
 import './globals.css'
 
 // Fallback standard CSS variable system for Great Vibes (fixes Turbopack internal/font compilation network flake issues)

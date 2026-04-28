@@ -1,4 +1,5 @@
 import { getDatamartEnv } from "@/lib/env";
+import { normalizeDatamartBaseUrl } from "@/lib/datamart";
 import { providerRequest } from "@/lib/providers/http-client";
 import type {
   BillCategory,
@@ -22,7 +23,7 @@ interface DatamartConfig {
 function getDatamartConfig(): DatamartConfig {
   const env = getDatamartEnv();
   return {
-    baseUrl: env.DATAMART_BASE_URL || "https://api.datamartgh.shop",
+    baseUrl: normalizeDatamartBaseUrl(env.DATAMART_BASE_URL),
     apiKey: env.DATAMART_API_KEY,
   };
 }

@@ -1,6 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sql } from "@/lib/db";
+import { sqlUnsafe } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
+import { fetchVerificationPricingSettings } from "@/lib/verification-pricing-settings";
+
+function parseFiniteNumber(value: unknown): number | null {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value === "string") {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function parseNullableMarkup(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = parseFiniteNumber(value);
+  if (parsed === null || parsed < 0) return null;
+  return parsed;
+}
+
+async function getMarkupGuards(): Promise<{ minMarkup: number | null; maxMarkup: number | null }> {
+  const settings = await fetchVerificationPricingSettings();
+  return {
+    minMarkup: settings.minMarkup,
+    maxMarkup: settings.maxMarkup,
+  };
+}
+
+function validateMarkupRange(markup: number, min: number | null, max: number | null): boolean {
+  if (min !== null && markup < min) return false;
+  if (max !== null && markup > max) return false;
+  return true;
+}
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -25,6 +56,27 @@ export async function PATCH(request: NextRequest) {
     const updates: string[] = [];
     const values: any[] = [];
     let paramIndex = 1;
+
+    if (markupPercentage !== undefined) {
+      const normalizedMarkup = parseNullableMarkup(markupPercentage);
+      if (normalizedMarkup === null) {
+        return NextResponse.json(
+          { success: false, error: "markupPercentage must be a non-negative number" },
+          { status: 400 }
+        );
+      }
+
+      const guards = await getMarkupGuards();
+      if (!validateMarkupRange(normalizedMarkup, guards.minMarkup, guards.maxMarkup)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `markupPercentage must be within configured guard range (${guards.minMarkup ?? "no min"} - ${guards.maxMarkup ?? "no max"})`,
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     if (markupPercentage !== undefined) {
       updates.push(`markup_percentage = $${paramIndex}`);
@@ -62,7 +114,7 @@ export async function PATCH(request: NextRequest) {
       WHERE id IN (${placeholders})
     `;
 
-    await sql`${query.replace(/\$\d+/g, (match) => values[parseInt(match.slice(1)) - 1])}`;
+    await sqlUnsafe(query, values);
 
     return NextResponse.json({
       success: true,
@@ -102,6 +154,27 @@ export async function PUT(request: NextRequest) {
     let paramIndex = 2;
 
     if (markupPercentage !== undefined) {
+      const normalizedMarkup = parseNullableMarkup(markupPercentage);
+      if (normalizedMarkup === null) {
+        return NextResponse.json(
+          { success: false, error: "markupPercentage must be a non-negative number" },
+          { status: 400 }
+        );
+      }
+
+      const guards = await getMarkupGuards();
+      if (!validateMarkupRange(normalizedMarkup, guards.minMarkup, guards.maxMarkup)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `markupPercentage must be within configured guard range (${guards.minMarkup ?? "no min"} - ${guards.maxMarkup ?? "no max"})`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (markupPercentage !== undefined) {
       updates.push(`markup_percentage = $${paramIndex}`);
       values.push(markupPercentage);
       paramIndex++;
@@ -126,14 +199,15 @@ export async function PUT(request: NextRequest) {
       UPDATE verification_services
       SET ${updates.join(", ")}
       WHERE category = $1
+      RETURNING id
     `;
 
-    const result = await sql`${query.replace(/\$\d+/g, (match) => values[parseInt(match.slice(1)) - 1])}`;
+    const result = await sqlUnsafe(query, values);
 
     return NextResponse.json({
       success: true,
       message: `Updated all services in ${category}`,
-      affected: result.length,
+      affected: (result as any[]).length,
     });
   } catch (error) {
     console.error("Category update error:", error);

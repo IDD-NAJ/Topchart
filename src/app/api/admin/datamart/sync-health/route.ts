@@ -86,6 +86,7 @@ export async function GET() {
           priceChanges: parsed.priceChanges || 0,
           duration: parsed.duration || 0,
           success: parsed.success || false,
+          source: parsed.source || "api",
         },
         totalActivePlans,
         totalCategories,

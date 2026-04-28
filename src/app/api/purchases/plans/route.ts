@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getNetworks, getBalance, resolveNetworkCode, type DatamartNetworkCode } from "@/lib/datamart";
+import { getNetworks, getBalance, resolveNetworkCode, isDatamartReachable, type DatamartNetworkCode } from "@/lib/datamart";
 import { requireAdmin } from "@/lib/admin-auth";
 import { sql, sqlUnsafe } from "@/lib/db";
 import { syncDatamartPlans } from "@/lib/datamart-sync";
@@ -70,51 +70,32 @@ async function fetchPlansFromCache(network?: string): Promise<{ success: true; d
   try {
     const dbNetworkCode = network ? (FRONTEND_TO_DB_NETWORK[network.toLowerCase()] || network.toUpperCase()) : undefined;
 
+    const selectCols = `
+      b.id,
+      n.name as network_id,
+      b.name,
+      COALESCE(b."sizeMb", b.size_mb) as size_mb,
+      COALESCE(b."validityHours", b.validity_hours) as validity_hours,
+      b.price as "providerPrice",
+      COALESCE(b."priceOverride", b.price_override) as "priceOverride",
+      COALESCE(b."markupPercent", b.markup_percent) as "markupPercent",
+      COALESCE(b."isPopular", b.is_popular) as "isPopular",
+      COALESCE(b."isActive", b.is_active) as "isActive",
+      COALESCE(b."isFeatured", b.is_featured) as "isFeatured",
+      COALESCE(b."datamartPlanId", b.datamart_plan_id) as "datamartPlanId",
+      COALESCE(b."datamartPlanType", b.datamart_plan_type) as "datamartPlanType",
+      COALESCE(b."syncedAt", b.synced_at, b."updatedAt", b.updated_at) as "syncedAt",
+      COALESCE(b."updatedAt", b.updated_at) as updated_at`;
+
+    const joinClause = `FROM data_bundles b LEFT JOIN networks n ON COALESCE(b."networkId", b.network_id) = n.id`;
+
     const rows = dbNetworkCode
       ? sqlUnsafe(
-          `SELECT 
-            b.id,
-            COALESCE(n.name, b.network_id) as network_id,
-            b.name,
-            COALESCE(b."sizeMb", b.size_mb) as size_mb,
-            COALESCE(b."validityHours", b.validity_hours) as validity_hours,
-            b.price as "providerPrice",
-            COALESCE(b."priceOverride", b.price_override) as "priceOverride",
-            COALESCE(b."markupPercent", b.markup_percent) as "markupPercent",
-            COALESCE(b."isPopular", b.is_popular) as "isPopular",
-            COALESCE(b."isActive", b.is_active, true) as "isActive",
-            COALESCE(b."isFeatured", b.is_featured) as "isFeatured",
-            COALESCE(b."datamartPlanId", b.datamart_plan_id) as "datamartPlanId",
-            COALESCE(b."datamartPlanType", b.datamart_plan_type) as "datamartPlanType",
-            COALESCE(b."syncedAt", b.synced_at) as "syncedAt",
-            COALESCE(b."updatedAt", b.updated_at) as updated_at
-          FROM data_bundles b
-          LEFT JOIN networks n ON b."networkId" = n.id
-          WHERE COALESCE(b."isActive", b.is_active, true) = true AND n.name = $1
-          ORDER BY b.price ASC`,
+          `SELECT ${selectCols} ${joinClause} WHERE COALESCE(b."isActive", b.is_active) = true AND n.name = $1 ORDER BY b.price ASC`,
           [dbNetworkCode]
         )
       : sqlUnsafe(
-          `SELECT 
-            b.id,
-            COALESCE(n.name, b.network_id) as network_id,
-            b.name,
-            COALESCE(b."sizeMb", b.size_mb) as size_mb,
-            COALESCE(b."validityHours", b.validity_hours) as validity_hours,
-            b.price as "providerPrice",
-            COALESCE(b."priceOverride", b.price_override) as "priceOverride",
-            COALESCE(b."markupPercent", b.markup_percent) as "markupPercent",
-            COALESCE(b."isPopular", b.is_popular) as "isPopular",
-            COALESCE(b."isActive", b.is_active, true) as "isActive",
-            COALESCE(b."isFeatured", b.is_featured) as "isFeatured",
-            COALESCE(b."datamartPlanId", b.datamart_plan_id) as "datamartPlanId",
-            COALESCE(b."datamartPlanType", b.datamart_plan_type) as "datamartPlanType",
-            COALESCE(b."syncedAt", b.synced_at) as "syncedAt",
-            COALESCE(b."updatedAt", b.updated_at) as updated_at
-          FROM data_bundles b
-          LEFT JOIN networks n ON b."networkId" = n.id
-          WHERE COALESCE(b."isActive", b.is_active, true) = true
-          ORDER BY n.name, b.price ASC`
+          `SELECT ${selectCols} ${joinClause} WHERE COALESCE(b."isActive", b.is_active) = true ORDER BY n.name, b.price ASC`
         );
 
     const result = await rows;
@@ -234,22 +215,92 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    if (cacheResult.success && !refresh) {
+      const reachable = await isDatamartReachable();
+      if (!reachable) {
+        console.warn(`[Plans API] DataMart unreachable — serving DB cache for network=${network || "all"}`);
+        return NextResponse.json({
+          success: true,
+          data: cacheResult.data,
+          stale: cacheResult.stale,
+          staleWarning: cacheResult.staleWarning || false,
+          fromCache: true,
+          fetchedAt: cacheResult.fetchedAt,
+          providerError: "Provider endpoint is unreachable; showing cached plans.",
+          code: "PROVIDER_UNAVAILABLE",
+        });
+      }
+      let syncResult: { success: boolean; syncedCount?: number; error?: string; errorCode?: string };
+      try {
+        const scopedNetworks = getScopedDatamartNetworks(network || undefined);
+        const result = await syncDatamartPlans({ networks: scopedNetworks });
+        syncResult = {
+          success: result.syncedCount > 0,
+          syncedCount: result.syncedCount,
+          error:
+            result.syncedCount > 0
+              ? undefined
+              : result.errors[0] || "No plans could be synced from DataMart",
+          errorCode: result.syncedCount > 0 ? undefined : "PROVIDER_SYNC_FAILED",
+        };
+      } catch (syncError) {
+        console.error("DataMart sync error:", syncError);
+        syncResult = { success: false, error: syncError instanceof Error ? syncError.message : "Sync failed", errorCode: "PROVIDER_SYNC_ERROR" };
+      }
+
+      if (syncResult.success) {
+        const freshCache = await fetchPlansFromCache(network || undefined);
+        if (freshCache.success) {
+          globalCache.datamartPlansCache = {
+            data: freshCache.data,
+            fetchedAt: new Date().toISOString(),
+          };
+          return NextResponse.json({
+            success: true,
+            data: freshCache.data,
+            stale: false,
+            staleWarning: false,
+            fromCache: true,
+            fetchedAt: freshCache.fetchedAt,
+            syncedCount: syncResult.syncedCount,
+          });
+        }
+      }
+
+      console.warn(`[Plans API] Fallback to DB cache for network=${network || "all"} — provider unavailable`);
+      return NextResponse.json({
+        success: true,
+        data: cacheResult.data,
+        stale: cacheResult.stale,
+        staleWarning: cacheResult.staleWarning || false,
+        fromCache: true,
+        fetchedAt: cacheResult.fetchedAt,
+        providerError: "Provider endpoint is unavailable; showing cached plans.",
+        code: syncResult.errorCode || "PROVIDER_UNAVAILABLE",
+      });
+    }
+
     let syncResult: { success: boolean; syncedCount?: number; error?: string; errorCode?: string };
-    try {
-      const scopedNetworks = getScopedDatamartNetworks(network || undefined);
-      const result = await syncDatamartPlans({ networks: scopedNetworks });
-      syncResult = {
-        success: result.syncedCount > 0,
-        syncedCount: result.syncedCount,
-        error:
-          result.syncedCount > 0
-            ? undefined
-            : result.errors[0] || "No plans could be synced from DataMart",
-        errorCode: result.syncedCount > 0 ? undefined : "PROVIDER_SYNC_FAILED",
-      };
-    } catch (syncError) {
-      console.error("DataMart sync error:", syncError);
-      syncResult = { success: false, error: syncError instanceof Error ? syncError.message : "Sync failed", errorCode: "PROVIDER_SYNC_ERROR" };
+    const reachable = await isDatamartReachable();
+    if (!reachable) {
+      syncResult = { success: false, error: "DataMart API is unreachable", errorCode: "PROVIDER_UNAVAILABLE" };
+    } else {
+      try {
+        const scopedNetworks = getScopedDatamartNetworks(network || undefined);
+        const result = await syncDatamartPlans({ networks: scopedNetworks });
+        syncResult = {
+          success: result.syncedCount > 0,
+          syncedCount: result.syncedCount,
+          error:
+            result.syncedCount > 0
+              ? undefined
+              : result.errors[0] || "No plans could be synced from DataMart",
+          errorCode: result.syncedCount > 0 ? undefined : "PROVIDER_SYNC_FAILED",
+        };
+      } catch (syncError) {
+        console.error("DataMart sync error:", syncError);
+        syncResult = { success: false, error: syncError instanceof Error ? syncError.message : "Sync failed", errorCode: "PROVIDER_SYNC_ERROR" };
+      }
     }
 
     if (syncResult.success) {

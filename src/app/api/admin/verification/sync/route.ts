@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 import { isPvadealsConfigured } from "@/lib/env";
@@ -6,13 +6,16 @@ import {
   getAllServices,
   getBalance,
   mapCategoryByName,
-  DEFAULT_MARKUP_PERCENT,
 } from "@/lib/pvadeals";
+import {
+  CATEGORY_KEYS,
+  fetchVerificationPricingSettings,
+} from "@/lib/verification-pricing-settings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json({ success: false, error: admin.error }, { status: admin.status });
@@ -27,6 +30,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const pvaResult = await getAllServices();
+    const pricingSettings = await fetchVerificationPricingSettings();
 
     if (!pvaResult.success || !pvaResult.data) {
       return NextResponse.json(
@@ -42,6 +46,8 @@ export async function POST(request: NextRequest) {
 
     for (const svc of services) {
       const category = mapCategoryByName(svc.name);
+      const categoryMarkup =
+        pricingSettings.categoryDefaults[category as (typeof CATEGORY_KEYS)[number]] ?? pricingSettings.defaultMarkup;
       try {
         await sql`
           INSERT INTO verification_services (
@@ -53,7 +59,7 @@ export async function POST(request: NextRequest) {
             ${svc.picture}, ${svc.country},
             ${svc.STRprice}, ${svc.LTR3price}, ${svc.LTR7price},
             ${svc.LTR14price}, ${svc.LTR30price},
-            ${DEFAULT_MARKUP_PERCENT}, true, NOW(), NOW()
+            ${categoryMarkup}, true, NOW(), NOW()
           )
           ON CONFLICT (pvadeals_service_id) DO UPDATE SET
             name = EXCLUDED.name,
@@ -115,13 +121,13 @@ export async function GET() {
     const [balanceResult, countResult, syncStatusResult] = await Promise.all([
       getBalance(),
       sql`SELECT COUNT(*) as count FROM verification_services WHERE is_active = true`.catch(() => [{ count: 0 }]),
-      sql`SELECT value FROM system_config WHERE key = 'pvadeals_last_sync'`.catch(() => []),
+      sql`SELECT config_value FROM system_config WHERE config_key = 'pvadeals_last_sync'`.catch(() => []),
     ]);
 
     let lastSync = null;
     if (syncStatusResult && syncStatusResult.length > 0) {
       try {
-        lastSync = JSON.parse(syncStatusResult[0].value);
+        lastSync = JSON.parse((syncStatusResult as any[])[0].config_value);
       } catch {
         lastSync = null;
       }

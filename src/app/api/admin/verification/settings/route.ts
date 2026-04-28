@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
+import {
+  CATEGORY_KEYS,
+  parseFiniteNumber,
+  parseNullableMarkup,
+  normalizeCategoryDefaults,
+  validateMarkupRange,
+  fetchVerificationPricingSettings,
+  saveVerificationPricingSettings,
+  VerificationPricingSettings,
+} from "@/lib/verification-pricing-settings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,50 +26,12 @@ export async function GET() {
       );
     }
 
-    // Try to get settings from database, return defaults if not found
-    try {
-      const settings = await sql`
-        SELECT key, value FROM app_settings 
-        WHERE key IN ('exchange_rate', 'default_verification_markup', 'pvadeals_api_key', 'min_markup', 'max_markup', 'category_defaults')
-      `;
-      
-      const settingsMap: Record<string, string> = {};
-      settings.forEach((s: any) => {
-        settingsMap[s.key] = s.value;
-      });
+    const settings = await fetchVerificationPricingSettings();
 
-      let categoryDefaults: Record<string, number> = {};
-      try {
-        if (settingsMap.category_defaults) {
-          categoryDefaults = JSON.parse(settingsMap.category_defaults);
-        }
-      } catch {}
-
-      return NextResponse.json({
-        success: true,
-        data: {
-          exchangeRate: parseFloat(settingsMap.exchange_rate || process.env.NEXT_PUBLIC_USD_TO_GHS_RATE || "15.5"),
-          defaultMarkup: parseFloat(settingsMap.default_verification_markup || "40"),
-          minMarkup: settingsMap.min_markup ? parseFloat(settingsMap.min_markup) : null,
-          maxMarkup: settingsMap.max_markup ? parseFloat(settingsMap.max_markup) : null,
-          categoryDefaults,
-          pvadealsApiKey: settingsMap.pvadeals_api_key || process.env.PVADEALS_API_KEY || "",
-        },
-      });
-    } catch {
-      // Return defaults if table doesn't exist
-      return NextResponse.json({
-        success: true,
-        data: {
-          exchangeRate: parseFloat(process.env.NEXT_PUBLIC_USD_TO_GHS_RATE || "15.5"),
-          defaultMarkup: 40,
-          minMarkup: null,
-          maxMarkup: null,
-          categoryDefaults: {},
-          pvadealsApiKey: process.env.PVADEALS_API_KEY || "",
-        },
-      });
-    }
+    return NextResponse.json({
+      success: true,
+      data: settings,
+    });
   } catch (error) {
     console.error("Get settings error:", error);
     return NextResponse.json(
@@ -81,75 +53,115 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { exchangeRate, defaultMarkup, categoryDefaults, pvadealsApiKey, minMarkup, maxMarkup } = body;
+    const { exchangeRate, defaultMarkup, categoryDefaults, pvadealsApiKey, minMarkup, maxMarkup, applyToExisting } = body;
 
-    // Update settings
-    const updates: string[] = [];
-    
-    if (exchangeRate !== undefined) {
-      await sql`
-        INSERT INTO app_settings (key, value, updated_at)
-        VALUES ('exchange_rate', ${exchangeRate.toString()}, NOW())
-        ON CONFLICT (key) DO UPDATE SET value = ${exchangeRate.toString()}, updated_at = NOW()
-      `;
-      updates.push(`exchange_rate: ${exchangeRate}`);
+    const current = await fetchVerificationPricingSettings();
+
+    const resolvedExchangeRate =
+      exchangeRate !== undefined ? parseFiniteNumber(exchangeRate) : current.exchangeRate;
+    if (resolvedExchangeRate === null || resolvedExchangeRate <= 0) {
+      return NextResponse.json(
+        { success: false, error: "exchangeRate must be a positive number" },
+        { status: 400 }
+      );
     }
 
-    if (defaultMarkup !== undefined) {
-      await sql`
-        INSERT INTO app_settings (key, value, updated_at)
-        VALUES ('default_verification_markup', ${defaultMarkup.toString()}, NOW())
-        ON CONFLICT (key) DO UPDATE SET value = ${defaultMarkup.toString()}, updated_at = NOW()
-      `;
-      updates.push(`default_verification_markup: ${defaultMarkup}%`);
+    const resolvedDefaultMarkup =
+      defaultMarkup !== undefined ? parseFiniteNumber(defaultMarkup) : current.defaultMarkup;
+    if (resolvedDefaultMarkup === null || resolvedDefaultMarkup < 0) {
+      return NextResponse.json(
+        { success: false, error: "defaultMarkup must be a non-negative number" },
+        { status: 400 }
+      );
     }
 
-    if (pvadealsApiKey !== undefined) {
-      await sql`
-        INSERT INTO app_settings (key, value, updated_at)
-        VALUES ('pvadeals_api_key', ${pvadealsApiKey}, NOW())
-        ON CONFLICT (key) DO UPDATE SET value = ${pvadealsApiKey}, updated_at = NOW()
-      `;
-      updates.push(`pvadeals_api_key: updated`);
+    const resolvedMinMarkup =
+      minMarkup !== undefined ? parseNullableMarkup(minMarkup) : current.minMarkup;
+    const resolvedMaxMarkup =
+      maxMarkup !== undefined ? parseNullableMarkup(maxMarkup) : current.maxMarkup;
+
+    if (minMarkup !== undefined && minMarkup !== null && resolvedMinMarkup === null) {
+      return NextResponse.json(
+        { success: false, error: "minMarkup must be null or a non-negative number" },
+        { status: 400 }
+      );
+    }
+    if (maxMarkup !== undefined && maxMarkup !== null && resolvedMaxMarkup === null) {
+      return NextResponse.json(
+        { success: false, error: "maxMarkup must be null or a non-negative number" },
+        { status: 400 }
+      );
     }
 
-    // Store category defaults as JSON
-    if (categoryDefaults !== undefined) {
-      await sql`
-        INSERT INTO app_settings (key, value, updated_at)
-        VALUES ('category_defaults', ${JSON.stringify(categoryDefaults)}, NOW())
-        ON CONFLICT (key) DO UPDATE SET value = ${JSON.stringify(categoryDefaults)}, updated_at = NOW()
-      `;
-      updates.push(`category_defaults: updated`);
+    if (resolvedMinMarkup !== null && resolvedMaxMarkup !== null && resolvedMinMarkup > resolvedMaxMarkup) {
+      return NextResponse.json(
+        { success: false, error: "minMarkup cannot be greater than maxMarkup" },
+        { status: 400 }
+      );
     }
 
-    if (minMarkup !== undefined) {
-      const val = minMarkup === null ? 'null' : minMarkup.toString();
-      await sql`
-        INSERT INTO app_settings (key, value, updated_at)
-        VALUES ('min_markup', ${val}, NOW())
-        ON CONFLICT (key) DO UPDATE SET value = ${val}, updated_at = NOW()
-      `;
-      updates.push(`min_markup: ${val}%`);
+    if (!validateMarkupRange(resolvedDefaultMarkup, resolvedMinMarkup, resolvedMaxMarkup)) {
+      return NextResponse.json(
+        { success: false, error: "defaultMarkup must be within configured min/max guard" },
+        { status: 400 }
+      );
     }
 
-    if (maxMarkup !== undefined) {
-      const val = maxMarkup === null ? 'null' : maxMarkup.toString();
-      await sql`
-        INSERT INTO app_settings (key, value, updated_at)
-        VALUES ('max_markup', ${val}, NOW())
-        ON CONFLICT (key) DO UPDATE SET value = ${val}, updated_at = NOW()
+    const normalizedCategoryDefaults =
+      categoryDefaults !== undefined
+        ? normalizeCategoryDefaults(categoryDefaults, resolvedDefaultMarkup)
+        : current.categoryDefaults;
+
+    for (const key of CATEGORY_KEYS) {
+      if (!validateMarkupRange(normalizedCategoryDefaults[key], resolvedMinMarkup, resolvedMaxMarkup)) {
+        return NextResponse.json(
+          { success: false, error: `categoryDefaults.${key} must be within configured min/max guard` },
+          { status: 400 }
+        );
+      }
+    }
+
+    const resolvedPvadealsApiKey =
+      pvadealsApiKey !== undefined && pvadealsApiKey !== null
+        ? String(pvadealsApiKey)
+        : current.pvadealsApiKey;
+
+    const nextSettings: VerificationPricingSettings = {
+      exchangeRate: resolvedExchangeRate,
+      defaultMarkup: resolvedDefaultMarkup,
+      minMarkup: resolvedMinMarkup,
+      maxMarkup: resolvedMaxMarkup,
+      categoryDefaults: normalizedCategoryDefaults,
+      pvadealsApiKey: resolvedPvadealsApiKey,
+    };
+
+    await saveVerificationPricingSettings(nextSettings, adminCheck.userId);
+
+    let affectedServices = 0;
+    if (applyToExisting === true) {
+      const applyResult = await sql`
+        UPDATE verification_services
+        SET
+          markup_percentage = CASE category
+            WHEN 'social_media' THEN ${normalizedCategoryDefaults.social_media}
+            WHEN 'ecommerce_financial' THEN ${normalizedCategoryDefaults.ecommerce_financial}
+            WHEN 'professional_tools' THEN ${normalizedCategoryDefaults.professional_tools}
+            WHEN 'streaming_entertainment' THEN ${normalizedCategoryDefaults.streaming_entertainment}
+            ELSE ${resolvedDefaultMarkup}
+          END,
+          updated_at = NOW()
+        RETURNING id
       `;
-      updates.push(`max_markup: ${val}%`);
+      affectedServices = (applyResult as any[]).length;
     }
 
     return NextResponse.json({
       success: true,
-      message: `Updated: ${updates.join(', ')}`,
+      message: applyToExisting ? `Updated settings and applied to ${affectedServices} services` : "Updated settings",
       data: {
-        exchangeRate,
-        defaultMarkup,
-        categoryDefaults,
+        ...nextSettings,
+        appliedToExisting: applyToExisting === true,
+        affectedServices,
       },
     });
   } catch (error) {

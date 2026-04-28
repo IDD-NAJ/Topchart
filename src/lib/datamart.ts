@@ -3,7 +3,7 @@ import { providerRequest, type ProviderHttpError } from "@/lib/providers/http-cl
 
 const DEVELOPER_API_PREFIX = "/api/developer";
 
-function normalizeDatamartBaseUrl(rawBaseUrl?: string): string {
+export function normalizeDatamartBaseUrl(rawBaseUrl?: string): string {
   const fallback = "https://api.datamartgh.shop";
   const candidate = rawBaseUrl?.trim() || fallback;
   try {
@@ -18,7 +18,7 @@ function normalizeDatamartBaseUrl(rawBaseUrl?: string): string {
   }
 }
 
-function getDatamartConfig() {
+export function getDatamartConfig() {
   const env = getDatamartEnv();
   return {
     baseUrl: normalizeDatamartBaseUrl(env.DATAMART_BASE_URL),
@@ -210,6 +210,29 @@ const NETWORK_DISPLAY_MAP: Record<string, string> = {
   at: "AirtelTigo",
 };
 
+const rateLimitState = {
+  remaining: Infinity as number,
+  resetAt: 0 as number,
+  lastUpdated: 0 as number,
+};
+
+function updateRateLimit(rateLimit: DatamartRateLimit | undefined): void {
+  if (!rateLimit) return;
+  rateLimitState.remaining = rateLimit.remaining;
+  rateLimitState.resetAt = Date.now() + rateLimit.resetInSeconds * 1000;
+  rateLimitState.lastUpdated = Date.now();
+}
+
+async function waitForRateLimit(): Promise<void> {
+  if (rateLimitState.remaining <= 2 && Date.now() < rateLimitState.resetAt) {
+    const waitMs = rateLimitState.resetAt - Date.now() + 500;
+    if (waitMs > 0 && waitMs < 30_000) {
+      console.warn(`[DataMart] Rate limit approaching (${rateLimitState.remaining} remaining), waiting ${waitMs}ms`);
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+    }
+  }
+}
+
 async function datamartRequest<T>(
   endpoint: string,
   options: RequestInit & { timeoutMs?: number; retries?: number; retryDelayMs?: number } = {}
@@ -226,14 +249,15 @@ async function datamartRequest<T>(
   }
 
   const { timeoutMs, retries, retryDelayMs, ...fetchOptions } = options;
+  await waitForRateLimit();
   const result = await providerRequest<DatamartApiResponse<T>>(
     "datamart",
     config.baseUrl,
     endpoint,
     {
       ...fetchOptions,
-      timeoutMs: timeoutMs ?? 30000,
-      retries: retries ?? 3,
+      timeoutMs: timeoutMs ?? 15000,
+      retries: retries ?? 1,
       retryDelayMs: retryDelayMs ?? 1000,
       headers: {
         "X-API-Key": config.apiKey,
@@ -244,11 +268,12 @@ async function datamartRequest<T>(
   );
 
   if (!result.success) {
+    const isAuthFailure = result.statusCode === 401 || result.statusCode === 403;
     return {
       success: false,
       error: result.error?.message || "DataMart request failed",
       statusCode: result.statusCode,
-      errorCode: result.error?.code,
+      errorCode: isAuthFailure ? "PROVIDER_AUTH_FAILED" : result.error?.code,
       attempts: result.attempts,
     };
   }
@@ -263,6 +288,7 @@ async function datamartRequest<T>(
     };
   }
 
+  updateRateLimit(apiResponse?.rateLimit);
   return {
     success: true,
     data: apiResponse?.data as T,
@@ -290,8 +316,13 @@ export async function purchaseDataBundle(params: {
   network: string;
   capacity: string;
   gateway?: string;
+  idempotencyKey?: string;
 }): Promise<ApiResponse<DatamartPurchaseData>> {
   const resolvedNetwork = resolveNetworkCode(params.network);
+  const headers: Record<string, string> = {};
+  if (params.idempotencyKey) {
+    headers["X-Idempotency-Key"] = params.idempotencyKey;
+  }
   return datamartRequest<DatamartPurchaseData>(`${DEVELOPER_API_PREFIX}/purchase`, {
     method: "POST",
     body: JSON.stringify({
@@ -300,6 +331,7 @@ export async function purchaseDataBundle(params: {
       capacity: params.capacity,
       gateway: params.gateway || "wallet",
     }),
+    headers,
     retries: 0,
   });
 }
@@ -490,6 +522,10 @@ export function extractRateLimitInfo(response: ApiResponse<unknown>): DatamartRa
   return response.rateLimit;
 }
 
+export function getRateLimitState(): { remaining: number; resetAt: number; lastUpdated: number } {
+  return { ...rateLimitState };
+}
+
 export function resolveNetworkCode(value: string): DatamartNetworkCode {
   if (!value) return value as DatamartNetworkCode;
   const normalized = value.trim().toLowerCase().replace(/[^a-z]/g, "");
@@ -505,6 +541,79 @@ export function resolveNetworkCode(value: string): DatamartNetworkCode {
 
 export function getNetworkDisplayName(code: string): string {
   return NETWORK_DISPLAY_MAP[code] || code;
+}
+
+const reachabilityCache = { result: null as boolean | null, reason: "" as string, checkedAt: 0 };
+const REACHABILITY_TTL = 300_000;
+
+export async function isDatamartReachable(): Promise<boolean> {
+  if (reachabilityCache.result !== null && Date.now() - reachabilityCache.checkedAt < REACHABILITY_TTL) {
+    return reachabilityCache.result;
+  }
+  try {
+    const config = getDatamartConfig();
+    const endpoints = [
+      "/api/developer/balance",
+      "/api/developer/data-packages?network=YELLO",
+    ];
+    for (const endpoint of endpoints) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch(`${config.baseUrl}${endpoint}`, {
+          method: "GET",
+          signal: controller.signal,
+          headers: { "X-API-Key": config.apiKey, "Accept": "application/json" },
+        });
+        clearTimeout(timer);
+        if (res.ok) {
+          reachabilityCache.result = true;
+          reachabilityCache.reason = `OK from ${endpoint}`;
+          reachabilityCache.checkedAt = Date.now();
+          console.log(`[DataMart] Reachable: ${reachabilityCache.reason}`);
+          return true;
+        }
+        if (res.status === 401 || res.status === 403) {
+          reachabilityCache.result = false;
+          reachabilityCache.reason = `Auth failed (${res.status}) from ${endpoint}`;
+          reachabilityCache.checkedAt = Date.now();
+          console.warn(`[DataMart] Unreachable: ${reachabilityCache.reason}`);
+          return false;
+        }
+        if (res.status >= 500) {
+          reachabilityCache.result = false;
+          reachabilityCache.reason = `Server error (${res.status}) from ${endpoint}`;
+          reachabilityCache.checkedAt = Date.now();
+          continue;
+        }
+        reachabilityCache.result = res.status < 500;
+        reachabilityCache.reason = `HTTP ${res.status} from ${endpoint}`;
+        reachabilityCache.checkedAt = Date.now();
+        if (reachabilityCache.result) return true;
+      } catch (err: any) {
+        const isTimeout = err?.name === "AbortError";
+        reachabilityCache.reason = isTimeout ? `Timeout from ${endpoint}` : `Network error from ${endpoint}: ${err?.message || "unknown"}`;
+        continue;
+      }
+    }
+    reachabilityCache.result = false;
+    reachabilityCache.checkedAt = Date.now();
+    console.warn(`[DataMart] Unreachable: ${reachabilityCache.reason}`);
+    return false;
+  } catch (err: any) {
+    reachabilityCache.result = false;
+    reachabilityCache.reason = `Config error: ${err?.message || "unknown"}`;
+    reachabilityCache.checkedAt = Date.now();
+    return false;
+  }
+}
+
+export function getReachabilityInfo(): { reachable: boolean | null; reason: string; checkedAt: number } {
+  return {
+    reachable: reachabilityCache.result,
+    reason: reachabilityCache.reason,
+    checkedAt: reachabilityCache.checkedAt,
+  };
 }
 
 export function datamartNetworkMatches(planNetwork: string, selectedNetwork: string): boolean {

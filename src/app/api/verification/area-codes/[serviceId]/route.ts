@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
+import { getServiceAreaCodes } from "@/lib/pvadeals";
 
-const US_AREA_CODES = [
+const US_AREA_CODES_FALLBACK = [
   { code: "205", state: "Alabama" },
   { code: "251", state: "Alabama" },
   { code: "256", state: "Alabama" },
@@ -329,11 +330,29 @@ export async function GET(
       );
     }
 
+    const { serviceId } = await context.params;
+
+    try {
+      const pvaResult = await getServiceAreaCodes(serviceId);
+      if (pvaResult.success && pvaResult.data?.areaCodes && pvaResult.data.areaCodes.length > 0) {
+        return NextResponse.json({
+          success: true,
+          data: { areaCodes: pvaResult.data.areaCodes },
+          fallback: false,
+          source: "pvadeals",
+          message: "Area codes loaded successfully",
+        });
+      }
+    } catch (pvaError) {
+      console.error("[AreaCodes] PVADeals fetch failed, using fallback:", pvaError);
+    }
+
     return NextResponse.json({
       success: true,
-      data: { areaCodes: US_AREA_CODES },
-      fallback: false,
-      message: "Area codes loaded successfully",
+      data: { areaCodes: US_AREA_CODES_FALLBACK },
+      fallback: true,
+      source: "fallback",
+      message: "Area codes loaded from fallback (provider unavailable)",
     });
   } catch (error) {
     console.error("Area codes fetch error:", error);

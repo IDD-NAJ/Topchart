@@ -146,9 +146,9 @@ async function testDataMart(): Promise<TestResult> {
       selectedVars.push("DATAMART_BASE_URL");
     }
     
-    const response = await fetch(`${config.datamart.baseUrl}/api/v1/me/`, {
+    const response = await fetch(`${config.datamart.baseUrl}/api/developer/balance`, {
       headers: {
-        Authorization: `Token ${config.datamart.apiKey}`,
+        "X-API-Key": config.datamart.apiKey,
         "Content-Type": "application/json",
       },
     });

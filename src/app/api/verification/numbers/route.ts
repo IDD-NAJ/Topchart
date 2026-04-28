@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql, sqlUnsafe } from "@/lib/db";
+import { getRequest } from "@/lib/pvadeals";
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
         vn.rental_duration_hours, vn.ltr_duration_days,
         vn.allow_flag, vn.allow_reuse, vn.auto_renew,
         vn.expires_at, vn.completed_at, vn.created_at,
+        vn.pvadeals_request_id,
         vs.id as service_id, vs.name as service_name,
         vs.category as service_category, vs.picture_url as service_icon,
         COUNT(vsms.id) as sms_count
@@ -70,6 +72,36 @@ export async function GET(request: NextRequest) {
         `${BASE} WHERE vn.user_id = $1 ${TAIL}`,
         [userId]
       ) as any[];
+    }
+
+    const activeNumbers = numbers.filter((n: any) => n.status === "active" && n.pvadeals_request_id);
+    if (activeNumbers.length > 0) {
+      for (const num of activeNumbers) {
+        try {
+          const pvaResult = await getRequest(num.pvadeals_request_id);
+          if (pvaResult.success && pvaResult.data) {
+            const pvaStatus = pvaResult.data.status?.toUpperCase();
+            if (pvaStatus && pvaStatus !== num.status) {
+              const mappedStatus = pvaStatus === "COMPLETED" ? "completed"
+                : pvaStatus === "FLAGGED" ? "cancelled"
+                : pvaStatus === "EXPIRED" ? "expired"
+                : null;
+              if (mappedStatus) {
+                await sql`
+                  UPDATE verification_numbers
+                  SET status = ${mappedStatus},
+                      completed_at = CASE WHEN ${mappedStatus} IN ('completed', 'cancelled', 'expired') THEN COALESCE(completed_at, NOW()) ELSE completed_at END,
+                      updated_at = NOW()
+                  WHERE id = ${num.id}
+                `;
+                num.status = mappedStatus;
+              }
+            }
+          }
+        } catch (syncError) {
+          console.error(`[Numbers] Failed to sync status for number ${num.id}:`, syncError);
+        }
+      }
     }
 
     // Calculate time remaining for active numbers

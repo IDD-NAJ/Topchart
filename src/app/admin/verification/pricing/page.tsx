@@ -105,6 +105,7 @@ export default function AdminVerificationPricingPage() {
 
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [settingsLoading, setSettingsLoading] = useState(false)
+  const [applyToExistingOnSave, setApplyToExistingOnSave] = useState(false)
   const [bulkCustomMarkup, setBulkCustomMarkup] = useState<number | "">("")
 
   const fetchServices = async () => {
@@ -159,9 +160,10 @@ export default function AdminVerificationPricingPage() {
     finally { setSyncing(false) }
   }
 
-  const handleSaveGlobalSettings = async () => {
+  const handleSaveGlobalSettings = async (applyToExistingOverride?: boolean) => {
     setSettingsSaving(true)
     try {
+      const applyToExisting = applyToExistingOverride ?? applyToExistingOnSave
       const res = await fetch("/api/admin/verification/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -171,10 +173,22 @@ export default function AdminVerificationPricingPage() {
           categoryDefaults,
           minMarkup: minMarkup === "" ? null : Number(minMarkup),
           maxMarkup: maxMarkup === "" ? null : Number(maxMarkup),
+          applyToExisting,
         }),
       })
       const data = await res.json()
-      if (data.success) toast.success("Global settings saved")
+      if (data.success) {
+        const affectedServices = Number(data?.data?.affectedServices ?? 0)
+        toast.success(
+          applyToExisting
+            ? `Settings saved and applied to ${affectedServices} services`
+            : "Global settings saved"
+        )
+        await fetchGlobalSettings()
+        if (applyToExisting) {
+          await fetchServices()
+        }
+      }
       else toast.error(data.error || "Failed to save settings")
     } catch { toast.error("Failed to save settings") }
     finally { setSettingsSaving(false) }
@@ -245,7 +259,11 @@ export default function AdminVerificationPricingPage() {
       const res = await fetch("/api/admin/verification/services", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ serviceId, ...edit }),
+        body: JSON.stringify({
+          serviceId,
+          markupPercentage: edit.markup_percentage,
+          isActive: edit.is_active,
+        }),
       })
       const data = await res.json()
       if (data.success) {
@@ -283,6 +301,17 @@ export default function AdminVerificationPricingPage() {
   const handleApplyToCategory = async (category: string) => {
     setBulkSaving(true)
     try {
+      const persistSettingsRes = await fetch("/api/admin/verification/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categoryDefaults }),
+      })
+      const persistSettingsData = await persistSettingsRes.json()
+      if (!persistSettingsData.success) {
+        toast.error(persistSettingsData.error || "Failed to save category defaults")
+        return
+      }
+
       const res = await fetch("/api/admin/verification/services/bulk", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -294,7 +323,8 @@ export default function AdminVerificationPricingPage() {
       const data = await res.json()
       if (data.success) {
         toast.success(`Applied ${categoryDefaults[category]}% to all ${category}`)
-        fetchServices()
+        await fetchGlobalSettings()
+        await fetchServices()
       } else { toast.error(data.error || "Failed to apply to category") }
     } catch { toast.error("Failed to apply to category") }
     finally { setBulkSaving(false) }
@@ -383,10 +413,20 @@ export default function AdminVerificationPricingPage() {
                 <Settings className="h-5 w-5 text-primary" />
                 <h3 className="font-semibold text-lg">Global Pricing Settings</h3>
               </div>
-              <Button size="sm" onClick={handleSaveGlobalSettings} disabled={settingsSaving || settingsLoading}>
-                {settingsSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                Save Settings
-              </Button>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 text-xs text-muted-foreground select-none">
+                  <Checkbox
+                    checked={applyToExistingOnSave}
+                    onCheckedChange={(checked) => setApplyToExistingOnSave(Boolean(checked))}
+                    disabled={settingsSaving || settingsLoading}
+                  />
+                  Apply to existing services
+                </label>
+                <Button size="sm" onClick={() => handleSaveGlobalSettings()} disabled={settingsSaving || settingsLoading}>
+                  {settingsSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                  Save Settings
+                </Button>
+              </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-5">

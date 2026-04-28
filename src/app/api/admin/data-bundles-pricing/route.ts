@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sql } from "@/lib/db";
+import { sql, sqlUnsafe } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 
 const DB_NETWORK_MAP: Record<string, string> = {
   MTN: "MTN",
-  Telecel: "VODAFONE",
-  Vodafone: "VODAFONE",
-  AirtelTigo: "AIRTELTIGO",
+  Telecel: "Telecel",
+  Vodafone: "Telecel",
+  AirtelTigo: "AirtelTigo",
 };
 
 export async function GET(request: NextRequest) {
@@ -24,61 +24,62 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const network = searchParams.get("network");
 
-    const dbCode = network ? DB_NETWORK_MAP[network] : undefined;
+    const dbNetworkCode = network ? (DB_NETWORK_MAP[network] || network) : undefined;
 
-    const rows = dbCode
-      ? sql`
-          SELECT 
+    const result = dbNetworkCode
+      ? await sqlUnsafe(
+          `SELECT
             b.id,
-            b.network_id,
+            n.name as "networkId",
             b.name,
-            b.size_mb,
-            b.validity_hours,
+            b."sizeMb",
+            b."validityHours",
             b.price as "providerPrice",
-            b.price_override as "priceOverride",
-            b.markup_percent as "markupPercent",
-            b.is_popular as "isPopular",
-            b.is_active as "isActive",
-            b.is_featured as "isFeatured",
-            b.updated_at
+            COALESCE(b."priceOverride", b.price_override) as "priceOverride",
+            COALESCE(b."markupPercent", b.markup_percent) as "markupPercent",
+            COALESCE(b."isPopular", b.is_popular) as "isPopular",
+            COALESCE(b."isActive", b.is_active) as "isActive",
+            COALESCE(b."isFeatured", b.is_featured) as "isFeatured",
+            b."updatedAt"
           FROM data_bundles b
-          WHERE b.network_id = ${dbCode}
-          ORDER BY b.price ASC
-        `
-      : sql`
-          SELECT 
+          LEFT JOIN networks n ON b."networkId" = n.id
+          WHERE n.name = $1
+          ORDER BY b.price ASC`,
+          [dbNetworkCode]
+        )
+      : await sqlUnsafe(
+          `SELECT
             b.id,
-            b.network_id,
+            n.name as "networkId",
             b.name,
-            b.size_mb,
-            b.validity_hours,
+            b."sizeMb",
+            b."validityHours",
             b.price as "providerPrice",
-            b.price_override as "priceOverride",
-            b.markup_percent as "markupPercent",
-            b.is_popular as "isPopular",
-            b.is_active as "isActive",
-            b.is_featured as "isFeatured",
-            b.updated_at
+            COALESCE(b."priceOverride", b.price_override) as "priceOverride",
+            COALESCE(b."markupPercent", b.markup_percent) as "markupPercent",
+            COALESCE(b."isPopular", b.is_popular) as "isPopular",
+            COALESCE(b."isActive", b.is_active) as "isActive",
+            COALESCE(b."isFeatured", b.is_featured) as "isFeatured",
+            b."updatedAt"
           FROM data_bundles b
-          ORDER BY b.network_id, b.price ASC
-        `;
+          LEFT JOIN networks n ON b."networkId" = n.id
+          ORDER BY n.name, b.price ASC`
+        );
 
-    const result = await rows;
-
-    const bundles = result.map((row: Record<string, unknown>) => ({
+    const bundles = (result as any[]).map((row: Record<string, unknown>) => ({
       id: String(row.id),
-      networkId: String(row.network_id),
-      network: String(row.network_id),
+      networkId: String(row.networkId),
+      network: String(row.networkId),
       name: String(row.name),
-      sizeMb: row.size_mb ? Number(row.size_mb) : null,
-      validityHours: row.validity_hours ? Number(row.validity_hours) : null,
+      sizeMb: row.sizeMb ? Number(row.sizeMb) : null,
+      validityHours: row.validityHours ? Number(row.validityHours) : null,
       providerPrice: Number(row.providerPrice),
       priceOverride: row.priceOverride ? Number(row.priceOverride) : null,
       markupPercent: row.markupPercent ? Number(row.markupPercent) : null,
       isPopular: Boolean(row.isPopular),
       isActive: Boolean(row.isActive),
       isFeatured: Boolean(row.isFeatured),
-      updatedAt: row.updated_at ? String(row.updated_at) : null,
+      updatedAt: row.updatedAt ? String(row.updatedAt) : null,
     }));
 
     return NextResponse.json({ success: true, data: bundles });
@@ -121,19 +122,21 @@ export async function PATCH(request: NextRequest) {
         }
 
         if (applyTo === "override") {
-          await sql`
-            UPDATE data_bundles
-            SET price_override = ${fixedAmount}, updated_at = NOW()
-            WHERE network_id = ${networkCode}
-              AND is_active = true
-          `;
+          await sqlUnsafe(
+            `UPDATE data_bundles
+            SET "priceOverride" = $1, "updatedAt" = NOW()
+            WHERE "networkId" IN (SELECT id FROM networks WHERE name = $2)
+              AND COALESCE("isActive", is_active) = true`,
+            [fixedAmount, networkCode]
+          );
         } else {
-          await sql`
-            UPDATE data_bundles
-            SET price_override = price + ${fixedAmount}, markup_percent = NULL, updated_at = NOW()
-            WHERE network_id = ${networkCode}
-              AND is_active = true
-          `;
+          await sqlUnsafe(
+            `UPDATE data_bundles
+            SET "priceOverride" = price + $1, "markupPercent" = NULL, "updatedAt" = NOW()
+            WHERE "networkId" IN (SELECT id FROM networks WHERE name = $2)
+              AND COALESCE("isActive", is_active) = true`,
+            [fixedAmount, networkCode]
+          );
         }
 
         return NextResponse.json({
@@ -149,19 +152,21 @@ export async function PATCH(request: NextRequest) {
         }
 
         if (applyTo === "override") {
-          await sql`
-            UPDATE data_bundles
-            SET markup_percent = ${pct}, price_override = NULL, updated_at = NOW()
-            WHERE network_id = ${networkCode}
-              AND is_active = true
-          `;
+          await sqlUnsafe(
+            `UPDATE data_bundles
+            SET "markupPercent" = $1, "priceOverride" = NULL, "updatedAt" = NOW()
+            WHERE "networkId" IN (SELECT id FROM networks WHERE name = $2)
+              AND COALESCE("isActive", is_active) = true`,
+            [pct, networkCode]
+          );
         } else {
-          await sql`
-            UPDATE data_bundles
-            SET markup_percent = COALESCE(markup_percent, 0) + ${pct}, updated_at = NOW()
-            WHERE network_id = ${networkCode}
-              AND is_active = true
-          `;
+          await sqlUnsafe(
+            `UPDATE data_bundles
+            SET "markupPercent" = COALESCE("markupPercent", markup_percent, 0) + $1, "updatedAt" = NOW()
+            WHERE "networkId" IN (SELECT id FROM networks WHERE name = $2)
+              AND COALESCE("isActive", is_active) = true`,
+            [pct, networkCode]
+          );
         }
 
         return NextResponse.json({
@@ -171,11 +176,12 @@ export async function PATCH(request: NextRequest) {
       }
 
       if (mode === "clear") {
-        await sql`
-          UPDATE data_bundles
-          SET price_override = NULL, markup_percent = NULL, updated_at = NOW()
-          WHERE network_id = ${networkCode}
-        `;
+        await sqlUnsafe(
+          `UPDATE data_bundles
+          SET "priceOverride" = NULL, "markupPercent" = NULL, "updatedAt" = NOW()
+          WHERE "networkId" IN (SELECT id FROM networks WHERE name = $1)`,
+          [networkCode]
+        );
         return NextResponse.json({
           success: true,
           message: `Cleared all pricing overrides for ${networkCode}`,
@@ -197,17 +203,25 @@ export async function PATCH(request: NextRequest) {
 
     const { priceOverride, markupPercent, isActive, isFeatured, isPopular } = updates;
 
-    await sql`
-      UPDATE data_bundles
-      SET 
-        price_override = ${priceOverride !== undefined ? priceOverride : null},
-        markup_percent = ${markupPercent !== undefined ? markupPercent : null},
-        is_active = ${isActive !== undefined ? isActive : undefined},
-        is_featured = ${isFeatured !== undefined ? isFeatured : undefined},
-        is_popular = ${isPopular !== undefined ? isPopular : undefined},
-        updated_at = NOW()
-      WHERE id = ${id}
-    `;
+    await sqlUnsafe(
+      `UPDATE data_bundles
+      SET
+        "priceOverride" = $1,
+        "markupPercent" = $2,
+        "isActive" = $3,
+        "isFeatured" = $4,
+        "isPopular" = $5,
+        "updatedAt" = NOW()
+      WHERE id = $6`,
+      [
+        priceOverride !== undefined ? priceOverride : null,
+        markupPercent !== undefined ? markupPercent : null,
+        isActive !== undefined ? isActive : undefined,
+        isFeatured !== undefined ? isFeatured : undefined,
+        isPopular !== undefined ? isPopular : undefined,
+        id,
+      ]
+    );
 
     return NextResponse.json({
       success: true,

@@ -1,12 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql, withTransaction } from "@/lib/db";
-import { purchaseDataBundle, resolveNetworkCode, getOrderStatus } from "@/lib/datamart";
+import { purchaseDataBundle, resolveNetworkCode, getOrderStatus, isDatamartReachable, getReachabilityInfo } from "@/lib/datamart";
 import { logServiceEvent, apiResponse } from "@/lib/api-utils";
 
 export const runtime = "nodejs";
 
 const REQUEST_DEADLINE_MS = 45_000;
+
+const purchaseRateLimit = new Map<string, { count: number; windowStart: number }>();
+const PURCHASE_RATE_LIMIT = 5;
+const PURCHASE_RATE_WINDOW_MS = 60_000;
+
+function checkPurchaseRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const entry = purchaseRateLimit.get(userId);
+  if (!entry || now - entry.windowStart > PURCHASE_RATE_WINDOW_MS) {
+    purchaseRateLimit.set(userId, { count: 1, windowStart: now });
+    return true;
+  }
+  if (entry.count >= PURCHASE_RATE_LIMIT) {
+    return false;
+  }
+  entry.count++;
+  return true;
+}
+
+if (typeof setInterval !== "undefined") {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of purchaseRateLimit) {
+      if (now - entry.windowStart > PURCHASE_RATE_WINDOW_MS * 2) {
+        purchaseRateLimit.delete(key);
+      }
+    }
+  }, 120_000);
+}
 
 async function getAuthenticatedUserId(): Promise<string | null> {
   const cookieStore = await cookies();
@@ -77,6 +106,10 @@ export async function POST(request: NextRequest) {
     const price = Number(planPrice);
     if (isNaN(price) || price <= 0) {
       return apiResponse(false, "Invalid plan price", { status: 400, correlationId });
+    }
+
+    if (!checkPurchaseRateLimit(userId)) {
+      return apiResponse(false, "Too many purchase attempts. Please wait a minute and try again.", { status: 429, code: "RATE_LIMITED", correlationId });
     }
 
     const userRows = await sql`
@@ -153,6 +186,19 @@ export async function POST(request: NextRequest) {
       await tx(`UPDATE users SET wallet_balance = wallet_balance - $1 WHERE id = $2`, [price, userId]);
     });
 
+    const reachable = await isDatamartReachable();
+    if (!reachable) {
+      const info = getReachabilityInfo();
+      await withTransaction(async (tx) => {
+        await tx(
+          `UPDATE transactions SET status = 'failed', metadata = metadata || $1::jsonb, updated_at = NOW() WHERE reference = $2`,
+          [JSON.stringify({ provider: "datamart", state: "refunded", provider_error: `DataMart API unreachable: ${info.reason}`, failed_at: new Date().toISOString() }), reference]
+        );
+        await tx(`UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2`, [price, userId]);
+      });
+      return apiResponse(false, `DataMart service is currently unavailable. Your wallet has been refunded.`, { status: 503, code: "SERVICE_UNAVAILABLE", correlationId, data: { reference, status: "failed" } });
+    }
+
     let providerSuccess = false;
     let providerMessage = "";
     let providerOrderId: string | number | undefined;
@@ -166,6 +212,7 @@ export async function POST(request: NextRequest) {
         phoneNumber: normalizedPhone,
         network: datamartNetwork,
         capacity: capacityGb,
+        idempotencyKey,
       });
 
       if (result.success && result.data) {
@@ -185,18 +232,26 @@ export async function POST(request: NextRequest) {
         });
 
         if (!providerSuccess && providerOrderRef) {
-          try {
-            await new Promise(r => setTimeout(r, 3000));
-            const statusResult = await getOrderStatus(providerOrderRef);
-            if (statusResult.success && statusResult.data) {
-              const polledStatus = statusResult.data.orderStatus?.toLowerCase();
-              if (polledStatus === "completed") {
-                providerSuccess = true;
-                providerMessage = "completed";
-                logServiceEvent("datamart", "purchase_poll", "success", { reference, providerOrderRef });
+          for (let pollAttempt = 0; pollAttempt < 3; pollAttempt++) {
+            try {
+              await new Promise(r => setTimeout(r, 5000));
+              const statusResult = await getOrderStatus(providerOrderRef);
+              if (statusResult.success && statusResult.data) {
+                const polledStatus = statusResult.data.orderStatus?.toLowerCase();
+                if (polledStatus === "completed") {
+                  providerSuccess = true;
+                  providerMessage = "completed";
+                  logServiceEvent("datamart", "purchase_poll", "success", { reference, providerOrderRef, pollAttempt: pollAttempt + 1 });
+                  break;
+                }
+                if (polledStatus === "failed" || polledStatus === "refunded") {
+                  providerMessage = statusResult.data.orderStatus;
+                  logServiceEvent("datamart", "purchase_poll", "failed", { reference, providerOrderRef, pollAttempt: pollAttempt + 1 });
+                  break;
+                }
               }
-            }
-          } catch {}
+            } catch {}
+          }
         }
       } else {
         providerMessage = result.error || "DataMart request failed";
