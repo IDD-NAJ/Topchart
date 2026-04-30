@@ -23,6 +23,7 @@ interface PurchaseBody {
   capacity?: string;
   gateway?: string;
   idempotencyKey?: string;
+  effectivePrice?: number;
 }
 
 async function getAuthenticatedUser() {
@@ -123,7 +124,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const price = Number(matched.price);
+    const price = incoming.effectivePrice !== undefined ? Number(incoming.effectivePrice) : Number(matched.price);
     if (isNaN(price) || price <= 0) {
       return NextResponse.json(
         { success: false, error: "Invalid bundle price", correlationId },

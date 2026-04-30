@@ -397,6 +397,7 @@ export default function DataPage() {
           network: networkCode,
           capacity,
           idempotencyKey,
+          effectivePrice: selectedPlan?.effectivePrice,
         }),
       })
       const result = await response.json()
