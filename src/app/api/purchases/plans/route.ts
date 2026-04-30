@@ -15,7 +15,6 @@ type CachedPlan = {
   validity: string | null;
   validityHours: number | null;
   validityDays: number | null;
-  providerPrice: number;
   effectivePrice: number;
   priceOverride: number | null;
   markupPercent: number | null;
@@ -117,7 +116,6 @@ async function fetchPlansFromCache(network?: string): Promise<{ success: true; d
         validity: row.validityHours ? `${Math.round(Number(row.validityHours) / 24)} days` : null,
         validityHours: row.validityHours ? Number(row.validityHours) : null,
         validityDays: row.validityHours ? Math.round(Number(row.validityHours) / 24) : null,
-        providerPrice,
         effectivePrice,
         priceOverride,
         markupPercent,

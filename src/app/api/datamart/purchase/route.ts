@@ -124,7 +124,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const price = incoming.effectivePrice !== undefined ? Number(incoming.effectivePrice) : Number(matched.price);
+    let price: number;
+    if (incoming.effectivePrice !== undefined) {
+      price = Number(incoming.effectivePrice);
+    } else {
+      const bundleRows = await sql`
+        SELECT 
+          price,
+          price_override as "priceOverride",
+          markup_percent as "markupPercent"
+        FROM data_bundles
+        WHERE datamart_plan_id = ${capacity}
+          AND is_active = true
+        LIMIT 1
+      `;
+      
+      if (bundleRows.length === 0) {
+        return NextResponse.json(
+          { success: false, error: "Bundle not found in database", correlationId },
+          { status: 404 }
+        );
+      }
+      
+      const bundle = bundleRows[0] as { price: number; priceOverride: number | null; markupPercent: number | null };
+      const providerPrice = Number(bundle.price);
+      const priceOverride = bundle.priceOverride ? Number(bundle.priceOverride) : null;
+      const markupPercent = bundle.markupPercent ? Number(bundle.markupPercent) : null;
+      
+      if (priceOverride !== null && priceOverride > 0) {
+        price = priceOverride;
+      } else if (markupPercent !== null && markupPercent > 0) {
+        const markup = providerPrice * (markupPercent / 100);
+        price = Number((providerPrice + markup).toFixed(2));
+      } else {
+        price = providerPrice;
+      }
+    }
     if (isNaN(price) || price <= 0) {
       return NextResponse.json(
         { success: false, error: "Invalid bundle price", correlationId },

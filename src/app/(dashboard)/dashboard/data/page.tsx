@@ -36,7 +36,6 @@ interface DatamartPlan {
   validity: string | null
   validityHours: number | null
   validityDays: number | null
-  providerPrice: number
   effectivePrice: number
   priceOverride: number | null
   markupPercent: number | null
@@ -797,7 +796,6 @@ export default function DataPage() {
                               dataAmount: plan.name,
                               validity: plan.validity || "N/A",
                               price: plan.effectivePrice,
-                              originalPrice: plan.providerPrice > plan.effectivePrice ? plan.providerPrice : undefined,
                               category: "other",
                               isPopular: plan.isPopular,
                               description: plan.datamartPlanType ? `Type: ${PLAN_TYPE_LABELS[plan.datamartPlanType] || plan.datamartPlanType}` : undefined,
