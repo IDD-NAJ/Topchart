@@ -90,9 +90,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const dbMediaRows = await sql<{ storage_path: string | null; file_url: string | null }[]>`
+    const dbMediaRows = (await sql`
       SELECT storage_path, file_url FROM homepage_media
-    `;
+    `) as Array<{ storage_path: string | null; file_url: string | null }>;
     const dbPathSet = new Set<string>();
     for (const row of dbMediaRows) {
       if (row.storage_path) dbPathSet.add(String(row.storage_path));

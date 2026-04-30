@@ -74,28 +74,28 @@ async function fetchPlansFromCache(network?: string): Promise<{ success: true; d
       b.id,
       n.name as network_id,
       b.name,
-      COALESCE(b."sizeMb", b.size_mb) as size_mb,
-      COALESCE(b."validityHours", b.validity_hours) as validity_hours,
+      b."sizeMb",
+      b."validityHours",
       b.price as "providerPrice",
-      COALESCE(b."priceOverride", b.price_override) as "priceOverride",
-      COALESCE(b."markupPercent", b.markup_percent) as "markupPercent",
-      COALESCE(b."isPopular", b.is_popular) as "isPopular",
-      COALESCE(b."isActive", b.is_active) as "isActive",
-      COALESCE(b."isFeatured", b.is_featured) as "isFeatured",
-      COALESCE(b."datamartPlanId", b.datamart_plan_id) as "datamartPlanId",
-      COALESCE(b."datamartPlanType", b.datamart_plan_type) as "datamartPlanType",
-      COALESCE(b."syncedAt", b.synced_at, b."updatedAt", b.updated_at) as "syncedAt",
-      COALESCE(b."updatedAt", b.updated_at) as updated_at`;
+      b."priceOverride",
+      b."markupPercent",
+      b."isPopular",
+      b."isActive",
+      b."isFeatured",
+      b."datamartPlanId",
+      b."datamartPlanType",
+      b."updatedAt" as "syncedAt",
+      b."updatedAt"`;
 
-    const joinClause = `FROM data_bundles b LEFT JOIN networks n ON COALESCE(b."networkId", b.network_id) = n.id`;
+    const joinClause = `FROM data_bundles b LEFT JOIN networks n ON COALESCE(b."networkId", b.network_id::uuid) = n.id`;
 
     const rows = dbNetworkCode
       ? sqlUnsafe(
-          `SELECT ${selectCols} ${joinClause} WHERE COALESCE(b."isActive", b.is_active) = true AND n.name = $1 ORDER BY b.price ASC`,
+          `SELECT ${selectCols} ${joinClause} WHERE b."isActive" = true AND n.name = $1 ORDER BY b.price ASC`,
           [dbNetworkCode]
         )
       : sqlUnsafe(
-          `SELECT ${selectCols} ${joinClause} WHERE COALESCE(b."isActive", b.is_active) = true ORDER BY n.name, b.price ASC`
+          `SELECT ${selectCols} ${joinClause} WHERE b."isActive" = true ORDER BY n.name, b.price ASC`
         );
 
     const result = await rows;
@@ -114,9 +114,9 @@ async function fetchPlansFromCache(network?: string): Promise<{ success: true; d
         networkId: String(row.network_id),
         network: String(row.network_id || ""),
         name: String(row.name),
-        validity: row.validity_hours ? `${Math.round(Number(row.validity_hours) / 24)} days` : null,
-        validityHours: row.validity_hours ? Number(row.validity_hours) : null,
-        validityDays: row.validity_hours ? Math.round(Number(row.validity_hours) / 24) : null,
+        validity: row.validityHours ? `${Math.round(Number(row.validityHours) / 24)} days` : null,
+        validityHours: row.validityHours ? Number(row.validityHours) : null,
+        validityDays: row.validityHours ? Math.round(Number(row.validityHours) / 24) : null,
         providerPrice,
         effectivePrice,
         priceOverride,
@@ -137,7 +137,7 @@ async function fetchPlansFromCache(network?: string): Promise<{ success: true; d
     
     const isStale = !oldestSync || Date.now() - oldestSync > 48 * 60 * 60 * 1000;
     const isWarning = !oldestSync || Date.now() - oldestSync > 24 * 60 * 60 * 1000;
-    const fetchedAt = (result[0] as any)?.updated_at ? new Date(String((result[0] as any).updated_at)).toISOString() : null;
+    const fetchedAt = (result[0] as any)?.updatedAt ? new Date(String((result[0] as any).updatedAt)).toISOString() : null;
 
     return { success: true, data: plans, stale: isStale, staleWarning: isWarning && !isStale, fetchedAt };
   } catch (error) {

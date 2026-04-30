@@ -1,9 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { detectNetwork, networks, type Network } from "@/lib/networks"
-import { resolveNetworkCode } from "@/lib/datamart"
 import { datamartNetworkMatches } from "@/lib/datamart"
 import { NetworkSelector } from "@/components/network-selector"
 import { ServiceGuard } from "@/components/service-guard"
@@ -48,6 +47,99 @@ interface DatamartPlan {
   datamartPlanType: string | null
 }
 
+type DatamartNetworkCode = "YELLO" | "TELECEL" | "AT_PREMIUM"
+
+interface DatamartOrderRow {
+  id: string
+  phone_number: string
+  network: string
+  capacity: string
+  price?: number | string | null
+  status: string
+  order_reference: string | null
+  transaction_reference: string | null
+  purchase_id: string | null
+  idempotency_key: string
+  balance_before?: number | string | null
+  balance_after?: number | string | null
+  processing_method?: string | null
+  created_at: string
+  updated_at: string
+}
+
+interface DatamartOrderStatusSnapshot {
+  orderStatus?: string
+  orderReference?: string
+  transactionReference?: string
+  purchaseId?: string
+  balanceBefore?: number
+  balanceAfter?: number
+  price?: number
+  processingMethod?: string
+  updatedAt?: string
+}
+
+interface DatamartDeliveryTrackerPayload {
+  stats?: {
+    delivered?: number
+    pending?: number
+    failed?: number
+  }
+  lastDelivered?: Record<string, unknown> | null
+  checkingNow?: Record<string, unknown> | null
+  yourOrders?: Record<string, unknown> | null
+  message?: string
+}
+
+const NETWORK_TO_PROVIDER: Record<string, DatamartNetworkCode> = {
+  yello: "YELLO",
+  mtn: "YELLO",
+  mtngh: "YELLO",
+  vodafone: "TELECEL",
+  telecel: "TELECEL",
+  voda: "TELECEL",
+  airteltigo: "AT_PREMIUM",
+  airtel: "AT_PREMIUM",
+  tigo: "AT_PREMIUM",
+  atpremium: "AT_PREMIUM",
+}
+
+const FINAL_ORDER_STATUSES = new Set(["completed", "delivered", "failed", "refunded"])
+const POLL_INTERVAL_MS = 12000
+
+function normalizeNetworkKey(value: string): string {
+  return value.toLowerCase().replace(/[^a-z]/g, "")
+}
+
+function resolveDatamartNetworkCode(...candidates: Array<string | undefined | null>): DatamartNetworkCode | null {
+  for (const candidate of candidates) {
+    if (!candidate) continue
+    const key = normalizeNetworkKey(candidate)
+    if (NETWORK_TO_PROVIDER[key]) {
+      return NETWORK_TO_PROVIDER[key]
+    }
+  }
+  return null
+}
+
+function extractPlanCapacity(plan: DatamartPlan | null): string | null {
+  if (!plan) return null
+  if (plan.datamartPlanId && plan.datamartPlanId.trim().length > 0) {
+    return plan.datamartPlanId.trim()
+  }
+  const numericMatch = plan.name.match(/([\d.]+)/)
+  if (numericMatch) {
+    return numericMatch[1]
+  }
+  return null
+}
+
+function normalizeProviderPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "")
+  if (digits.startsWith("233")) return `0${digits.slice(3)}`
+  return digits.startsWith("0") ? digits : `0${digits.slice(-9)}`
+}
+
 type Step = "form" | "confirm" | "processing" | "success" | "failed"
 
 const PLAN_TYPE_LABELS: Record<string, string> = {
@@ -89,6 +181,17 @@ export default function DataPage() {
   const [plansFetchedAt, setPlansFetchedAt] = useState<string>("")
   const [activeType, setActiveType] = useState<string>("ALL")
   const [favoritesRefreshKey, setFavoritesRefreshKey] = useState(0)
+  const [currentIdempotencyKey, setCurrentIdempotencyKey] = useState<string | null>(null)
+  const [currentOrder, setCurrentOrder] = useState<DatamartOrderRow | null>(null)
+  const [orderStatusSnapshot, setOrderStatusSnapshot] = useState<DatamartOrderStatusSnapshot | null>(null)
+  const [pollingOrder, setPollingOrder] = useState(false)
+  const [pollError, setPollError] = useState<string | null>(null)
+  const [deliveryTracker, setDeliveryTracker] = useState<DatamartDeliveryTrackerPayload | null>(null)
+  const [correlationId, setCorrelationId] = useState<string>("")
+  const [newWalletBalance, setNewWalletBalance] = useState<number | null>(null)
+  const pollTimerRef = useRef<number | null>(null)
+  const pendingPhoneRef = useRef<string>("")
+  const pendingNetworkIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (phone.length >= 4) {
@@ -160,7 +263,7 @@ export default function DataPage() {
 
   const validateForm = () => {
     if (!selectedNetwork) { setError("Please select a network provider."); return false }
-    if (!phone || phone.length < 10) { setError("Please enter a valid 10-digit phone number."); return false }
+    if (!phone || !/^0\d{9}$/.test(phone)) { setError("Please enter a valid 10-digit phone number starting with 0."); return false }
     if (!selectedPlan) { setError("Please select a data bundle plan."); return false }
     const price = selectedPlan.effectivePrice
     if (!authUser || price > authUser.walletBalance) {
@@ -207,45 +310,198 @@ export default function DataPage() {
     if (validateForm()) setStep("confirm")
   }
 
-  const handleConfirm = async () => {
-    if (!validateForm()) return;
-    setStep("processing")
-    
+  const stopPolling = useCallback(() => {
+    if (pollTimerRef.current) {
+      window.clearInterval(pollTimerRef.current)
+      pollTimerRef.current = null
+    }
+  }, [])
+
+  const loadDeliveryTracker = useCallback(async () => {
     try {
-      const idempotencyKey = crypto.randomUUID()
-      const response = await fetch("/api/purchases", {
+      const res = await fetch("/api/datamart/delivery-tracker", { cache: "no-store" })
+      const json = await res.json()
+      if (json.success) {
+        setDeliveryTracker(json.data as DatamartDeliveryTrackerPayload)
+      } else {
+        setDeliveryTracker(null)
+      }
+    } catch {
+      setDeliveryTracker(null)
+    }
+  }, [])
+
+  const finalizeOrderStatus = useCallback(
+    async (status: string, order: DatamartOrderRow, snapshot?: DatamartOrderStatusSnapshot | null) => {
+      stopPolling()
+      setPollingOrder(false)
+      const lowered = status.toLowerCase()
+      if (lowered === "completed") {
+        setStep("success")
+        const localPhone = normalizeProviderPhone(pendingPhoneRef.current || order.phone_number || "")
+        if (localPhone) {
+          const networkId = pendingNetworkIdRef.current || normalizeNetworkId(order.network, selectedNetwork?.id)
+          addRecentRecipient(localPhone, networkId || "mtn")
+          setRecentRecipients(getRecentRecipients())
+        }
+        await refreshUser()
+        await loadDeliveryTracker()
+      } else {
+        const message = snapshot?.orderStatus || order.status || "Transaction declined by provider."
+        setError(message)
+        setStep("failed")
+        await refreshUser()
+      }
+    },
+    [loadDeliveryTracker, refreshUser, selectedNetwork?.id, stopPolling]
+  )
+
+  const handleConfirm = async () => {
+    if (!validateForm()) return
+    stopPolling()
+    setPollError(null)
+    setDeliveryTracker(null)
+    setCurrentOrder(null)
+    setOrderStatusSnapshot(null)
+    setCorrelationId("")
+    setNewWalletBalance(null)
+
+    const idempotencyKey = crypto.randomUUID()
+    setCurrentIdempotencyKey(idempotencyKey)
+    pendingPhoneRef.current = phone
+    pendingNetworkIdRef.current = selectedNetwork?.id || null
+
+    const networkCode = resolveDatamartNetworkCode(selectedPlan?.network, selectedNetwork?.id, selectedNetwork?.name)
+    if (!networkCode) {
+      setError("Selected network is temporarily unavailable.")
+      setStep("failed")
+      return
+    }
+
+    const capacity = extractPlanCapacity(selectedPlan)
+    if (!capacity) {
+      setError("Unable to determine the selected bundle capacity.")
+      setStep("failed")
+      return
+    }
+
+    setStep("processing")
+
+    try {
+      const response = await fetch("/api/datamart/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-idempotency-key": idempotencyKey },
         credentials: "include",
         body: JSON.stringify({
-          phone,
-          networkId: resolveNetworkCode(selectedNetwork!.id),
-          networkName: selectedNetwork!.name,
-          planId: selectedPlan!.id,
-          planName: selectedPlan!.name,
-          planSize: selectedPlan!.name,
-          planPrice: selectedPlan!.effectivePrice,
-          type: "DATA",
+          phoneNumber: phone,
+          network: networkCode,
+          capacity,
           idempotencyKey,
         }),
       })
       const result = await response.json()
-      
-      if (result.success) {
-        addRecentRecipient(phone, selectedNetwork!.id)
-        setRecentRecipients(getRecentRecipients())
-        setStep("success")
-        await refreshUser()
-      } else {
+
+      if (!response.ok || !result.success) {
+        const message = result?.error || "Transaction declined by provider."
+        setError(message)
         setStep("failed")
-        setError(result.error || "Transaction declined by provider.")
+        return
       }
-    } catch {
-      setStep("failed")
+
+      setCorrelationId(result.correlationId || "")
+      if (typeof result.newBalance === "number") setNewWalletBalance(result.newBalance)
+      const order = result.data as DatamartOrderRow | null
+      if (!order) {
+        setError("Provider did not return order details. Please try again.")
+        setStep("failed")
+        return
+      }
+
+      setCurrentOrder(order)
+      const snapshot: DatamartOrderStatusSnapshot = {
+        orderStatus: order.status,
+        orderReference: order.order_reference || undefined,
+        transactionReference: order.transaction_reference || undefined,
+        purchaseId: order.purchase_id || undefined,
+        price: typeof order.price === "number" ? order.price : Number(order.price || 0) || undefined,
+        balanceBefore: typeof order.balance_before === "number" ? order.balance_before : Number(order.balance_before || 0) || undefined,
+        balanceAfter: typeof order.balance_after === "number" ? order.balance_after : Number(order.balance_after || 0) || undefined,
+        processingMethod: order.processing_method || undefined,
+        updatedAt: order.updated_at,
+      }
+      setOrderStatusSnapshot(snapshot)
+
+      const normalizedStatus = (order.status || "").toLowerCase()
+      if (normalizedStatus && FINAL_ORDER_STATUSES.has(normalizedStatus)) {
+        await finalizeOrderStatus(normalizedStatus, order, snapshot)
+      } else if (order.order_reference) {
+        setPollingOrder(true)
+      } else {
+        setPollingOrder(false)
+      }
+    } catch (err) {
+      console.error(err)
       setError("Connectivity issue. Your balance remains unchanged.")
+      setStep("failed")
       await refreshUser()
     }
   }
+
+  useEffect(() => {
+    if (!pollingOrder || !currentOrder?.order_reference) {
+      return
+    }
+
+    let isMounted = true
+
+    const poll = async (refresh: boolean) => {
+      try {
+        const res = await fetch(`/api/datamart/orders/${currentOrder.order_reference}?refresh=${refresh ? "true" : "false"}`, {
+          cache: "no-store",
+        })
+        const json = await res.json()
+        if (!isMounted) return
+
+        if (!json.success) {
+          setPollError(json.error || "Unable to refresh order status. We will try again shortly.")
+          return
+        }
+
+        setPollError(null)
+        if (json.correlationId) setCorrelationId(json.correlationId)
+        const order = json.data?.order as DatamartOrderRow | null
+        const statusPayload = json.data?.status as DatamartOrderStatusSnapshot | null
+        if (order) {
+          setCurrentOrder(order)
+        }
+        if (statusPayload) {
+          setOrderStatusSnapshot(statusPayload)
+        }
+        const nextStatus = (statusPayload?.orderStatus || order?.status || "").toLowerCase()
+        if (nextStatus && FINAL_ORDER_STATUSES.has(nextStatus) && order) {
+          await finalizeOrderStatus(nextStatus, order, statusPayload)
+        }
+      } catch {
+        if (!isMounted) return
+        setPollError("Unable to refresh order status. We will try again shortly.")
+      }
+    }
+
+    poll(true)
+    const timer = window.setInterval(() => {
+      poll(false)
+    }, POLL_INTERVAL_MS)
+    pollTimerRef.current = timer
+
+    return () => {
+      isMounted = false
+      if (timer) window.clearInterval(timer)
+      if (pollTimerRef.current) {
+        window.clearInterval(pollTimerRef.current)
+        pollTimerRef.current = null
+      }
+    }
+  }, [currentOrder?.order_reference, finalizeOrderStatus, pollingOrder])
 
   const planPrice = selectedPlan ? selectedPlan.effectivePrice : 0
 
@@ -678,14 +934,92 @@ export default function DataPage() {
                 {step === "failed" && "Transaction Failed"}
               </DialogTitle>
               <DialogDescription className="text-base">
-                {step === "processing" && "Please wait while we secure your transaction."}
-                {step === "success" && `${selectedPlan?.name} delivered to ${phone}.`}
+                {step === "processing" && (
+                  orderStatusSnapshot?.orderStatus
+                    ? `Waiting on provider: ${orderStatusSnapshot.orderStatus.toLowerCase().replace(/_/g, " ")}`
+                    : "Please wait while we secure your transaction."
+                )}
+                {step === "success" && (orderStatusSnapshot?.orderStatus ? `${orderStatusSnapshot.orderStatus.toLowerCase().replace(/_/g, " ")}. Data delivered to ${normalizeProviderPhone(pendingPhoneRef.current || phone)}.` : `${selectedPlan?.name} delivered.`)}
                 {step === "failed" && (error || "Your transaction could not be completed.")}
               </DialogDescription>
             </div>
 
+            {currentOrder && (
+              <div className="w-full space-y-3 rounded-xl border border-muted/60 p-4 text-left">
+                <div className="flex items-center justify-between text-sm font-medium">
+                  <span className="text-muted-foreground">Status</span>
+                  <span className="capitalize">{((orderStatusSnapshot?.orderStatus || currentOrder.status || "pending").toLowerCase().replace(/_/g, " "))}</span>
+                </div>
+                {currentOrder.order_reference && (
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Order Ref</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(currentOrder.order_reference || "")
+                          toast.success("Order reference copied")
+                        } catch {
+                          toast.error("Unable to copy reference")
+                        }
+                      }}
+                      className="font-mono text-primary underline-offset-2 hover:underline"
+                    >
+                      {currentOrder.order_reference}
+                    </button>
+                  </div>
+                )}
+                {orderStatusSnapshot?.transactionReference && (
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Transaction Ref</span>
+                    <span className="font-mono">{orderStatusSnapshot.transactionReference}</span>
+                  </div>
+                )}
+                {correlationId && (
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground/80">
+                    <span>Trace ID</span>
+                    <span className="font-mono">{correlationId}</span>
+                  </div>
+                )}
+                {pollingOrder && (
+                  <div className="text-xs text-muted-foreground">Refreshing provider status automatically…</div>
+                )}
+                {pollError && (
+                  <div className="text-xs text-destructive">{pollError}</div>
+                )}
+              </div>
+            )}
+
             {step === "success" && (
               <div className="flex flex-col gap-3 w-full mt-4">
+                {newWalletBalance !== null && (
+                  <div className="w-full rounded-xl border border-green-200 bg-green-50 p-4 text-left">
+                    <p className="text-sm font-semibold text-green-700 mb-1">Wallet Balance</p>
+                    <p className="text-2xl font-bold text-green-700">GH₵ {newWalletBalance.toFixed(2)}</p>
+                  </div>
+                )}
+                {deliveryTracker && (
+                  <div className="w-full rounded-xl border border-primary/20 bg-primary/5 p-4 text-left">
+                    <p className="text-sm font-semibold text-primary mb-3">Delivery Snapshot</p>
+                    <div className="grid grid-cols-3 gap-3 text-center text-sm">
+                      <div className="rounded-lg bg-white/80 p-3 shadow-sm">
+                        <p className="text-[11px] uppercase text-muted-foreground">Delivered</p>
+                        <p className="text-lg font-bold">{deliveryTracker.stats?.delivered ?? 0}</p>
+                      </div>
+                      <div className="rounded-lg bg-white/80 p-3 shadow-sm">
+                        <p className="text-[11px] uppercase text-muted-foreground">Pending</p>
+                        <p className="text-lg font-bold">{deliveryTracker.stats?.pending ?? 0}</p>
+                      </div>
+                      <div className="rounded-lg bg-white/80 p-3 shadow-sm">
+                        <p className="text-[11px] uppercase text-muted-foreground">Failed</p>
+                        <p className="text-lg font-bold">{deliveryTracker.stats?.failed ?? 0}</p>
+                      </div>
+                    </div>
+                    {deliveryTracker.message && (
+                      <p className="mt-3 text-xs text-muted-foreground">{deliveryTracker.message}</p>
+                    )}
+                  </div>
+                )}
                 <Button onClick={() => {
                   setSelectedPlan(null)
                   setStep("form")

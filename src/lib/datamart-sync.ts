@@ -70,6 +70,8 @@ export interface SyncOptions {
 type ColumnMap = {
   bundleId: string;
   bundleNetworkId: string;
+  bundleNetworkIdAlt: string | null;
+  bundleNetworkCode: string | null;
   bundleCategoryId: string;
   bundleName: string;
   bundleSizeMb: string;
@@ -136,6 +138,11 @@ async function detectColumnNames(): Promise<ColumnMap> {
 
   const bundleIdCol = pickCol(["id"], bundleColNames);
   const bundleNetworkIdCol = pickCol(["network_id", "networkId"], bundleColNames);
+  const bundleNetworkIdAltCol = bundleColNames.find(c => {
+    const lc = c.toLowerCase();
+    return lc !== bundleNetworkIdCol.toLowerCase() && (lc === "networkid" || lc === "network_id");
+  }) || null;
+  const bundleNetworkCodeCol = bundleColNames.find(c => c.toLowerCase() === "network") || null;
   const bundleCategoryIdCol = pickCol(["category_id", "categoryId"], bundleColNames);
   const bundleNameCol = pickCol(["name"], bundleColNames);
   const bundleSizeMbCol = pickCol(["size_mb", "sizeMb"], bundleColNames);
@@ -163,7 +170,7 @@ async function detectColumnNames(): Promise<ColumnMap> {
   const bundleCategoryIdIsUuid = (bundleColType[bundleCategoryIdCol.toLowerCase()] || "").toLowerCase() === "uuid";
 
   console.log("[DataMart Sync] Detected columns:", {
-    bundles: { id: bundleIdCol, networkId: bundleNetworkIdCol, categoryId: bundleCategoryIdCol, name: bundleNameCol, sizeMb: bundleSizeMbCol, validityHours: bundleValidityHoursCol, price: bundlePriceCol, datamartPlanId: bundleDatamartPlanIdCol, datamartPlanType: bundleDatamartPlanTypeCol, syncedAt: bundleSyncedAtCol, updatedAt: bundleUpdatedAtCol },
+    bundles: { id: bundleIdCol, networkId: bundleNetworkIdCol, networkIdAlt: bundleNetworkIdAltCol, networkCode: bundleNetworkCodeCol, categoryId: bundleCategoryIdCol, name: bundleNameCol, sizeMb: bundleSizeMbCol, validityHours: bundleValidityHoursCol, price: bundlePriceCol, datamartPlanId: bundleDatamartPlanIdCol, datamartPlanType: bundleDatamartPlanTypeCol, syncedAt: bundleSyncedAtCol, updatedAt: bundleUpdatedAtCol },
     categories: { id: categoryIdCol, networkId: categoryNetworkIdCol, name: categoryNameCol, isActive: categoryIsActiveCol, sortOrder: categorySortOrderCol, updatedAt: categoryUpdatedAtCol },
     types: { bundleIdIsUuid, categoryIdIsUuid, bundleCategoryIdIsUuid },
   });
@@ -171,6 +178,8 @@ async function detectColumnNames(): Promise<ColumnMap> {
   return {
     bundleId: bundleIdCol,
     bundleNetworkId: bundleNetworkIdCol,
+    bundleNetworkIdAlt: bundleNetworkIdAltCol,
+    bundleNetworkCode: bundleNetworkCodeCol,
     bundleCategoryId: bundleCategoryIdCol,
     bundleName: bundleNameCol,
     bundleSizeMb: bundleSizeMbCol,
@@ -199,6 +208,36 @@ async function detectColumnNames(): Promise<ColumnMap> {
 
 function col(name: string): string {
   return `"${name}"`;
+}
+
+function extraNetworkCols(c: ColumnMap, networkUuid: string, dbNetworkCode: string, nextIdx: number): { insertCols: string; insertVals: string; updateSet: string; params: string[] } {
+  const cols: string[] = [];
+  const vals: string[] = [];
+  const sets: string[] = [];
+  const params: string[] = [];
+  let idx = nextIdx;
+
+  if (c.bundleNetworkIdAlt) {
+    cols.push(col(c.bundleNetworkIdAlt));
+    vals.push(`$${idx}`);
+    sets.push(`${col(c.bundleNetworkIdAlt)} = $${idx}`);
+    params.push(networkUuid);
+    idx++;
+  }
+  if (c.bundleNetworkCode) {
+    cols.push(col(c.bundleNetworkCode));
+    vals.push(`$${idx}`);
+    sets.push(`${col(c.bundleNetworkCode)} = $${idx}`);
+    params.push(dbNetworkCode);
+    idx++;
+  }
+
+  return {
+    insertCols: cols.length ? ", " + cols.join(", ") : "",
+    insertVals: vals.length ? ", " + vals.join(", ") : "",
+    updateSet: sets.length ? ", " + sets.join(", ") : "",
+    params,
+  };
 }
 
 interface WebsitePlan {
@@ -429,19 +468,22 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
           }
 
           if (!force && existingPlan?.id) {
+            const extra1 = extraNetworkCols(c, networkUuid, dbNetworkCode, 11);
             await sqlUnsafe(
-              `UPDATE data_bundles SET ${col(c.bundleNetworkId)} = $1, ${col(c.bundleCategoryId)} = $2, ${col(c.bundleName)} = $3, ${col(c.bundleSizeMb)} = $4, ${col(c.bundleValidityHours)} = $5, ${col(c.bundlePrice)} = $6, ${col(c.bundleIsPopular)} = false, ${col(c.bundleIsActive)} = $7, ${col(c.bundleDatamartPlanId)} = $8, ${col(c.bundleDatamartPlanType)} = $9, ${col(c.bundleUpdatedAt)} = NOW() WHERE ${col(c.bundleId)} = $10`,
-              [networkUuid, categoryIdForBundle, planName, mb, validityHours, providerPrice, isActive, datamartPlanId, datamartPlanType, existingPlan.id]
+              `UPDATE data_bundles SET ${col(c.bundleNetworkId)} = $1, ${col(c.bundleCategoryId)} = $2, ${col(c.bundleName)} = $3, ${col(c.bundleSizeMb)} = $4, ${col(c.bundleValidityHours)} = $5, ${col(c.bundlePrice)} = $6, ${col(c.bundleIsPopular)} = false, ${col(c.bundleIsActive)} = $7, ${col(c.bundleDatamartPlanId)} = $8, ${col(c.bundleDatamartPlanType)} = $9, ${col(c.bundleUpdatedAt)} = NOW()${extra1.updateSet} WHERE ${col(c.bundleId)} = $10`,
+              [networkUuid, categoryIdForBundle, planName, mb, validityHours, providerPrice, isActive, datamartPlanId, datamartPlanType, existingPlan.id, ...extra1.params]
             );
           } else if (c.bundleIdIsUuid) {
+            const extra2 = extraNetworkCols(c, networkUuid, dbNetworkCode, 10);
             await sqlUnsafe(
-              `INSERT INTO data_bundles (${col(c.bundleNetworkId)}, ${col(c.bundleCategoryId)}, ${col(c.bundleName)}, ${col(c.bundleSizeMb)}, ${col(c.bundleValidityHours)}, ${col(c.bundlePrice)}, ${col(c.bundleIsPopular)}, ${col(c.bundleIsActive)}, ${col(c.bundleDatamartPlanId)}, ${col(c.bundleDatamartPlanType)}, ${col(c.bundleUpdatedAt)}) VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8, $9, NOW())`,
-              [networkUuid, categoryIdForBundle, planName, mb, validityHours, providerPrice, isActive, datamartPlanId, datamartPlanType]
+              `INSERT INTO data_bundles (${col(c.bundleNetworkId)}, ${col(c.bundleCategoryId)}, ${col(c.bundleName)}, ${col(c.bundleSizeMb)}, ${col(c.bundleValidityHours)}, ${col(c.bundlePrice)}, ${col(c.bundleIsPopular)}, ${col(c.bundleIsActive)}, ${col(c.bundleDatamartPlanId)}, ${col(c.bundleDatamartPlanType)}, ${col(c.bundleUpdatedAt)}${extra2.insertCols}) VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8, $9, NOW()${extra2.insertVals})`,
+              [networkUuid, categoryIdForBundle, planName, mb, validityHours, providerPrice, isActive, datamartPlanId, datamartPlanType, ...extra2.params]
             );
           } else {
+            const extra3 = extraNetworkCols(c, networkUuid, dbNetworkCode, 11);
             await sqlUnsafe(
-              `INSERT INTO data_bundles (${col(c.bundleId)}, ${col(c.bundleNetworkId)}, ${col(c.bundleCategoryId)}, ${col(c.bundleName)}, ${col(c.bundleSizeMb)}, ${col(c.bundleValidityHours)}, ${col(c.bundlePrice)}, ${col(c.bundleIsPopular)}, ${col(c.bundleIsActive)}, ${col(c.bundleDatamartPlanId)}, ${col(c.bundleDatamartPlanType)}, ${col(c.bundleUpdatedAt)}) VALUES ($1, $2, $3, $4, $5, $6, $7, false, $8, $9, $10, NOW()) ON CONFLICT (${col(c.bundleId)}) DO UPDATE SET ${col(c.bundleNetworkId)} = EXCLUDED.${col(c.bundleNetworkId)}, ${col(c.bundleCategoryId)} = EXCLUDED.${col(c.bundleCategoryId)}, ${col(c.bundleName)} = EXCLUDED.${col(c.bundleName)}, ${col(c.bundleSizeMb)} = EXCLUDED.${col(c.bundleSizeMb)}, ${col(c.bundleValidityHours)} = EXCLUDED.${col(c.bundleValidityHours)}, ${col(c.bundlePrice)} = EXCLUDED.${col(c.bundlePrice)}, ${col(c.bundleIsPopular)} = EXCLUDED.${col(c.bundleIsPopular)}, ${col(c.bundleIsActive)} = EXCLUDED.${col(c.bundleIsActive)}, ${col(c.bundleDatamartPlanId)} = EXCLUDED.${col(c.bundleDatamartPlanId)}, ${col(c.bundleDatamartPlanType)} = EXCLUDED.${col(c.bundleDatamartPlanType)}, ${col(c.bundleUpdatedAt)} = NOW()`,
-              [bundleId, networkUuid, categoryIdForBundle, planName, mb, validityHours, providerPrice, isActive, datamartPlanId, datamartPlanType]
+              `INSERT INTO data_bundles (${col(c.bundleId)}, ${col(c.bundleNetworkId)}, ${col(c.bundleCategoryId)}, ${col(c.bundleName)}, ${col(c.bundleSizeMb)}, ${col(c.bundleValidityHours)}, ${col(c.bundlePrice)}, ${col(c.bundleIsPopular)}, ${col(c.bundleIsActive)}, ${col(c.bundleDatamartPlanId)}, ${col(c.bundleDatamartPlanType)}, ${col(c.bundleUpdatedAt)}${extra3.insertCols}) VALUES ($1, $2, $3, $4, $5, $6, $7, false, $8, $9, $10, NOW()${extra3.insertVals}) ON CONFLICT (${col(c.bundleId)}) DO UPDATE SET ${col(c.bundleNetworkId)} = EXCLUDED.${col(c.bundleNetworkId)}, ${col(c.bundleCategoryId)} = EXCLUDED.${col(c.bundleCategoryId)}, ${col(c.bundleName)} = EXCLUDED.${col(c.bundleName)}, ${col(c.bundleSizeMb)} = EXCLUDED.${col(c.bundleSizeMb)}, ${col(c.bundleValidityHours)} = EXCLUDED.${col(c.bundleValidityHours)}, ${col(c.bundlePrice)} = EXCLUDED.${col(c.bundlePrice)}, ${col(c.bundleIsPopular)} = EXCLUDED.${col(c.bundleIsPopular)}, ${col(c.bundleIsActive)} = EXCLUDED.${col(c.bundleIsActive)}, ${col(c.bundleDatamartPlanId)} = EXCLUDED.${col(c.bundleDatamartPlanId)}, ${col(c.bundleDatamartPlanType)} = EXCLUDED.${col(c.bundleDatamartPlanType)}, ${col(c.bundleUpdatedAt)} = NOW()${extra3.updateSet}`,
+              [bundleId, networkUuid, categoryIdForBundle, planName, mb, validityHours, providerPrice, isActive, datamartPlanId, datamartPlanType, ...extra3.params]
             );
           }
 
@@ -512,14 +554,16 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
             ) as Array<{id: string; price: number}>;
             if (!existingPlan?.id) {
               if (c.bundleIdIsUuid) {
+                const extra4 = extraNetworkCols(c, networkUuid, dbNetworkCode, 10);
                 await sqlUnsafe(
-                  `INSERT INTO data_bundles (${col(c.bundleNetworkId)}, ${col(c.bundleCategoryId)}, ${col(c.bundleName)}, ${col(c.bundleSizeMb)}, ${col(c.bundleValidityHours)}, ${col(c.bundlePrice)}, ${col(c.bundleIsPopular)}, ${col(c.bundleIsActive)}, ${col(c.bundleDatamartPlanId)}, ${col(c.bundleDatamartPlanType)}, ${col(c.bundleUpdatedAt)}) VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8, $9, NOW())`,
-                  [networkUuid, categoryIdForBundle, planName, mb, validityHours, providerPrice, isActive, datamartPlanId, datamartPlanType]
+                  `INSERT INTO data_bundles (${col(c.bundleNetworkId)}, ${col(c.bundleCategoryId)}, ${col(c.bundleName)}, ${col(c.bundleSizeMb)}, ${col(c.bundleValidityHours)}, ${col(c.bundlePrice)}, ${col(c.bundleIsPopular)}, ${col(c.bundleIsActive)}, ${col(c.bundleDatamartPlanId)}, ${col(c.bundleDatamartPlanType)}, ${col(c.bundleUpdatedAt)}${extra4.insertCols}) VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8, $9, NOW()${extra4.insertVals})`,
+                  [networkUuid, categoryIdForBundle, planName, mb, validityHours, providerPrice, isActive, datamartPlanId, datamartPlanType, ...extra4.params]
                 );
               } else {
+                const extra5 = extraNetworkCols(c, networkUuid, dbNetworkCode, 11);
                 await sqlUnsafe(
-                  `INSERT INTO data_bundles (${col(c.bundleId)}, ${col(c.bundleNetworkId)}, ${col(c.bundleCategoryId)}, ${col(c.bundleName)}, ${col(c.bundleSizeMb)}, ${col(c.bundleValidityHours)}, ${col(c.bundlePrice)}, ${col(c.bundleIsPopular)}, ${col(c.bundleIsActive)}, ${col(c.bundleDatamartPlanId)}, ${col(c.bundleDatamartPlanType)}, ${col(c.bundleUpdatedAt)}) VALUES ($1, $2, $3, $4, $5, $6, $7, false, $8, $9, $10, NOW()) ON CONFLICT (${col(c.bundleId)}) DO UPDATE SET ${col(c.bundlePrice)} = EXCLUDED.${col(c.bundlePrice)}, ${col(c.bundleIsActive)} = EXCLUDED.${col(c.bundleIsActive)}, ${col(c.bundleUpdatedAt)} = NOW()`,
-                  [bundleId, networkUuid, categoryIdForBundle, planName, mb, validityHours, providerPrice, isActive, datamartPlanId, datamartPlanType]
+                  `INSERT INTO data_bundles (${col(c.bundleId)}, ${col(c.bundleNetworkId)}, ${col(c.bundleCategoryId)}, ${col(c.bundleName)}, ${col(c.bundleSizeMb)}, ${col(c.bundleValidityHours)}, ${col(c.bundlePrice)}, ${col(c.bundleIsPopular)}, ${col(c.bundleIsActive)}, ${col(c.bundleDatamartPlanId)}, ${col(c.bundleDatamartPlanType)}, ${col(c.bundleUpdatedAt)}${extra5.insertCols}) VALUES ($1, $2, $3, $4, $5, $6, $7, false, $8, $9, $10, NOW()${extra5.insertVals}) ON CONFLICT (${col(c.bundleId)}) DO UPDATE SET ${col(c.bundlePrice)} = EXCLUDED.${col(c.bundlePrice)}, ${col(c.bundleIsActive)} = EXCLUDED.${col(c.bundleIsActive)}, ${col(c.bundleUpdatedAt)} = NOW()${extra5.updateSet}`,
+                  [bundleId, networkUuid, categoryIdForBundle, planName, mb, validityHours, providerPrice, isActive, datamartPlanId, datamartPlanType, ...extra5.params]
                 );
               }
               syncedCount++;
@@ -528,9 +572,10 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
               if (Number(existingPlan.price) !== providerPrice) {
                 priceChanges.push({ bundleId: String(existingPlan.id || bundleId), oldPrice: Number(existingPlan.price), newPrice: providerPrice });
               }
+              const extra6 = extraNetworkCols(c, networkUuid, dbNetworkCode, 4);
               await sqlUnsafe(
-                `UPDATE data_bundles SET ${col(c.bundlePrice)} = $1, ${col(c.bundleIsActive)} = $2, ${col(c.bundleUpdatedAt)} = NOW() WHERE ${col(c.bundleId)} = $3`,
-                [providerPrice, isActive, existingPlan.id]
+                `UPDATE data_bundles SET ${col(c.bundlePrice)} = $1, ${col(c.bundleIsActive)} = $2, ${col(c.bundleUpdatedAt)} = NOW()${extra6.updateSet} WHERE ${col(c.bundleId)} = $3`,
+                [providerPrice, isActive, existingPlan.id, ...extra6.params]
               );
               syncedCount++;
               syncedPlanKeys.add(`${networkUuid}:${datamartPlanId}:${datamartPlanType}`);

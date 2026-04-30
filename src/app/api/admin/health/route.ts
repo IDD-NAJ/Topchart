@@ -138,19 +138,21 @@ async function getMediaHealthStats(): Promise<{
 }> {
   try {
     // Get total and active counts
-    const [countResult] = await sql<{ total: string; active: string }[]>`
+    const countRows = (await sql`
       SELECT 
         COUNT(*)::text as total,
         COUNT(*) FILTER (WHERE status = 'active' AND is_active = true)::text as active
       FROM homepage_media
-    `;
-    
+    `) as Array<{ total: string; active: string }>;
+    const countResult = countRows[0];
+
     // Get recent uploads (last 24 hours)
-    const [recentResult] = await sql<{ recent: string }[]>`
+    const recentRows = (await sql`
       SELECT COUNT(*)::text as recent
       FROM homepage_media
       WHERE created_at > NOW() - INTERVAL '24 hours'
-    `;
+    `) as Array<{ recent: string }>;
+    const recentResult = recentRows[0];
     
     const totalCount = parseInt(countResult?.total || "0", 10);
     const activeCount = parseInt(countResult?.active || "0", 10);

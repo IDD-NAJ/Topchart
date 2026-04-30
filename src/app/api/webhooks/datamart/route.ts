@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { NextRequest, NextResponse } from "next/server";
 import { sql, withTransaction } from "@/lib/db";
-import { logServiceEvent } from "@/lib/api-utils";
+import { persistWebhookEvent } from "@/lib/datamart-v2";
+import { getDatamartEnv } from "@/lib/env";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,44 +26,56 @@ export async function POST(request: NextRequest) {
 
   try {
     const rawBody = await request.text();
-    const signature = request.headers.get("x-datamart-signature") || "";
-    const event = request.headers.get("x-datamart-event") || "";
+    const signature = request.headers.get("x-datamart-signature");
+    const headerEvent = request.headers.get("x-datamart-event") || undefined;
 
-    const webhookSecret = process.env.DATAMART_WEBHOOK_SECRET;
-    if (webhookSecret && signature) {
+    let webhookSecret: string | undefined;
+    try {
+      const env = getDatamartEnv();
+      webhookSecret = env.DATAMART_WEBHOOK_SECRET ?? undefined;
+    } catch (error) {
+      logger.warn({ message: "[DataMart] Webhook secret missing", correlationId, error: error instanceof Error ? error.message : error });
+    }
+
+    if (webhookSecret) {
+      if (!signature) {
+        logger.warn({ message: "[DataMart] Missing webhook signature", correlationId });
+        return NextResponse.json({ error: "Signature required", correlationId }, { status: 401 });
+      }
       if (!verifySignature(rawBody, signature, webhookSecret)) {
-        logServiceEvent("datamart", "webhook", "failed", { event, reason: "invalid_signature", correlationId });
-        return NextResponse.json(
-          { error: "Invalid signature" },
-          { status: 401 }
-        );
+        logger.warn({ message: "[DataMart] Invalid webhook signature", correlationId });
+        await persistWebhookEvent(headerEvent || "unknown", signature, false, { raw: rawBody });
+        return NextResponse.json({ error: "Invalid signature", correlationId }, { status: 401 });
       }
     }
 
-    let payload: Record<string, unknown>;
+    let payload: Record<string, unknown> = {};
     try {
-      payload = JSON.parse(rawBody);
-    } catch {
-      return NextResponse.json(
-        { error: "Invalid JSON" },
-        { status: 400 }
-      );
+      payload = JSON.parse(rawBody) as Record<string, unknown>;
+    } catch (error) {
+      logger.error({ message: "[DataMart] Invalid webhook JSON", correlationId }, error);
+      return NextResponse.json({ error: "Invalid JSON", correlationId }, { status: 400 });
     }
 
-    const eventType = payload.event || event;
+    const event = typeof payload.event === "string" && payload.event.length > 0 ? payload.event : headerEvent || "unknown";
     const data = (payload.data || {}) as Record<string, unknown>;
+    const status = typeof data.status === "string" ? data.status.toLowerCase() : undefined;
+    const orderReference = typeof data.orderReference === "string" ? data.orderReference : undefined;
 
-    logServiceEvent("datamart", "webhook", "started", {
-      event: eventType,
-      orderReference: data.orderReference,
-      status: data.status,
+    await persistWebhookEvent(event, signature, Boolean(webhookSecret && signature), {
+      ...payload,
       correlationId,
     });
 
-    const orderReference = data.orderReference as string;
-    const orderStatus = String(data.status || "").toLowerCase();
+    logger.info({
+      message: "[DataMart] Webhook received",
+      event,
+      orderReference,
+      status,
+      correlationId,
+    });
 
-    if (orderReference) {
+    if (orderReference && status) {
       const txRows = await sql`
         SELECT reference, status, amount, user_id, metadata
         FROM transactions
@@ -72,24 +86,22 @@ export async function POST(request: NextRequest) {
 
       if (txRows.length > 0) {
         const tx = txRows[0];
+        const now = new Date().toISOString();
+        const metadataPatch = {
+          webhook_event: event,
+          provider_status: status,
+          provider_confirmed_at: now,
+        };
 
-        if (orderStatus === "completed" && tx.status !== "success") {
+        if (status === "completed" && tx.status !== "success") {
           await sql`
             UPDATE transactions
             SET status = 'success',
-                metadata = metadata || ${JSON.stringify({
-                  state: "success",
-                  provider_confirmed_at: new Date().toISOString(),
-                  webhook_event: eventType,
-                })}::jsonb,
+                metadata = metadata || ${JSON.stringify(metadataPatch)}::jsonb,
                 updated_at = NOW()
             WHERE reference = ${tx.reference}
           `;
-          logServiceEvent("datamart", "webhook", "success", {
-            orderReference,
-            reference: tx.reference,
-          });
-        } else if (orderStatus === "failed" && tx.status !== "failed") {
+        } else if ((status === "failed" || status === "refunded") && tx.status !== "failed") {
           await withTransaction(async (query) => {
             await query(
               `UPDATE transactions
@@ -97,49 +109,12 @@ export async function POST(request: NextRequest) {
                    metadata = metadata || $1::jsonb,
                    updated_at = NOW()
                WHERE reference = $2`,
-              [
-                JSON.stringify({
-                  state: "refunded",
-                  provider_confirmed_failed_at: new Date().toISOString(),
-                  webhook_event: eventType,
-                }),
-                tx.reference,
-              ]
+              [JSON.stringify({ ...metadataPatch, provider_refunded_at: now }), tx.reference]
             );
             await query(
               `UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2`,
               [Number(tx.amount), tx.user_id]
             );
-          });
-          logServiceEvent("datamart", "webhook", "failed", {
-            orderReference,
-            reference: tx.reference,
-          });
-        } else if (orderStatus === "refunded" && tx.status !== "failed") {
-          await withTransaction(async (query) => {
-            await query(
-              `UPDATE transactions
-               SET status = 'failed',
-                   metadata = metadata || $1::jsonb,
-                   updated_at = NOW()
-               WHERE reference = $2`,
-              [
-                JSON.stringify({
-                  state: "refunded",
-                  provider_refunded_at: new Date().toISOString(),
-                  webhook_event: eventType,
-                }),
-                tx.reference,
-              ]
-            );
-            await query(
-              `UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2`,
-              [Number(tx.amount), tx.user_id]
-            );
-          });
-          logServiceEvent("datamart", "webhook", "failed", {
-            orderReference,
-            reference: tx.reference,
           });
         }
       }
@@ -147,10 +122,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true, correlationId });
   } catch (error) {
-    console.error("DataMart webhook error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    logger.error({ message: "[DataMart] Webhook processing failed", correlationId }, error);
+    return NextResponse.json({ error: "Internal server error", correlationId }, { status: 500 });
   }
 }

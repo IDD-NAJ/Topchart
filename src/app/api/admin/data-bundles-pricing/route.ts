@@ -35,14 +35,14 @@ export async function GET(request: NextRequest) {
             b."sizeMb",
             b."validityHours",
             b.price as "providerPrice",
-            COALESCE(b."priceOverride", b.price_override) as "priceOverride",
-            COALESCE(b."markupPercent", b.markup_percent) as "markupPercent",
-            COALESCE(b."isPopular", b.is_popular) as "isPopular",
-            COALESCE(b."isActive", b.is_active) as "isActive",
-            COALESCE(b."isFeatured", b.is_featured) as "isFeatured",
+            b."priceOverride",
+            b."markupPercent",
+            b."isPopular",
+            b."isActive",
+            b."isFeatured",
             b."updatedAt"
           FROM data_bundles b
-          LEFT JOIN networks n ON b."networkId" = n.id
+          LEFT JOIN networks n ON COALESCE(b."networkId", b.network_id::uuid) = n.id
           WHERE n.name = $1
           ORDER BY b.price ASC`,
           [dbNetworkCode]
@@ -55,14 +55,14 @@ export async function GET(request: NextRequest) {
             b."sizeMb",
             b."validityHours",
             b.price as "providerPrice",
-            COALESCE(b."priceOverride", b.price_override) as "priceOverride",
-            COALESCE(b."markupPercent", b.markup_percent) as "markupPercent",
-            COALESCE(b."isPopular", b.is_popular) as "isPopular",
-            COALESCE(b."isActive", b.is_active) as "isActive",
-            COALESCE(b."isFeatured", b.is_featured) as "isFeatured",
+            b."priceOverride",
+            b."markupPercent",
+            b."isPopular",
+            b."isActive",
+            b."isFeatured",
             b."updatedAt"
           FROM data_bundles b
-          LEFT JOIN networks n ON b."networkId" = n.id
+          LEFT JOIN networks n ON COALESCE(b."networkId", b.network_id::uuid) = n.id
           ORDER BY n.name, b.price ASC`
         );
 
@@ -126,7 +126,7 @@ export async function PATCH(request: NextRequest) {
             `UPDATE data_bundles
             SET "priceOverride" = $1, "updatedAt" = NOW()
             WHERE "networkId" IN (SELECT id FROM networks WHERE name = $2)
-              AND COALESCE("isActive", is_active) = true`,
+              AND "isActive" = true`,
             [fixedAmount, networkCode]
           );
         } else {
@@ -134,7 +134,7 @@ export async function PATCH(request: NextRequest) {
             `UPDATE data_bundles
             SET "priceOverride" = price + $1, "markupPercent" = NULL, "updatedAt" = NOW()
             WHERE "networkId" IN (SELECT id FROM networks WHERE name = $2)
-              AND COALESCE("isActive", is_active) = true`,
+              AND "isActive" = true`,
             [fixedAmount, networkCode]
           );
         }
@@ -156,15 +156,15 @@ export async function PATCH(request: NextRequest) {
             `UPDATE data_bundles
             SET "markupPercent" = $1, "priceOverride" = NULL, "updatedAt" = NOW()
             WHERE "networkId" IN (SELECT id FROM networks WHERE name = $2)
-              AND COALESCE("isActive", is_active) = true`,
+              AND "isActive" = true`,
             [pct, networkCode]
           );
         } else {
           await sqlUnsafe(
             `UPDATE data_bundles
-            SET "markupPercent" = COALESCE("markupPercent", markup_percent, 0) + $1, "updatedAt" = NOW()
+            SET "markupPercent" = COALESCE("markupPercent", 0) + $1, "updatedAt" = NOW()
             WHERE "networkId" IN (SELECT id FROM networks WHERE name = $2)
-              AND COALESCE("isActive", is_active) = true`,
+              AND "isActive" = true`,
             [pct, networkCode]
           );
         }

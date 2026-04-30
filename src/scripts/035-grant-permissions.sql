@@ -42,6 +42,14 @@ GRANT ALL ON TABLE referral_rewards TO authenticator;
 
 -- Service status
 GRANT ALL ON TABLE service_status TO authenticator;
+GRANT ALL ON TABLE service_status_audit TO authenticator;
+
+-- DataMart tables
+GRANT ALL ON TABLE datamart_orders TO authenticator;
+GRANT ALL ON TABLE datamart_bulk_batches TO authenticator;
+GRANT ALL ON TABLE datamart_bulk_order_items TO authenticator;
+GRANT ALL ON TABLE datamart_webhook_logs TO authenticator;
+GRANT ALL ON TABLE datamart_data_packages TO authenticator;
 
 -- Homepage media
 GRANT ALL ON TABLE homepage_media TO authenticator;

@@ -21,7 +21,7 @@ interface PublicServiceStatus {
  */
 export async function GET() {
   try {
-    const services = await sql<PublicServiceStatus[]>`
+    const services = (await sql`
       SELECT 
         service_key,
         service_name,
@@ -33,7 +33,7 @@ export async function GET() {
         maintenance_message
       FROM service_status
       ORDER BY display_order ASC
-    `;
+    `) as PublicServiceStatus[];
 
     return NextResponse.json(
       {

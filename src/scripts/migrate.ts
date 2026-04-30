@@ -7,10 +7,26 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { loadEnvConfig } from '@next/env';
 import { neon, type NeonQueryFunction } from '@neondatabase/serverless';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+loadEnvConfig(path.join(__dirname, '..', '..'));
+
+const migrationDirs = [
+  path.join(__dirname, '..', 'lib', 'db', 'migrations'),
+  __dirname,
+];
+
+function findMigrationFile(filename: string): string | null {
+  for (const dir of migrationDirs) {
+    const fullPath = path.join(dir, filename);
+    if (fs.existsSync(fullPath)) return fullPath;
+  }
+  return null;
+}
 
 // Migration files in order
 const migrations = [
@@ -31,7 +47,7 @@ const migrations = [
   '009-add-role-constraint.sql',
   '010-create-content-tables.sql',
   '011-create-blog-tables.sql',
-  '012-create-faqs-tables.sql',
+  '012-create-faqs-table.sql',
   '013-create-press-tables.sql',
   '015-add-verification-tables.sql',
   '016-fix-reseller-tables.sql',
@@ -55,6 +71,21 @@ const migrations = [
   '031-create-service-status-table.sql',
   '032-add-maintenance-columns.sql',
   '033-create-transactions-table.sql',
+  '034-fix-data-bundle-columns.sql',
+  '008_add_pricing_tables.sql',
+  '009_add_bill_providers.sql',
+  '010_sync_wallets.sql',
+  '010_unified_bill_payments.sql',
+  '011_homepage_media.sql',
+  '012_esim_order_processing.sql',
+  '013_add_esim_phone_plans_description.sql',
+  '014_create_referrals_table.sql',
+  '015_enhance_homepage_media.sql',
+  '016_normalize_homepage_media_model.sql',
+  '017_add_status_version.sql',
+  '018_datamart_orders.sql',
+  '019_fix_data_bundles_network_nullable.sql',
+  '020-create-missing-admin-tables.sql',
 ];
 
 function getCleanConnectionString(): string {
@@ -118,10 +149,10 @@ async function runMigrations() {
         continue;
       }
 
-      const filePath = path.join(__dirname, migration);
+      const filePath = findMigrationFile(migration);
 
-      if (!fs.existsSync(filePath)) {
-        console.warn(`⚠ ${migration} - file not found, skipping`);
+      if (!filePath) {
+        console.warn(`⚠ ${migration} - file not found in any migration directory, skipping`);
         continue;
       }
 

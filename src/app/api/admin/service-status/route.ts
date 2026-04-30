@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
 
     await applyScheduledMaintenance();
 
-    const services = await sql<ServiceStatus[]>`
+    const services = (await sql`
       SELECT 
         id, service_key, service_name, description,
         is_coming_soon, coming_soon_message, expected_launch_date,
@@ -122,15 +122,15 @@ export async function GET(request: NextRequest) {
         created_at, updated_at, updated_by
       FROM service_status
       ORDER BY display_order ASC, service_name ASC
-    `;
+    `) as ServiceStatus[];
 
     const audits = includeAudit
-      ? await sql<ServiceStatusAudit[]>`
+      ? (await sql`
           SELECT id, service_key, action, old_values, new_values, changed_at, changed_by
           FROM service_status_audit
           ORDER BY changed_at DESC
           LIMIT 100
-        `
+        `) as ServiceStatusAudit[]
       : [];
 
     const health = includeHealth
@@ -179,7 +179,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, error: "service_key and service_name are required" }, { status: 400 });
     }
 
-    const inserted = await sql<ServiceStatus[]>`
+    const inserted = (await sql`
       INSERT INTO service_status (
         service_key, service_name, description, icon_name,
         is_enabled, is_coming_soon, is_maintenance, display_order, updated_by
@@ -187,11 +187,11 @@ export async function PUT(request: NextRequest) {
         ${serviceKey}, ${serviceName}, ${description}, ${iconName},
         true, false, false,
         COALESCE((SELECT MAX(display_order) + 1 FROM service_status), 1),
-        ${admin.id}::uuid
+        ${admin.userId}::uuid
       )
       ON CONFLICT (service_key) DO NOTHING
       RETURNING *
-    `;
+    `) as ServiceStatus[];
 
     if (!inserted.length) {
       return NextResponse.json({ success: false, error: "Service key already exists" }, { status: 409 });
@@ -206,7 +206,7 @@ export async function PUT(request: NextRequest) {
         'created',
         NULL,
         ${JSON.stringify({ service_name: serviceName, description, icon_name: iconName })}::jsonb,
-        ${admin.id}::uuid
+        ${admin.userId}::uuid
       )
     `;
 
@@ -230,9 +230,9 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: "service_key is required" }, { status: 400 });
     }
 
-    const existing = await sql<ServiceStatus[]>`
+    const existing = (await sql`
       SELECT * FROM service_status WHERE service_key = ${serviceKey} LIMIT 1
-    `;
+    `) as ServiceStatus[];
     if (!existing.length) {
       return NextResponse.json({ success: false, error: "Service not found" }, { status: 404 });
     }
@@ -278,9 +278,9 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Fetch current values for audit
-    const [currentService] = await sql<ServiceStatus[]>`
+    const [currentService] = (await sql`
       SELECT * FROM service_status WHERE service_key = ${service_key}
-    `;
+    `) as ServiceStatus[];
 
     if (!currentService) {
       return NextResponse.json(
@@ -302,7 +302,7 @@ export async function PATCH(request: NextRequest) {
     if (typeof maintenance_auto_resume === 'boolean') updates.maintenance_auto_resume = maintenance_auto_resume;
 
     // Perform update
-    const [updatedService] = await sql<ServiceStatus[]>`
+    const [updatedService] = (await sql`
       UPDATE service_status
       SET 
         is_coming_soon = COALESCE(${updates.is_coming_soon ?? null}::boolean, is_coming_soon),
@@ -314,11 +314,11 @@ export async function PATCH(request: NextRequest) {
         maintenance_starts_at = ${updates.maintenance_starts_at ?? currentService.maintenance_starts_at ?? null}::timestamptz,
         maintenance_ends_at = ${updates.maintenance_ends_at ?? currentService.maintenance_ends_at ?? null}::timestamptz,
         maintenance_auto_resume = COALESCE(${updates.maintenance_auto_resume ?? null}::boolean, maintenance_auto_resume),
-        updated_by = ${admin.id}::uuid,
+        updated_by = ${admin.userId}::uuid,
         updated_at = NOW()
       WHERE service_key = ${service_key}
       RETURNING *
-    `;
+    `) as ServiceStatus[];
 
     // Determine action type for audit
     let action = 'updated';
@@ -359,7 +359,7 @@ export async function PATCH(request: NextRequest) {
           maintenance_ends_at: updatedService.maintenance_ends_at,
           maintenance_auto_resume: updatedService.maintenance_auto_resume
         })}::jsonb,
-        ${admin.id}::uuid
+        ${admin.userId}::uuid
       )
     `;
 
@@ -424,23 +424,23 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      const [currentService] = await sql<ServiceStatus[]>`
+      const [currentService] = (await sql`
         SELECT * FROM service_status WHERE service_key = ${service_key}
-      `;
+      `) as ServiceStatus[];
 
       if (!currentService) continue;
 
-      const [updatedService] = await sql<ServiceStatus[]>`
+      const [updatedService] = (await sql`
         UPDATE service_status
         SET 
           is_coming_soon = COALESCE(${typeof is_coming_soon === 'boolean' ? is_coming_soon : null}::boolean, is_coming_soon),
           is_enabled = COALESCE(${typeof is_enabled === 'boolean' ? is_enabled : null}::boolean, is_enabled),
           is_maintenance = COALESCE(${typeof is_maintenance === 'boolean' ? is_maintenance : null}::boolean, is_maintenance),
-          updated_by = ${admin.id}::uuid,
+          updated_by = ${admin.userId}::uuid,
           updated_at = NOW()
         WHERE service_key = ${service_key}
         RETURNING *
-      `;
+      `) as ServiceStatus[];
 
       // Log audit
       await sql`
@@ -460,7 +460,7 @@ export async function POST(request: NextRequest) {
             is_enabled: updatedService.is_enabled,
             is_maintenance: updatedService.is_maintenance,
           })}::jsonb,
-          ${admin.id}::uuid
+          ${admin.userId}::uuid
         )
       `;
 
