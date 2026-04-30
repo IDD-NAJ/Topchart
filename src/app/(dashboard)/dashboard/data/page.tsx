@@ -929,14 +929,14 @@ export default function DataPage() {
             
             <div className="space-y-2">
               <DialogTitle className="text-2xl font-bold tracking-tight">
-                {step === "processing" && "Processing"}
+                {step === "processing" && (currentOrder ? "Order Confirmation" : "Processing")}
                 {step === "success" && "Transaction Successful"}
                 {step === "failed" && "Transaction Failed"}
               </DialogTitle>
               <DialogDescription className="text-base">
                 {step === "processing" && (
-                  orderStatusSnapshot?.orderStatus
-                    ? `Waiting on provider: ${orderStatusSnapshot.orderStatus.toLowerCase().replace(/_/g, " ")}`
+                  currentOrder
+                    ? `Your order has been confirmed. Status: ${(orderStatusSnapshot?.orderStatus || currentOrder.status || "pending").toLowerCase().replace(/_/g, " ")}`
                     : "Please wait while we secure your transaction."
                 )}
                 {step === "success" && (orderStatusSnapshot?.orderStatus ? `${orderStatusSnapshot.orderStatus.toLowerCase().replace(/_/g, " ")}. Data delivered to ${normalizeProviderPhone(pendingPhoneRef.current || phone)}.` : `${selectedPlan?.name} delivered.`)}
