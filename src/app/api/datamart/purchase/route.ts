@@ -41,7 +41,7 @@ async function getAuthenticatedUser() {
 
 async function getOrderByKey(idempotencyKey: string) {
   const rows = await sql`
-    SELECT id, phone_number, network, capacity, price, status, order_reference, transaction_reference, purchase_id, idempotency_key, user_id, created_at, updated_at
+    SELECT id, phone_number, network, capacity, price, status, order_reference, transaction_reference, purchase_id, idempotency_key, created_at, updated_at
     FROM datamart_orders
     WHERE idempotency_key = ${idempotencyKey}
     LIMIT 1

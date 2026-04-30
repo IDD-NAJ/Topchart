@@ -436,30 +436,60 @@ export async function createDatamartOrder(params: {
 
   const price = params.price ?? match.price;
 
-  const [row] = await sql`
-    INSERT INTO datamart_orders (
-      phone_number,
-      network,
-      capacity,
-      price,
-      gateway,
-      status,
-      idempotency_key,
-      user_id,
-      metadata
-    ) VALUES (
-      ${toE164(params.phoneNumber)},
-      ${params.network},
-      ${params.capacity},
-      ${price},
-      ${gateway},
-      'pending',
-      ${idempotencyKey},
-      ${params.userId || null},
-      ${JSON.stringify({ attempts: 0 })}::jsonb
-    )
-    RETURNING id
-  `;
+  let row: any;
+  try {
+    [row] = await sql`
+      INSERT INTO datamart_orders (
+        phone_number,
+        network,
+        capacity,
+        price,
+        gateway,
+        status,
+        idempotency_key,
+        user_id,
+        metadata
+      ) VALUES (
+        ${toE164(params.phoneNumber)},
+        ${params.network},
+        ${params.capacity},
+        ${price},
+        ${gateway},
+        'pending',
+        ${idempotencyKey},
+        ${params.userId || null},
+        ${JSON.stringify({ attempts: 0 })}::jsonb
+      )
+      RETURNING id
+    `;
+  } catch (err: any) {
+    if (err?.message?.includes("user_id")) {
+      [row] = await sql`
+        INSERT INTO datamart_orders (
+          phone_number,
+          network,
+          capacity,
+          price,
+          gateway,
+          status,
+          idempotency_key,
+          metadata
+        ) VALUES (
+          ${toE164(params.phoneNumber)},
+          ${params.network},
+          ${params.capacity},
+          ${price},
+          ${gateway},
+          'pending',
+          ${idempotencyKey},
+          ${JSON.stringify({ attempts: 0 })}::jsonb
+        )
+        RETURNING id
+      `;
+    } else {
+      throw err;
+    }
+  }
 
   return { id: String(row.id), idempotencyKey, price };
 }
