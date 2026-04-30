@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
       planName,
       planSize,
       planPrice,
+      effectivePrice,
       type,
       idempotencyKey: bodyIdempotencyKey,
     } = body;
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
       return apiResponse(false, "Missing idempotency key", { status: 400, code: "MISSING_IDEMPOTENCY_KEY", correlationId });
     }
 
-    const price = Number(planPrice);
+    const price = effectivePrice !== undefined ? Number(effectivePrice) : Number(planPrice);
     if (isNaN(price) || price <= 0) {
       return apiResponse(false, "Invalid plan price", { status: 400, correlationId });
     }

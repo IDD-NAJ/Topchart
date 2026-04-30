@@ -230,6 +230,7 @@ async function POSTHandler(request: NextRequest) {
           network,
           price,
           price_override as "priceOverride",
+          markup_percent as "markupPercent",
           is_active as "isActive"
         FROM data_bundles
         WHERE id = ${bundleId}
@@ -249,9 +250,22 @@ async function POSTHandler(request: NextRequest) {
         network: string;
         price: number | string;
         priceOverride: number | string | null;
+        markupPercent: number | string | null;
       };
 
-      const basePrice = bundle.priceOverride ? Number(bundle.priceOverride) : Number(bundle.price);
+      const providerPrice = Number(bundle.price);
+      const priceOverride = bundle.priceOverride ? Number(bundle.priceOverride) : null;
+      const markupPercent = bundle.markupPercent ? Number(bundle.markupPercent) : null;
+
+      let basePrice: number;
+      if (priceOverride !== null && priceOverride > 0) {
+        basePrice = priceOverride;
+      } else if (markupPercent !== null && markupPercent > 0) {
+        const markup = providerPrice * (markupPercent / 100);
+        basePrice = Number((providerPrice + markup).toFixed(2));
+      } else {
+        basePrice = providerPrice;
+      }
 
       if (Number.isNaN(basePrice) || basePrice <= 0) {
         return NextResponse.json({ success: false, error: "Invalid bundle pricing" }, { status: 400 });
