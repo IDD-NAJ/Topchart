@@ -191,6 +191,8 @@ export default function DataPage() {
   const pollTimerRef = useRef<number | null>(null)
   const pendingPhoneRef = useRef<string>("")
   const pendingNetworkIdRef = useRef<string | null>(null)
+  const confirmTimerRef = useRef<number | null>(null)
+  const [countdown, setCountdown] = useState<number>(0)
 
   useEffect(() => {
     if (phone.length >= 4) {
@@ -202,6 +204,34 @@ export default function DataPage() {
   useEffect(() => {
     setRecentRecipients(getRecentRecipients())
   }, [])
+
+  useEffect(() => {
+    if (step === "confirm") {
+      setCountdown(10)
+      confirmTimerRef.current = window.setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            setStep("form")
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    } else {
+      if (confirmTimerRef.current) {
+        clearInterval(confirmTimerRef.current)
+        confirmTimerRef.current = null
+      }
+      setCountdown(0)
+    }
+
+    return () => {
+      if (confirmTimerRef.current) {
+        clearInterval(confirmTimerRef.current)
+        confirmTimerRef.current = null
+      }
+    }
+  }, [step])
 
   const fetchPlans = useCallback(async () => {
     setPlansLoading(true)
@@ -545,14 +575,22 @@ export default function DataPage() {
         <div className="max-w-2xl mx-auto animate-in slide-in-from-bottom-4 duration-500">
           <Card className="border-primary/20 shadow-xl overflow-hidden">
             <div className="bg-primary p-6 sm:p-8 text-primary-foreground">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                  <ShieldCheck className="w-8 h-8 text-white" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <ShieldCheck className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Review Purchase</h2>
+                    <p className="text-primary-foreground/80">Please verify the details below</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-white">Review Purchase</h2>
-                  <p className="text-primary-foreground/80">Please verify the details below</p>
-                </div>
+                {countdown > 0 && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full backdrop-blur-sm">
+                    <Clock className="w-4 h-4 text-white" />
+                    <span className="text-sm font-medium text-white">{countdown}s</span>
+                  </div>
+                )}
               </div>
               
               <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/20">
@@ -589,14 +627,26 @@ export default function DataPage() {
                 <Button 
                   variant="outline" 
                   size="lg"
-                  onClick={() => setStep("form")} 
+                  onClick={() => {
+                    if (confirmTimerRef.current) {
+                      clearInterval(confirmTimerRef.current)
+                      confirmTimerRef.current = null
+                    }
+                    setStep("form")
+                  }} 
                   className="flex-1"
                 >
                   Edit Details
                 </Button>
                 <Button 
                   size="lg"
-                  onClick={handleConfirm} 
+                  onClick={() => {
+                    if (confirmTimerRef.current) {
+                      clearInterval(confirmTimerRef.current)
+                      confirmTimerRef.current = null
+                    }
+                    handleConfirm()
+                  }} 
                   className="flex-1"
                 >
                   Confirm & Pay

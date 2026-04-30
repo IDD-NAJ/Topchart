@@ -292,18 +292,20 @@ export default function DashboardPage() {
         }
       }
     } catch (err) {
-      console.error("Dashboard load error:", err)
       if (err instanceof Error) {
         if (err.name === "AbortError") {
           setError("Request timed out. Please try again.")
         } else if (err.message.includes("Failed to fetch")) {
+          console.error("Dashboard load error:", err)
           setError("Network error. Check your connection and try again.")
           toast.error("Network error. Please check your connection.")
         } else {
+          console.error("Dashboard load error:", err)
           setError(err.message)
           toast.error(err.message)
         }
       } else {
+        console.error("Dashboard load error:", err)
         setError("An unexpected error occurred. Please try again.")
       }
     } finally {
