@@ -61,10 +61,9 @@ function applySecurityHeaders(response: NextResponse, request: NextRequest): Nex
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Check both legacy session token and NextAuth session token
+  // Check session token
   const sessionToken = request.cookies.get("session_token")?.value;
-  const nextAuthToken = request.cookies.get("next-auth.session-token")?.value;
-  const hasSession = Boolean(sessionToken || nextAuthToken);
+  const hasSession = Boolean(sessionToken);
 
   const isServerAction = request.headers.get("next-action");
   if (isServerAction) {

@@ -440,6 +440,59 @@ export async function POST(request: NextRequest) {
     `;
     steps.push("transactions table patched for verification types");
 
+    await sql`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        type VARCHAR(20) NOT NULL DEFAULT 'info',
+        title VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        is_read BOOLEAN NOT NULL DEFAULT false,
+        action_url TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id) WHERE is_read = false`;
+    steps.push("notifications table ensured");
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS seo_settings (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        page_key VARCHAR(100) NOT NULL UNIQUE,
+        title VARCHAR(255),
+        meta_description TEXT,
+        keywords TEXT,
+        og_image_url TEXT,
+        favicon_url TEXT,
+        canonical_url TEXT,
+        no_index BOOLEAN DEFAULT false,
+        updated_by UUID,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+    steps.push("seo_settings table ensured");
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id),
+        action VARCHAR(100) NOT NULL,
+        resource_type VARCHAR(50),
+        resource_id UUID,
+        details JSONB,
+        ip_address VARCHAR(45),
+        user_agent TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs(resource_type, resource_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC)`;
+    steps.push("audit_logs table ensured");
+
     return NextResponse.json({ success: true, steps });
   } catch (error) {
     console.error("Migration error:", error);

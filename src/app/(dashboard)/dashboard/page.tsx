@@ -52,6 +52,7 @@ import {
   QrCode,
   Check,
 } from "lucide-react"
+import { useServiceStatus, SERVICE_KEYS } from "@/hooks/use-service-status"
 import { Suspense } from "react"
 import Loading from "./loading"
 import { cn } from "@/lib/utils"
@@ -70,8 +71,15 @@ const staggerContainer = {
   }
 }
 
-const services = [
-  {
+const serviceConfig: Record<string, {
+    href: string;
+    label: string;
+    description: string;
+    icon: any;
+    color: string;
+    hoverColor: string;
+  }> = {
+  [SERVICE_KEYS.DATA]: {
     href: "/dashboard/data",
     label: "Buy Data",
     description: "Affordable bundles for all networks",
@@ -79,7 +87,7 @@ const services = [
     color: "text-[#1A85B8] bg-[#E6F0FF]",
     hoverColor: "group-hover:border-[#1A85B8]/30"
   },
-  {
+  [SERVICE_KEYS.VERIFICATION]: {
     href: "/dashboard/verification",
     label: "Number Verification",
     description: "Get US numbers for SMS verification",
@@ -87,7 +95,7 @@ const services = [
     color: "text-[#FF5630] bg-[#FFE5E8]",
     hoverColor: "group-hover:border-[#FF5630]/30"
   },
-  {
+  [SERVICE_KEYS.RESULT_CHECKER]: {
     href: "/dashboard/result-checkers",
     label: "Result Checker",
     description: "Check WASSCE, BECE & other exam results",
@@ -95,15 +103,7 @@ const services = [
     color: "text-[#6B7280] bg-[#F3F4F6]",
     hoverColor: "group-hover:border-[#6B7280]/30"
   },
-  {
-    href: "/dashboard/reseller",
-    label: "Reseller Programme",
-    description: "Earn commissions on every referral sale",
-    icon: Store,
-    color: "text-amber-700 bg-amber-50",
-    hoverColor: "group-hover:border-amber-300/50"
-  },
-  {
+  [SERVICE_KEYS.ESIM]: {
     href: "/dashboard/esim",
     label: "eSIM",
     description: "Digital SIM cards for global connectivity",
@@ -111,7 +111,7 @@ const services = [
     color: "text-emerald-600 bg-emerald-50",
     hoverColor: "group-hover:border-emerald-300/50"
   },
-  {
+  [SERVICE_KEYS.PROXY]: {
     href: "/dashboard/proxies",
     label: "Proxies",
     description: "Residential, mobile & datacenter proxies",
@@ -119,7 +119,7 @@ const services = [
     color: "text-violet-600 bg-violet-50",
     hoverColor: "group-hover:border-violet-300/50"
   },
-  {
+  [SERVICE_KEYS.GIFTCARDS]: {
     href: "/dashboard/giftcards",
     label: "Gift Cards",
     description: "Buy & send digital gift cards instantly",
@@ -127,7 +127,7 @@ const services = [
     color: "text-pink-600 bg-pink-50",
     hoverColor: "group-hover:border-pink-300/50"
   },
-  {
+  [SERVICE_KEYS.BILLS]: {
     href: "/dashboard/bills",
     label: "Pay Bills",
     description: "Electricity, TV, water & internet bills",
@@ -135,7 +135,15 @@ const services = [
     color: "text-orange-600 bg-orange-50",
     hoverColor: "group-hover:border-orange-300/50"
   },
-]
+  reseller: {
+    href: "/dashboard/reseller",
+    label: "Reseller Programme",
+    description: "Earn commissions on every referral sale",
+    icon: Store,
+    color: "text-amber-700 bg-amber-50",
+    hoverColor: "group-hover:border-amber-300/50"
+  },
+}
 
 interface Transaction {
   id: string
@@ -158,6 +166,7 @@ interface ReferralStats {
 
 export default function DashboardPage() {
   const { user, refreshUser } = useAuth()
+  const { isEnabled, isMaintenance, getMaintenanceMessage, services: dbServices } = useServiceStatus()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
@@ -473,32 +482,44 @@ export default function DashboardPage() {
                 <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="p-3 space-y-2">
-                {services.map((service, index) => (
-                  <motion.div
-                    key={service.href}
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 + index * 0.1 }}
-                  >
-                    <Link href={service.href} className="group">
-                      <div className={cn(
-                        "flex items-center justify-between p-3 rounded-xl border border-border transition-all hover:bg-muted/50",
-                        service.hoverColor
-                      )}>
-                        <div className="flex items-center gap-3">
-                          <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", service.color)}>
-                            <service.icon className="w-5 h-5" />
+                {Object.entries(serviceConfig).filter(([key, svc]) => {
+                  if (key === "reseller") return true
+                  return isEnabled(key)
+                }).map(([key, service], index) => {
+                  const maintenance = key !== "reseller" && isMaintenance(key)
+                  const maintenanceMsg = key !== "reseller" ? getMaintenanceMessage(key) : null
+                  const Icon = service.icon
+                  return (
+                    <motion.div
+                      key={service.href}
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.4 + index * 0.1 }}
+                    >
+                      <Link href={service.href} className="group" title={maintenance ? maintenanceMsg || "Under maintenance" : undefined}>
+                        <div className={cn(
+                          "flex items-center justify-between p-3 rounded-xl border border-border transition-all",
+                          maintenance ? "opacity-50 cursor-not-allowed" : "hover:bg-muted/50",
+                          service.hoverColor
+                        )}>
+                          <div className="flex items-center gap-3">
+                            <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", service.color)}>
+                              <Icon className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold flex items-center gap-2">
+                                {service.label}
+                                {maintenance && <Badge variant="secondary" className="text-[8px] h-3.5 px-1 bg-amber-100 text-amber-700 border-amber-200">MAINT</Badge>}
+                              </p>
+                              <p className="text-xs text-muted-foreground line-clamp-1">{service.description}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-semibold">{service.label}</p>
-                            <p className="text-xs text-muted-foreground line-clamp-1">{service.description}</p>
-                          </div>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                         </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </Link>
-                  </motion.div>
-                ))}
+                      </Link>
+                    </motion.div>
+                  )
+                })}
               </CardContent>
               <div className="px-6 pb-6 pt-2">
                 <div className="p-3 rounded-lg bg-[#0052CC]/5 border border-[#0052CC]/10">

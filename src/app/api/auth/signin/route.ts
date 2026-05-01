@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const callbackUrl = url.searchParams.get("callbackUrl") || "/dashboard";
     
     // Build the authorization URL
-    const authUrl = new URL(`/api/auth/authorize/${provider}`, request.url);
+    const authUrl = new URL(`/api/auth/${provider}`, request.url);
     authUrl.searchParams.set("callbackUrl", callbackUrl);
     
     return NextResponse.redirect(authUrl);

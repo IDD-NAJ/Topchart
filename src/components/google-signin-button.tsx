@@ -15,7 +15,7 @@ export function GoogleSignInButton({ mode = "signin", callbackUrl = "/dashboard"
   const handleClick = () => {
     setIsLoading(true);
     // Redirect to NextAuth Google signin endpoint
-    const url = new URL("/api/auth/signin/google", window.location.origin);
+    const url = new URL("/api/auth/google", window.location.origin);
     url.searchParams.set("callbackUrl", callbackUrl);
     window.location.href = url.toString();
   };

@@ -13,7 +13,7 @@ export const authConfig: AuthConfig = {
   ],
   session: {
     strategy: "database",
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    maxAge: 5 * 60,
   },
   cookies: {
     sessionToken: {

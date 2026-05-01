@@ -4,8 +4,10 @@ import Link from "next/link"
 import { LogoVideo } from "@/components/logo-video"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { useServiceStatus, SERVICE_KEYS } from "@/hooks/use-service-status"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { motion } from "framer-motion"
 import {
   LayoutDashboard,
@@ -37,20 +39,21 @@ import {
   Globe2,
   Gift,
   Receipt,
+  Wrench,
 } from "lucide-react"
 import { useState } from "react"
 
 const navItems = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/data", label: "Buy Data", icon: Wifi },
-  { href: "/dashboard/esim", label: "Buy eSIM", icon: Smartphone },
-  { href: "/dashboard/giftcards", label: "Gift Cards", icon: Gift },
-  { href: "/dashboard/bills", label: "Pay Bills", icon: Receipt },
-  { href: "/dashboard/proxies", label: "Proxies", icon: Globe2 },
-  { href: "/dashboard/verification", label: "Verification Numbers", icon: PhoneCall },
-  { href: "/dashboard/verification/history", label: "Verification History", icon: ClipboardList, indent: true },
-  { href: "/dashboard/result-checkers", label: "Result Checkers", icon: GraduationCap },
-  { href: "/dashboard/history", label: "Transaction History", icon: History },
+  { href: "/dashboard", label: "Overview", icon: LayoutDashboard, serviceKey: null },
+  { href: "/dashboard/data", label: "Buy Data", icon: Wifi, serviceKey: SERVICE_KEYS.DATA },
+  { href: "/dashboard/esim", label: "Buy eSIM", icon: Smartphone, serviceKey: SERVICE_KEYS.ESIM },
+  { href: "/dashboard/giftcards", label: "Gift Cards", icon: Gift, serviceKey: SERVICE_KEYS.GIFTCARDS },
+  { href: "/dashboard/bills", label: "Pay Bills", icon: Receipt, serviceKey: SERVICE_KEYS.BILLS },
+  { href: "/dashboard/proxies", label: "Proxies", icon: Globe2, serviceKey: SERVICE_KEYS.PROXY },
+  { href: "/dashboard/verification", label: "Verification Numbers", icon: PhoneCall, serviceKey: SERVICE_KEYS.VERIFICATION },
+  { href: "/dashboard/verification/history", label: "Verification History", icon: ClipboardList, indent: true, serviceKey: SERVICE_KEYS.VERIFICATION },
+  { href: "/dashboard/result-checkers", label: "Result Checkers", icon: GraduationCap, serviceKey: SERVICE_KEYS.RESULT_CHECKER },
+  { href: "/dashboard/history", label: "Transaction History", icon: History, serviceKey: null },
 ]
 
 const resellerItems = [
@@ -83,6 +86,7 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({ collapsed: controlledCollapsed, onCollapsedChange }: DashboardSidebarProps = {}) {
   const pathname = usePathname()
   const { user, logout } = useAuth()
+  const { isEnabled, isMaintenance, getMaintenanceMessage } = useServiceStatus()
   const [resellerMenuOpen, setResellerMenuOpen] = useState(true)
   const [internalCollapsed, setInternalCollapsed] = useState(false)
   
@@ -135,8 +139,11 @@ export function DashboardSidebar({ collapsed: controlledCollapsed, onCollapsedCh
           </h3>
           <nav className="space-y-1">
             {navItems.map((item) => {
+              if (item.serviceKey && !isEnabled(item.serviceKey)) return null
               const active = pathname === item.href
               const Icon = item.icon
+              const maintenance = item.serviceKey ? isMaintenance(item.serviceKey) : false
+              const maintenanceMsg = item.serviceKey ? getMaintenanceMessage(item.serviceKey) : null
               return (
                 <Link
                   key={item.href}
@@ -146,15 +153,26 @@ export function DashboardSidebar({ collapsed: controlledCollapsed, onCollapsedCh
                     collapsed ? "justify-center px-2 py-2.5" : (item as any).indent ? "px-4 py-2 ml-4 text-xs" : "px-4 py-2.5",
                     active
                       ? "bg-[color:var(--marketing-accent)]/10 text-[color:var(--marketing-accent)]"
-                      : "text-muted-foreground hover:bg-[color:var(--marketing-cream-alt)] hover:text-[color:var(--marketing-accent)]"
+                      : "text-muted-foreground hover:bg-[color:var(--marketing-cream-alt)] hover:text-[color:var(--marketing-accent)]",
+                    maintenance && "opacity-60"
                   )}
-                  title={collapsed ? item.label : undefined}
+                  title={collapsed ? (maintenance ? maintenanceMsg || "Under maintenance" : item.label) : maintenance ? maintenanceMsg || "Under maintenance" : undefined}
                 >
-                  <Icon className={cn(
-                    collapsed ? "h-5 w-5" : (item as any).indent ? "h-3.5 w-3.5" : "h-4 w-4",
-                    active ? "text-[color:var(--marketing-accent)]" : "group-hover:text-[color:var(--marketing-accent)]"
-                  )} />
-                  {!collapsed && item.label}
+                  <div className="relative">
+                    <Icon className={cn(
+                      collapsed ? "h-5 w-5" : (item as any).indent ? "h-3.5 w-3.5" : "h-4 w-4",
+                      active ? "text-[color:var(--marketing-accent)]" : "group-hover:text-[color:var(--marketing-accent)]"
+                    )} />
+                    {maintenance && !collapsed && (
+                      <Wrench className="absolute -top-1 -right-1 h-2.5 w-2.5 text-amber-500" />
+                    )}
+                  </div>
+                  {!collapsed && (
+                    <span className="flex items-center gap-2">
+                      {item.label}
+                      {maintenance && <Badge variant="secondary" className="text-[8px] h-3.5 px-1 bg-amber-100 text-amber-700 border-amber-200">MAINT</Badge>}
+                    </span>
+                  )}
                 </Link>
               )
             })}

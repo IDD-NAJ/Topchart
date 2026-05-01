@@ -262,10 +262,11 @@ export async function fetchUserInfo(accessToken: string): Promise<GoogleUserInfo
 }
 
 export function getGoogleEnv(): { clientId: string; clientSecret: string } | null {
-  const clientId = process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET;
+  const clientId = process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET;
   if (!clientId || !clientSecret) return null;
   return { clientId, clientSecret };
 }
 
-export { encryptToken, GoogleTokenResponse, GoogleIdTokenPayload, GoogleUserInfo };
+export { encryptToken };
+export type { GoogleTokenResponse, GoogleIdTokenPayload, GoogleUserInfo };

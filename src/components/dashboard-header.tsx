@@ -33,6 +33,7 @@ import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { NotificationsPanel } from "@/components/notifications-panel"
 
 const mainNavItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -138,6 +139,7 @@ export function DashboardHeader({ sidebarCollapsed = false }: DashboardHeaderPro
         </div>
 
         <div className="flex shrink-0 items-center gap-3">
+          <NotificationsPanel />
           <div className="hidden max-w-[200px] md:flex md:flex-col md:items-end lg:max-w-[240px]">
             <span className="truncate text-sm font-semibold">
               {user?.firstName} {user?.lastName}

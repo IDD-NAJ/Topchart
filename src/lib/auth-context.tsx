@@ -320,7 +320,7 @@ const register = async (
     }
   };
 
-  // Inactivity tracking - Auto logout after 30 minutes
+  // Inactivity tracking - Auto logout after 5 minutes
   const clearAllTimers = useCallback(() => {
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
@@ -402,6 +402,18 @@ const register = async (
       clearAllTimers();
     };
   }, [user, resetInactivityTimer, clearAllTimers]);
+
+  // Tab close logout - invalidate session when user closes the tab
+  useEffect(() => {
+    if (!user) return;
+
+    const handleUnload = () => {
+      navigator.sendBeacon("/api/auth/logout");
+    };
+
+    window.addEventListener("beforeunload", handleUnload);
+    return () => window.removeEventListener("beforeunload", handleUnload);
+  }, [user]);
 
   // Don't track inactivity on auth pages
   const isAuthPage = pathname?.startsWith('/login') || pathname?.startsWith('/register');

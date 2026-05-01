@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("session_token")?.value;
@@ -17,6 +17,7 @@ export async function POST() {
     );
 
     response.cookies.delete("session_token");
+    response.cookies.delete("next-auth.session-token");
     response.cookies.delete("admin_role");
     return response;
   } catch (error) {

@@ -3,7 +3,7 @@ import { getDatabaseEnv } from "@/lib/env";
 
 // Query timeout in milliseconds - increased for admin operations
 const QUERY_TIMEOUT_MS = 60000; // Increased to 60s for stability
-const CONNECTION_TIMEOUT_MS = 20000; // Increased to 20s for Neon cold starts
+const CONNECTION_TIMEOUT_MS = 30000; // 30s for Neon cold starts
 
 function getCleanConnectionString(): string {
   const dbEnv = getDatabaseEnv();
@@ -44,11 +44,12 @@ function getPool(): Pool {
   if (connectionString && (connectionString.startsWith("postgresql://") || connectionString.startsWith("postgres://"))) {
     _pool = new Pool({ 
       connectionString,
-      max: process.env.NODE_ENV === "production" ? 20 : 10,
-      idleTimeoutMillis: 30000,
+      max: process.env.NODE_ENV === "production" ? 20 : 5,
+      idleTimeoutMillis: 20000,
       connectionTimeoutMillis: CONNECTION_TIMEOUT_MS,
       keepAlive: true,
-      keepAliveInitialDelayMillis: 10000,
+      keepAliveInitialDelayMillis: 5000,
+      maxLifetimeSeconds: 300,
     });
     _poolCreatedAt = Date.now();
     if (process.env.NODE_ENV !== "production") {

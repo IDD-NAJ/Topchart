@@ -250,7 +250,7 @@ export async function register(formData: {
     // Create session with explicit UUID
     const token = uuidv4();
     const sessionId = uuidv4();
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     await insertSessionRecord({
       sessionId,
@@ -309,7 +309,7 @@ export async function login(formData: {
     // Create session with explicit UUID
     const token = uuidv4();
     const sessionId = uuidv4();
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
     const now = new Date().toISOString();
 
     await insertSessionRecord({
@@ -545,7 +545,7 @@ export async function handleGoogleAuth(profile: {
     // Create session
     const token = uuidv4();
     const sessionId = uuidv4();
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
     const nowIso = new Date().toISOString();
 
     await insertSessionRecord({
