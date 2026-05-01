@@ -45,6 +45,16 @@ export default function DashboardLayout({
     return () => clearTimeout(timer)
   }, [stabilized, user, isLoading, retryCount, router])
 
+  useEffect(() => {
+    if (!user) return
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        refreshUser()
+      }
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [user, refreshUser])
+
   if (isLoading || !stabilized || (!user && retryCount < maxRetries)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[color:var(--marketing-cream)]">
