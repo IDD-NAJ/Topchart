@@ -17,7 +17,8 @@ export async function GET() {
         id, section, slot_key, media_type, file_url, storage_source, 
         file_name, mime_type, file_size, storage_path, public_url, 
         section_key, asset_type, alt_text, priority, status, is_active, 
-        version, created_at, updated_at
+        version, width, height, duration_seconds, thumbnail_url,
+        created_at, updated_at
       FROM homepage_media
       ORDER BY section ASC, slot_key ASC, priority ASC, created_at ASC
     `;

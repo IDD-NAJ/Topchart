@@ -50,6 +50,67 @@ const CATEGORIES = [
   { id: "streaming_entertainment", name: "Streaming & Entertainment", shortName: "Streaming", icon: Play, color: "text-red-600 bg-red-50 dark:bg-red-950/40" },
 ]
 
+const AVATAR_COLORS = [
+  "bg-blue-500 text-white",
+  "bg-green-500 text-white",
+  "bg-purple-500 text-white",
+  "bg-red-500 text-white",
+  "bg-amber-500 text-white",
+  "bg-teal-500 text-white",
+  "bg-pink-500 text-white",
+  "bg-indigo-500 text-white",
+  "bg-cyan-600 text-white",
+  "bg-orange-500 text-white",
+]
+
+function getAvatarColor(name: string): string {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+}
+
+function ServiceIcon({ name, pictureUrl, fallbackIcon: FallbackIcon, fallbackColor, size = "md" }: {
+  name: string
+  pictureUrl?: string | null
+  fallbackIcon: React.ComponentType<{ className?: string }>
+  fallbackColor: string
+  size?: "xs" | "sm" | "md"
+}) {
+  const [imgError, setImgError] = useState(false)
+  const letter = name.charAt(0).toUpperCase()
+  const avatarColor = getAvatarColor(name)
+
+  const sizeClasses = {
+    xs: "h-4 w-4 sm:h-5 sm:w-5",
+    sm: "h-8 w-8",
+    md: "h-8 w-8 sm:h-10 sm:w-10",
+  }
+  const fontClasses = {
+    xs: "text-[8px] sm:text-[10px]",
+    sm: "text-xs",
+    md: "text-sm sm:text-base",
+  }
+  const containerClass = sizeClasses[size]
+  const fontClass = fontClasses[size]
+
+  if (pictureUrl && !imgError) {
+    return (
+      <img
+        src={pictureUrl}
+        alt={name}
+        className={`${containerClass} rounded-lg object-contain bg-muted ${size === "md" ? "p-1" : "p-0.5"}`}
+        onError={() => setImgError(true)}
+      />
+    )
+  }
+
+  return (
+    <div className={`${containerClass} rounded-lg flex items-center justify-center ${avatarColor}`}>
+      <span className={`${fontClass} font-bold`}>{letter}</span>
+    </div>
+  )
+}
+
 const LTR_OPTIONS = [
   { days: 3, label: "3 Days" },
   { days: 7, label: "7 Days" },
@@ -553,9 +614,7 @@ export default function VerificationPage() {
                           <CardContent className="space-y-3 p-4">
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex min-w-0 items-center gap-2">
-                                {svc.picture_url && (
-                                  <img src={svc.picture_url} alt={svc.name} className="h-8 w-8 rounded object-contain" />
-                                )}
+                                <ServiceIcon name={svc.name} pictureUrl={svc.picture_url} fallbackIcon={MessageCircle} fallbackColor="text-blue-600 bg-blue-50" size="sm" />
                                 <div className="min-w-0">
                                   <p className="truncate text-sm font-medium">{svc.name}</p>
                                   <p className="text-xs capitalize text-muted-foreground">{svc.category.replace(/_/g, " ")}</p>
@@ -629,9 +688,7 @@ export default function VerificationPage() {
                             <tr key={svc.id} className={isDirty ? "bg-amber-50/60 dark:bg-amber-950/20" : "bg-background"}>
                               <td className="px-2 sm:px-3 py-2">
                                 <div className="flex items-center gap-2">
-                                  {svc.picture_url && (
-                                    <img src={svc.picture_url} alt={svc.name} className="h-4 w-4 sm:h-5 sm:w-5 rounded object-contain" />
-                                  )}
+                                  <ServiceIcon name={svc.name} pictureUrl={svc.picture_url} fallbackIcon={MessageCircle} fallbackColor="text-blue-600 bg-blue-50" size="xs" />
                                   <span className="font-medium truncate max-w-[80px] sm:max-w-[120px]">{svc.name}</span>
                                 </div>
                               </td>
@@ -888,18 +945,7 @@ export default function VerificationPage() {
                       <Card className="h-full hover:border-primary/40 transition-all hover:shadow-sm">
                         <CardContent className="p-3 sm:p-5">
                           <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                            {svc.picture_url ? (
-                              <img
-                                src={svc.picture_url}
-                                alt={svc.name}
-                                className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg object-contain bg-muted p-1"
-                                onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
-                              />
-                            ) : (
-                              <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-lg flex items-center justify-center ${catMeta.color}`}>
-                                <CatIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                              </div>
-                            )}
+                            <ServiceIcon name={svc.name} pictureUrl={svc.picture_url} fallbackIcon={CatIcon} fallbackColor={catMeta.color} />
                             <div className="flex-1 min-w-0">
                               <h3 className="font-semibold text-xs sm:text-sm truncate">{svc.name}</h3>
                               <p className="text-[10px] sm:text-xs text-muted-foreground">{svc.country ?? "US"}</p>
@@ -971,18 +1017,7 @@ export default function VerificationPage() {
                       <Card className="h-full hover:border-primary/40 transition-all hover:shadow-sm">
                         <CardContent className="p-3 sm:p-5">
                           <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                            {svc.picture_url ? (
-                              <img
-                                src={svc.picture_url}
-                                alt={svc.name}
-                                className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg object-contain bg-muted p-1"
-                                onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
-                              />
-                            ) : (
-                              <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-lg flex items-center justify-center ${catMeta.color}`}>
-                                <CatIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                              </div>
-                            )}
+                            <ServiceIcon name={svc.name} pictureUrl={svc.picture_url} fallbackIcon={CatIcon} fallbackColor={catMeta.color} />
                             <div className="flex-1 min-w-0">
                               <h3 className="font-semibold text-xs sm:text-sm truncate">{svc.name}</h3>
                               <p className="text-[10px] sm:text-xs text-muted-foreground">{svc.country ?? "US"}</p>

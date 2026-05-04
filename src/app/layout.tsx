@@ -149,11 +149,15 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: '/logo.svg',
+        url: '/favicon.svg',
         type: 'image/svg+xml',
       },
+      {
+        url: '/favicon.ico',
+        sizes: 'any',
+      },
     ],
-    apple: '/logo.svg',
+    apple: '/favicon.svg',
   },
   manifest: '/site.webmanifest',
   category: 'finance',

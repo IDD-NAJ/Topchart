@@ -103,6 +103,9 @@ export default function AdminVerificationPricingPage() {
     streaming_entertainment: DEFAULT_MARKUP,
   })
 
+  const [pvadealsApiKey, setPvadealsApiKey] = useState("")
+  const [settingsLastSaved, setSettingsLastSaved] = useState<{ at: string | null; by: string | null }>({ at: null, by: null })
+  const [settingsErrors, setSettingsErrors] = useState<string[]>([])
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [settingsLoading, setSettingsLoading] = useState(false)
   const [applyToExistingOnSave, setApplyToExistingOnSave] = useState(false)
@@ -128,6 +131,8 @@ export default function AdminVerificationPricingPage() {
         setDefaultMarkup(data.data.defaultMarkup)
         setMinMarkup(data.data.minMarkup ?? "")
         setMaxMarkup(data.data.maxMarkup ?? "")
+        setPvadealsApiKey(data.data.pvadealsApiKey ?? "")
+        setSettingsLastSaved({ at: data.data.updated_at ?? null, by: data.data.updated_by ?? null })
         if (data.data.categoryDefaults && Object.keys(data.data.categoryDefaults).length > 0) {
           setCategoryDefaults(prev => ({ ...prev, ...data.data.categoryDefaults }))
         }
@@ -161,6 +166,12 @@ export default function AdminVerificationPricingPage() {
   }
 
   const handleSaveGlobalSettings = async (applyToExistingOverride?: boolean) => {
+    const errors = validateSettings()
+    setSettingsErrors(errors)
+    if (errors.length > 0) {
+      toast.error(`${errors.length} validation error${errors.length > 1 ? "s" : ""} — fix before saving`)
+      return
+    }
     setSettingsSaving(true)
     try {
       const applyToExisting = applyToExistingOverride ?? applyToExistingOnSave
@@ -173,6 +184,7 @@ export default function AdminVerificationPricingPage() {
           categoryDefaults,
           minMarkup: minMarkup === "" ? null : Number(minMarkup),
           maxMarkup: maxMarkup === "" ? null : Number(maxMarkup),
+          pvadealsApiKey: pvadealsApiKey || null,
           applyToExisting,
         }),
       })
@@ -225,6 +237,40 @@ export default function AdminVerificationPricingPage() {
     if (minMarkup !== "" && markup < Number(minMarkup)) return "low"
     if (maxMarkup !== "" && markup > Number(maxMarkup)) return "high"
     return null
+  }
+
+  const validateSettings = (): string[] => {
+    const errors: string[] = []
+    if (!exchangeRate || exchangeRate <= 0) errors.push("Exchange rate must be a positive number")
+    if (defaultMarkup < 0) errors.push("Default markup cannot be negative")
+    if (minMarkup !== "" && Number(minMarkup) < 0) errors.push("Min markup cannot be negative")
+    if (maxMarkup !== "" && Number(maxMarkup) < 0) errors.push("Max markup cannot be negative")
+    if (minMarkup !== "" && maxMarkup !== "" && Number(minMarkup) > Number(maxMarkup)) errors.push("Min markup cannot exceed max markup")
+    if (minMarkup !== "" && defaultMarkup < Number(minMarkup)) errors.push("Default markup is below min guard")
+    if (maxMarkup !== "" && defaultMarkup > Number(maxMarkup)) errors.push("Default markup exceeds max guard")
+    for (const cat of CATEGORIES) {
+      const val = categoryDefaults[cat.id]
+      if (val < 0) errors.push(`${cat.name} markup cannot be negative`)
+      if (minMarkup !== "" && val < Number(minMarkup)) errors.push(`${cat.name} markup is below min guard`)
+      if (maxMarkup !== "" && val > Number(maxMarkup)) errors.push(`${cat.name} markup exceeds max guard`)
+    }
+    return errors
+  }
+
+  const handleResetDefaults = () => {
+    setExchangeRate(DEFAULT_USD_TO_GHS)
+    setDefaultMarkup(DEFAULT_MARKUP)
+    setMinMarkup("")
+    setMaxMarkup("")
+    setPvadealsApiKey("")
+    setCategoryDefaults({
+      social_media: DEFAULT_MARKUP,
+      ecommerce_financial: DEFAULT_MARKUP,
+      professional_tools: DEFAULT_MARKUP,
+      streaming_entertainment: DEFAULT_MARKUP,
+    })
+    setSettingsErrors([])
+    toast.info("Settings reset to defaults (not saved yet)")
   }
 
   const filteredServices = useMemo(() => {
@@ -412,16 +458,28 @@ export default function AdminVerificationPricingPage() {
               <div className="flex items-center gap-2">
                 <Settings className="h-5 w-5 text-primary" />
                 <h3 className="font-semibold text-lg">Global Pricing Settings</h3>
+                {settingsLastSaved.at && (
+                  <Badge variant="outline" className="text-[10px] font-normal">
+                    <Clock className="h-2.5 w-2.5 mr-1" />
+                    Saved {relativeTime(settingsLastSaved.at)}
+                  </Badge>
+                )}
               </div>
               <div className="flex items-center gap-3">
+                <Button size="sm" variant="outline" onClick={handleResetDefaults} disabled={settingsSaving || settingsLoading}>
+                  <RotateCcw className="h-3.5 w-3.5 mr-1.5" />Reset Defaults
+                </Button>
                 <label className="flex items-center gap-2 text-xs text-muted-foreground select-none">
                   <Checkbox
                     checked={applyToExistingOnSave}
                     onCheckedChange={(checked) => setApplyToExistingOnSave(Boolean(checked))}
                     disabled={settingsSaving || settingsLoading}
                   />
-                  Apply to existing services
+                  Apply to existing
                 </label>
+                {applyToExistingOnSave && services.length > 0 && (
+                  <Badge variant="secondary" className="text-[10px]">{services.length} services affected</Badge>
+                )}
                 <Button size="sm" onClick={() => handleSaveGlobalSettings()} disabled={settingsSaving || settingsLoading}>
                   {settingsSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                   Save Settings
@@ -429,43 +487,61 @@ export default function AdminVerificationPricingPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-5">
+            {settingsErrors.length > 0 && (
+              <div className="mb-4 p-3 rounded-lg border border-destructive/30 bg-destructive/5">
+                <p className="text-xs font-semibold text-destructive mb-1">Validation Errors</p>
+                <ul className="text-xs text-destructive/80 space-y-0.5">
+                  {settingsErrors.map((err, i) => <li key={i}>• {err}</li>)}
+                </ul>
+              </div>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5 mb-5">
               <div>
                 <Label className="flex items-center gap-1 text-xs mb-1"><DollarSign className="h-3 w-3" />USD → GHS Rate</Label>
-                <Input type="number" step="0.1" value={exchangeRate} onChange={(e) => setExchangeRate(parseFloat(e.target.value) || DEFAULT_USD_TO_GHS)} className="h-8" />
+                <Input type="number" step="0.1" value={exchangeRate} onChange={(e) => setExchangeRate(parseFloat(e.target.value) || DEFAULT_USD_TO_GHS)} className={`h-8 ${(!exchangeRate || exchangeRate <= 0) ? "border-destructive" : ""}`} />
                 <p className="text-xs text-muted-foreground mt-0.5">Current rate for price calculations</p>
               </div>
               <div>
                 <Label className="flex items-center gap-1 text-xs mb-1"><Percent className="h-3 w-3" />Default Markup %</Label>
-                <Input type="number" step="1" min="0" value={defaultMarkup} onChange={(e) => setDefaultMarkup(parseFloat(e.target.value) || DEFAULT_MARKUP)} className="h-8" />
+                <Input type="number" step="1" min="0" value={defaultMarkup} onChange={(e) => setDefaultMarkup(parseFloat(e.target.value) || DEFAULT_MARKUP)} className={`h-8 ${(minMarkup !== "" && defaultMarkup < Number(minMarkup)) || (maxMarkup !== "" && defaultMarkup > Number(maxMarkup)) ? "border-yellow-400" : ""}`} />
                 <p className="text-xs text-muted-foreground mt-0.5">Applied to new synced services</p>
               </div>
               <div>
                 <Label className="flex items-center gap-1 text-xs mb-1"><TrendingUp className="h-3 w-3" />Min Markup % (guard)</Label>
-                <Input type="number" step="1" min="0" placeholder="No min" value={minMarkup} onChange={(e) => setMinMarkup(e.target.value === "" ? "" : parseFloat(e.target.value))} className="h-8" />
+                <Input type="number" step="1" min="0" placeholder="No min" value={minMarkup} onChange={(e) => setMinMarkup(e.target.value === "" ? "" : parseFloat(e.target.value))} className={`h-8 ${minMarkup !== "" && maxMarkup !== "" && Number(minMarkup) > Number(maxMarkup) ? "border-destructive" : ""}`} />
                 <p className="text-xs text-muted-foreground mt-0.5">Cards below this show a warning</p>
               </div>
               <div>
                 <Label className="flex items-center gap-1 text-xs mb-1"><TrendingUp className="h-3 w-3" />Max Markup % (guard)</Label>
-                <Input type="number" step="1" min="0" placeholder="No max" value={maxMarkup} onChange={(e) => setMaxMarkup(e.target.value === "" ? "" : parseFloat(e.target.value))} className="h-8" />
+                <Input type="number" step="1" min="0" placeholder="No max" value={maxMarkup} onChange={(e) => setMaxMarkup(e.target.value === "" ? "" : parseFloat(e.target.value))} className={`h-8 ${minMarkup !== "" && maxMarkup !== "" && Number(minMarkup) > Number(maxMarkup) ? "border-destructive" : ""}`} />
                 <p className="text-xs text-muted-foreground mt-0.5">Cards above this show a warning</p>
+              </div>
+              <div>
+                <Label className="flex items-center gap-1 text-xs mb-1"><Settings className="h-3 w-3" />PVA Deals API Key</Label>
+                <Input type="password" placeholder="Enter API key" value={pvadealsApiKey} onChange={(e) => setPvadealsApiKey(e.target.value)} className="h-8" />
+                <p className="text-xs text-muted-foreground mt-0.5">{pvadealsApiKey ? "Key stored • " : ""}Used for service sync</p>
               </div>
             </div>
 
             <div className="border-t border-primary/10 pt-4 mb-5">
               <p className="text-xs font-medium mb-3 flex items-center gap-1"><TrendingUp className="h-3.5 w-3.5" />Category Defaults</p>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {CATEGORIES.map(cat => (
-                  <div key={cat.id}>
-                    <Label className="text-xs mb-1 block">{cat.name}</Label>
-                    <div className="flex gap-2">
-                      <Input type="number" step="1" min="0" value={categoryDefaults[cat.id]} onChange={(e) => setCategoryDefaults(prev => ({ ...prev, [cat.id]: parseFloat(e.target.value) || 0 }))} className="h-8" />
-                      <Button size="sm" className="h-8 px-2 shrink-0" onClick={() => handleApplyToCategory(cat.id)} disabled={bulkSaving}>
-                        {bulkSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : "Apply"}
-                      </Button>
+                {CATEGORIES.map(cat => {
+                  const catOutOfRange = (minMarkup !== "" && categoryDefaults[cat.id] < Number(minMarkup)) || (maxMarkup !== "" && categoryDefaults[cat.id] > Number(maxMarkup))
+                  return (
+                    <div key={cat.id}>
+                      <Label className="text-xs mb-1 block">{cat.name}</Label>
+                      <div className="flex gap-2">
+                        <Input type="number" step="1" min="0" value={categoryDefaults[cat.id]} onChange={(e) => setCategoryDefaults(prev => ({ ...prev, [cat.id]: parseFloat(e.target.value) || 0 }))} className={`h-8 ${catOutOfRange ? "border-yellow-400" : ""}`} />
+                        <Button size="sm" className="h-8 px-2 shrink-0" onClick={() => handleApplyToCategory(cat.id)} disabled={bulkSaving}>
+                          {bulkSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : "Apply"}
+                        </Button>
+                      </div>
+                      {catOutOfRange && <p className="text-[10px] text-yellow-600 mt-0.5">Outside min/max guard</p>}
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
 

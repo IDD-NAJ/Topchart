@@ -192,7 +192,9 @@ export default function DataPage() {
   const pendingPhoneRef = useRef<string>("")
   const pendingNetworkIdRef = useRef<string | null>(null)
   const confirmTimerRef = useRef<number | null>(null)
+  const successTimerRef = useRef<number | null>(null)
   const [countdown, setCountdown] = useState<number>(0)
+  const [successCountdown, setSuccessCountdown] = useState<number>(0)
 
   useEffect(() => {
     if (phone.length >= 4) {
@@ -229,6 +231,35 @@ export default function DataPage() {
       if (confirmTimerRef.current) {
         clearInterval(confirmTimerRef.current)
         confirmTimerRef.current = null
+      }
+    }
+  }, [step])
+
+  useEffect(() => {
+    if (step === "success") {
+      setSuccessCountdown(5)
+      successTimerRef.current = window.setInterval(() => {
+        setSuccessCountdown((prev) => {
+          if (prev <= 1) {
+            setStep("form")
+            setSelectedPlan(null)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    } else {
+      if (successTimerRef.current) {
+        clearInterval(successTimerRef.current)
+        successTimerRef.current = null
+      }
+      setSuccessCountdown(0)
+    }
+
+    return () => {
+      if (successTimerRef.current) {
+        clearInterval(successTimerRef.current)
+        successTimerRef.current = null
       }
     }
   }, [step])
@@ -962,7 +993,16 @@ export default function DataPage() {
 
       {/* Processing/Outcome Modal */}
       <Dialog open={["processing", "success", "failed"].includes(step)} onOpenChange={(open) => {
-        if (!open && step !== "processing") setStep("form")
+        if (!open) {
+          if (successTimerRef.current) {
+            clearInterval(successTimerRef.current)
+            successTimerRef.current = null
+          }
+          if (step !== "processing") {
+            setStep("form")
+            setSelectedPlan(null)
+          }
+        }
       }}>
         <DialogContent className="sm:max-w-md p-8">
           <div className="flex flex-col items-center text-center space-y-6">
@@ -1070,14 +1110,27 @@ export default function DataPage() {
                   </div>
                 )}
                 <Button onClick={() => {
+                  if (successTimerRef.current) {
+                    clearInterval(successTimerRef.current)
+                    successTimerRef.current = null
+                  }
                   setSelectedPlan(null)
                   setStep("form")
                 }} variant="outline" className="w-full h-12">
                   Buy Another
                 </Button>
-                <Button onClick={() => router.push("/dashboard")} className="w-full h-12">
+                <Button onClick={() => {
+                  if (successTimerRef.current) {
+                    clearInterval(successTimerRef.current)
+                    successTimerRef.current = null
+                  }
+                  router.push("/dashboard")
+                }} className="w-full h-12">
                   Return to Dashboard
                 </Button>
+                {successCountdown > 0 && (
+                  <p className="text-xs text-muted-foreground text-center">Auto-closing in {successCountdown}s…</p>
+                )}
               </div>
             )}
             

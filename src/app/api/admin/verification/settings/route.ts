@@ -28,9 +28,18 @@ export async function GET() {
 
     const settings = await fetchVerificationPricingSettings();
 
+    const metaRow = await sql`
+      SELECT updated_at, updated_by FROM system_config WHERE config_key = ${"verification_pricing_settings"}
+    `;
+    const meta = metaRow?.[0] ?? null;
+
     return NextResponse.json({
       success: true,
-      data: settings,
+      data: {
+        ...settings,
+        updated_at: meta?.updated_at ?? null,
+        updated_by: meta?.updated_by ?? null,
+      },
     });
   } catch (error) {
     console.error("Get settings error:", error);
