@@ -422,6 +422,14 @@ export async function uploadMedia(
     return result;
   }
 
+  const env = getSupabaseStorageEnv();
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn("[UPLOAD] Supabase not configured, falling back to local storage");
+    const result = await uploadToLocal(file, sectionKey);
+    onProgress?.(100);
+    return result;
+  }
+
   return uploadToSupabase(file, sectionKey, onProgress);
 }
 
