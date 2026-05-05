@@ -158,15 +158,15 @@ export async function POST(request: NextRequest) {
       ON homepage_media(section_key, is_active, sort_order)
     `;
     await sql`
-      INSERT INTO homepage_media (section_key, asset_type, storage_path, public_url, alt_text, sort_order, is_active) VALUES
-      ('mtn_logo', 'image', 'seed/mtn-logo.svg', '/images/mtn-logo.svg', 'MTN logo', 1, TRUE),
-      ('telecel_logo', 'image', 'seed/telecel-logo.svg', '/images/telecel-logo.svg', 'Telecel logo', 2, TRUE),
-      ('airteltigo_logo', 'image', 'seed/airteltigo-logo.svg', '/images/airteltigo-logo.svg', 'AirtelTigo logo', 3, TRUE),
-      ('developer_community_image', 'image', 'seed/technical-partnership.jpg', '/images/technical-partnership.jpg', 'A user looking at code metrics', 4, TRUE),
-      ('hero_background_video', 'image', 'seed/technical-partnership.jpg', '/images/technical-partnership.jpg', 'Hero section background image', 5, TRUE),
-      ('scale_background_video', 'image', 'seed/topchart-way.jpg', '/images/topchart-way.jpg', 'Scale section background image', 6, TRUE),
-      ('faq_hero_background', 'image', 'seed/topchart-way.jpg', '/images/topchart-way.jpg', 'FAQ hero background image', 7, TRUE),
-      ('about_hero_background', 'image', 'seed/topchart-way.jpg', '/images/topchart-way.jpg', 'About hero background image', 8, TRUE)
+      INSERT INTO homepage_media (section_key, asset_type, storage_path, public_url, alt_text, sort_order, is_active, section, slot_key, media_type, file_url, priority) VALUES
+      ('mtn_logo', 'image', 'seed/mtn-logo.svg', '/images/mtn-logo.svg', 'MTN logo', 1, TRUE, 'logo', 'mtn_logo', 'image', '/images/mtn-logo.svg', 1),
+      ('telecel_logo', 'image', 'seed/telecel-logo.svg', '/images/telecel-logo.svg', 'Telecel logo', 2, TRUE, 'logo', 'telecel_logo', 'image', '/images/telecel-logo.svg', 2),
+      ('airteltigo_logo', 'image', 'seed/airteltigo-logo.svg', '/images/airteltigo-logo.svg', 'AirtelTigo logo', 3, TRUE, 'logo', 'airteltigo_logo', 'image', '/images/airteltigo-logo.svg', 3),
+      ('developer_community_image', 'image', 'seed/technical-partnership.jpg', '/images/technical-partnership.jpg', 'A user looking at code metrics', 4, TRUE, 'banner', 'developer_community_image', 'image', '/images/technical-partnership.jpg', 4),
+      ('hero_background_video', 'image', 'seed/technical-partnership.jpg', '/images/technical-partnership.jpg', 'Hero section background image', 5, TRUE, 'hero', 'hero_background_video', 'image', '/images/technical-partnership.jpg', 5),
+      ('scale_background_video', 'image', 'seed/topchart-way.jpg', '/images/topchart-way.jpg', 'Scale section background image', 6, TRUE, 'background', 'scale_background_video', 'image', '/images/topchart-way.jpg', 6),
+      ('faq_hero_background', 'image', 'seed/topchart-way.jpg', '/images/topchart-way.jpg', 'FAQ hero background image', 7, TRUE, 'hero', 'faq_hero_background', 'image', '/images/topchart-way.jpg', 7),
+      ('about_hero_background', 'image', 'seed/topchart-way.jpg', '/images/topchart-way.jpg', 'About hero background image', 8, TRUE, 'hero', 'about_hero_background', 'image', '/images/topchart-way.jpg', 8)
       ON CONFLICT DO NOTHING
     `;
     steps.push("homepage_media table created and seeded");

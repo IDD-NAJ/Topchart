@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
     fraudRows,
     topResellerRows,
     txByDayRows,
+    txTotalsRows,
+    regionRows,
   ] = await Promise.all([
     safe(() => sql`SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status = 'active')::int AS active FROM reseller_profiles`, []),
     safe(() => sql`SELECT COALESCE(SUM(amount),0)::numeric AS total FROM reseller_sales`, []),
@@ -35,7 +37,7 @@ export async function GET(request: NextRequest) {
     safe(() => sql`SELECT COUNT(*)::int AS total FROM fraud_alerts WHERE status = 'open'`, []),
     safe(
       () => sql`
-        SELECT rp.business_name, rp.reseller_code, rp.total_sales::numeric, rp.total_commission_earned::numeric, rp.status,
+        SELECT rp.id, rp.business_name, rp.reseller_code, rp.total_sales::numeric, rp.total_commission_earned::numeric, rp.status,
                u.email AS user_email,
                COALESCE(rp.total_referrals, 0)::int AS total_referrals
         FROM reseller_profiles rp
@@ -55,6 +57,30 @@ export async function GET(request: NextRequest) {
       `,
       []
     ),
+    safe(
+      () => sql`
+        SELECT
+          COUNT(*)::int AS total_transactions,
+          COALESCE(SUM(amount),0)::numeric AS total_revenue,
+          COUNT(*) FILTER (WHERE status = 'pending')::int AS pending_transactions
+        FROM transactions
+      `,
+      []
+    ),
+    safe(
+      () => sql`
+        SELECT
+          COALESCE(rp.region, 'Unknown') AS region,
+          COALESCE(SUM(rp.total_sales), 0)::numeric AS total_sales,
+          COUNT(rp.id)::int AS sales_count
+        FROM reseller_profiles rp
+        WHERE rp.total_sales > 0
+        GROUP BY rp.region
+        ORDER BY total_sales DESC
+        LIMIT 10
+      `,
+      []
+    ),
   ]);
 
   const stats = {
@@ -64,6 +90,9 @@ export async function GET(request: NextRequest) {
     totalCommissions: Number((commissionRows as any[])[0]?.total ?? 0),
     totalReferrals: (referralRows as any[])[0]?.total ?? 0,
     fraudAlerts: (fraudRows as any[])[0]?.total ?? 0,
+    totalTransactions: (txTotalsRows as any[])[0]?.total_transactions ?? 0,
+    totalRevenue: Number((txTotalsRows as any[])[0]?.total_revenue ?? 0),
+    pendingTransactions: (txTotalsRows as any[])[0]?.pending_transactions ?? 0,
   };
 
   return NextResponse.json({
@@ -71,6 +100,6 @@ export async function GET(request: NextRequest) {
     stats,
     topResellers: topResellerRows,
     salesByDay: txByDayRows,
-    salesByRegion: [],
+    salesByRegion: regionRows,
   });
 }

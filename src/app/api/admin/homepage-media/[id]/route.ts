@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 import { deleteHomepageMediaObject } from "@/lib/supabase-storage";
+import { inferSectionFromSlotKey } from "@/lib/homepage-media";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,9 +42,11 @@ export async function PATCH(
       }
     }
 
+    const targetSectionVal = sectionKey ? inferSectionFromSlotKey(sectionKey) : null;
     const updated = await sql`
       UPDATE homepage_media
       SET
+        section     = COALESCE(${targetSectionVal}, section),
         section_key = COALESCE(${sectionKey}, section_key),
         slot_key    = COALESCE(${sectionKey}, slot_key),
         alt_text    = COALESCE(${altText},    alt_text),
@@ -51,7 +54,7 @@ export async function PATCH(
         is_active   = COALESCE(${isActive},   is_active),
         updated_at  = NOW()
       WHERE id = ${id}
-      RETURNING id, section_key, slot_key, asset_type, media_type, storage_path, public_url, file_url, alt_text, priority, is_active, created_at, updated_at
+      RETURNING id, section, section_key, slot_key, asset_type, media_type, storage_path, public_url, file_url, alt_text, priority, is_active, created_at, updated_at
     `;
 
     if (!updated.length) {

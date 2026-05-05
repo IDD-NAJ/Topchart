@@ -24,9 +24,9 @@ export async function GET() {
 
   try {
     const media = await sql`
-      SELECT id, section_key, asset_type, storage_path, public_url, alt_text, sort_order, is_active, storage_source, file_name, mime_type, file_size, width, height, duration_seconds, created_at, updated_at
+      SELECT id, section, slot_key, media_type, file_url, section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size, created_at, updated_at
       FROM homepage_media
-      ORDER BY sort_order ASC, created_at ASC
+      ORDER BY priority ASC, created_at ASC
     `;
     const duration = Date.now() - startTime;
     console.log("[HOMEPAGE_MEDIA] GET completed", { requestId, count: media.length, duration });
@@ -85,10 +85,17 @@ export async function POST(request: Request) {
     const uploadDuration = Date.now() - uploadStartTime;
     console.log("[UPLOAD] Storage upload completed", { requestId, duration: uploadDuration, size: file.size });
 
+    const section = inferSectionFromSlotKey(sectionKey);
     const inserted = await sql`
-      INSERT INTO homepage_media (section_key, asset_type, storage_path, public_url, alt_text, sort_order, is_active, storage_source, file_name, mime_type, file_size, width, height)
-      VALUES (${sectionKey}, ${assetType}, ${uploaded.storagePath}, ${uploaded.publicUrl}, ${altText}, ${priority}, ${isActive}, ${uploaded.source}, ${uploaded.fileName}, ${uploaded.mimeType}, ${uploaded.fileSize}, ${uploaded.width || null}, ${uploaded.height || null})
-      RETURNING id, section_key, asset_type, storage_path, public_url, alt_text, sort_order, is_active, storage_source, file_name, mime_type, file_size, width, height, created_at, updated_at
+      INSERT INTO homepage_media (
+        section, slot_key, media_type, file_url,
+        section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size
+      )
+      VALUES (
+        ${section}, ${sectionKey}, ${assetType}, ${uploaded.publicUrl},
+        ${sectionKey}, ${assetType}, ${uploaded.storagePath}, ${uploaded.publicUrl}, ${altText}, ${priority}, ${isActive}, ${uploaded.source}, ${uploaded.fileName}, ${uploaded.mimeType}, ${uploaded.fileSize}
+      )
+      RETURNING id, section, slot_key, media_type, file_url, section_key, asset_type, storage_path, public_url, alt_text, priority, is_active, storage_source, file_name, mime_type, file_size, created_at, updated_at
     `;
 
     const totalDuration = Date.now() - startTime;
