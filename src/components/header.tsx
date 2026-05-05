@@ -19,6 +19,7 @@ import {
   Shield,
   Gift,
   CreditCard,
+  Store,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -32,6 +33,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+const ICON_MAP: Record<string, any> = {
+  LayoutDashboard,
+  Wifi,
+  PhoneCall,
+  GraduationCap,
+  Smartphone,
+  Shield,
+  Gift,
+  CreditCard,
+  Store,
+}
+
 const SERVICE_KEY_MAP: Record<string, ServiceKey> = {
   "/dashboard/data": SERVICE_KEYS.DATA,
   "/dashboard/verification": SERVICE_KEYS.VERIFICATION,
@@ -42,54 +55,60 @@ const SERVICE_KEY_MAP: Record<string, ServiceKey> = {
   "/dashboard/bills": SERVICE_KEYS.BILLS,
 }
 
-const serviceLinks: { href: string; label: string; description: string; icon: LucideIcon }[] = [
+const DEFAULT_SERVICE_LINKS: { href: string; label: string; description: string; icon: string }[] = [
   {
     href: "/dashboard",
     label: "Overview",
     description: "Balances, referrals, and activity",
-    icon: LayoutDashboard,
+    icon: "LayoutDashboard",
   },
   {
     href: "/dashboard/data",
     label: "Data bundles",
     description: "Plans for every need",
-    icon: Wifi,
+    icon: "Wifi",
   },
   {
     href: "/dashboard/verification",
     label: "Verification numbers",
     description: "Temporary numbers for SMS codes",
-    icon: PhoneCall,
+    icon: "PhoneCall",
   },
   {
     href: "/dashboard/result-checkers",
     label: "Result checkers",
     description: "Exam results and PINs",
-    icon: GraduationCap,
+    icon: "GraduationCap",
   },
   {
     href: "/dashboard/esim",
     label: "eSIM",
     description: "US phone numbers & travel data eSIMs",
-    icon: Smartphone,
+    icon: "Smartphone",
   },
   {
     href: "/dashboard/proxies",
     label: "Proxies",
     description: "Residential, mobile & datacenter proxies",
-    icon: Shield,
+    icon: "Shield",
   },
   {
     href: "/dashboard/giftcards",
     label: "Gift Cards",
     description: "Digital gift cards delivered instantly",
-    icon: Gift,
+    icon: "Gift",
   },
   {
     href: "/dashboard/bills",
     label: "Pay Bills",
     description: "Electricity, TV, water & internet",
-    icon: CreditCard,
+    icon: "CreditCard",
+  },
+  {
+    href: "/dashboard/reseller",
+    label: "Reseller",
+    description: "Reseller program and tools",
+    icon: "Store",
   },
 ]
 
@@ -105,8 +124,24 @@ export function Header() {
   const { isEnabled, isComingSoon } = useServiceStatus()
   const [isOpen, setIsOpen] = useState(false)
   const [servicesOpen, setServicesOpen] = useState(false)
+  const [serviceLinks, setServiceLinks] = useState(DEFAULT_SERVICE_LINKS)
 
-  const visibleServiceLinks = serviceLinks.filter((s) => {
+  useEffect(() => {
+    const fetchNavigation = async () => {
+      try {
+        const res = await fetch("/api/navigation", { cache: "no-store" })
+        const data = await res.json()
+        if (data.success && data.links?.length > 0) {
+          setServiceLinks(data.links)
+        }
+      } catch (error) {
+        console.error("Failed to fetch navigation:", error)
+      }
+    }
+    fetchNavigation()
+  }, [])
+
+  const visibleServiceLinks = serviceLinks.filter((s: any) => {
     const key = SERVICE_KEY_MAP[s.href]
     if (!key) return true
     return isEnabled(key)
@@ -154,7 +189,7 @@ export function Header() {
             >
               <div className="grid gap-1">
                 {visibleServiceLinks.map((s) => {
-                  const Icon = s.icon
+                  const IconComponent = ICON_MAP[s.icon] || LayoutDashboard
                   const serviceKey = SERVICE_KEY_MAP[s.href]
                   const isComing = serviceKey ? isComingSoon(serviceKey) : false
                   return (
@@ -164,7 +199,7 @@ export function Header() {
                         className="flex items-center gap-3 px-3 py-2.5 outline-none transition-colors w-full"
                       >
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#F38F20]/10 text-[#F38F20]">
-                          <Icon className="h-4 w-4" aria-hidden />
+                          <IconComponent className="h-4 w-4" aria-hidden />
                         </div>
                         <div className="flex flex-col gap-0.5">
                           <span className="text-sm font-[family-name:var(--font-aesthetic)] font-medium text-slate-900 flex items-center gap-1.5">
@@ -285,7 +320,7 @@ export function Header() {
                       >
                         <div className="border-l border-slate-200 ml-5 pl-2 py-1 mt-1 space-y-1">
                           {visibleServiceLinks.map((s) => {
-                            const Icon = s.icon
+                            const IconComponent = ICON_MAP[s.icon] || LayoutDashboard
                             return (
                               <Link
                                 key={s.href}
@@ -296,7 +331,7 @@ export function Header() {
                                 }}
                                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-slate-600 hover:bg-slate-50 transition-colors"
                               >
-                                <Icon className="h-4 w-4 shrink-0 text-[#F38F20]" aria-hidden />
+                                <IconComponent className="h-4 w-4 shrink-0 text-[#F38F20]" aria-hidden />
                                 <span className="text-sm font-medium">{s.label}</span>
                               </Link>
                             )

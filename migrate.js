@@ -1,8 +1,16 @@
+require('dotenv').config({ path: '.env' });
 const fs = require('fs');
 const path = require('path');
 const { neon } = require('@neondatabase/serverless');
 
-const connectionString = (process.env.DATABASE_URL || '')
+// Use direct connection for schema changes (pooler has limited permissions)
+let connectionString = (process.env.DATABASE_URL || '');
+
+// Convert pooler URL to direct URL for schema changes
+connectionString = connectionString.replace(/-pooler/g, '');
+
+// Remove pooler-specific parameters
+connectionString = connectionString
   .replace(/[&?]channel_binding=[^&]*/g, '')
   .replace(/[&?]pooler_timeout=[^&]*/g, '')
   .replace(/&&/g, '&')
@@ -62,6 +70,7 @@ const migrations = [
   '032-add-maintenance-columns.sql',
   '033-create-transactions-table.sql',
   '036-esim-admin-tables.sql',
+  '018_homepage_content_tables.sql',
 ];
 
 async function runMigrations() {

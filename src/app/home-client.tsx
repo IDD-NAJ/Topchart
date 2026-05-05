@@ -37,110 +37,26 @@ import { motion } from "framer-motion"
 import { ScrollReveal, StaggerReveal, StaggerRevealItem, PageTransition } from "@/components/animations"
 import { TestimonialCarousel, type Testimonial } from "@/components/marketing/testimonial-carousel"
 
-const SERVICES = [
-  {
-    icon: Wifi,
-    title: "Data Bundles",
-    description: "Affordable daily, weekly and monthly data packages for every network.",
-    href: "/dashboard/data",
-    label: "Browse bundles",
-  },
-  {
-    icon: PhoneCall,
-    title: "Verification Numbers",
-    description: "Temporary virtual numbers for OTP verification on any platform.",
-    href: "/dashboard/verification",
-    label: "Get a number",
-  },
-  {
-    icon: GraduationCap,
-    title: "Result Checkers",
-    description: "WAEC, BECE, and NOVDEC results with your index number.",
-    href: "/dashboard/result-checkers",
-    label: "Check results",
-  },
-  {
-    icon: Smartphone,
-    title: "eSIM",
-    description: "Get a US phone number or travel data eSIM for 50+ countries.",
-    href: "/dashboard/esim",
-    label: "Get eSIM",
-  },
-  {
-    icon: Shield,
-    title: "Proxies",
-    description: "Residential, mobile & datacenter proxies via 9Proxy.",
-    href: "/dashboard/proxies",
-    label: "Get proxies",
-  },
-  {
-    icon: Gift,
-    title: "Gift Cards",
-    description: "Digital gift cards for Netflix, Amazon, Steam & more — delivered instantly.",
-    href: "/dashboard/giftcards",
-    label: "Buy gift cards",
-  },
-  {
-    icon: CreditCard,
-    title: "Pay Bills",
-    description: "Electricity, TV, water & internet bill payments in .",
-    href: "/dashboard/bills",
-    label: "Pay now",
-  },
-  {
-    icon: Store,
-    title: "Reseller Program",
-    description: "Earn commissions reselling our services under your own brand.",
-    href: "/dashboard/reseller",
-    label: "Become a reseller",
-  },
-]
-
-const FAQS = [
-  {
-    q: "How fast is airtime ana dirtime and data delivery?",
-    a: "Most orders complete within seconds. Network congestion may occasionally add a short delay.",
-  },
-  {
-    q: "What payment methods are supported?",
-    a: "MTN MoMo, Telecel Cash, AirtelTigo Money, Visa, Mastercard, and wallet balance via Paystack.",
-  },
-  {
-    q: "How do verification numbers work?",
-    a: "You rent a temporary number; OTP SMS appears in your dashboard in real time.",
-  },
-]
-
-const TESTIMONIALS: Testimonial[] = [
-  {
-    brand: "North Ridge Fintech",
-    quote:
-      "Topchart cut our recharge turnaround to seconds. Wallet funding and reporting are exactly what we needed for ops.",
-    name: "Kwame A.",
-    role: "Head of Operations",
-  },
-  {
-    brand: "Campus Hub GH",
-    quote:
-      "We sell data ad  airtimitime to students daily. Reliability and the reseller tools have been excellent.",
-    name: "Ama O.",
-    role: "Product Lead",
-  },
-  {
-    brand: "VerifyPro Labs",
-    quote:
-      "Verification numbers for QA saved us from juggling personal SIMs. Support is responsive.",
-    name: "Kofi M.",
-    role: "Engineering Manager",
-  },
-  {
-    brand: "Retail Collective",
-    quote:
-      "Airrime tndiaatadata in one dashboard simplified payouts for our field teams.",
-    name: "Esi T.",
-    role: "Finance Director",
-  },
-]
+const ICON_MAP: Record<string, any> = {
+  Wifi,
+  PhoneCall,
+  GraduationCap,
+  Smartphone,
+  Shield,
+  Gift,
+  CreditCard,
+  Store,
+  LayoutDashboard,
+  Server,
+  Activity,
+  Terminal,
+  Fingerprint,
+  Ticket,
+  Phone,
+  Play,
+  ChevronDown,
+  ArrowRight,
+}
 
 type NetworkLogoConfig = {
   key: string
@@ -367,12 +283,191 @@ function PrimaryLink({
   )
 }
 
+type ServiceItem = {
+  id: string
+  title: string
+  description: string
+  href: string
+  label: string
+  icon: string
+  priority: number
+  is_active: boolean
+}
+
+type FAQItem = {
+  id: string
+  question: string
+  answer: string
+  priority: number
+  is_active: boolean
+}
+
+type TestimonialItem = {
+  id: string
+  brand: string
+  quote: string
+  name: string
+  role: string
+  priority: number
+  is_active: boolean
+}
+
+const DEFAULT_SERVICES: ServiceItem[] = [
+  {
+    id: "default-1",
+    icon: "Wifi",
+    title: "Data Bundles",
+    description: "Affordable daily, weekly and monthly data packages for every network.",
+    href: "/dashboard/data",
+    label: "Browse bundles",
+    priority: 1,
+    is_active: true,
+  },
+  {
+    id: "default-2",
+    icon: "PhoneCall",
+    title: "Verification Numbers",
+    description: "Temporary virtual numbers for OTP verification on any platform.",
+    href: "/dashboard/verification",
+    label: "Get a number",
+    priority: 2,
+    is_active: true,
+  },
+  {
+    id: "default-3",
+    icon: "GraduationCap",
+    title: "Result Checkers",
+    description: "WAEC, BECE, and NOVDEC results with your index number.",
+    href: "/dashboard/result-checkers",
+    label: "Check results",
+    priority: 3,
+    is_active: true,
+  },
+  {
+    id: "default-4",
+    icon: "Smartphone",
+    title: "eSIM",
+    description: "Get a US phone number or travel data eSIM for 50+ countries.",
+    href: "/dashboard/esim",
+    label: "Get eSIM",
+    priority: 4,
+    is_active: true,
+  },
+  {
+    id: "default-5",
+    icon: "Shield",
+    title: "Proxies",
+    description: "Residential, mobile & datacenter proxies via 9Proxy.",
+    href: "/dashboard/proxies",
+    label: "Get proxies",
+    priority: 5,
+    is_active: true,
+  },
+  {
+    id: "default-6",
+    icon: "Gift",
+    title: "Gift Cards",
+    description: "Digital gift cards for Netflix, Amazon, Steam & more — delivered instantly.",
+    href: "/dashboard/giftcards",
+    label: "Buy gift cards",
+    priority: 6,
+    is_active: true,
+  },
+  {
+    id: "default-7",
+    icon: "CreditCard",
+    title: "Pay Bills",
+    description: "Electricity, TV, water & internet bill payments in Ghana.",
+    href: "/dashboard/bills",
+    label: "Pay now",
+    priority: 7,
+    is_active: true,
+  },
+  {
+    id: "default-8",
+    icon: "Store",
+    title: "Reseller Program",
+    description: "Earn commissions reselling our services under your own brand.",
+    href: "/dashboard/reseller",
+    label: "Become a reseller",
+    priority: 8,
+    is_active: true,
+  },
+]
+
+const DEFAULT_FAQS: FAQItem[] = [
+  {
+    id: "default-1",
+    question: "How fast is airtime and data delivery?",
+    answer: "Most orders complete within seconds. Network congestion may occasionally add a short delay.",
+    priority: 1,
+    is_active: true,
+  },
+  {
+    id: "default-2",
+    question: "What payment methods are supported?",
+    answer: "MTN MoMo, Telecel Cash, AirtelTigo Money, Visa, Mastercard, and wallet balance via Paystack.",
+    priority: 2,
+    is_active: true,
+  },
+  {
+    id: "default-3",
+    question: "How do verification numbers work?",
+    answer: "You rent a temporary number; OTP SMS appears in your dashboard in real time.",
+    priority: 3,
+    is_active: true,
+  },
+]
+
+const DEFAULT_TESTIMONIALS: TestimonialItem[] = [
+  {
+    id: "default-1",
+    brand: "North Ridge Fintech",
+    quote: "Topchart cut our recharge turnaround to seconds. Wallet funding and reporting are exactly what we needed for ops.",
+    name: "Kwame A.",
+    role: "Head of Operations",
+    priority: 1,
+    is_active: true,
+  },
+  {
+    id: "default-2",
+    brand: "Campus Hub GH",
+    quote: "We sell data and airtime to students daily. Reliability and the reseller tools have been excellent.",
+    name: "Ama O.",
+    role: "Product Lead",
+    priority: 2,
+    is_active: true,
+  },
+  {
+    id: "default-3",
+    brand: "VerifyPro Labs",
+    quote: "Verification numbers for QA saved us from juggling personal SIMs. Support is responsive.",
+    name: "Kofi M.",
+    role: "Engineering Manager",
+    priority: 3,
+    is_active: true,
+  },
+  {
+    id: "default-4",
+    brand: "Retail Collective",
+    quote: "Airtime and data in one dashboard simplified payouts for our field teams.",
+    name: "Esi T.",
+    role: "Finance Director",
+    priority: 4,
+    is_active: true,
+  },
+]
+
 export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
   const [networkLogos, setNetworkLogos] = useState<NetworkLogoConfig[]>(DEFAULT_NETWORK_LOGOS)
   const [developerImage, setDeveloperImage] = useState(DEFAULT_DEVELOPER_IMAGE)
   const [heroMedia, setHeroMedia] = useState<{ type: "image" | "video"; url: string } | null>(null)
   const [scaleMedia, setScaleMedia] = useState<{ type: "image" | "video"; url: string } | null>(null)
   const [logoErrorKeys, setLogoErrorKeys] = useState<Record<string, boolean>>({})
+  const [services, setServices] = useState<ServiceItem[]>(DEFAULT_SERVICES)
+  const [faqs, setFaqs] = useState<FAQItem[]>(DEFAULT_FAQS)
+  const [testimonials, setTestimonials] = useState<TestimonialItem[]>(DEFAULT_TESTIMONIALS)
+  const [contentLoading, setContentLoading] = useState(true)
   const { media, isLoading: mediaLoading } = useHomepageMedia({ initialData: initialMedia })
 
   useEffect(() => {
@@ -419,6 +514,42 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
     })
     setNetworkLogos(updatedLogos)
   }, [media, mediaLoading])
+
+  useEffect(() => {
+    const fetchHomepageContent = async () => {
+      try {
+        setContentLoading(true)
+        
+        const [servicesRes, faqsRes, testimonialsRes] = await Promise.all([
+          fetch("/api/homepage/services", { cache: "no-store" }),
+          fetch("/api/homepage/faqs", { cache: "no-store" }),
+          fetch("/api/homepage/testimonials", { cache: "no-store" }),
+        ])
+
+        const servicesData = await servicesRes.json()
+        const faqsData = await faqsRes.json()
+        const testimonialsData = await testimonialsRes.json()
+
+        if (servicesData.success && servicesData.services?.length > 0) {
+          setServices(servicesData.services)
+        }
+
+        if (faqsData.success && faqsData.faqs?.length > 0) {
+          setFaqs(faqsData.faqs)
+        }
+
+        if (testimonialsData.success && testimonialsData.testimonials?.length > 0) {
+          setTestimonials(testimonialsData.testimonials)
+        }
+      } catch (error) {
+        console.error("Failed to fetch homepage content:", error)
+      } finally {
+        setContentLoading(false)
+      }
+    }
+
+    fetchHomepageContent()
+  }, [])
 
   return (
     <PageTransition className="min-h-screen flex flex-col bg-[color:var(--marketing-cream)]">
@@ -658,29 +789,32 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
               stack
               amount={0.12}
             >
-              {SERVICES.map((s, i) => (
-                <StaggerRevealItem key={s.title} index={i} stack>
-                  <motion.div whileHover={{ y: -8, transition: { duration: 0.3 } }} className="h-full">
-                    <Link
-                      href={s.href}
-                      className="group flex h-full flex-col rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/50 relative overflow-hidden"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                      <div
-                        className="mb-6 flex h-12 w-12 items-center justify-center bg-transparent text-primary transition-transform duration-300 group-hover:scale-110"
+              {services.map((s, i) => {
+                const IconComponent = ICON_MAP[s.icon] || Wifi
+                return (
+                  <StaggerRevealItem key={s.id || s.title} index={i} stack>
+                    <motion.div whileHover={{ y: -8, transition: { duration: 0.3 } }} className="h-full">
+                      <Link
+                        href={s.href}
+                        className="group flex h-full flex-col rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/50 relative overflow-hidden"
                       >
-                        <s.icon className="h-8 w-8" strokeWidth={1.5} />
-                      </div>
-                      <h3 className="text-xl font-bold text-neutral-900 z-10">{s.title}</h3>
-                      <p className="mt-3 flex-1 text-[15px] leading-relaxed text-neutral-600 z-10">{s.description}</p>
-                      <span className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-primary uppercase tracking-wide z-10">
-                        {s.label}
-                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                      </span>
-                    </Link>
-                  </motion.div>
-                </StaggerRevealItem>
-              ))}
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                        <div
+                          className="mb-6 flex h-12 w-12 items-center justify-center bg-transparent text-primary transition-transform duration-300 group-hover:scale-110"
+                        >
+                          <IconComponent className="h-8 w-8" strokeWidth={1.5} />
+                        </div>
+                        <h3 className="text-xl font-bold text-neutral-900 z-10">{s.title}</h3>
+                        <p className="mt-3 flex-1 text-[15px] leading-relaxed text-neutral-600 z-10">{s.description}</p>
+                        <span className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-primary uppercase tracking-wide z-10">
+                          {s.label}
+                          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </span>
+                      </Link>
+                    </motion.div>
+                  </StaggerRevealItem>
+                )
+              })}
             </StaggerReveal>
           </div>
         </section>
@@ -807,7 +941,7 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
                 What people are saying
               </h2>
             </ScrollReveal>
-            <TestimonialCarousel items={TESTIMONIALS} />
+            <TestimonialCarousel items={testimonials.map(t => ({ brand: t.brand, quote: t.quote, name: t.name, role: t.role }))} />
           </div>
         </section>
 
@@ -838,17 +972,17 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
               <h2 className="text-3xl font-extrabold tracking-tight text-neutral-900">Common questions</h2>
             </ScrollReveal>
             <Accordion type="single" collapsible className="space-y-2">
-              {FAQS.map((faq, i) => (
+              {faqs.map((faq, i) => (
                 <AccordionItem
-                  key={faq.q}
+                  key={faq.id || faq.question}
                   value={`faq-${i}`}
                   className="rounded-2xl border border-neutral-200 bg-[color:var(--marketing-cream)] px-4 data-[state=open]:shadow-sm"
                 >
                   <AccordionTrigger className="py-4 text-left font-semibold text-neutral-900 hover:no-underline">
-                    {faq.q}
+                    {faq.question}
                   </AccordionTrigger>
                   <AccordionContent className="pb-4 text-sm leading-relaxed text-neutral-600">
-                    {faq.a}
+                    {faq.answer}
                   </AccordionContent>
                 </AccordionItem>
               ))}
