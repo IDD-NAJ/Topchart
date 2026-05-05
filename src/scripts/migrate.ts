@@ -86,6 +86,7 @@ const migrations = [
   '018_datamart_orders.sql',
   '019_fix_data_bundles_network_nullable.sql',
   '020-create-missing-admin-tables.sql',
+  '036-esim-admin-tables.sql',
 ];
 
 function getCleanConnectionString(): string {

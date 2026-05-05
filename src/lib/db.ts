@@ -121,6 +121,12 @@ function isRetryableDbError(err: unknown): boolean {
     if (msg.includes("websocket")) return true;
     if (msg.includes("errorevent")) return true;
   }
+
+  // Unknown errors with no code and no message are likely Neon connection issues
+  const pgCode = findPgCode(err);
+  if (!pgCode && (!e.code || e.code === "UNKNOWN") && (!e.message || String(e.message).trim() === "")) {
+    return true;
+  }
   
   return false;
 }
@@ -146,6 +152,16 @@ function isTimeoutError(err: unknown): boolean {
   );
 }
 
+function findPgCode(err: unknown): string | undefined {
+  if (!err || typeof err !== "object") return undefined;
+  const e = err as any;
+  if (e.code && typeof e.code === "string" && /^[0-9A-Z]{5}$/.test(e.code)) return e.code;
+  if (e.cause) return findPgCode(e.cause);
+  if (e.sourceError) return findPgCode(e.sourceError);
+  if (e.error) return findPgCode(e.error);
+  return undefined;
+}
+
 function normalizeDbError(err: unknown): Error {
   const asAny = err as any;
 
@@ -160,15 +176,18 @@ function normalizeDbError(err: unknown): Error {
   }
 
   if (err instanceof Error) {
+    const pgCode = findPgCode(err);
+    if (pgCode && !((err as any).code)) {
+      (err as any).code = pgCode;
+    }
     return err;
   }
 
+  const pgCode = findPgCode(err);
   const fallbackMessage =
     typeof err === "string" && err.length > 0 ? err : "Database query failed";
   const wrapped = new Error(fallbackMessage);
-  if (asAny?.code) {
-    (wrapped as any).code = asAny.code;
-  }
+  (wrapped as any).code = pgCode || asAny?.code || undefined;
   return wrapped;
 }
 

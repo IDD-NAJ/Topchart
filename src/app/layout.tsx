@@ -147,16 +147,7 @@ export const metadata: Metadata = {
     ]),
   },
   icons: {
-    icon: [
-      {
-        url: '/favicon.svg',
-        type: 'image/svg+xml',
-      },
-      {
-        url: '/favicon.ico',
-        sizes: 'any',
-      },
-    ],
+    icon: '/favicon.svg',
     apple: '/favicon.svg',
   },
   manifest: '/site.webmanifest',

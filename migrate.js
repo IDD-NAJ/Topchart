@@ -61,6 +61,7 @@ const migrations = [
   '031-create-service-status-table.sql',
   '032-add-maintenance-columns.sql',
   '033-create-transactions-table.sql',
+  '036-esim-admin-tables.sql',
 ];
 
 async function runMigrations() {

@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       orders = await sql`
         SELECT o.*, 
                u.email as user_email, u.first_name, u.last_name
-        FROM esim_orders o
+        FROM proxy_orders o
         JOIN users u ON o.user_id = u.id::uuid
         WHERE o.processing_status = ${status}
         ORDER BY o.created_at DESC
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       orders = await sql`
         SELECT o.*, 
                u.email as user_email, u.first_name, u.last_name
-        FROM esim_orders o
+        FROM proxy_orders o
         JOIN users u ON o.user_id = u.id::uuid
         ORDER BY o.created_at DESC
       `;
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: orders });
   } catch (error) {
-    console.error("GET Data Orders Error:", error);
+    console.error("GET Proxy Orders Error:", error);
     return NextResponse.json({ success: false, error: "Failed to fetch orders" }, { status: 500 });
   }
 }
@@ -70,7 +70,7 @@ export async function PATCH(request: NextRequest) {
     const data = validation.data;
 
     const result = await sql`
-      UPDATE esim_orders 
+      UPDATE proxy_orders 
       SET 
         processing_status = COALESCE(${data.processingStatus}, processing_status),
         delivery_details = COALESCE(${data.deliveryDetails ? JSON.stringify(data.deliveryDetails) : null}, delivery_details),
@@ -88,7 +88,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: result[0] });
   } catch (error) {
-    console.error("PATCH Order Error:", error);
+    console.error("PATCH Proxy Order Error:", error);
     return NextResponse.json({ success: false, error: "Failed to update order" }, { status: 500 });
   }
 }

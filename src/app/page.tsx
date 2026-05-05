@@ -59,11 +59,11 @@ async function getHomepageMedia(): Promise<HomepageMediaItem[]> {
     `;
     return JSON.parse(JSON.stringify(media)) as HomepageMediaItem[];
   } catch (error) {
-    const err = error as { code?: string; message?: string };
-    // Log error but don't crash - allow page to render with defaults
-    if (err.code === "42P01") {
+    const { isPgMissingRelation } = await import("@/lib/db");
+    if (isPgMissingRelation(error)) {
       console.warn("[Homepage] homepage_media table does not exist - using defaults");
     } else {
+      const err = error as { message?: string };
       console.error("[Homepage] Failed to fetch homepage media:", err.message || error);
     }
     return [];
