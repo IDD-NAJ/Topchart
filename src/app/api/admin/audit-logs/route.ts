@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
-import { sql } from "@/lib/db";
+import { sql, sqlUnsafe } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,23 +42,25 @@ export async function GET(request: NextRequest) {
       whereClause = "WHERE " + conditions.join(" AND ");
     }
 
-    const countResult = await sql`
-      SELECT COUNT(*)::int as total FROM audit_logs ${whereClause ? sql.unsafe(whereClause) : sql``}
-    `;
-
-    const logs = await sql`
-      SELECT 
-        al.id, al.user_id, al.action, al.resource_type, al.resource_id, 
+    const countSql = `SELECT COUNT(*)::int AS total FROM audit_logs ${whereClause}`;
+    const countRows = await sqlUnsafe(countSql, params.length ? params : undefined);
+    const limitSlot = paramIdx;
+    const offsetSlot = paramIdx + 1;
+    const logsSql = `
+      SELECT
+        al.id, al.user_id, al.action, al.resource_type, al.resource_id,
         al.details, al.ip_address, al.created_at,
         u.first_name, u.last_name, u.email
       FROM audit_logs al
       LEFT JOIN users u ON u.id = al.user_id
-      ${whereClause ? sql.unsafe(whereClause) : sql``}
+      ${whereClause}
       ORDER BY al.created_at DESC
-      LIMIT ${limit} OFFSET ${offset}
+      LIMIT $${limitSlot} OFFSET $${offsetSlot}
     `;
+    const logsParams = [...params, limit, offset];
+    const logs = await sqlUnsafe(logsSql, logsParams);
 
-    const total = countResult[0]?.total || 0;
+    const total = (countRows[0] as { total?: number })?.total || 0;
 
     return NextResponse.json({
       success: true,

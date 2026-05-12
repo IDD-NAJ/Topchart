@@ -499,12 +499,14 @@ export async function submitDatamartPurchase(params: {
   network: DatamartNetworkCode;
   capacity: string;
   idempotencyKey: string;
+  gateway?: string;
 }): Promise<DatamartPurchaseSuccess> {
+  const gateway = params.gateway?.trim() || "wallet";
   const payload = {
     phoneNumber: toLocalGhanaFormat(params.phoneNumber),
     network: params.network,
     capacity: params.capacity,
-    gateway: "wallet",
+    gateway,
   };
 
   const result = await datamartRequest<DatamartPurchaseSuccess>("/purchase", {

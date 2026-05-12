@@ -147,8 +147,9 @@ export const metadata: Metadata = {
     ]),
   },
   icons: {
-    icon: '/favicon.svg',
-    apple: '/favicon.svg',
+    icon: '/logo.svg',
+    apple: '/logo.svg',
+    shortcut: '/logo.svg',
   },
   manifest: '/site.webmanifest',
   category: 'finance',

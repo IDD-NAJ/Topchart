@@ -35,8 +35,10 @@ export default function AdminLoginPage() {
       
       const data = await res.json()
       if (data.success) {
-        await new Promise(resolve => setTimeout(resolve, 100))
-        window.location.href = "/admin"
+        window.dispatchEvent(new Event("auth:changed"))
+        setTimeout(() => {
+          window.location.href = "/admin"
+        }, 300)
       } else {
         setError(data.error || "Login failed")
       }

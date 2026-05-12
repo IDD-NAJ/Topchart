@@ -4,16 +4,25 @@ import { NeonAdapter } from "./auth-adapter";
 import { sql } from "./db";
 
 export const authConfig: AuthConfig = {
+  trustHost: true,
+  basePath: "/api/auth",
   adapter: NeonAdapter(),
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback/google`,
+        },
+      },
     }),
   ],
   session: {
     strategy: "database",
-    maxAge: 5 * 60,
+    maxAge: 24 * 60 * 60,
   },
   cookies: {
     sessionToken: {

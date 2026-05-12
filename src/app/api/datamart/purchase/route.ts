@@ -5,57 +5,25 @@ import { logger } from "@/lib/logger";
 import { sql, withTransaction } from "@/lib/db";
 import {
   createDatamartOrder,
-  generateIdempotencyKey,
-  getPackages,
-  isValidGhanaPhone,
-  resolveNetworkCode,
   submitDatamartPurchase,
-  type DatamartNetworkCode,
 } from "@/lib/datamart-v2";
+import {
+  resolveDatamartPurchaseIntent,
+  fetchDatamartOrderByIdempotency,
+  assertNoDuplicateTransactionIntent,
+  applyDatamartTransactionAfterProviderSubmit,
+  type DatamartPurchaseIntentBody,
+} from "@/lib/datamart-purchase-shared";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-interface PurchaseBody {
-  phoneNumber?: string;
-  phone?: string;
-  network?: string;
-  capacity?: string;
-  gateway?: string;
-  idempotencyKey?: string;
-  effectivePrice?: number;
-}
-
-async function getAuthenticatedUser() {
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get("session_token")?.value;
-  if (!sessionToken) return null;
-
-  const sessions = await sql`
-    SELECT s.user_id, u.wallet_balance
-    FROM auth_sessions s
-    JOIN users u ON s.user_id::text = u.id::text
-    WHERE s.token = ${sessionToken} AND s.expires_at > NOW()
-  `;
-  return sessions.length > 0 ? sessions[0] : null;
-}
-
-async function getOrderByKey(idempotencyKey: string) {
-  const rows = await sql`
-    SELECT id, phone_number, network, capacity, price, status, order_reference, transaction_reference, purchase_id, idempotency_key, created_at, updated_at
-    FROM datamart_orders
-    WHERE idempotency_key = ${idempotencyKey}
-    LIMIT 1
-  `;
-  return rows.length > 0 ? rows[0] : null;
-}
-
 export async function POST(request: NextRequest) {
   const correlationId = crypto.randomUUID();
-  let incoming: PurchaseBody;
+  let incoming: DatamartPurchaseIntentBody;
 
   try {
-    incoming = (await request.json()) as PurchaseBody;
+    incoming = (await request.json()) as DatamartPurchaseIntentBody;
   } catch {
     return NextResponse.json(
       { success: false, error: "Invalid JSON body", correlationId },
@@ -63,49 +31,53 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const user = await getAuthenticatedUser();
-  if (!user) {
+  const headerKey = request.headers.get("x-idempotency-key") ?? undefined;
+  if (!incoming.idempotencyKey && headerKey) {
+    incoming = { ...incoming, idempotencyKey: headerKey };
+  }
+
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("session_token")?.value;
+  if (!sessionToken) {
     return NextResponse.json(
       { success: false, error: "Unauthorized — please log in", correlationId },
       { status: 401 }
     );
   }
+
+  const sessions = await sql`
+    SELECT s.user_id, u.wallet_balance
+    FROM auth_sessions s
+    JOIN users u ON s.user_id::text = u.id::text
+    WHERE s.token = ${sessionToken} AND s.expires_at > NOW()
+  `;
+  if (sessions.length === 0) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized — please log in", correlationId },
+      { status: 401 }
+    );
+  }
+
+  const user = sessions[0] as { user_id: string; wallet_balance: unknown };
   const userId = String(user.user_id);
+  const walletBalance = Number(user.wallet_balance) || 0;
 
-  const phoneInput = incoming.phoneNumber || incoming.phone || "";
-  const networkInput = incoming.network || "";
-  const capacity = incoming.capacity?.trim();
+  const resolved = await resolveDatamartPurchaseIntent(incoming, correlationId, {
+    requireWalletBalance: true,
+    walletBalance,
+  });
 
-  if (!phoneInput || !networkInput || !capacity) {
+  if (!resolved.ok) {
     return NextResponse.json(
-      { success: false, error: "phoneNumber, network, and capacity are required", correlationId },
-      { status: 400 }
+      { success: false, error: resolved.error, correlationId },
+      { status: resolved.status }
     );
   }
 
-  if (!isValidGhanaPhone(phoneInput)) {
-    return NextResponse.json(
-      { success: false, error: "Invalid Ghana phone number", code: "INVALID_PHONE", correlationId },
-      { status: 400 }
-    );
-  }
-
-  let network: DatamartNetworkCode;
-  try {
-    network = resolveNetworkCode(networkInput);
-  } catch {
-    return NextResponse.json(
-      { success: false, error: `Unsupported network: ${networkInput}`, correlationId },
-      { status: 400 }
-    );
-  }
-
-  const headerKey = request.headers.get("x-idempotency-key") ?? undefined;
-  const requestedKey = incoming.idempotencyKey ?? headerKey;
-  const idempotencyKey = requestedKey && requestedKey.trim().length > 0 ? requestedKey.trim() : generateIdempotencyKey();
+  const { phoneInput, network, capacity, idempotencyKey, price } = resolved;
 
   try {
-    const existing = await getOrderByKey(idempotencyKey);
+    const existing = await fetchDatamartOrderByIdempotency(idempotencyKey);
     if (existing) {
       return NextResponse.json({
         success: true,
@@ -115,75 +87,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const { packages } = await getPackages({ network });
-    const matched = packages.find((pkg) => pkg.capacity === capacity);
-    if (!matched) {
-      return NextResponse.json(
-        { success: false, error: `Capacity ${capacity} is not available`, correlationId },
-        { status: 400 }
-      );
-    }
-
-    let price: number;
-    if (incoming.effectivePrice !== undefined) {
-      price = Number(incoming.effectivePrice);
-    } else {
-      const bundleRows = await sql`
-        SELECT 
-          price,
-          price_override as "priceOverride",
-          markup_percent as "markupPercent"
-        FROM data_bundles
-        WHERE datamart_plan_id = ${capacity}
-          AND is_active = true
-        LIMIT 1
-      `;
-      
-      if (bundleRows.length === 0) {
-        return NextResponse.json(
-          { success: false, error: "Bundle not found in database", correlationId },
-          { status: 404 }
-        );
-      }
-      
-      const bundle = bundleRows[0] as { price: number; priceOverride: number | null; markupPercent: number | null };
-      const providerPrice = Number(bundle.price);
-      const priceOverride = bundle.priceOverride ? Number(bundle.priceOverride) : null;
-      const markupPercent = bundle.markupPercent ? Number(bundle.markupPercent) : null;
-      
-      if (priceOverride !== null && priceOverride > 0) {
-        price = priceOverride;
-      } else if (markupPercent !== null && markupPercent > 0) {
-        const markup = providerPrice * (markupPercent / 100);
-        price = Number((providerPrice + markup).toFixed(2));
-      } else {
-        price = providerPrice;
-      }
-    }
-    if (isNaN(price) || price <= 0) {
-      return NextResponse.json(
-        { success: false, error: "Invalid bundle price", correlationId },
-        { status: 400 }
-      );
-    }
-
-    const walletBalance = Number(user.wallet_balance) || 0;
-    if (walletBalance < price) {
-      return NextResponse.json(
-        { success: false, error: `Insufficient balance. Need GHS ${price.toFixed(2)}, have GHS ${walletBalance.toFixed(2)}`, correlationId },
-        { status: 400 }
-      );
-    }
-
-    const existingTx = await sql`
-      SELECT reference, status
-      FROM transactions
-      WHERE user_id = ${userId}
-        AND metadata->>'idempotency_key' = ${idempotencyKey}
-      ORDER BY created_at DESC
-      LIMIT 1
-    `;
-    if (existingTx.length > 0) {
+    const duplicateIntent = await assertNoDuplicateTransactionIntent(userId, idempotencyKey);
+    if (duplicateIntent) {
       return NextResponse.json(
         { success: false, error: "Duplicate purchase request", correlationId },
         { status: 409 }
@@ -210,7 +115,7 @@ export async function POST(request: NextRequest) {
         ) VALUES (
           gen_random_uuid(),
           $1,
-          'PENDING',
+          'pending',
           $2,
           'GHS',
           $3,
@@ -282,55 +187,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const order = await getOrderByKey(idempotencyKey);
-    const orderStatus = (order?.status || "pending").toLowerCase();
-
-    if (orderStatus === "completed" || orderStatus === "delivered") {
-      await sql`
-        UPDATE transactions
-        SET status = 'success',
-            metadata = metadata || ${JSON.stringify({
-              state: "success",
-              provider_order_ref: order?.order_reference,
-              fulfilled_at: new Date().toISOString(),
-            })}::jsonb,
-            updated_at = NOW()
-        WHERE reference = ${reference}
-      `;
-    } else if (orderStatus === "failed" || orderStatus === "refunded") {
-      await withTransaction(async (tx) => {
-        await tx(
-          `UPDATE transactions
-           SET status = 'failed',
-               metadata = metadata || $1::jsonb,
-               updated_at = NOW()
-           WHERE reference = $2`,
-          [
-            JSON.stringify({
-              state: "refunded",
-              provider_order_ref: order?.order_reference,
-              failed_at: new Date().toISOString(),
-            }),
-            reference,
-          ]
-        );
-        await tx(`UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2`, [price, userId]);
-      });
-    } else {
-      await sql`
-        UPDATE transactions
-        SET status = 'pending',
-            metadata = metadata || ${JSON.stringify({
-              state: "provider_submitted",
-              provider_order_ref: order?.order_reference,
-            })}::jsonb,
-            updated_at = NOW()
-        WHERE reference = ${reference}
-      `;
-    }
-
-    const updatedUser = await sql`SELECT wallet_balance FROM users WHERE id = ${userId} LIMIT 1`;
-    const newBalance = updatedUser.length > 0 ? Number(updatedUser[0].wallet_balance) : undefined;
+    const { order, newBalance } = await applyDatamartTransactionAfterProviderSubmit({
+      reference,
+      userId,
+      idempotencyKey,
+      price,
+      correlationId,
+      refundWalletOnTerminalFailure: true,
+    });
 
     return NextResponse.json({
       success: true,

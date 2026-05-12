@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql, sqlUnsafe } from "@/lib/db";
-import { getRequest } from "@/lib/pvadeals";
+import { syncPvadealsRequestAndSms } from "@/lib/verification-sms-sync";
 
 export async function GET(request: NextRequest) {
   try {
@@ -78,28 +78,21 @@ export async function GET(request: NextRequest) {
     if (activeNumbers.length > 0) {
       for (const num of activeNumbers) {
         try {
-          const pvaResult = await getRequest(num.pvadeals_request_id);
-          if (pvaResult.success && pvaResult.data) {
-            const pvaStatus = pvaResult.data.status?.toUpperCase();
-            if (pvaStatus && pvaStatus !== num.status) {
-              const mappedStatus = pvaStatus === "COMPLETED" ? "completed"
-                : pvaStatus === "FLAGGED" ? "cancelled"
-                : pvaStatus === "EXPIRED" ? "expired"
-                : null;
-              if (mappedStatus) {
-                await sql`
-                  UPDATE verification_numbers
-                  SET status = ${mappedStatus},
-                      completed_at = CASE WHEN ${mappedStatus} IN ('completed', 'cancelled', 'expired') THEN COALESCE(completed_at, NOW()) ELSE completed_at END,
-                      updated_at = NOW()
-                  WHERE id = ${num.id}
-                `;
-                num.status = mappedStatus;
-              }
-            }
+          const synced = await syncPvadealsRequestAndSms({
+            numberId: num.id,
+            pvadealsRequestId: num.pvadeals_request_id,
+          });
+          if (synced.ok) {
+            num.status = synced.dbStatus;
+            num.allow_flag = synced.pva.allowFlag;
+            num.allow_reuse = synced.pva.allowReuse ?? false;
+            const cntRows = await sql`
+              SELECT COUNT(*)::int AS c FROM verification_sms WHERE number_id = ${num.id}
+            `;
+            num.sms_count = Number((cntRows[0] as { c: number }).c ?? 0);
           }
         } catch (syncError) {
-          console.error(`[Numbers] Failed to sync status for number ${num.id}:`, syncError);
+          console.error(`[Numbers] Failed to sync number ${num.id}:`, syncError);
         }
       }
     }
@@ -108,15 +101,17 @@ export async function GET(request: NextRequest) {
     const now = new Date();
     const numbersWithMeta = numbers.map((num: any) => {
       const expiresAt = num.expires_at ? new Date(num.expires_at) : null;
-      const timeRemaining = expiresAt && num.status === "active" 
-        ? Math.max(0, expiresAt.getTime() - now.getTime())
-        : 0;
-      
+      const expiryPassed = Boolean(expiresAt && expiresAt.getTime() <= now.getTime());
+      const timeRemaining =
+        expiresAt && num.status === "active" && !expiryPassed
+          ? Math.max(0, expiresAt.getTime() - now.getTime())
+          : 0;
+
       return {
         ...num,
         time_remaining_ms: timeRemaining,
         time_remaining_formatted: formatDuration(timeRemaining),
-        is_expired: timeRemaining === 0 && num.status === "active",
+        is_expired: num.status === "active" && expiryPassed,
       };
     });
 

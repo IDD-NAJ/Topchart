@@ -151,7 +151,7 @@ function ServiceDetailPageContent() {
 
   const fetchSMS = async (numberId: string) => {
     try {
-      const response = await fetch(`/api/verification/sms?numberId=${numberId}`)
+      const response = await fetch(`/api/verification/sms/${numberId}`, { credentials: "include", cache: "no-store" })
       let data: any = null
       try { data = await response.json() } catch { /* non-JSON response */ }
       if (data?.success) {

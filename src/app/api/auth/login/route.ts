@@ -33,17 +33,17 @@ async function POST(request: NextRequest) {
     });
 
     if (result.success && result.user && result.token && result.expiresAt) {
-      const response = NextResponse.json({ success: true, user: result.user }, { status: 200 });
+      const response = NextResponse.json({ success: true, user: result.user, token: result.token, expiresAt: result.expiresAt }, { status: 200 });
 
         // Set cookie on the response (this is what the browser receives)
         response.cookies.set("session_token", result.token, {
           httpOnly: true,
-          secure: shouldUseSecureCookies(),
+          secure: false,
           sameSite: "lax",
-          expires: new Date(result.expiresAt),
+          maxAge: 24 * 60 * 60,
           path: "/",
         });
-      
+
       return response;
     } else {
       // Return 200 with success: false so the client

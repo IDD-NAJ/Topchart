@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   const admin = await requireAdmin();
   if (!admin.ok) {
@@ -17,7 +17,7 @@ export async function PATCH(
   try {
     const body = await request.json();
     const { label, href, description, icon, parent_id, priority, is_active } = body;
-    const { id } = params;
+    const { id } = await context.params;
 
     const updated = await sql`
       UPDATE navigation_links
@@ -47,7 +47,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   const admin = await requireAdmin();
   if (!admin.ok) {
@@ -55,7 +55,7 @@ export async function DELETE(
   }
 
   try {
-    const { id } = params;
+    const { id } = await context.params;
 
     const deleted = await sql`
       DELETE FROM navigation_links WHERE id = ${id} RETURNING *

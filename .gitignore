@@ -25,3 +25,4 @@ public/*.mp4
 public/*.mov
 public/*.avi
 public/homepage/hero_background_video/
+.env

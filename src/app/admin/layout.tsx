@@ -343,33 +343,53 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       setLoading(false)
       return
     }
+    let cancelled = false
+
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
     const checkAdminAuth = async () => {
       try {
         const response = await fetch("/api/admin/auth", {
           credentials: "include",
           cache: "no-store",
         })
-        if (response.ok) {
-          const result = await response.json()
-          if (!result.success) {
-            router.replace("/admin/login")
-            return false
-          }
-          return true
-        } else {
-          router.replace("/admin/login")
-          return false
-        }
+        if (!response.ok) return false
+        const result = await response.json()
+        return Boolean(result.success)
       } catch (error) {
         console.error("Admin auth check failed:", error)
-        router.replace("/admin/login")
         return false
       }
     }
-    checkAdminAuth().then((ok) => {
-      if (!ok) return
-      setLoading(false)
-    })
+
+    const runAuthCheck = async () => {
+      const delays = [0, 400, 800, 1500]
+
+      for (let attempt = 0; attempt < delays.length; attempt += 1) {
+        if (cancelled) return
+        if (delays[attempt] > 0) {
+          await sleep(delays[attempt])
+        }
+
+        const ok = await checkAdminAuth()
+        if (cancelled) return
+        if (ok) {
+          setLoading(false)
+          return
+        }
+      }
+
+      if (!cancelled) {
+        router.replace("/admin/login")
+      }
+    }
+
+    setLoading(true)
+    runAuthCheck()
+
+    return () => {
+      cancelled = true
+    }
   }, [pathname, router])
 
   if (pathname === "/admin/login") return <>{children}</>

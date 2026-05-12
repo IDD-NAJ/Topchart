@@ -49,15 +49,15 @@ async function POST(request: NextRequest) {
 
     if (result.success && result.user) {
       const response = NextResponse.json(
-        { success: true, user: result.user },
+        { success: true, user: result.user, token: result.token, expiresAt: result.expiresAt },
         { status: 201 }
       );
       if (result.token && result.expiresAt) {
         response.cookies.set("session_token", result.token, {
           httpOnly: true,
-          secure: shouldUseSecureCookies(),
+          secure: false,
           sameSite: "lax",
-          expires: new Date(result.expiresAt),
+          maxAge: 24 * 60 * 60,
           path: "/",
         });
       }

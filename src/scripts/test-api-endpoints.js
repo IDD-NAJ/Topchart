@@ -5,7 +5,7 @@ const path = require('path');
 // Load environment variables
 function loadEnvFile() {
   try {
-    const envPath = path.join(__dirname, '..', '.env.local');
+    const envPath = path.join(__dirname, '..', '..', '.env');
     const envContent = fs.readFileSync(envPath, 'utf8');
     
     envContent.split('\n').forEach(line => {
@@ -21,7 +21,7 @@ function loadEnvFile() {
     
     console.log('✅ Environment variables loaded');
   } catch (error) {
-    console.log('⚠️  Could not load .env.local file:', error.message);
+    console.log('⚠️  Could not load .env file:', error.message);
   }
 }
 

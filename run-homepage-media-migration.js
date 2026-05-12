@@ -1,5 +1,5 @@
 // Migration runner for homepage_media table
-require('dotenv').config({ path: '.env.local' });
+require('dotenv').config({ path: '.env' });
 const { Pool } = require('@neondatabase/serverless');
 const ws = require('ws');
 

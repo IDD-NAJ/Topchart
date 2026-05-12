@@ -250,7 +250,7 @@ export async function register(formData: {
     // Create session with explicit UUID
     const token = uuidv4();
     const sessionId = uuidv4();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     await insertSessionRecord({
       sessionId,
@@ -309,7 +309,7 @@ export async function login(formData: {
     // Create session with explicit UUID
     const token = uuidv4();
     const sessionId = uuidv4();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const now = new Date().toISOString();
 
     await insertSessionRecord({
@@ -393,14 +393,15 @@ export async function getCurrentUser(): Promise<User | null> {
     const token = cookieStore.get("session_token")?.value;
 
     if (!token) {
+      console.log("[getCurrentUser] no session_token cookie");
       return null;
     }
 
     let result: any[] = [];
     try {
       result = await sql`
-        SELECT 
-          u.id, u.email, u.phone, u.first_name, u.last_name, 
+        SELECT
+          u.id, u.email, u.phone, u.first_name, u.last_name,
           u.wallet_balance, u.is_verified, u.role, u.referral_code, u.created_at
         FROM auth_sessions s
         JOIN users u ON s.user_id::text = u.id::text
@@ -409,8 +410,8 @@ export async function getCurrentUser(): Promise<User | null> {
     } catch (error) {
       if (!isPgMissingRelation(error)) throw error;
       result = await sql`
-        SELECT 
-          u.id, u.email, u.phone, u.first_name, u.last_name, 
+        SELECT
+          u.id, u.email, u.phone, u.first_name, u.last_name,
           u.wallet_balance, u.is_verified, u.role, u.referral_code, u.created_at
         FROM sessions s
         JOIN users u ON s.user_id::text = u.id::text
@@ -419,6 +420,7 @@ export async function getCurrentUser(): Promise<User | null> {
     }
 
     if (result.length === 0) {
+      console.log("[getCurrentUser] session not found or expired for token prefix:", token.slice(0, 8));
       return null;
     }
 

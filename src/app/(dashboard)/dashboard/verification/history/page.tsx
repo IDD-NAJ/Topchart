@@ -175,7 +175,10 @@ function SMSPanel({
     if (!silent) setLoading(true); else setRefreshing(true)
     if (!silent) setExpanded(true)
     try {
-      const res = await fetch(`/api/verification/sms/${numberId}`)
+      const res = await fetch(`/api/verification/sms/${numberId}`, {
+        credentials: "include",
+        cache: "no-store",
+      })
       let data: any = null
       try { data = await res.json() } catch { /* non-JSON response */ }
       if (data?.success) {
@@ -300,13 +303,10 @@ function HistoryRow({ record, onRefresh }: { record: VerificationRecord; onRefre
       let data: any = null
       try { data = await res.json() } catch { /* non-JSON response */ }
       if (data?.success) {
-        const { refunded, refund_amount, refund_method } = data?.data ?? {}
+        const { refunded, refund_amount } = data?.data ?? {}
         let description = `${record.number} has been cancelled.`
         if (refunded && refund_amount > 0) {
-          const methodLabel = refund_method === "paystack"
-            ? "Paystack refund initiated (3–5 business days)"
-            : `GH₵${Number(refund_amount).toFixed(2)} refunded to your wallet`
-          description = methodLabel
+          description = `GH₵${Number(refund_amount).toFixed(2)} credited to your wallet balance`
         }
         toast({ title: "Number cancelled", description })
         onRefresh()

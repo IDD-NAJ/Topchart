@@ -1,20 +1,36 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useState, Suspense, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/networks"
-import { Loader2, CheckCircle, XCircle, Copy, Check, ArrowLeft, RefreshCw } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Loader2, CheckCircle, XCircle, Copy, Check, ArrowLeft, RefreshCw, MessageSquare, History } from "lucide-react"
 
 type State =
   | { phase: "verifying" }
-  | { phase: "success"; number: string; expires_at: string; price: number; type: string; ltr_days: number | null }
+  | {
+      phase: "success"
+      number_id: string | null
+      number: string
+      expires_at: string | null
+      price: number
+      type: string
+      ltr_days: number | null
+    }
   | { phase: "pending" }
   | { phase: "refunded"; refund_amount: number; message: string }
   | { phase: "error"; message: string }
+
+interface CallbackSmsRow {
+  id: string
+  from_number: string
+  message: string
+  received_at: string
+}
 
 function CallbackContent() {
   const searchParams = useSearchParams()
@@ -23,14 +39,8 @@ function CallbackContent() {
   const [state, setState] = useState<State>({ phase: "verifying" })
   const [copied, setCopied] = useState(false)
   const [attempts, setAttempts] = useState(0)
-
-  useEffect(() => {
-    if (!reference) {
-      setState({ phase: "error", message: "No payment reference found." })
-      return
-    }
-    verify()
-  }, [reference])
+  const [callbackSms, setCallbackSms] = useState<CallbackSmsRow[]>([])
+  const [callbackSmsLoading, setCallbackSmsLoading] = useState(false)
 
   const verify = async () => {
     try {
@@ -41,8 +51,9 @@ function CallbackContent() {
       if (data?.success && data?.data?.status === "success") {
         setState({
           phase: "success",
+          number_id: data?.data?.number_id ?? null,
           number: data?.data?.number,
-          expires_at: data?.data?.expires_at,
+          expires_at: data?.data?.expires_at ?? null,
           price: data?.data?.price,
           type: data?.data?.type,
           ltr_days: data?.data?.ltr_days ?? null,
@@ -66,6 +77,47 @@ function CallbackContent() {
       setState({ phase: "error", message: "Network error. Please try again." })
     }
   }
+
+  useEffect(() => {
+    if (!reference) {
+      setState({ phase: "error", message: "No payment reference found." })
+      return
+    }
+    verify()
+  }, [reference])
+
+  const successNumberId = state.phase === "success" ? state.number_id : null
+
+  const fetchCallbackSms = useCallback(
+    async (silent: boolean) => {
+      if (!successNumberId) return
+      if (!silent) setCallbackSmsLoading(true)
+      try {
+        const res = await fetch(`/api/verification/sms/${successNumberId}`, { credentials: "include", cache: "no-store" })
+        let data: unknown = null
+        try {
+          data = await res.json()
+        } catch {
+          /* non-JSON */
+        }
+        const d = data as { success?: boolean; data?: { sms?: CallbackSmsRow[] } } | null
+        if (d?.success) setCallbackSms(d?.data?.sms ?? [])
+      } finally {
+        if (!silent) setCallbackSmsLoading(false)
+      }
+    },
+    [successNumberId]
+  )
+
+  useEffect(() => {
+    if (!successNumberId) {
+      setCallbackSms([])
+      return
+    }
+    fetchCallbackSms(false)
+    const interval = setInterval(() => fetchCallbackSms(true), 12000)
+    return () => clearInterval(interval)
+  }, [successNumberId, fetchCallbackSms])
 
   const copyNumber = () => {
     if (state.phase !== "success") return
@@ -116,7 +168,9 @@ function CallbackContent() {
                   <Badge variant="secondary">
                     {state.type === "LTR" ? `LTR ${state.ltr_days}-day` : "STR 20 min"}
                   </Badge>
-                  <span>Expires: {new Date(state.expires_at).toLocaleString()}</span>
+                  {state.expires_at ? (
+                    <span>Expires: {new Date(state.expires_at).toLocaleString()}</span>
+                  ) : null}
                 </div>
 
                 <p className="text-xs font-medium">
@@ -124,13 +178,73 @@ function CallbackContent() {
                 </p>
               </div>
 
+              {successNumberId ? (
+                <div className="rounded-xl border bg-muted/40 p-4 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium flex items-center gap-1.5">
+                      <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
+                      Incoming SMS
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => fetchCallbackSms(false)}
+                      disabled={callbackSmsLoading}
+                      className="p-1 rounded-md hover:bg-background transition-colors disabled:opacity-50"
+                      title="Refresh SMS"
+                    >
+                      <RefreshCw
+                        className={cn("h-3.5 w-3.5 text-muted-foreground", callbackSmsLoading && "animate-spin")}
+                      />
+                    </button>
+                  </div>
+                  {callbackSmsLoading && callbackSms.length === 0 ? (
+                    <div className="flex items-center gap-2 py-1">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Checking for messages…</span>
+                    </div>
+                  ) : callbackSms.length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic">
+                      No messages yet. Tap refresh or wait — auto-checks every 12s.
+                    </p>
+                  ) : (
+                    <div className="space-y-2 max-h-36 overflow-y-auto pr-0.5">
+                      {callbackSms.map((msg) => (
+                        <div key={msg.id} className="rounded-md border bg-background/80 p-2 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-medium text-muted-foreground truncate">
+                              From {msg.from_number}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
+                              {new Date(msg.received_at).toLocaleTimeString("en-US", {
+                                hour: "numeric",
+                                minute: "2-digit",
+                                hour12: true,
+                              })}
+                            </span>
+                          </div>
+                          <p className="text-xs font-mono break-all leading-snug">{msg.message}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
               <p className="text-xs text-muted-foreground">
                 Use this number on the target platform. You can monitor SMS from your verification dashboard.
               </p>
 
-              <Button asChild className="w-full">
-                <Link href="/dashboard/verification">Go to Verification Dashboard</Link>
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button variant="outline" asChild className="w-full sm:flex-1 gap-2">
+                  <Link href="/dashboard/verification/history">
+                    <History className="h-4 w-4" />
+                    Verification History
+                  </Link>
+                </Button>
+                <Button asChild className="w-full sm:flex-1">
+                  <Link href="/dashboard/verification">Verification Dashboard</Link>
+                </Button>
+              </div>
             </div>
           ) : state.phase === "refunded" ? (
             <div className="space-y-5">

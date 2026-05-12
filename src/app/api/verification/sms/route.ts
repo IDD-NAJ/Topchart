@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
-import { getRequest, reuseNumber } from "@/lib/pvadeals";
+import { reuseNumber } from "@/lib/pvadeals";
+import { syncPvadealsRequestAndSms } from "@/lib/verification-sms-sync";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,34 +50,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "No provider request ID" }, { status: 400 });
     }
 
-    // Poll PVADeals for latest request state (includes messageCounter)
-    const pvaResult = await getRequest(numRecord.pvadeals_request_id);
+    const synced = await syncPvadealsRequestAndSms({
+      numberId,
+      pvadealsRequestId: numRecord.pvadeals_request_id,
+    });
 
-    if (!pvaResult.success || !pvaResult.data) {
+    if (!synced.ok) {
       return NextResponse.json(
-        { success: false, error: pvaResult.error || "Failed to fetch SMS status from provider" },
+        { success: false, error: synced.error || "Failed to fetch SMS status from provider" },
         { status: 502 }
       );
     }
 
-    const pvaData = pvaResult.data;
-
-    // Sync status changes back to DB
-    const newStatus = pvaData.status === "COMPLETED"
-      ? "completed"
-      : pvaData.status === "FLAGGED"
-      ? "cancelled"
-      : pvaData.status === "EXPIRED"
-      ? "expired"
-      : "active";
-
-    if (newStatus !== numRecord.status) {
-      await sql`
-        UPDATE verification_numbers
-        SET status = ${newStatus}, allow_flag = ${pvaData.allowFlag}, allow_reuse = ${pvaData.allowReuse ?? false}, updated_at = NOW()
-        WHERE id = ${numberId}
-      `.catch(() => null);
-    }
+    const pvaData = synced.pva;
+    const newStatus = synced.dbStatus;
 
     // Load stored SMS messages from our DB
     let storedSms: any[] = [];

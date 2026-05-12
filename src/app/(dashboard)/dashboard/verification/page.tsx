@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
 import { formatCurrency } from "@/lib/networks"
@@ -39,6 +40,8 @@ import {
   Globe,
   Filter,
   Search,
+  MessageSquare,
+  Flag,
 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
@@ -149,6 +152,7 @@ interface ActiveNumber {
   allow_flag: boolean
   auto_renew: boolean
   ltr_duration_days?: number
+  service_icon?: string | null
 }
 
 interface PurchaseModal {
@@ -158,8 +162,15 @@ interface PurchaseModal {
   areaCode: string
   paymentMethod: "wallet" | "paystack"
   purchasing: boolean
-  result: { number: string; expires_at: string; price: number } | null
+  result: { number_id: string; number: string; expires_at: string; price: number } | null
   error: string | null
+}
+
+interface PurchaseModalSms {
+  id: string
+  from_number: string
+  message: string
+  received_at: string
 }
 
 function getLtrPrice(svc: Service, days: number): number {
@@ -167,6 +178,291 @@ function getLtrPrice(svc: Service, days: number): number {
   if (days <= 7) return svc.ltr7_price
   if (days <= 14) return svc.ltr14_price
   return svc.ltr30_price
+}
+
+function ActiveNumberSmsPanel({
+  numberId,
+  initialCount,
+  isActive,
+}: {
+  numberId: string
+  initialCount: number
+  isActive: boolean
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [sms, setSms] = useState<PurchaseModalSms[]>([])
+  const [count, setCount] = useState(initialCount)
+  const [fetched, setFetched] = useState(false)
+  const [lastFetched, setLastFetched] = useState<Date | null>(null)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    setCount(initialCount)
+  }, [initialCount])
+
+  const fetchSMS = useCallback(async (silent = false) => {
+    if (!silent) {
+      setLoading(true)
+    } else {
+      setRefreshing(true)
+    }
+    if (!silent) setExpanded(true)
+    try {
+      const res = await fetch(`/api/verification/sms/${numberId}`, {
+        credentials: "include",
+        cache: "no-store",
+      })
+      let data: any = null
+      try {
+        data = await res.json()
+      } catch {
+        /* non-JSON response */
+      }
+      if (data?.success) {
+        const list = (data?.data?.sms || []) as PurchaseModalSms[]
+        setSms(list)
+        setCount(list.length)
+        setFetched(true)
+        setLastFetched(new Date())
+      } else if (!silent) {
+        toast({ title: "Could not load SMS", description: data?.error, variant: "destructive" })
+        setExpanded(false)
+      }
+    } catch {
+      if (!silent) {
+        toast({ title: "Network error", description: "Failed to load SMS messages", variant: "destructive" })
+        setExpanded(false)
+      }
+    } finally {
+      if (!silent) setLoading(false)
+      else setRefreshing(false)
+    }
+  }, [numberId, toast])
+
+  useEffect(() => {
+    if (!isActive) return
+    const t = window.setTimeout(() => {
+      void fetchSMS(true)
+    }, 600)
+    return () => clearTimeout(t)
+  }, [isActive, numberId, fetchSMS])
+
+  useEffect(() => {
+    if (!isActive) return
+    const id = setInterval(() => {
+      void fetchSMS(true)
+    }, 20000)
+    return () => clearInterval(id)
+  }, [isActive, fetchSMS])
+
+  const toggle = () => {
+    if (!expanded && !fetched) {
+      void fetchSMS(false)
+      return
+    }
+    setExpanded(e => !e)
+  }
+
+  const handleRefresh = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    void fetchSMS(false)
+    setFetched(false)
+  }
+
+  return (
+    <div className="mt-1">
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          type="button"
+          onClick={toggle}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {loading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <MessageSquare className="h-3.5 w-3.5" />
+          )}
+          <span>{count} SMS message{count !== 1 ? "s" : ""}</span>
+          {!loading && (expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
+        </button>
+        {(fetched || isActive) && (
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="p-0.5 rounded hover:bg-muted transition-colors"
+            title="Refresh SMS"
+          >
+            <RefreshCw className={cn("h-3 w-3 text-muted-foreground", refreshing && "animate-spin")} />
+          </button>
+        )}
+        {lastFetched && (
+          <span className="text-[10px] text-muted-foreground/60">
+            Updated{" "}
+            {lastFetched.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true })}
+          </span>
+        )}
+      </div>
+
+      {expanded && !loading && (
+        <div className="mt-2 space-y-2 pl-1">
+          {sms.length === 0 ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-xs text-muted-foreground italic">No SMS messages received yet.</p>
+              {isActive && (
+                <span className="text-[10px] text-muted-foreground/60">Auto-checks every 20s</span>
+              )}
+            </div>
+          ) : (
+            sms.map((msg) => (
+              <div key={msg.id} className="rounded-lg border bg-muted/30 p-3 space-y-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-muted-foreground">From: {msg.from_number}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {new Date(msg.received_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
+                  </span>
+                </div>
+                <p className="text-sm font-mono break-all">{msg.message}</p>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ActiveNumberCard({
+  num,
+  copied,
+  onCopy,
+  onRefreshList,
+}: {
+  num: ActiveNumber
+  copied: boolean
+  onCopy: (value: string) => void
+  onRefreshList: () => Promise<void>
+}) {
+  const [confirmCancel, setConfirmCancel] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const { toast } = useToast()
+  const cat = CATEGORIES.find(c => c.id === num.service_category)
+  const FallbackIcon = cat?.icon ?? MessageCircle
+  const statusNorm = String(num.status ?? "").trim().toLowerCase()
+  const isActiveForSms = statusNorm === "active"
+  const isActive = isActiveForSms && !num.is_expired
+
+  const handleCancel = async () => {
+    setCancelling(true)
+    try {
+      const res = await fetch("/api/verification/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ numberId: num.id }),
+      })
+      let data: any = null
+      try {
+        data = await res.json()
+      } catch {
+        /* non-JSON */
+      }
+      if (data?.success) {
+        const { refunded, refund_amount } = data?.data ?? {}
+        let description = `${num.number} has been cancelled.`
+        if (refunded && refund_amount > 0) {
+          description = `GH₵${Number(refund_amount).toFixed(2)} credited to your wallet balance`
+        }
+        toast({ title: "Number cancelled", description })
+        await onRefreshList()
+      } else {
+        toast({ title: "Cancel failed", description: data?.error || "Could not cancel number", variant: "destructive" })
+      }
+    } catch {
+      toast({ title: "Network error", description: "Failed to cancel number", variant: "destructive" })
+    } finally {
+      setCancelling(false)
+      setConfirmCancel(false)
+    }
+  }
+
+  return (
+    <Card className="border bg-background">
+      <CardContent className="p-3 sm:p-4 space-y-2">
+        <div className="flex gap-3">
+          <div className="shrink-0 pt-0.5">
+            <ServiceIcon
+              name={num.service_name}
+              pictureUrl={num.service_icon}
+              fallbackIcon={FallbackIcon}
+              fallbackColor={cat?.color ?? "text-blue-600 bg-blue-50 dark:bg-blue-950/40"}
+              size="sm"
+            />
+          </div>
+          <div className="flex-1 min-w-0 space-y-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <Badge variant={num.type === "LTR" ? "default" : "secondary"} className="text-xs">
+                {num.type === "LTR" ? `LTR ${num.ltr_duration_days}d` : "STR 20min"}
+              </Badge>
+              {!num.is_expired && (
+                <span className="text-xs font-mono text-orange-600">{num.time_remaining_formatted}</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <p className="font-mono text-sm sm:text-base font-semibold flex-1 break-all">{num.number}</p>
+              <button
+                type="button"
+                onClick={() => onCopy(num.number)}
+                className="p-2 rounded hover:bg-muted transition-colors shrink-0 sm:p-1"
+              >
+                {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5 text-muted-foreground" />}
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">{num.service_name}</p>
+            <div className="flex flex-wrap gap-1">
+              {num.allow_reuse && (
+                <Badge variant="outline" className="text-xs text-blue-600 border-blue-200">Reusable</Badge>
+              )}
+              {num.auto_renew && (
+                <Badge variant="outline" className="text-xs text-green-600 border-green-200">
+                  <RefreshCw className="h-2.5 w-2.5 mr-1" />
+                  Auto-renew
+                </Badge>
+              )}
+            </div>
+            <ActiveNumberSmsPanel numberId={num.id} initialCount={num.sms_count} isActive={isActiveForSms} />
+            {isActive && num.allow_flag && !confirmCancel && (
+              <button
+                type="button"
+                onClick={() => setConfirmCancel(true)}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors dark:bg-red-950/30 dark:border-red-900"
+              >
+                <Flag className="h-3 w-3" />
+                Cancel number
+              </button>
+            )}
+            {isActive && num.allow_flag && confirmCancel && (
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-red-600 font-medium">Confirm cancel?</span>
+                <button
+                  type="button"
+                  onClick={() => void handleCancel()}
+                  disabled={cancelling}
+                  className="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+                >
+                  {cancelling ? <Loader2 className="h-3 w-3 animate-spin inline" /> : "Yes, cancel"}
+                </button>
+                <button type="button" onClick={() => setConfirmCancel(false)} className="px-2 py-1 rounded border hover:bg-muted">
+                  Keep
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 export default function VerificationPage() {
@@ -179,6 +475,7 @@ export default function VerificationPage() {
   const [selectedCategory, setSelectedCategory] = useState("social_media")
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
+  const [refreshingActiveNumbers, setRefreshingActiveNumbers] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState<"name" | "price_asc" | "price_desc">("name")
   const [countryFilter, setCountryFilter] = useState<string>("all")
@@ -206,8 +503,9 @@ export default function VerificationPage() {
   const [areaCodeFallback, setAreaCodeFallback] = useState(false)
   const [globalAreaCodes, setGlobalAreaCodes] = useState<{ code: string; state: string }[]>([])
   const [apiError, setApiError] = useState<string | null>(null)
-  
-  // Global pricing settings
+  const [purchaseSms, setPurchaseSms] = useState<PurchaseModalSms[]>([])
+  const [purchaseSmsLoading, setPurchaseSmsLoading] = useState(false)
+
   const [exchangeRate, setExchangeRate] = useState(15.5)
 
   // Fetch global area codes on mount
@@ -396,8 +694,52 @@ export default function VerificationPage() {
   }
 
   const closeModal = () => {
+    setPurchaseSms([])
+    setPurchaseSmsLoading(false)
     setModal(m => ({ ...m, service: null, result: null, error: null }))
   }
+
+  const fetchPurchaseSms = useCallback(async (silent: boolean) => {
+    const numberId = modal.result?.number_id
+    if (!numberId) return
+    if (!silent) setPurchaseSmsLoading(true)
+    try {
+      const res = await fetch(`/api/verification/sms/${numberId}`, { credentials: "include", cache: "no-store" })
+      let data: unknown = null
+      try {
+        data = await res.json()
+      } catch {
+        /* non-JSON */
+      }
+      const d = data as { success?: boolean; data?: { sms?: PurchaseModalSms[] }; error?: string } | null
+      if (d?.success) {
+        setPurchaseSms(d?.data?.sms ?? [])
+      } else if (!silent) {
+        toast({
+          title: "Could not load SMS",
+          description: d?.error ?? "Try again in a moment.",
+          variant: "destructive",
+        })
+      }
+    } catch {
+      if (!silent) {
+        toast({ title: "Network error", description: "Failed to load SMS.", variant: "destructive" })
+      }
+    } finally {
+      if (!silent) setPurchaseSmsLoading(false)
+    }
+  }, [modal.result?.number_id, toast])
+
+  useEffect(() => {
+    const numberId = modal.result?.number_id
+    if (!numberId) {
+      setPurchaseSms([])
+      return
+    }
+    fetchPurchaseSms(false)
+    const interval = setInterval(() => fetchPurchaseSms(true), 12000)
+    return () => clearInterval(interval)
+  }, [modal.result?.number_id, fetchPurchaseSms])
 
   const handlePurchase = async () => {
     if (!modal.service) return
@@ -446,7 +788,12 @@ export default function VerificationPage() {
         setModal(m => ({
           ...m,
           purchasing: false,
-          result: { number: data?.data?.number, expires_at: data?.data?.expires_at, price: data?.data?.price },
+          result: {
+            number_id: data?.data?.number_id,
+            number: data?.data?.number,
+            expires_at: data?.data?.expires_at,
+            price: data?.data?.price,
+          },
         }))
         fetchActiveNumbers()
       } else {
@@ -743,54 +1090,49 @@ export default function VerificationPage() {
       {activeNumbers.length > 0 && (
         <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/10">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Clock className="h-4 w-4 text-amber-600" />
-              Active Numbers ({activeNumbers.length})
-            </CardTitle>
-            <CardDescription>Your currently active verification numbers</CardDescription>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="space-y-1">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Clock className="h-4 w-4 text-amber-600" />
+                  Active Numbers ({activeNumbers.length})
+                </CardTitle>
+                <CardDescription>Your currently active verification numbers</CardDescription>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0 gap-2 border-amber-300 bg-background hover:bg-amber-50 dark:border-amber-900 dark:hover:bg-amber-950/40"
+                disabled={refreshingActiveNumbers}
+                onClick={() => {
+                  void (async () => {
+                    setRefreshingActiveNumbers(true)
+                    try {
+                      await fetchActiveNumbers()
+                    } finally {
+                      setRefreshingActiveNumbers(false)
+                    }
+                  })()
+                }}
+              >
+                <RefreshCw className={cn("h-4 w-4", refreshingActiveNumbers && "animate-spin")} />
+                Refresh list
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {activeNumbers.map((num) => (
-                <Card key={num.id} className="border bg-background">
-                  <CardContent className="p-3 sm:p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Badge variant={num.type === "LTR" ? "default" : "secondary"} className="text-xs">
-                        {num.type === "LTR" ? `LTR ${num.ltr_duration_days}d` : "STR 20min"}
-                      </Badge>
-                      {!num.is_expired && (
-                        <span className="text-xs font-mono text-orange-600">{num.time_remaining_formatted}</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-mono text-sm sm:text-base font-semibold flex-1 break-all">{num.number}</p>
-                      <button
-                        onClick={() => copyNumber(num.number)}
-                        className="p-2 rounded hover:bg-muted transition-colors shrink-0 sm:p-1"
-                      >
-                        {copied === num.number ? (
-                          <Check className="h-3.5 w-3.5 text-green-600" />
-                        ) : (
-                          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                        )}
-                      </button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{num.service_name}</p>
-                    <div className="flex flex-wrap gap-1">
-                      {num.sms_count > 0 && (
-                        <Badge variant="outline" className="text-xs">{num.sms_count} SMS</Badge>
-                      )}
-                      {num.allow_reuse && (
-                        <Badge variant="outline" className="text-xs text-blue-600 border-blue-200">Reusable</Badge>
-                      )}
-                      {num.auto_renew && (
-                        <Badge variant="outline" className="text-xs text-green-600 border-green-200">
-                          <RefreshCw className="h-2.5 w-2.5 mr-1" />Auto-renew
-                        </Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                <ActiveNumberCard
+                  key={num.id}
+                  num={num}
+                  copied={copied === num.number}
+                  onCopy={copyNumber}
+                  onRefreshList={async () => {
+                    await refreshUser()
+                    await fetchActiveNumbers()
+                  }}
+                />
               ))}
             </div>
           </CardContent>
@@ -1117,9 +1459,65 @@ export default function VerificationPage() {
                     </p>
                     <p className="text-xs font-medium">Charged: {formatCurrency(modal.result.price)}</p>
                   </div>
+
+                  <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium flex items-center gap-1.5">
+                        <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
+                        Incoming SMS
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => fetchPurchaseSms(false)}
+                        disabled={purchaseSmsLoading}
+                        className="p-1 rounded-md hover:bg-background transition-colors disabled:opacity-50"
+                        title="Refresh SMS"
+                      >
+                        <RefreshCw className={cn("h-3.5 w-3.5 text-muted-foreground", purchaseSmsLoading && "animate-spin")} />
+                      </button>
+                    </div>
+                    {purchaseSmsLoading && purchaseSms.length === 0 ? (
+                      <div className="flex items-center gap-2 py-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Checking for messages…</span>
+                      </div>
+                    ) : purchaseSms.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic">
+                        No messages yet. Tap refresh or wait — auto-checks every 12s.
+                      </p>
+                    ) : (
+                      <div className="space-y-2 max-h-36 overflow-y-auto pr-0.5">
+                        {purchaseSms.map((msg) => (
+                          <div key={msg.id} className="rounded-md border bg-background/80 p-2 space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[10px] font-medium text-muted-foreground truncate">
+                                From {msg.from_number}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
+                                {new Date(msg.received_at).toLocaleTimeString("en-US", {
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                })}
+                              </span>
+                            </div>
+                            <p className="text-xs font-mono break-all leading-snug">{msg.message}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="shrink-0 border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5">
-                  <Button className="w-full" onClick={closeModal}>Done</Button>
+                <div className="shrink-0 border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5 flex flex-col sm:flex-row gap-2">
+                  <Button variant="outline" className="w-full sm:flex-1 gap-2" asChild>
+                    <Link href="/dashboard/verification/history">
+                      <History className="h-4 w-4" />
+                      Verification History
+                    </Link>
+                  </Button>
+                  <Button className="w-full sm:flex-1" onClick={closeModal}>
+                    Done
+                  </Button>
                 </div>
                 </>
               ) : (

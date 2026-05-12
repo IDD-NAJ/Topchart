@@ -17,6 +17,7 @@ function getSecurityHeaders(request: NextRequest) {
     `${appProtocol}//${appDomain}`,
     `${appProtocol}//api.${appDomain}`,
     "https://*.tawk.to",
+    "wss://*.tawk.to",
     "https://accounts.google.com",
     "https://oauth2.googleapis.com",
     "https://www.googleapis.com"
@@ -46,6 +47,8 @@ function getSecurityHeaders(request: NextRequest) {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
       "frame-src 'self' https://*.tawk.to",
+      "child-src 'self' blob: https://*.tawk.to",
+      "worker-src 'self' blob:",
     ].join("; "),
   };
 }

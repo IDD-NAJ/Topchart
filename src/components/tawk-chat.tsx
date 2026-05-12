@@ -1,10 +1,11 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { usePathname } from "next/navigation"
-// @ts-ignore
-import TawkMessengerReact from "@tawk.to/tawk-messenger-react"
+
+const TawkMessengerReact = dynamic(() => import("@tawk.to/tawk-messenger-react"), { ssr: false })
 
 const noop = () => {}
 
@@ -38,8 +39,7 @@ export function TawkChat() {
       if (attempts >= maxAttempts) return
       attempts++
       try {
-        // @ts-ignore
-        const api = window.Tawk_API
+        const api = (window as unknown as { Tawk_API?: { setAttributes?: (a: Record<string, string>) => void } }).Tawk_API
         if (api?.setAttributes) {
           api.setAttributes({
             name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email,
@@ -63,28 +63,28 @@ export function TawkChat() {
 
   return (
     <TawkMessengerReact
-        propertyId={propertyId}
-        widgetId={widgetId}
-        onBeforeLoad={noop}
-        onLoad={noop}
-        onStatusChange={noop}
-        onChatMaximized={noop}
-        onChatMinimized={noop}
-        onChatHidden={noop}
-        onChatStarted={noop}
-        onChatEnded={noop}
-        onPrechatSubmit={noop}
-        onOfflineSubmit={noop}
-        onChatMessageVisitor={noop}
-        onChatMessageAgent={noop}
-        onChatMessageSystem={noop}
-        onAgentJoinChat={noop}
-        onAgentLeaveChat={noop}
-        onChatSatisfaction={noop}
-        onVisitorNameChanged={noop}
-        onFileUpload={noop}
-        onTagsUpdated={noop}
-        onUnreadCountChanged={noop}
-      />
+      propertyId={propertyId}
+      widgetId={widgetId}
+      onBeforeLoad={noop}
+      onLoad={noop}
+      onStatusChange={noop}
+      onChatMaximized={noop}
+      onChatMinimized={noop}
+      onChatHidden={noop}
+      onChatStarted={noop}
+      onChatEnded={noop}
+      onPrechatSubmit={noop}
+      onOfflineSubmit={noop}
+      onChatMessageVisitor={noop}
+      onChatMessageAgent={noop}
+      onChatMessageSystem={noop}
+      onAgentJoinChat={noop}
+      onAgentLeaveChat={noop}
+      onChatSatisfaction={noop}
+      onVisitorNameChanged={noop}
+      onFileUpload={noop}
+      onTagsUpdated={noop}
+      onUnreadCountChanged={noop}
+    />
   )
 }

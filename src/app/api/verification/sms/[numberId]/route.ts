@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
-import { getRequest } from "@/lib/pvadeals";
-import { v4 as uuidv4 } from "uuid";
+import { syncPvadealsRequestAndSms } from "@/lib/verification-sms-sync";
 
 export async function GET(
   request: NextRequest,
@@ -40,57 +39,16 @@ export async function GET(
 
     const number = numbers[0];
 
-    if (number.status !== "active") {
-      const cachedSMS = await sql`
-        SELECT id, from_number, message, received_at, is_read
-        FROM verification_sms WHERE number_id = ${numberId}
-        ORDER BY received_at DESC
-      `;
-      return NextResponse.json({
-        success: true,
-        data: { sms: cachedSMS, status: number.status, expired: true },
-      });
-    }
-
-    // Poll PVADeals for latest request state / SMS
+    let responseStatus = String(number.status ?? "");
     if (number.pvadeals_request_id) {
-      const result = await getRequest(number.pvadeals_request_id);
-      if (result.success && result.data) {
-        const pva = result.data;
-
-        // Sync status
-        const pvaStatus = pva.status?.toUpperCase();
-        if (pvaStatus === "COMPLETED" || pvaStatus === "FLAGGED") {
-          await sql`
-            UPDATE verification_numbers
-            SET status = 'completed', completed_at = NOW(), updated_at = NOW()
-            WHERE id = ${numberId}
-          `;
-        } else if (pvaStatus === "EXPIRED") {
-          await sql`
-            UPDATE verification_numbers
-            SET status = 'expired', updated_at = NOW()
-            WHERE id = ${numberId}
-          `;
-        }
-
-        // Store any SMS messages returned in the request
-        if (Array.isArray((pva as any).messages)) {
-          for (const msg of (pva as any).messages) {
-            try {
-              await sql`
-                INSERT INTO verification_sms (
-                  id, number_id, from_number, message, pvadeals_sms_id, received_at
-                ) VALUES (
-                  ${uuidv4()}, ${numberId}, ${msg.from || "Unknown"},
-                  ${msg.message || msg.body || ""}, ${msg._id || msg.id || null},
-                  ${msg.receivedAt || msg.received_at || new Date().toISOString()}
-                )
-                ON CONFLICT (pvadeals_sms_id) DO NOTHING
-              `;
-            } catch { /* ignore duplicates */ }
-          }
-        }
+      const synced = await syncPvadealsRequestAndSms({
+        numberId,
+        pvadealsRequestId: number.pvadeals_request_id,
+      });
+      if (synced.ok) {
+        responseStatus = synced.dbStatus;
+      } else {
+        return NextResponse.json({ success: false, error: synced.error || "Failed to sync SMS from provider" }, { status: 502 });
       }
     }
 
@@ -113,8 +71,9 @@ export async function GET(
       success: true,
       data: {
         sms: allSMS,
-        status: number.status,
-        expired: new Date(number.expires_at) < new Date(),
+        status: responseStatus,
+        expired:
+          number.expires_at != null ? new Date(number.expires_at as string) < new Date() : false,
         has_verification_code: hasVerificationCode,
       },
     });

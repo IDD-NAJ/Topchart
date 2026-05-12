@@ -7,6 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function shouldUseSecureCookies(): boolean {
   if (process.env.NODE_ENV === "development") return false;
+  if (process.env.NODE_ENV === "test") return false;
   return process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") === true;
 }
 

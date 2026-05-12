@@ -213,7 +213,7 @@ export default function SeoSettingsPage() {
               </div>
               <div>
                 <Label className="text-xs">Favicon URL</Label>
-                <Input value={form.favicon_url} onChange={(e) => setForm({ ...form, favicon_url: e.target.value })} placeholder="https://topchart.store/favicon.ico" className="mt-1" />
+                <Input value={form.favicon_url} onChange={(e) => setForm({ ...form, favicon_url: e.target.value })} placeholder="https://topchart.store/logo.svg" className="mt-1" />
               </div>
             </div>
             <div className="flex items-center gap-3">

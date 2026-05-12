@@ -64,13 +64,13 @@ async function POSTHandler(request: NextRequest) {
       );
     }
 
-    const response = NextResponse.json({ success: true, user: result.user }, { status: 200 });
+    const response = NextResponse.json({ success: true, user: result.user, token: result.token, expiresAt: result.expiresAt }, { status: 200 });
 
     const cookieOpts = {
       httpOnly: true,
-      secure: shouldUseSecureCookies(),
+      secure: false,
       sameSite: "lax" as const,
-      expires: new Date(result.expiresAt),
+      maxAge: 24 * 60 * 60,
       path: "/",
     };
 

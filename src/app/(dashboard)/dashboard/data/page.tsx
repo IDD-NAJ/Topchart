@@ -15,7 +15,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { AlertCircle, CheckCircle2, Loader2, ArrowLeft, Star, Zap, ShieldCheck, Target, CreditCard, Users, Smartphone, Receipt, Check, Database, Clock } from "lucide-react"
+import { AlertCircle, CheckCircle2, Loader2, ArrowLeft, Star, Zap, ShieldCheck, Target, Users, Smartphone, Receipt, Check, Database, Clock, X, Wallet, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
@@ -105,6 +105,7 @@ const NETWORK_TO_PROVIDER: Record<string, DatamartNetworkCode> = {
 
 const FINAL_ORDER_STATUSES = new Set(["completed", "delivered", "failed", "refunded"])
 const POLL_INTERVAL_MS = 12000
+const PAYSTACK_DATA_SURCHARGE = 0.05
 
 function normalizeNetworkKey(value: string): string {
   return value.toLowerCase().replace(/[^a-z]/g, "")
@@ -167,6 +168,7 @@ export default function DataPage() {
   const [selectedPlan, setSelectedPlan] = useState<DatamartPlan | null>(null)
   const [phone, setPhone] = useState(searchParams.get("phone") || "")
   const [step, setStep] = useState<Step>("form")
+  const [paymentMethod, setPaymentMethod] = useState<"wallet" | "paystack">("wallet")
   const [error, setError] = useState("")
   const [saveAsFavorite, setSaveAsFavorite] = useState(false)
   const [favoriteName, setFavoriteName] = useState("")
@@ -196,6 +198,40 @@ export default function DataPage() {
   const [countdown, setCountdown] = useState<number>(0)
   const [successCountdown, setSuccessCountdown] = useState<number>(0)
 
+  const closeConfirmToForm = useCallback(() => {
+    if (confirmTimerRef.current) {
+      clearInterval(confirmTimerRef.current)
+      confirmTimerRef.current = null
+    }
+    setCountdown(0)
+    setStep("form")
+  }, [])
+
+  const stopPolling = useCallback(() => {
+    if (pollTimerRef.current) {
+      window.clearInterval(pollTimerRef.current)
+      pollTimerRef.current = null
+    }
+  }, [])
+
+  const dismissOutcomeDialogToForm = useCallback(() => {
+    stopPolling()
+    if (successTimerRef.current) {
+      clearInterval(successTimerRef.current)
+      successTimerRef.current = null
+    }
+    setPollingOrder(false)
+    setPollError(null)
+    setCurrentOrder(null)
+    setOrderStatusSnapshot(null)
+    setCorrelationId("")
+    setNewWalletBalance(null)
+    setDeliveryTracker(null)
+    setSelectedPlan(null)
+    setError("")
+    setStep("form")
+  }, [stopPolling])
+
   useEffect(() => {
     if (phone.length >= 4) {
       const detected = detectNetwork(phone)
@@ -209,11 +245,15 @@ export default function DataPage() {
 
   useEffect(() => {
     if (step === "confirm") {
-      setCountdown(10)
+      setCountdown(30)
       confirmTimerRef.current = window.setInterval(() => {
         setCountdown((prev) => {
           if (prev <= 1) {
-            setStep("form")
+            if (confirmTimerRef.current) {
+              clearInterval(confirmTimerRef.current)
+              confirmTimerRef.current = null
+            }
+            queueMicrotask(closeConfirmToForm)
             return 0
           }
           return prev - 1
@@ -233,16 +273,19 @@ export default function DataPage() {
         confirmTimerRef.current = null
       }
     }
-  }, [step])
+  }, [step, closeConfirmToForm])
 
   useEffect(() => {
     if (step === "success") {
-      setSuccessCountdown(5)
+      setSuccessCountdown(30)
       successTimerRef.current = window.setInterval(() => {
         setSuccessCountdown((prev) => {
           if (prev <= 1) {
-            setStep("form")
-            setSelectedPlan(null)
+            if (successTimerRef.current) {
+              clearInterval(successTimerRef.current)
+              successTimerRef.current = null
+            }
+            queueMicrotask(dismissOutcomeDialogToForm)
             return 0
           }
           return prev - 1
@@ -262,7 +305,7 @@ export default function DataPage() {
         successTimerRef.current = null
       }
     }
-  }, [step])
+  }, [step, dismissOutcomeDialogToForm])
 
   const fetchPlans = useCallback(async () => {
     setPlansLoading(true)
@@ -326,9 +369,11 @@ export default function DataPage() {
     if (!phone || !/^0\d{9}$/.test(phone)) { setError("Please enter a valid 10-digit phone number starting with 0."); return false }
     if (!selectedPlan) { setError("Please select a data bundle plan."); return false }
     const price = selectedPlan.effectivePrice
-    if (!authUser || price > authUser.walletBalance) {
-      setError("Insufficient wallet balance. Please fund your wallet.")
-      return false
+    if (paymentMethod === "wallet") {
+      if (!authUser || price > authUser.walletBalance) {
+        setError("Insufficient wallet balance. Switch to Paystack or fund your wallet.")
+        return false
+      }
     }
     return true
   }
@@ -369,13 +414,6 @@ export default function DataPage() {
     setError("")
     if (validateForm()) setStep("confirm")
   }
-
-  const stopPolling = useCallback(() => {
-    if (pollTimerRef.current) {
-      window.clearInterval(pollTimerRef.current)
-      pollTimerRef.current = null
-    }
-  }, [])
 
   const loadDeliveryTracker = useCallback(async () => {
     try {
@@ -448,6 +486,37 @@ export default function DataPage() {
     setStep("processing")
 
     try {
+      if (paymentMethod === "paystack") {
+        const response = await fetch("/api/datamart/purchase/initialize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-idempotency-key": idempotencyKey },
+          credentials: "include",
+          body: JSON.stringify({
+            phoneNumber: phone,
+            network: networkCode,
+            capacity,
+            idempotencyKey,
+            effectivePrice: selectedPlan?.effectivePrice,
+          }),
+        })
+        const result = await response.json()
+        if (!response.ok || !result.success) {
+          const message = result?.error || "Could not start Paystack checkout."
+          setError(message)
+          setStep("failed")
+          return
+        }
+        const authUrl = result.data?.authorization_url as string | undefined
+        if (!authUrl) {
+          setError("Checkout URL missing. Please try again.")
+          setStep("failed")
+          return
+        }
+        setCorrelationId(result.data?.correlation_id || result.correlationId || "")
+        window.location.href = authUrl
+        return
+      }
+
       const response = await fetch("/api/datamart/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-idempotency-key": idempotencyKey },
@@ -502,7 +571,11 @@ export default function DataPage() {
       }
     } catch (err) {
       console.error(err)
-      setError("Connectivity issue. Your balance remains unchanged.")
+      setError(
+        paymentMethod === "paystack"
+          ? "Connectivity issue. Try again or use wallet balance."
+          : "Connectivity issue. Your balance remains unchanged."
+      )
       setStep("failed")
       await refreshUser()
     }
@@ -564,7 +637,97 @@ export default function DataPage() {
     }
   }, [currentOrder?.order_reference, finalizeOrderStatus, pollingOrder])
 
+  useEffect(() => {
+    const paystackOk = searchParams.get("paystack_ok")
+    const oref = searchParams.get("oref")
+    if (paystackOk !== "1" || !oref) return
+
+    const idc = searchParams.get("idc") || ""
+    const stripResumeParams = () => {
+      const p = new URLSearchParams(searchParams.toString())
+      p.delete("paystack_ok")
+      p.delete("oref")
+      p.delete("idc")
+      const qs = p.toString()
+      router.replace(qs ? `/dashboard/data?${qs}` : "/dashboard/data")
+    }
+
+    if (typeof window !== "undefined") {
+      const consumedKey = `datamart_ps_resume:${oref}:${idc}`
+      if (sessionStorage.getItem(consumedKey)) {
+        stripResumeParams()
+        return
+      }
+      sessionStorage.setItem(consumedKey, "1")
+    }
+
+    void (async () => {
+      stopPolling()
+      setPollError(null)
+      setDeliveryTracker(null)
+      setNewWalletBalance(null)
+      setPaymentMethod("paystack")
+      setCorrelationId("")
+      if (idc) setCurrentIdempotencyKey(idc)
+      setStep("processing")
+
+      try {
+        const res = await fetch(`/api/datamart/orders/${encodeURIComponent(oref)}?refresh=true`, { cache: "no-store" })
+        const json = await res.json()
+        if (!json.success) {
+          setError(json.error || "Could not load order status.")
+          setStep("failed")
+          stripResumeParams()
+          return
+        }
+        if (typeof json.correlationId === "string" && json.correlationId) setCorrelationId(json.correlationId)
+        const order = json.data?.order as DatamartOrderRow | null
+        const statusPayload = json.data?.status as DatamartOrderStatusSnapshot | null
+        if (!order) {
+          setError("Order not found.")
+          setStep("failed")
+          stripResumeParams()
+          return
+        }
+        const digits = normalizeProviderPhone(order.phone_number || "")
+        if (digits) setPhone(digits)
+        pendingPhoneRef.current = digits || pendingPhoneRef.current
+        pendingNetworkIdRef.current = normalizeNetworkId(String(order.network || ""), pendingNetworkIdRef.current || undefined)
+        setCurrentOrder(order)
+        const snapshot: DatamartOrderStatusSnapshot =
+          statusPayload && (statusPayload.orderStatus || statusPayload.orderReference)
+            ? statusPayload
+            : {
+                orderStatus: order.status,
+                orderReference: order.order_reference || undefined,
+                transactionReference: order.transaction_reference || undefined,
+                purchaseId: order.purchase_id || undefined,
+                price: typeof order.price === "number" ? order.price : Number(order.price || 0) || undefined,
+                balanceBefore: typeof order.balance_before === "number" ? order.balance_before : Number(order.balance_before || 0) || undefined,
+                balanceAfter: typeof order.balance_after === "number" ? order.balance_after : Number(order.balance_after || 0) || undefined,
+                processingMethod: order.processing_method || undefined,
+                updatedAt: order.updated_at,
+              }
+        setOrderStatusSnapshot(snapshot)
+        const normalizedStatus = (snapshot.orderStatus || order.status || "").toLowerCase()
+        if (normalizedStatus && FINAL_ORDER_STATUSES.has(normalizedStatus)) {
+          await finalizeOrderStatus(normalizedStatus, order, snapshot)
+        } else if (order.order_reference) {
+          setPollingOrder(true)
+        } else {
+          setPollingOrder(false)
+        }
+      } catch {
+        setError("Unable to resume purchase.")
+        setStep("failed")
+      }
+      stripResumeParams()
+    })()
+  }, [searchParams, router, stopPolling, finalizeOrderStatus])
+
   const planPrice = selectedPlan ? selectedPlan.effectivePrice : 0
+  const planPaystackFee = Number((planPrice * PAYSTACK_DATA_SURCHARGE).toFixed(2))
+  const planPaystackTotal = Number((planPrice + planPaystackFee).toFixed(2))
 
   return (
     <ServiceGuard serviceKey="data">
@@ -606,7 +769,7 @@ export default function DataPage() {
         <div className="max-w-2xl mx-auto animate-in slide-in-from-bottom-4 duration-500">
           <Card className="border-primary/20 shadow-xl overflow-hidden">
             <div className="bg-primary p-6 sm:p-8 text-primary-foreground">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                     <ShieldCheck className="w-8 h-8 text-white" />
@@ -616,12 +779,22 @@ export default function DataPage() {
                     <p className="text-primary-foreground/80">Please verify the details below</p>
                   </div>
                 </div>
-                {countdown > 0 && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full backdrop-blur-sm">
-                    <Clock className="w-4 h-4 text-white" />
-                    <span className="text-sm font-medium text-white">{countdown}s</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={closeConfirmToForm}
+                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/60 hover:bg-white/70 transition-colors cursor-pointer border border-white/50"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5 text-neutral-900" />
+                  </button>
+                  {countdown > 0 && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full">
+                      <Clock className="w-4 h-4 text-white" />
+                      <span className="text-sm font-medium text-white">{countdown}s</span>
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/20">
@@ -633,20 +806,85 @@ export default function DataPage() {
                   <p className="text-sm font-medium text-white/70 uppercase tracking-wider">Recipient</p>
                   <p className="text-lg font-mono font-bold mt-1">{phone}</p>
                 </div>
-                <div className="col-span-2 bg-white/10 rounded-lg p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-white/70 uppercase tracking-wider">Bundle & Amount</p>
-                    <p className="text-2xl font-bold mt-1">{selectedPlan?.name}</p>
+                <div className="col-span-2 bg-white/10 rounded-lg p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-white/70 uppercase tracking-wider">Bundle</p>
+                      <p className="text-2xl font-bold mt-1">{selectedPlan?.name}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-medium text-white/70 uppercase tracking-wider">Pay with</p>
+                      <p className="text-lg font-bold mt-1">{paymentMethod === "wallet" ? "Wallet" : "Paystack"}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-white/70 uppercase tracking-wider">You Pay</p>
-                    <p className="text-2xl font-bold text-green-300 mt-1">GH₵ {planPrice.toFixed(2)}</p>
-                  </div>
+                  {paymentMethod === "paystack" ? (
+                    <div className="flex flex-col items-end gap-0.5 text-sm border-t border-white/20 pt-3 text-white/95">
+                      <div className="flex justify-between w-full max-w-[240px] gap-4">
+                        <span className="text-white/70">Bundle price</span>
+                        <span>GH₵ {planPrice.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between w-full max-w-[240px] gap-4">
+                        <span className="text-white/70">Fee (5%)</span>
+                        <span>GH₵ {planPaystackFee.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between w-full max-w-[240px] gap-4 font-bold text-green-300 text-lg mt-1">
+                        <span>Total</span>
+                        <span>GH₵ {planPaystackTotal.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-end border-t border-white/20 pt-3">
+                      <span className="text-sm font-medium text-white/70 uppercase tracking-wider">You pay</span>
+                      <p className="text-2xl font-bold text-green-300">GH₵ {planPrice.toFixed(2)}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             <CardContent className="p-6 sm:p-8 bg-card space-y-6">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2">Payment method</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentMethod("wallet")
+                      setError("")
+                    }}
+                    className={cn(
+                      "w-full p-3 rounded-lg border text-left transition-all",
+                      paymentMethod === "wallet" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                    )}
+                  >
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <Wallet className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <p className="font-semibold text-sm">Wallet</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">
+                      Bal: GH₵ {authUser ? authUser.walletBalance.toFixed(2) : "0.00"}
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentMethod("paystack")
+                      setError("")
+                    }}
+                    className={cn(
+                      "w-full p-3 rounded-lg border text-left transition-all",
+                      paymentMethod === "paystack" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                    )}
+                  >
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <ExternalLink className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <p className="font-semibold text-sm">Paystack</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">+5% processing fee</p>
+                  </button>
+                </div>
+              </div>
+
               <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50 border">
                 <AlertCircle className="w-5 h-5 text-muted-foreground shrink-0" />
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -658,16 +896,10 @@ export default function DataPage() {
                 <Button 
                   variant="outline" 
                   size="lg"
-                  onClick={() => {
-                    if (confirmTimerRef.current) {
-                      clearInterval(confirmTimerRef.current)
-                      confirmTimerRef.current = null
-                    }
-                    setStep("form")
-                  }} 
+                  onClick={closeConfirmToForm} 
                   className="flex-1"
                 >
-                  Edit Details
+                  Cancel
                 </Button>
                 <Button 
                   size="lg"
@@ -679,9 +911,19 @@ export default function DataPage() {
                     handleConfirm()
                   }} 
                   className="flex-1"
+                  disabled={paymentMethod === "wallet" && (!authUser || planPrice > authUser.walletBalance)}
                 >
-                  Confirm & Pay
-                  <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+                  {paymentMethod === "paystack" ? (
+                    <>
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Pay GH₵ {planPaystackTotal.toFixed(2)}
+                    </>
+                  ) : (
+                    <>
+                      Confirm & pay GH₵ {planPrice.toFixed(2)}
+                      <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+                    </>
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -948,17 +1190,81 @@ export default function DataPage() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-dashed">
-                  <div className="flex justify-between items-end mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">Total to Pay</span>
-                    <span className="text-3xl font-bold tracking-tight">GH₵ {planPrice.toFixed(2)}</span>
+                <div className="pt-4 border-t border-dashed space-y-4">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Payment method</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaymentMethod("wallet")
+                          setError("")
+                        }}
+                        className={cn(
+                          "w-full p-3 rounded-lg border text-left transition-all",
+                          paymentMethod === "wallet" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                        )}
+                      >
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <Wallet className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <p className="font-semibold text-sm">Wallet</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          GH₵ {authUser ? authUser.walletBalance.toFixed(2) : "0.00"}
+                        </p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaymentMethod("paystack")
+                          setError("")
+                        }}
+                        className={cn(
+                          "w-full p-3 rounded-lg border text-left transition-all",
+                          paymentMethod === "paystack" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                        )}
+                      >
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <ExternalLink className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <p className="font-semibold text-sm">Paystack</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">+5% fee</p>
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center text-sm mt-4">
+
+                  {paymentMethod === "paystack" ? (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Bundle price</span>
+                        <span className="font-medium">GH₵ {planPrice.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Fee (5%)</span>
+                        <span className="font-medium">GH₵ {planPaystackFee.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-end pt-1">
+                        <span className="text-sm font-medium text-muted-foreground">Total charge</span>
+                        <span className="text-3xl font-bold tracking-tight text-primary">GH₵ {planPaystackTotal.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-end">
+                      <span className="text-sm font-medium text-muted-foreground">Total to Pay</span>
+                      <span className="text-3xl font-bold tracking-tight">GH₵ {planPrice.toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center text-sm pt-1">
                     <span className="text-muted-foreground">Wallet Balance</span>
-                    <span className={cn(
-                      "font-medium",
-                      authUser && planPrice > authUser.walletBalance ? "text-destructive" : "text-green-600"
-                    )}>
+                    <span
+                      className={cn(
+                        "font-medium",
+                        paymentMethod === "wallet" && authUser && planPrice > authUser.walletBalance
+                          ? "text-destructive"
+                          : "text-green-600"
+                      )}
+                    >
                       GH₵ {authUser ? authUser.walletBalance.toFixed(2) : "0.00"}
                     </span>
                   </div>
@@ -969,7 +1275,13 @@ export default function DataPage() {
                     size="lg"
                     className="w-full h-14 text-base font-bold shadow-lg transition-transform hover:scale-[1.02]"
                     onClick={handleProceed}
-                    disabled={!selectedNetwork || phone.length < 9 || !selectedPlan || plansLoading}
+                    disabled={
+                      !selectedNetwork ||
+                      phone.length < 9 ||
+                      !selectedPlan ||
+                      plansLoading ||
+                      (paymentMethod === "wallet" && (!authUser || planPrice > authUser.walletBalance))
+                    }
                   >
                     Proceed to Pay
                   </Button>
@@ -994,14 +1306,7 @@ export default function DataPage() {
       {/* Processing/Outcome Modal */}
       <Dialog open={["processing", "success", "failed"].includes(step)} onOpenChange={(open) => {
         if (!open) {
-          if (successTimerRef.current) {
-            clearInterval(successTimerRef.current)
-            successTimerRef.current = null
-          }
-          if (step !== "processing") {
-            setStep("form")
-            setSelectedPlan(null)
-          }
+          dismissOutcomeDialogToForm()
         }
       }}>
         <DialogContent className="sm:max-w-md p-8">
@@ -1110,20 +1415,12 @@ export default function DataPage() {
                   </div>
                 )}
                 <Button onClick={() => {
-                  if (successTimerRef.current) {
-                    clearInterval(successTimerRef.current)
-                    successTimerRef.current = null
-                  }
-                  setSelectedPlan(null)
-                  setStep("form")
+                  dismissOutcomeDialogToForm()
                 }} variant="outline" className="w-full h-12">
                   Buy Another
                 </Button>
                 <Button onClick={() => {
-                  if (successTimerRef.current) {
-                    clearInterval(successTimerRef.current)
-                    successTimerRef.current = null
-                  }
+                  dismissOutcomeDialogToForm()
                   router.push("/dashboard")
                 }} className="w-full h-12">
                   Return to Dashboard
@@ -1135,7 +1432,7 @@ export default function DataPage() {
             )}
             
             {step === "failed" && (
-              <Button onClick={() => { setStep("form"); setError("") }} className="w-full h-12">
+              <Button onClick={() => { dismissOutcomeDialogToForm() }} className="w-full h-12">
                 Try Again
               </Button>
             )}

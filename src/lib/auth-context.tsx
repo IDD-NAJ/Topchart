@@ -25,9 +25,16 @@ type MeFetchResult =
 
 let _meInFlight: Promise<MeFetchResult> | null = null;
 
+function invalidateMeRequest() {
+  _meInFlight = null;
+}
+
 async function fetchMeOnce(): Promise<MeFetchResult> {
   try {
-    const response = await fetch("/api/auth/me", { credentials: "include" });
+    const response = await fetch("/api/auth/me", {
+      credentials: "include",
+      cache: "no-store",
+    });
     let payload: MePayload | null = null;
     try {
       payload = (await response.json()) as MePayload;
@@ -52,7 +59,10 @@ function fetchMe(): Promise<MeFetchResult> {
 // Fetch NextAuth session
 async function fetchNextAuthSession(): Promise<User | null> {
   try {
-    const response = await fetch("/api/auth/session", { credentials: "include" });
+    const response = await fetch("/api/auth/session", {
+      credentials: "include",
+      cache: "no-store",
+    });
     if (!response.ok) return null;
     const session = await response.json();
     if (session?.user?.id) {
@@ -139,18 +149,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [secondsRemaining, setSecondsRemaining] = useState(30);
   const router = useRouter();
   const pathname = usePathname();
-  const logoutInFlightRef = useRef(false);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
   const warningTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
-  const preloadTimerRef = useRef<NodeJS.Timeout | null>(null);
   const authCompleteRef = useRef(false);
+  const refreshSequenceRef = useRef(0);
+
+  const invalidateAuthState = useCallback(() => {
+    refreshSequenceRef.current += 1;
+    invalidateMeRequest();
+  }, []);
 
   const refreshUser = useCallback(async () => {
+    const requestId = ++refreshSequenceRef.current;
+
     try {
       // First try legacy session
       const result = await fetchMe();
+      if (requestId !== refreshSequenceRef.current) return;
       if (result.kind === "network") {
         console.warn("Network error during user refresh");
         return;
@@ -158,6 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (result.status >= 200 && result.status < 300) {
         const body = result.payload;
         if (body?.success && body.user) {
+          if (requestId !== refreshSequenceRef.current) return;
           setUser(mapServerUser(body.user));
           return;
         }
@@ -165,6 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // If no legacy session, try NextAuth session
       const nextAuthUser = await fetchNextAuthSession();
+      if (requestId !== refreshSequenceRef.current) return;
       if (nextAuthUser) {
         setUser(nextAuthUser);
         return;
@@ -173,6 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (result.status !== 401) {
         console.error("Failed to refresh user:", result.status);
       }
+      if (requestId !== refreshSequenceRef.current) return;
       setUser(null);
     } catch (error) {
       if (error instanceof Error &&
@@ -184,6 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       console.error("Failed to refresh user:", error);
+      if (requestId !== refreshSequenceRef.current) return;
       setUser(null);
     }
   }, []);
@@ -223,6 +244,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [refreshUser]);
 
+  useEffect(() => {
+    const handleAuthChanged = () => {
+      invalidateAuthState();
+    };
+
+    window.addEventListener("auth:changed", handleAuthChanged);
+    return () => window.removeEventListener("auth:changed", handleAuthChanged);
+  }, [invalidateAuthState]);
+
   const login = async (
     email: string,
     password: string
@@ -242,7 +272,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const result = await response.json();
 
-      if (result.success && result.user) {
+      if (result.success && result.user && result.token && result.expiresAt) {
+        invalidateAuthState();
         const u = mapServerUser(result.user);
         setUser(u);
         return { success: true, user: u };
@@ -286,6 +317,7 @@ const register = async (
         console.log("Auth-context register response status:", response.status);
 
         if (result.success && result.user) {
+          invalidateAuthState();
           setUser(mapServerUser(result.user));
           return { success: true };
         }
@@ -297,8 +329,9 @@ const register = async (
       }
     };
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
+      invalidateAuthState();
       // Sign out from NextAuth
       await fetch("/api/auth/signout", {
         method: "POST",
@@ -318,7 +351,7 @@ const register = async (
     } finally {
       setUser(null);
     }
-  };
+  }, [invalidateAuthState]);
 
   // Inactivity tracking - Auto logout after 5 minutes
   const clearAllTimers = useCallback(() => {
@@ -402,18 +435,6 @@ const register = async (
       clearAllTimers();
     };
   }, [user, resetInactivityTimer, clearAllTimers]);
-
-  // Tab close logout - invalidate session when user closes the tab
-  useEffect(() => {
-    if (!user) return;
-
-    const handleUnload = () => {
-      navigator.sendBeacon("/api/auth/logout");
-    };
-
-    window.addEventListener("beforeunload", handleUnload);
-    return () => window.removeEventListener("beforeunload", handleUnload);
-  }, [user]);
 
   // Don't track inactivity on auth pages
   const isAuthPage = pathname?.startsWith('/login') || pathname?.startsWith('/register');

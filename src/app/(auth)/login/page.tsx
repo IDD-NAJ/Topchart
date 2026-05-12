@@ -88,8 +88,10 @@ export default function LoginPage() {
 
       if (result.success) {
         const destination = result.user && isAdmin(result.user.role) ? "/admin" : "/dashboard"
-        router.push(destination)
-        router.refresh()
+        window.dispatchEvent(new Event("auth:changed"))
+        setTimeout(() => {
+          window.location.href = destination
+        }, 300)
       } else {
         setError(result.error || "Invalid email or password")
         setIsLoading(false)

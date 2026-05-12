@@ -2,9 +2,8 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { useHomepageMedia } from "@/hooks/use-homepage-media"
-import { ResponsiveMedia } from "@/components/responsive-media"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import {
@@ -72,6 +71,91 @@ const DEFAULT_NETWORK_LOGOS: NetworkLogoConfig[] = [
 ]
 
 const DEFAULT_DEVELOPER_IMAGE = "/images/technical-partnership.jpg"
+
+const HERO_BACKGROUND_VIDEOS = [
+  "/homepage/15229-262569933_medium.mp4",
+  "/homepage/8501-210166782_medium.mp4",
+]
+
+const SCALE_SLIDE_IMAGES = [
+  "/homepage/albertoadan-aerial-1880873_1920.jpg",
+  "/homepage/hbieser-ghana-684554_1920",
+]
+
+function HeroBackgroundVideoSlider() {
+  const [activeIndex, setActiveIndex] = useState(0)
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
+
+  useEffect(() => {
+    videoRefs.current.forEach((el, i) => {
+      if (!el) return
+      if (i === activeIndex) {
+        el.currentTime = 0
+        void el.play().catch(() => {})
+      } else {
+        el.pause()
+      }
+    })
+  }, [activeIndex])
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setActiveIndex((i) => (i + 1) % HERO_BACKGROUND_VIDEOS.length)
+    }, 9000)
+    return () => clearInterval(id)
+  }, [activeIndex])
+
+  return (
+    <div className="absolute inset-0 h-full w-full opacity-40 pointer-events-none" aria-hidden>
+      {HERO_BACKGROUND_VIDEOS.map((src, i) => (
+        <video
+          key={src}
+          ref={(el) => {
+            videoRefs.current[i] = el
+          }}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${i === activeIndex ? "opacity-100 z-[1]" : "opacity-0 z-0"
+            }`}
+          src={src}
+          muted
+          playsInline
+          preload="metadata"
+          loop={false}
+          onEnded={() => {
+            if (i !== activeIndex) return
+            setActiveIndex((x) => (x + 1) % HERO_BACKGROUND_VIDEOS.length)
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function ScaleConfidenceImageSlider() {
+  const [activeIndex, setActiveIndex] = useState(0)
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setActiveIndex((i) => (i + 1) % SCALE_SLIDE_IMAGES.length)
+    }, 7000)
+    return () => clearInterval(id)
+  }, [])
+
+  return (
+    <>
+      {SCALE_SLIDE_IMAGES.map((src, i) => (
+        <motion.div
+          key={src}
+          className="absolute inset-0"
+          animate={{ opacity: i === activeIndex ? 1 : 0 }}
+          transition={{ duration: 1, ease: "easeInOut" }}
+          aria-hidden
+        >
+          <Image src={src} alt="" fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" loading="lazy" />
+        </motion.div>
+      ))}
+    </>
+  )
+}
 
 function TopographicBg() {
   return (
@@ -461,8 +545,6 @@ const DEFAULT_TESTIMONIALS: TestimonialItem[] = [
 export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
   const [networkLogos, setNetworkLogos] = useState<NetworkLogoConfig[]>(DEFAULT_NETWORK_LOGOS)
   const [developerImage, setDeveloperImage] = useState(DEFAULT_DEVELOPER_IMAGE)
-  const [heroMedia, setHeroMedia] = useState<{ type: "image" | "video"; url: string } | null>(null)
-  const [scaleMedia, setScaleMedia] = useState<{ type: "image" | "video"; url: string } | null>(null)
   const [logoErrorKeys, setLogoErrorKeys] = useState<Record<string, boolean>>({})
   const [services, setServices] = useState<ServiceItem[]>(DEFAULT_SERVICES)
   const [faqs, setFaqs] = useState<FAQItem[]>(DEFAULT_FAQS)
@@ -472,22 +554,6 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
 
   useEffect(() => {
     if (mediaLoading || !media.length) return
-
-    const hero = media.find((m) =>
-      (m.slot_key === "hero_background" || m.section_key === "hero_background_video") && m.is_active
-    )
-    if (hero) {
-      const url = hero.file_url || hero.public_url || hero.storage_path
-      if (url) setHeroMedia({ type: hero.media_type ?? hero.asset_type ?? "video", url })
-    }
-
-    const scale = media.find((m) =>
-      (m.slot_key === "scale_background_video" || m.section_key === "scale_background_video") && m.is_active
-    )
-    if (scale) {
-      const url = scale.file_url || scale.public_url || scale.storage_path
-      if (url) setScaleMedia({ type: scale.media_type ?? scale.asset_type ?? "video", url })
-    }
 
     const devImg = media.find((m) =>
       (m.slot_key === "developer_community_image" || m.section_key === "developer_community_image") && m.is_active
@@ -559,26 +625,7 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
         <section
           className="relative overflow-hidden px-4 pb-32 pt-20 sm:px-6 sm:pb-40 sm:pt-28 lg:pt-36 selection:bg-primary/30 selection:text-white flex min-h-[85vh] flex-col items-center justify-center bg-[#0d1627]"
         >
-          {heroMedia ? (
-            <div className="absolute inset-0 h-full w-full opacity-40">
-              <ResponsiveMedia
-                src={heroMedia.url}
-                alt="Topchart Hero Background"
-                type={heroMedia.type}
-                fill
-                priority
-                loadingPriority="eager"
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="metadata"
-                className="object-cover"
-                sizes="100vw"
-                onError={() => setHeroMedia(null)}
-              />
-            </div>
-          ) : null}
+          <HeroBackgroundVideoSlider />
           <div className="absolute inset-0 bg-gradient-to-b from-[#0d1627]/80 via-[#0d1627]/60 to-[#0d1627] pointer-events-none" />
           <ConnectionsGrid />
           
@@ -748,23 +795,7 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
             </ScrollReveal>
             <ScrollReveal once={false} amount={0.22}>
               <div className="relative aspect-video overflow-hidden rounded-3xl bg-neutral-200/80 shadow-lg">
-                {scaleMedia ? (
-                  <ResponsiveMedia
-                    src={scaleMedia.url}
-                    alt="Scale with Confidence"
-                    type={scaleMedia.type}
-                    fill
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    preload="metadata"
-                    loadingPriority="lazy"
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                    onError={() => setScaleMedia(null)}
-                  />
-                ) : null}
+                <ScaleConfidenceImageSlider />
               </div>
             </ScrollReveal>
           </div>
