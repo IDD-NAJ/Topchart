@@ -3,6 +3,9 @@ import { billService } from "@/lib/bills/service";
 import { requireAuth } from "@/lib/auth";
 import { sql } from "@/lib/db";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ reference: string }> }
