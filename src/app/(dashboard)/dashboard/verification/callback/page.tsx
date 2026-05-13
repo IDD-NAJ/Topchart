@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/networks"
 import { cn } from "@/lib/utils"
-import { Loader2, CheckCircle, XCircle, Copy, Check, ArrowLeft, RefreshCw, MessageSquare, History } from "lucide-react"
+import { Loader2, CheckCircle, XCircle, Copy, Check, ArrowLeft, RefreshCw, MessageSquare, History, AlertCircle } from "lucide-react"
 
 type State =
   | { phase: "verifying" }
@@ -233,6 +233,15 @@ function CallbackContent() {
               <p className="text-xs text-muted-foreground">
                 Use this number on the target platform. You can monitor SMS from your verification dashboard.
               </p>
+
+              <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 px-4 py-3 flex items-start gap-2.5">
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                  If SMS is not received within <span className="font-semibold">7 minutes</span>, go to{" "}
+                  <span className="font-semibold">Verification History</span> and click{" "}
+                  <span className="font-semibold">Cancel</span> to get a refund.
+                </p>
+              </div>
 
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button variant="outline" asChild className="w-full sm:flex-1 gap-2">

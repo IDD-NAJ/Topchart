@@ -1508,16 +1508,26 @@ export default function VerificationPage() {
                     )}
                   </div>
                 </div>
-                <div className="shrink-0 border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5 flex flex-col sm:flex-row gap-2">
-                  <Button variant="outline" className="w-full sm:flex-1 gap-2" asChild>
-                    <Link href="/dashboard/verification/history">
-                      <History className="h-4 w-4" />
-                      Verification History
-                    </Link>
-                  </Button>
-                  <Button className="w-full sm:flex-1" onClick={closeModal}>
-                    Done
-                  </Button>
+                <div className="shrink-0 border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5 space-y-3">
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 px-3 py-2.5 flex items-start gap-2">
+                    <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                      If SMS is not received within <span className="font-semibold">7 minutes</span>, go to{" "}
+                      <span className="font-semibold">Verification History</span> and click{" "}
+                      <span className="font-semibold">Cancel</span> to get a refund.
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button variant="outline" className="w-full sm:flex-1 gap-2" asChild>
+                      <Link href="/dashboard/verification/history">
+                        <History className="h-4 w-4" />
+                        Verification History
+                      </Link>
+                    </Button>
+                    <Button className="w-full sm:flex-1" onClick={closeModal}>
+                      Done
+                    </Button>
+                  </div>
                 </div>
                 </>
               ) : (
