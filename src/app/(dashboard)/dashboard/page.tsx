@@ -57,6 +57,29 @@ import { Suspense } from "react"
 import Loading from "./loading"
 import { cn } from "@/lib/utils"
 
+const TX_TYPE_LABELS: Record<string, string> = {
+  deposit: "Wallet Deposit",
+  airtime: "Airtime Purchase",
+  data: "Data Bundle",
+  referral: "Referral Bonus",
+  bonus: "Bonus Credit",
+  withdrawal: "Withdrawal",
+  refund: "Refund",
+  result_checker: "Result Checker",
+  esim: "eSIM Purchase",
+  proxy: "Proxy Purchase",
+  giftcard: "Gift Card",
+  bill: "Bill Payment",
+}
+
+const TX_STATUS_LABELS: Record<string, string> = {
+  success: "Success",
+  pending: "Pending",
+  failed: "Failed",
+  processing: "Processing",
+  refunded: "Refunded",
+}
+
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -706,7 +729,7 @@ export default function DashboardPage() {
                                   "text-[9px] uppercase font-bold h-4 px-1.5",
                                   tx.status === "success" ? "text-[#0052CC] bg-[#E6F0FF]/80 border-[#0052CC]/20" : "text-amber-600 bg-amber-50/50"
                                 )}>
-                                  {tx.status}
+                                  {TX_STATUS_LABELS[tx.status] ?? tx.status}
                                 </Badge>
                               </div>
                               {expandedTransaction === tx.id ? (
@@ -722,7 +745,7 @@ export default function DashboardPage() {
                               <div className="grid grid-cols-2 gap-2 text-xs">
                                 <div className="p-2 rounded bg-background border">
                                   <p className="text-muted-foreground font-bold uppercase">Type</p>
-                                  <p className="font-medium">{tx.type}</p>
+                                  <p className="font-medium">{TX_TYPE_LABELS[tx.type] ?? tx.type}</p>
                                 </div>
                                 <div className="p-2 rounded bg-background border">
                                   <p className="text-muted-foreground font-bold uppercase">Amount</p>

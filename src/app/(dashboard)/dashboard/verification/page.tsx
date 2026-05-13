@@ -508,14 +508,12 @@ export default function VerificationPage() {
 
   const [exchangeRate, setExchangeRate] = useState(15.5)
 
-  // SMSPVA provider state
+  // International numbers state (unified — mirrors PVADeals pattern)
   const [providerTab, setProviderTab] = useState<"usa" | "international">("usa")
-  const [smspvaServices, setSmspvaServices] = useState<Array<{ code: string; name: string; category: string; ghsPrice: number; baseUsdPrice: number }>>([]) 
-  const [smspvaCountries, setSmspvaCountries] = useState<Array<{ code: string; name: string; flag: string }>>([])
-  const [selectedSmspvaCountry, setSelectedSmspvaCountry] = useState("7")
-  const [smspvaServicesLoading, setSmspvaServicesLoading] = useState(false)
-  const [smspvaAvailability, setSmspvaAvailability] = useState<Record<string, { count: number; ghsPrice: number; available: boolean }>>({})
-  const [smspvaAvailabilityLoading, setSmspvaAvailabilityLoading] = useState(false)
+  const [intlNumbers, setIntlNumbers] = useState<Array<{ code: string; name: string; category: string; ghsPrice: number; baseUsdPrice: number; count: number; available: boolean }>>([])
+  const [intlCountries, setIntlCountries] = useState<Array<{ code: string; name: string; flag: string }>>([])
+  const [selectedSmspvaCountry, setSelectedSmspvaCountry] = useState("55")
+  const [intlLoading, setIntlLoading] = useState(false)
   const [smspvaCountrySearch, setSmspvaCountrySearch] = useState("")
   const [smspvaModal, setSmspvaModal] = useState<{
     open: boolean
@@ -599,36 +597,19 @@ export default function VerificationPage() {
     fetchAreaCodes()
   }, [modal.service, globalAreaCodes])
 
-  const fetchSmspvaServices = useCallback(async () => {
-    setSmspvaServicesLoading(true)
+  const fetchInternationalNumbers = useCallback(async (country: string) => {
+    setIntlLoading(true)
+    setIntlNumbers([])
     try {
-      const res = await fetch("/api/verification/smspva/services")
+      const res = await fetch(`/api/verification/smspva/numbers?country=${encodeURIComponent(country)}`)
       let data: any = null
       try { data = await res.json() } catch { /* non-JSON */ }
       if (data?.success) {
-        setSmspvaServices(data?.data?.services || [])
-        setSmspvaCountries(data?.data?.countries || [])
+        setIntlNumbers(data?.data?.services || [])
+        if (data?.data?.countries?.length > 0) setIntlCountries(data.data.countries)
       }
     } catch {}
-    finally { setSmspvaServicesLoading(false) }
-  }, [])
-
-  const fetchSmspvaAvailability = useCallback(async (country: string) => {
-    setSmspvaAvailabilityLoading(true)
-    setSmspvaAvailability({})
-    try {
-      const res = await fetch(`/api/verification/smspva/availability?country=${encodeURIComponent(country)}`)
-      let data: any = null
-      try { data = await res.json() } catch { /* non-JSON */ }
-      if (data?.success) {
-        const map: Record<string, { count: number; ghsPrice: number; available: boolean }> = {}
-        for (const svc of (data?.data?.services || [])) {
-          map[svc.code] = { count: svc.count, ghsPrice: svc.ghsPrice, available: svc.available }
-        }
-        setSmspvaAvailability(map)
-      }
-    } catch {}
-    finally { setSmspvaAvailabilityLoading(false) }
+    finally { setIntlLoading(false) }
   }, [])
 
   const handleSmspvaPurchase = async () => {
@@ -742,7 +723,7 @@ export default function VerificationPage() {
       let data: any = null
       try { data = await res.json() } catch { /* non-JSON response */ }
       if (data?.success) {
-        toast({ title: "Synced", description: data?.data?.message || "Services synced from PVADeals" })
+        toast({ title: "Synced", description: data?.data?.message || "Services synced successfully" })
         fetchAdminServices()
         fetchServices()
       } else {
@@ -768,21 +749,20 @@ export default function VerificationPage() {
     fetchServices()
     fetchActiveNumbers()
     fetchGlobalSettings()
-    fetchSmspvaServices()
     const stored = typeof window !== "undefined" ? localStorage.getItem("smspva_country") : null
     if (stored) setSelectedSmspvaCountry(stored)
-  }, [fetchServices, fetchActiveNumbers, refreshUser, fetchGlobalSettings, fetchSmspvaServices])
+  }, [fetchServices, fetchActiveNumbers, refreshUser, fetchGlobalSettings])
 
   useEffect(() => {
     if (providerTab !== "international") return
     if (typeof window !== "undefined") localStorage.setItem("smspva_country", selectedSmspvaCountry)
-    fetchSmspvaAvailability(selectedSmspvaCountry)
-  }, [selectedSmspvaCountry, providerTab, fetchSmspvaAvailability])
+    fetchInternationalNumbers(selectedSmspvaCountry)
+  }, [selectedSmspvaCountry, providerTab, fetchInternationalNumbers])
 
   const handleProviderTabChange = (tab: "usa" | "international") => {
     setProviderTab(tab)
-    if (tab === "international" && Object.keys(smspvaAvailability).length === 0) {
-      fetchSmspvaAvailability(selectedSmspvaCountry)
+    if (tab === "international" && intlNumbers.length === 0) {
+      fetchInternationalNumbers(selectedSmspvaCountry)
     }
   }
 
@@ -904,11 +884,11 @@ export default function VerificationPage() {
         let errorMsg = data?.error || "Purchase failed"
         if (res.status === 502) {
           if (data?.code === "PROVIDER_SERVICES") {
-            errorMsg = "Verification provider unavailable — check API configuration or try again later"
+            errorMsg = "Verification service temporarily unavailable — please try again later"
           } else if (data?.code === "PROVIDER_PURCHASE") {
-            errorMsg = data?.error || "Provider purchase failed — please try again shortly"
+            errorMsg = data?.error || "Purchase failed — please try again shortly"
           } else if (data?.code === "INSUFFICIENT_CREDITS") {
-            errorMsg = data?.error || "Provider temporarily out of credits — try again in a few minutes"
+            errorMsg = data?.error || "Service temporarily unavailable — try again in a few minutes"
           }
         }
         setModal(m => ({ ...m, purchasing: false, error: errorMsg }))
@@ -982,7 +962,7 @@ export default function VerificationPage() {
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Number Verification</h1>
           <p className="text-muted-foreground mt-1.5 text-xs sm:text-sm leading-relaxed">
-            Get temporary phone numbers for SMS verification — USA numbers via PVADeals or international numbers from 20+ countries via SMSPVA.
+            Get temporary phone numbers for SMS verification — USA numbers (STR/LTR) and international numbers from 20+ countries.
           </p>
         </div>
         <Link href="/dashboard/verification/history" className="shrink-0 self-start">
@@ -1031,7 +1011,7 @@ export default function VerificationPage() {
                       disabled={adminSyncing}
                     >
                       {adminSyncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-                      Sync from PVADeals
+                      Sync Services
                     </Button>
                     <Link href="/admin/verification/pricing">
                       <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5 border-amber-300">
@@ -1048,7 +1028,7 @@ export default function VerificationPage() {
                   </div>
                 ) : adminServices.length === 0 ? (
                   <div className="text-center py-6">
-                    <p className="text-sm text-muted-foreground">No services found. Sync from PVADeals to populate.</p>
+                    <p className="text-sm text-muted-foreground">No services found. Use Sync Services to populate.</p>
                   </div>
                 ) : (
                   <>
@@ -1263,7 +1243,6 @@ export default function VerificationPage() {
           )}
         >
           🇺🇸 <span>USA Numbers</span>
-          <Badge variant="outline" className="text-[10px] h-4 px-1.5 hidden sm:flex">PVADeals</Badge>
         </button>
         <button
           type="button"
@@ -1274,7 +1253,6 @@ export default function VerificationPage() {
           )}
         >
           <Globe className="h-4 w-4" /> <span>International</span>
-          <Badge variant="outline" className="text-[10px] h-4 px-1.5 hidden sm:flex">SMSPVA</Badge>
         </button>
       </div>
 
@@ -1302,7 +1280,7 @@ export default function VerificationPage() {
                         onKeyDown={(e) => e.stopPropagation()}
                       />
                     </div>
-                    {smspvaCountries
+                    {intlCountries
                       .filter((c) =>
                         smspvaCountrySearch === "" ||
                         c.name.toLowerCase().includes(smspvaCountrySearch.toLowerCase())
@@ -1320,14 +1298,14 @@ export default function VerificationPage() {
                 </Select>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                {smspvaAvailabilityLoading ? (
+                {intlLoading ? (
                   <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     Checking availability…
                   </span>
-                ) : Object.keys(smspvaAvailability).length > 0 ? (
+                ) : intlNumbers.length > 0 ? (
                   <span className="text-xs text-muted-foreground">
-                    {Object.values(smspvaAvailability).filter(a => a.available).length} services available
+                    {intlNumbers.filter(s => s.available).length} services available
                   </span>
                 ) : null}
                 <p className="text-xs text-muted-foreground hidden sm:block">STR 20-min · Wallet</p>
@@ -1335,14 +1313,14 @@ export default function VerificationPage() {
             </div>
           </div>
 
-          {smspvaServicesLoading ? (
+          {intlLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : (
             <div>
               {CATEGORIES.map((cat) => {
-                const catSvcs = smspvaServices.filter(s => s.category === cat.id)
+                const catSvcs = intlNumbers.filter(s => s.category === cat.id)
                 if (catSvcs.length === 0) return null
                 const CatIcon = cat.icon
                 return (
@@ -1353,11 +1331,9 @@ export default function VerificationPage() {
                     </div>
                     <div className="grid gap-2 sm:gap-4 grid-cols-2 min-[380px]:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6">
                       {catSvcs.map((svc) => {
-                        const avail = smspvaAvailability[svc.code]
-                        const availChecked = Object.keys(smspvaAvailability).length > 0
-                        const isAvailable = !availChecked || (avail?.available ?? true)
-                        const displayPrice = avail?.ghsPrice ?? svc.ghsPrice
-                        const count = avail?.count ?? 0
+                        const isAvailable = svc.available
+                        const displayPrice = svc.ghsPrice
+                        const count = svc.count
                         return (
                           <motion.div
                             key={svc.code}
@@ -1376,7 +1352,7 @@ export default function VerificationPage() {
                                 </div>
                                 <div className="flex items-center justify-between gap-1 flex-wrap">
                                   <p className="font-semibold text-xs text-primary">{formatCurrency(displayPrice)}</p>
-                                  {availChecked && smspvaAvailabilityLoading === false && (
+                                  {!intlLoading && (
                                     isAvailable ? (
                                       <Badge variant="outline" className="text-[9px] h-4 px-1 text-green-600 border-green-300 bg-green-50 dark:bg-green-950/30">
                                         {count > 99 ? "99+" : count} avail.
@@ -1667,8 +1643,8 @@ export default function VerificationPage() {
                 <div className="min-w-0 mr-2">
                   <h2 className="font-semibold text-sm sm:text-base truncate">{smspvaModal.serviceName}</h2>
                   <p className="text-xs text-muted-foreground">
-                    {smspvaCountries.find(c => c.code === selectedSmspvaCountry)?.flag}{" "}
-                    {smspvaCountries.find(c => c.code === selectedSmspvaCountry)?.name} · STR 20-min
+                    {intlCountries.find((c: any) => c.code === selectedSmspvaCountry)?.flag}{" "}
+                    {intlCountries.find((c: any) => c.code === selectedSmspvaCountry)?.name} · STR 20-min
                   </p>
                 </div>
                 <button
@@ -1711,7 +1687,7 @@ export default function VerificationPage() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Country</span>
-                        <span className="text-sm">{smspvaCountries.find(c => c.code === selectedSmspvaCountry)?.flag} {smspvaCountries.find(c => c.code === selectedSmspvaCountry)?.name}</span>
+                        <span className="text-sm">{intlCountries.find((c: any) => c.code === selectedSmspvaCountry)?.flag} {intlCountries.find((c: any) => c.code === selectedSmspvaCountry)?.name}</span>
                       </div>
                       <div className="flex items-center justify-between border-t pt-3">
                         <span className="text-sm font-medium">Price</span>

@@ -16,6 +16,7 @@ import {
   MessageSquare,
   ShieldAlert,
   MoreHorizontal,
+  HelpCircle,
   PhoneCall,
   GraduationCap,
   Store,
@@ -50,6 +51,7 @@ const moreNavItems = [
   { href: "/dashboard/wallet", label: "My Wallet", icon: CreditCard },
   { href: "/dashboard/profile", label: "Profile Settings", icon: User },
   { href: "/dashboard/tickets", label: "Support Tickets", icon: MessageSquare },
+  { href: "/dashboard/faq", label: "Help & FAQ", icon: HelpCircle },
   { href: "/dashboard/disputes", label: "Disputes", icon: ShieldAlert },
 ]
 

@@ -256,7 +256,7 @@ export default function WalletPage() {
                         {tx.type === 'deposit' ? '+' : '-'}{formatCurrency(tx.amount)}
                       </p>
                       <p className={`text-xs ${getStatusColor(tx.status)}`}>
-                        {tx.status}
+                        {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
                       </p>
                     </div>
                   </div>

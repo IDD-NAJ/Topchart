@@ -18,10 +18,24 @@ export interface TicketMessage {
   createdAt: Date;
 }
 
+export const TICKET_CATEGORIES = [
+  "General",
+  "Payment & Billing",
+  "Account & Security",
+  "Data & Airtime",
+  "Verification Numbers",
+  "Technical Issue",
+  "Reseller",
+  "Other",
+] as const;
+
+export type TicketCategory = (typeof TICKET_CATEGORIES)[number];
+
 export interface Ticket {
   id: string;
   userId: string;
   subject: string;
+  category: string;
   status: TicketStatus;
   priority: TicketPriority;
   channel: TicketChannel;
@@ -71,23 +85,26 @@ export async function createTicket(data: {
   subject: string;
   message: string;
   priority?: TicketPriority;
+  category?: string;
 }) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
 
   const ticketId = `TKT-${nanoid(10).toUpperCase()}`;
   const now = new Date();
+  const category = data.category || "General";
 
   await sql`
-    INSERT INTO tickets (id, "userId", subject, status, priority, channel, "createdAt", "updatedAt")
+    INSERT INTO tickets (id, "userId", subject, category, status, priority, channel, "createdAt", "updatedAt")
     VALUES (
-      ${ticketId}, 
-      ${user.id}, 
-      ${data.subject}, 
-      'OPEN'::"TicketStatus", 
-      ${data.priority || 'MEDIUM'}::"TicketPriority", 
-      'IN_APP'::"TicketChannel", 
-      ${now}, 
+      ${ticketId},
+      ${user.id},
+      ${data.subject},
+      ${category},
+      'OPEN'::"TicketStatus",
+      ${data.priority || 'MEDIUM'}::"TicketPriority",
+      'IN_APP'::"TicketChannel",
+      ${now},
       ${now}
     )
   `;
@@ -96,15 +113,49 @@ export async function createTicket(data: {
   await sql`
     INSERT INTO ticket_messages (id, "ticketId", "senderType", body, "createdAt")
     VALUES (
-      ${messageId}, 
-      ${ticketId}, 
-      'USER'::"TicketSenderType", 
-      ${data.message}, 
+      ${messageId},
+      ${ticketId},
+      'USER'::"TicketSenderType",
+      ${data.message},
       ${now}
     )
   `;
 
   return { id: ticketId };
+}
+
+export async function closeTicket(ticketId: string) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const ticketResult = await sql`
+    SELECT id FROM tickets WHERE id = ${ticketId} AND "userId" = ${user.id}
+  `;
+  if (!ticketResult || ticketResult.length === 0) throw new Error("Ticket not found or unauthorized");
+
+  const now = new Date();
+  await sql`
+    UPDATE tickets SET status = 'CLOSED'::"TicketStatus", "updatedAt" = ${now}
+    WHERE id = ${ticketId}
+  `;
+  return { ok: true };
+}
+
+export async function reopenTicket(ticketId: string) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const ticketResult = await sql`
+    SELECT id FROM tickets WHERE id = ${ticketId} AND "userId" = ${user.id}
+  `;
+  if (!ticketResult || ticketResult.length === 0) throw new Error("Ticket not found or unauthorized");
+
+  const now = new Date();
+  await sql`
+    UPDATE tickets SET status = 'OPEN'::"TicketStatus", "updatedAt" = ${now}
+    WHERE id = ${ticketId}
+  `;
+  return { ok: true };
 }
 
 export async function sendTicketMessage(ticketId: string, body: string) {

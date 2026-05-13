@@ -75,6 +75,7 @@ const secondaryItems = [
   { href: "/dashboard/profile", label: "Profile Settings", icon: User },
   { href: "/dashboard/wallet", label: "My Wallet", icon: CreditCard },
   { href: "/dashboard/tickets", label: "Support Tickets", icon: MessageSquare },
+  { href: "/dashboard/faq", label: "Help & FAQ", icon: HelpCircle },
   { href: "/dashboard/disputes", label: "My Disputes", icon: ShieldAlert },
 ]
 

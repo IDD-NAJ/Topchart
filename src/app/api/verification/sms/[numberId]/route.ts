@@ -28,11 +28,21 @@ export async function GET(
 
     const userId = sessions[0].user_id;
 
-    const numbers = await sql`
-      SELECT vn.id, vn.pvadeals_request_id, vn.status, vn.expires_at, vn.metadata
-      FROM verification_numbers vn
-      WHERE vn.id = ${numberId} AND vn.user_id = ${userId}
-    `;
+    let numbers: any[];
+    try {
+      numbers = await sql`
+        SELECT vn.id, vn.pvadeals_request_id, vn.status, vn.expires_at,
+               vn.metadata
+        FROM verification_numbers vn
+        WHERE vn.id = ${numberId} AND vn.user_id = ${userId}
+      ` as any[];
+    } catch {
+      numbers = await sql`
+        SELECT vn.id, vn.pvadeals_request_id, vn.status, vn.expires_at
+        FROM verification_numbers vn
+        WHERE vn.id = ${numberId} AND vn.user_id = ${userId}
+      ` as any[];
+    }
 
     if (numbers.length === 0) {
       return NextResponse.json({ success: false, error: "Number not found" }, { status: 404 });

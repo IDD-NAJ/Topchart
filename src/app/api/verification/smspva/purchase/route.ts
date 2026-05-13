@@ -4,10 +4,11 @@ import { v4 as uuidv4 } from "uuid";
 import { sql } from "@/lib/db";
 import { isSmspvaConfigured } from "@/lib/env";
 import {
-  SMSPVA_SERVICES,
   getSmspvaNumber,
+  getSmspvaCountAvailable,
   banSmspvaNumber,
   calculateSmspvaPrice,
+  SMSPVA_SERVICES,
 } from "@/lib/smspva";
 import { USD_TO_GHS_RATE, DEFAULT_MARKUP_PERCENT } from "@/lib/pvadeals";
 
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
   try {
     if (!isSmspvaConfigured()) {
       return NextResponse.json(
-        { success: false, error: "SMSPVA provider not configured", code: "NOT_CONFIGURED" },
+        { success: false, error: "International numbers are not available at this time", code: "NOT_CONFIGURED" },
         { status: 503 }
       );
     }
@@ -60,16 +61,57 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const serviceEntry = SMSPVA_SERVICES.find((s) => s.code === smspvaServiceCode);
-    if (!serviceEntry) {
-      return NextResponse.json({ success: false, error: "Unknown SMSPVA service code" }, { status: 400 });
+    // ── Resolve service from DB; fall back to verified static list ──────────────
+    let serviceName_resolved = serviceName as string | undefined;
+    let baseUsdPrice = 0.10;
+    let markupPct = DEFAULT_MARKUP_PERCENT;
+    let exchangeRate = USD_TO_GHS_RATE;
+
+    try {
+      const [dbSvc, dbRate] = await Promise.all([
+        sql`SELECT name, base_usd_price, markup_percentage FROM smspva_services WHERE service_code = ${smspvaServiceCode} AND is_active = TRUE`.catch(() => []),
+        sql`SELECT value FROM app_settings WHERE key = 'exchange_rate'`.catch(() => []),
+      ]);
+      if ((dbSvc as any[]).length > 0) {
+        serviceName_resolved = serviceName_resolved || (dbSvc as any[])[0].name;
+        baseUsdPrice = parseFloat(String((dbSvc as any[])[0].base_usd_price));
+        markupPct = parseFloat(String((dbSvc as any[])[0].markup_percentage));
+      } else {
+        // Not in DB — try static fallback list
+        const fallback = SMSPVA_SERVICES.find((s) => s.code === smspvaServiceCode);
+        if (!fallback) {
+          return NextResponse.json({ success: false, error: "This service is not available" }, { status: 400 });
+        }
+        serviceName_resolved = serviceName_resolved || fallback.name;
+        baseUsdPrice = fallback.baseUsdPrice;
+      }
+      if ((dbRate as any[]).length > 0) {
+        exchangeRate = parseFloat(String((dbRate as any[])[0].value)) || exchangeRate;
+      }
+    } catch {
+      // DB unavailable — use static fallback
+      const fallback = SMSPVA_SERVICES.find((s) => s.code === smspvaServiceCode);
+      if (!fallback) {
+        return NextResponse.json({ success: false, error: "This service is not available" }, { status: 400 });
+      }
+      serviceName_resolved = serviceName_resolved || fallback.name;
+      baseUsdPrice = fallback.baseUsdPrice;
     }
 
-    const price = calculateSmspvaPrice(
-      serviceEntry.baseUsdPrice,
-      USD_TO_GHS_RATE,
-      DEFAULT_MARKUP_PERCENT
-    );
+    // ── Pre-purchase: verify live stock + use live API cost ──────────────────────
+    const stockCheck = await getSmspvaCountAvailable(smspvaServiceCode, countryCode);
+    if (stockCheck.count === 0) {
+      return NextResponse.json(
+        { success: false, error: "No numbers are available for this service right now. Please try a different country or check back later.", code: "NO_STOCK" },
+        { status: 503 }
+      );
+    }
+    // Prefer live API cost over static price (same as PVADeals using live prices)
+    if (stockCheck.costUsd && stockCheck.costUsd > 0) {
+      baseUsdPrice = stockCheck.costUsd;
+    }
+
+    const price = calculateSmspvaPrice(baseUsdPrice, exchangeRate, markupPct);
 
     if (walletBalance < price) {
       return NextResponse.json(
@@ -85,16 +127,39 @@ export async function POST(request: NextRequest) {
     const purchaseResult = await getSmspvaNumber(smspvaServiceCode, countryCode);
     if (!purchaseResult.ok) {
       console.error(`[${correlationId}] SMSPVA get_number failed:`, purchaseResult.error);
+
+      // Map SMSPVA response codes to meaningful HTTP statuses
+      const rc = (purchaseResult as any).responseCode;
+      const errMsg = purchaseResult.error || "Failed to get number from provider";
+      const isNoNumbers = rc === "2" || /no.*(number|avail)/i.test(errMsg);
+      const isWrongService = rc === "10" || /wrong.*service/i.test(errMsg);
+      const isProviderBalance = rc === "3" || /balance|credit|fund/i.test(errMsg);
+      const isApiError = rc === "error" || rc === "";
+      const isNetworkError = !rc && /network|timeout|ECONNREFUSED|fetch|HTTP/i.test(errMsg);
+
+      const httpStatus = isWrongService ? 400 : isNetworkError ? 502 : 503;
+      const userMessage = isNoNumbers
+        ? "No numbers are available for this service right now. Please try a different country or check back later."
+        : isWrongService
+        ? "This service is not supported at the moment."
+        : isProviderBalance
+        ? "International numbers are temporarily unavailable. Please contact support."
+        : isApiError
+        ? "International numbers are currently unavailable. Please try again later."
+        : isNetworkError
+        ? "Could not connect to the provider. Please try again in a few moments."
+        : "Failed to get a number. Please try again.";
+
       return NextResponse.json(
-        { success: false, error: purchaseResult.error || "Failed to get number from provider", code: "PROVIDER_PURCHASE", correlationId },
-        { status: 502 }
+        { success: false, error: userMessage, code: "PROVIDER_PURCHASE", correlationId },
+        { status: httpStatus }
       );
     }
 
     const { id: smspvaOrderId, number, countryCode: numCountryCode, fullNumber } = purchaseResult.data;
     const numberId = uuidv4();
     const reference = `SVA-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    const displayName = serviceName || serviceEntry.name;
+    const displayName = serviceName_resolved || smspvaServiceCode;
 
     const expiresAt = new Date(Date.now() + 20 * 60 * 1000);
 
@@ -147,7 +212,7 @@ export async function POST(request: NextRequest) {
           description, verification_number_id, created_at
         ) VALUES (
           ${transactionId}, ${userId}, 'verification_STR', ${price}, 'success', ${reference},
-          ${`${displayName} STR 20-min verification (SMSPVA)`},
+          ${`${displayName} — International STR 20-min`},
           ${numberId}, NOW()
         )
       `.catch(() => {});

@@ -15,7 +15,7 @@ import { formatCurrency } from "@/lib/networks"
 import { 
   Loader2, ArrowLeft, Save, Percent, Search, CheckSquare, Square, 
   Settings, DollarSign, TrendingUp, Filter, ChevronDown, RefreshCw,
-  Download, Wallet, AlertTriangle, RotateCcw, ShoppingBag, Clock
+  Download, Wallet, AlertTriangle, RotateCcw, ShoppingBag, Clock, Globe
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -110,6 +110,58 @@ export default function AdminVerificationPricingPage() {
   const [settingsLoading, setSettingsLoading] = useState(false)
   const [applyToExistingOnSave, setApplyToExistingOnSave] = useState(false)
   const [bulkCustomMarkup, setBulkCustomMarkup] = useState<number | "">("")
+
+  const [mainTab, setMainTab] = useState<"usa" | "international">("usa")
+  const [intlServices, setIntlServices] = useState<Array<{ service_code: string; name: string; category: string; base_usd_price: number; is_active: boolean; markup_percentage: number; updated_at?: string }>>([]) 
+  const [intlLoading, setIntlLoading] = useState(false)
+  const [intlSyncing, setIntlSyncing] = useState(false)
+  const [intlSaving, setIntlSaving] = useState<string | null>(null)
+  const [intlEdits, setIntlEdits] = useState<Record<string, { is_active?: boolean; markup_percentage?: number }>>({})
+  const [intlSearch, setIntlSearch] = useState("")
+
+  const fetchIntlServices = async () => {
+    setIntlLoading(true)
+    try {
+      const res = await fetch("/api/admin/verification/smspva-services")
+      const data = await res.json()
+      if (data.success) setIntlServices(data.data.services)
+      else toast.error(data.error || "Failed to load international services")
+    } catch { toast.error("Failed to load international services") }
+    finally { setIntlLoading(false) }
+  }
+
+  const handleIntlSync = async () => {
+    setIntlSyncing(true)
+    try {
+      const res = await fetch("/api/admin/verification/smspva-services", { method: "POST" })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(data.data?.message || "International services synced")
+        fetchIntlServices()
+      } else { toast.error(data.error || "Sync failed") }
+    } catch { toast.error("Sync request failed") }
+    finally { setIntlSyncing(false) }
+  }
+
+  const handleIntlSave = async (serviceCode: string) => {
+    const edit = intlEdits[serviceCode]
+    if (!edit) return
+    setIntlSaving(serviceCode)
+    try {
+      const res = await fetch("/api/admin/verification/smspva-services", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serviceCode, ...edit }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success("Saved")
+        setIntlEdits(prev => { const u = { ...prev }; delete u[serviceCode]; return u })
+        fetchIntlServices()
+      } else { toast.error(data.error || "Failed to save") }
+    } catch { toast.error("Save failed") }
+    finally { setIntlSaving(null) }
+  }
 
   const fetchServices = async () => {
     try {
@@ -394,7 +446,7 @@ export default function AdminVerificationPricingPage() {
     setSelectedServices(newSelected)
   }
 
-  useEffect(() => { fetchServices(); fetchGlobalSettings(); fetchPvaBalance() }, [])
+  useEffect(() => { fetchServices(); fetchGlobalSettings(); fetchPvaBalance(); fetchIntlServices() }, [])
 
   if (loading) {
     return (
@@ -576,6 +628,28 @@ export default function AdminVerificationPricingPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* ── Provider Tab Switcher ── */}
+      <div className="flex gap-2 border rounded-xl p-1 bg-muted/40">
+        <button
+          type="button"
+          onClick={() => setMainTab("usa")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${mainTab === "usa" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          🇺🇸 USA Numbers
+          <Badge variant={mainTab === "usa" ? "default" : "secondary"} className="text-[10px] h-4 px-1.5">{services.length}</Badge>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMainTab("international")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${mainTab === "international" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          <Globe className="h-4 w-4" /> International Numbers
+          <Badge variant={mainTab === "international" ? "default" : "secondary"} className="text-[10px] h-4 px-1.5">{intlServices.length}</Badge>
+        </button>
+      </div>
+
+      {mainTab === "usa" && <>
 
       {/* ── Search + Filter Bar ── */}
       <Card>
@@ -852,7 +926,7 @@ export default function AdminVerificationPricingPage() {
                       </p>
                       {!isSearching && (
                         <div className="flex flex-col items-center gap-2">
-                          <p className="text-sm text-muted-foreground">Load services from PVADeals to get started.</p>
+                          <p className="text-sm text-muted-foreground">Use Sync Services to load USA numbers.</p>
                           <Button size="sm" onClick={handleSync} disabled={syncing}>
                             {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
                             Sync Services Now
@@ -867,6 +941,120 @@ export default function AdminVerificationPricingPage() {
           )
         })}
       </Tabs>
+      </>}
+
+      {/* ── International Numbers Tab ── */}
+      {mainTab === "international" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <p className="text-sm text-muted-foreground">
+                {intlServices.length} services · {intlServices.filter(s => s.is_active).length} active
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search services…"
+                  value={intlSearch}
+                  onChange={(e) => setIntlSearch(e.target.value)}
+                  className="pl-9 h-9 w-56"
+                />
+              </div>
+              <Button size="sm" onClick={handleIntlSync} disabled={intlSyncing}>
+                {intlSyncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                Sync Services
+              </Button>
+            </div>
+          </div>
+
+          {intlLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : intlServices.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="p-10 text-center space-y-3">
+                <Globe className="h-10 w-10 mx-auto text-muted-foreground/30" />
+                <p className="text-muted-foreground font-medium">No international services yet.</p>
+                <p className="text-sm text-muted-foreground">Click Sync Services to populate from the master list.</p>
+                <Button size="sm" onClick={handleIntlSync} disabled={intlSyncing}>
+                  {intlSyncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                  Sync Services Now
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-3">
+              {intlServices
+                .filter(svc => !intlSearch || svc.name.toLowerCase().includes(intlSearch.toLowerCase()) || svc.category.includes(intlSearch.toLowerCase()))
+                .map((svc) => {
+                  const markup = intlEdits[svc.service_code]?.markup_percentage ?? svc.markup_percentage
+                  const isActive = intlEdits[svc.service_code]?.is_active ?? svc.is_active
+                  const isDirty = !!intlEdits[svc.service_code]
+                  const isSaving = intlSaving === svc.service_code
+                  const ghsPreview = formatCurrency(svc.base_usd_price * exchangeRate * (1 + markup / 100))
+                  const profit = formatCurrency(svc.base_usd_price * exchangeRate * (markup / 100))
+                  return (
+                    <Card key={svc.service_code} className={[isDirty ? "border-primary" : "", !isActive ? "opacity-60" : ""].filter(Boolean).join(" ")}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-4 flex-wrap justify-between">
+                          <div className="min-w-0 flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0 text-sm font-bold">
+                              {svc.name.charAt(0)}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-semibold text-sm">{svc.name}</p>
+                                <Badge variant={isActive ? "default" : "secondary"} className="text-[10px] h-5">{isActive ? "Active" : "Inactive"}</Badge>
+                                <Badge variant="outline" className="text-[10px] h-5">{svc.category.replace(/_/g, " ")}</Badge>
+                              </div>
+                              <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+                                <span>Base: ${svc.base_usd_price} USD</span>
+                                <span>·</span>
+                                <span className="text-primary font-medium">{ghsPreview}</span>
+                                <span className="text-green-600">+{profit}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                            <div className="flex items-center gap-1.5">
+                              <Label className="text-xs text-muted-foreground shrink-0">Markup %</Label>
+                              <Input
+                                type="number"
+                                step="1"
+                                min="0"
+                                value={markup}
+                                onChange={(e) => setIntlEdits(prev => ({ ...prev, [svc.service_code]: { ...prev[svc.service_code], markup_percentage: parseFloat(e.target.value) || 0 } }))}
+                                className="h-8 w-20 text-sm"
+                              />
+                            </div>
+                            <div className="flex flex-col items-center gap-0.5">
+                              <Label className="text-xs text-muted-foreground">Active</Label>
+                              <Switch
+                                checked={isActive}
+                                onCheckedChange={(v) => setIntlEdits(prev => ({ ...prev, [svc.service_code]: { ...prev[svc.service_code], is_active: v } }))}
+                              />
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => handleIntlSave(svc.service_code)}
+                              disabled={!isDirty || isSaving}
+                              className="h-8"
+                            >
+                              {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Save className="h-3.5 w-3.5 mr-1" />Save</>}
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

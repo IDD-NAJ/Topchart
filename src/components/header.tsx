@@ -132,7 +132,14 @@ export function Header() {
         const res = await fetch("/api/navigation", { cache: "no-store" })
         const data = await res.json()
         if (data.success && data.links?.length > 0) {
-          setServiceLinks(data.links)
+          const seen = new Set<string>()
+          const deduped = data.links.filter((l: any) => {
+            if (!l.href || (!l.href.startsWith("/dashboard") )) return false
+            if (seen.has(l.href)) return false
+            seen.add(l.href)
+            return true
+          })
+          if (deduped.length > 0) setServiceLinks(deduped)
         }
       } catch (error) {
         console.error("Failed to fetch navigation:", error)

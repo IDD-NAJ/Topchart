@@ -14,6 +14,133 @@ export async function POST(request: NextRequest) {
 
     const steps: string[] = [];
 
+    // ── Ticket enums ──────────────────────────────────────────
+    await sql`DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'TicketStatus') THEN
+        CREATE TYPE "TicketStatus" AS ENUM ('OPEN','IN_PROGRESS','RESOLVED','CLOSED');
+      END IF;
+    END $$`;
+    await sql`DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'TicketPriority') THEN
+        CREATE TYPE "TicketPriority" AS ENUM ('LOW','MEDIUM','HIGH','URGENT');
+      END IF;
+    END $$`;
+    await sql`DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'TicketChannel') THEN
+        CREATE TYPE "TicketChannel" AS ENUM ('EMAIL','CHAT','IN_APP');
+      END IF;
+    END $$`;
+    await sql`DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'TicketSenderType') THEN
+        CREATE TYPE "TicketSenderType" AS ENUM ('USER','ADMIN','SYSTEM');
+      END IF;
+    END $$`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS tickets (
+        id            TEXT PRIMARY KEY,
+        "userId"      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        subject       TEXT NOT NULL,
+        category      TEXT NOT NULL DEFAULT 'General',
+        status        "TicketStatus"   NOT NULL DEFAULT 'OPEN',
+        priority      "TicketPriority" NOT NULL DEFAULT 'MEDIUM',
+        channel       "TicketChannel"  NOT NULL DEFAULT 'IN_APP',
+        "externalRef" TEXT,
+        "createdAt"   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        "updatedAt"   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_tickets_userId    ON tickets("userId")`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_tickets_status    ON tickets(status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_tickets_createdAt ON tickets("createdAt" DESC)`;
+    await sql`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'General'`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS ticket_messages (
+        id           TEXT PRIMARY KEY,
+        "ticketId"   TEXT NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+        "senderType" "TicketSenderType" NOT NULL DEFAULT 'USER',
+        body         TEXT NOT NULL,
+        attachments  JSONB NOT NULL DEFAULT '[]'::jsonb,
+        "createdAt"  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_ticket_messages_ticketId  ON ticket_messages("ticketId")`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_ticket_messages_createdAt ON ticket_messages("createdAt" ASC)`;
+    steps.push("tickets + ticket_messages tables ensured");
+
+    // ── DisputeStatus enum + disputes table ───────────────────────────
+    await sql`DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'DisputeStatus') THEN
+        CREATE TYPE "DisputeStatus" AS ENUM ('OPEN','IN_PROGRESS','RESOLVED','CLOSED');
+      END IF;
+    END $$`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS disputes (
+        id              TEXT PRIMARY KEY,
+        "transactionId" UUID NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
+        "userId"        UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        status          "DisputeStatus" NOT NULL DEFAULT 'OPEN',
+        reason          TEXT,
+        resolution      TEXT,
+        "createdAt"     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        "resolvedAt"    TIMESTAMPTZ
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_disputes_userId        ON disputes("userId")`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_disputes_transactionId ON disputes("transactionId")`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_disputes_status        ON disputes(status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_disputes_createdAt     ON disputes("createdAt" DESC)`;
+    steps.push("disputes table ensured");
+
+    // ── faqs table (content API) ───────────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS faqs (
+        id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        question   TEXT NOT NULL,
+        answer     TEXT NOT NULL,
+        category   TEXT NOT NULL DEFAULT 'General',
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        is_active  BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_faqs_active ON faqs(is_active, sort_order ASC)`;
+    steps.push("faqs table ensured");
+
+    // ── smspva_availability cache table ───────────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS smspva_availability (
+        country_code TEXT NOT NULL,
+        service_code TEXT NOT NULL,
+        count        INTEGER NOT NULL DEFAULT 0,
+        cost_usd     NUMERIC(10,4),
+        cached_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (country_code, service_code)
+      )
+    `;
+    steps.push("smspva_availability table ensured");
+
+    // ── smspva_services (international services with admin overrides) ─
+    await sql`
+      CREATE TABLE IF NOT EXISTS smspva_services (
+        service_code      TEXT PRIMARY KEY,
+        name              TEXT NOT NULL,
+        category          TEXT NOT NULL DEFAULT 'professional_tools',
+        base_usd_price    NUMERIC(10,4) NOT NULL DEFAULT 0.10,
+        is_active         BOOLEAN NOT NULL DEFAULT TRUE,
+        markup_percentage NUMERIC(6,2) NOT NULL DEFAULT 40,
+        picture_url       TEXT,
+        created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_smspva_services_active   ON smspva_services(is_active)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_smspva_services_category ON smspva_services(category)`;
+    steps.push("smspva_services table ensured");
+
     await sql`
       CREATE TABLE IF NOT EXISTS reseller_applications (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -489,6 +616,7 @@ export async function POST(request: NextRequest) {
     await sql`ALTER TABLE verification_numbers ADD COLUMN IF NOT EXISTS auto_renew BOOLEAN DEFAULT FALSE`;
     await sql`ALTER TABLE verification_numbers ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITH TIME ZONE`;
     await sql`ALTER TABLE verification_numbers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()`;
+    await sql`ALTER TABLE verification_numbers ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb`;
     steps.push("verification_numbers table ensured");
 
     await sql`

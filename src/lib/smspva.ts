@@ -22,33 +22,24 @@ export interface SmspvaAvailability {
 }
 
 export const SMSPVA_SERVICES: SmspvaService[] = [
-  { code: "opt6",  name: "WhatsApp",   category: "social_media",            baseUsdPrice: 0.15 },
-  { code: "opt4",  name: "Telegram",   category: "social_media",            baseUsdPrice: 0.10 },
-  { code: "opt11", name: "Facebook",   category: "social_media",            baseUsdPrice: 0.12 },
-  { code: "opt3",  name: "Twitter/X",  category: "social_media",            baseUsdPrice: 0.10 },
-  { code: "ma",    name: "Instagram",  category: "social_media",            baseUsdPrice: 0.12 },
-  { code: "opt1",  name: "Viber",      category: "social_media",            baseUsdPrice: 0.10 },
-  { code: "opt2",  name: "WeChat",     category: "social_media",            baseUsdPrice: 0.14 },
-  { code: "sc",    name: "Snapchat",   category: "social_media",            baseUsdPrice: 0.12 },
-  { code: "ti",    name: "TikTok",     category: "streaming_entertainment", baseUsdPrice: 0.12 },
-  { code: "dc",    name: "Discord",    category: "social_media",            baseUsdPrice: 0.10 },
-  { code: "tn",    name: "Tinder",     category: "social_media",            baseUsdPrice: 0.12 },
-  { code: "go",    name: "Google",     category: "professional_tools",      baseUsdPrice: 0.18 },
-  { code: "ms",    name: "Microsoft",  category: "professional_tools",      baseUsdPrice: 0.15 },
-  { code: "ya",    name: "Yahoo",      category: "professional_tools",      baseUsdPrice: 0.10 },
-  { code: "li",    name: "LinkedIn",   category: "professional_tools",      baseUsdPrice: 0.14 },
-  { code: "am",    name: "Amazon",     category: "ecommerce_financial",     baseUsdPrice: 0.15 },
-  { code: "ub",    name: "Uber",       category: "ecommerce_financial",     baseUsdPrice: 0.12 },
-  { code: "pp",    name: "PayPal",     category: "ecommerce_financial",     baseUsdPrice: 0.14 },
-  { code: "bi",    name: "Binance",    category: "ecommerce_financial",     baseUsdPrice: 0.12 },
-  { code: "ay",    name: "AliExpress", category: "ecommerce_financial",     baseUsdPrice: 0.10 },
-  { code: "nf",    name: "Netflix",    category: "streaming_entertainment", baseUsdPrice: 0.15 },
-  { code: "sp",    name: "Spotify",    category: "streaming_entertainment", baseUsdPrice: 0.12 },
-  { code: "ot",    name: "Any Service",category: "professional_tools",      baseUsdPrice: 0.08 },
+  // Verified SMSPVA service codes (fallback only — DB is the live source of truth)
+  { code: "opt6",  name: "WhatsApp",   category: "social_media",        baseUsdPrice: 0.15 },
+  { code: "opt4",  name: "Telegram",   category: "social_media",        baseUsdPrice: 0.10 },
+  { code: "opt11", name: "Facebook",   category: "social_media",        baseUsdPrice: 0.12 },
+  { code: "opt3",  name: "Twitter/X",  category: "social_media",        baseUsdPrice: 0.10 },
+  { code: "ma",    name: "Instagram",  category: "social_media",        baseUsdPrice: 0.12 },
+  { code: "opt1",  name: "Viber",      category: "social_media",        baseUsdPrice: 0.10 },
+  { code: "opt2",  name: "WeChat",     category: "social_media",        baseUsdPrice: 0.14 },
+  { code: "go",    name: "Google",     category: "professional_tools",  baseUsdPrice: 0.18 },
+  { code: "ya",    name: "Yahoo",      category: "professional_tools",  baseUsdPrice: 0.10 },
+  { code: "ot",    name: "Any Service",category: "professional_tools",  baseUsdPrice: 0.08 },
+  { code: "am",    name: "Amazon",     category: "ecommerce_financial", baseUsdPrice: 0.15 },
+  { code: "ub",    name: "Uber",       category: "ecommerce_financial", baseUsdPrice: 0.12 },
+  { code: "pp",    name: "PayPal",     category: "ecommerce_financial", baseUsdPrice: 0.14 },
+  { code: "bi",    name: "Binance",    category: "ecommerce_financial", baseUsdPrice: 0.12 },
 ];
 
 export const SMSPVA_COUNTRIES: SmspvaCountry[] = [
-  { code: "0",   name: "United States",  flag: "🇺🇸" },
   { code: "55",  name: "Brazil",         flag: "🇧🇷" },
   { code: "52",  name: "Mexico",         flag: "🇲🇽" },
   { code: "54",  name: "Argentina",      flag: "🇦🇷" },
@@ -146,11 +137,16 @@ async function smspvaGet(params: Record<string, string>): Promise<any> {
 export async function getSmspvaNumber(
   service: string,
   country: string
-): Promise<{ ok: true; data: SmspvaNumberResult } | { ok: false; error: string }> {
+): Promise<{ ok: true; data: SmspvaNumberResult } | { ok: false; error: string; responseCode?: string }> {
   try {
     const json = await smspvaGet({ metod: "get_number", service, country });
-    if (String(json?.response) !== "1") {
-      return { ok: false, error: json?.msg || `SMSPVA get_number failed (response=${json?.response})` };
+    const responseCode = String(json?.response ?? "");
+    if (responseCode !== "1") {
+      const isApiError = responseCode === "error" || responseCode === "";
+      const fallback = isApiError
+        ? "Number request failed — please check provider configuration"
+        : `Number request failed (code ${responseCode})`;
+      return { ok: false, error: json?.msg || fallback, responseCode };
     }
     const id = parseInt(json.id, 10);
     const number = String(json.number);
