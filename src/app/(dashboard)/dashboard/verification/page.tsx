@@ -508,6 +508,22 @@ export default function VerificationPage() {
 
   const [exchangeRate, setExchangeRate] = useState(15.5)
 
+  // SMSPVA provider state
+  const [providerTab, setProviderTab] = useState<"usa" | "international">("usa")
+  const [smspvaServices, setSmspvaServices] = useState<Array<{ code: string; name: string; category: string; ghsPrice: number; baseUsdPrice: number }>>([]) 
+  const [smspvaCountries, setSmspvaCountries] = useState<Array<{ code: string; name: string; flag: string }>>([])
+  const [selectedSmspvaCountry, setSelectedSmspvaCountry] = useState("0")
+  const [smspvaServicesLoading, setSmspvaServicesLoading] = useState(false)
+  const [smspvaModal, setSmspvaModal] = useState<{
+    open: boolean
+    serviceCode: string
+    serviceName: string
+    ghsPrice: number
+    purchasing: boolean
+    result: { number_id: string; number: string; expires_at: string; price: number } | null
+    error: string | null
+  }>({ open: false, serviceCode: "", serviceName: "", ghsPrice: 0, purchasing: false, result: null, error: null })
+
   // Fetch global area codes on mount
   useEffect(() => {
     const fetchGlobalAreaCodes = async () => {
@@ -579,6 +595,56 @@ export default function VerificationPage() {
 
     fetchAreaCodes()
   }, [modal.service, globalAreaCodes])
+
+  const fetchSmspvaServices = useCallback(async () => {
+    setSmspvaServicesLoading(true)
+    try {
+      const res = await fetch("/api/verification/smspva/services")
+      let data: any = null
+      try { data = await res.json() } catch { /* non-JSON */ }
+      if (data?.success) {
+        setSmspvaServices(data?.data?.services || [])
+        setSmspvaCountries(data?.data?.countries || [])
+      }
+    } catch {}
+    finally { setSmspvaServicesLoading(false) }
+  }, [])
+
+  const handleSmspvaPurchase = async () => {
+    if (!smspvaModal.serviceCode) return
+    setSmspvaModal(m => ({ ...m, purchasing: true, error: null }))
+    try {
+      const res = await fetch("/api/verification/smspva/purchase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          smspvaServiceCode: smspvaModal.serviceCode,
+          countryCode: selectedSmspvaCountry,
+          serviceName: smspvaModal.serviceName,
+        }),
+      })
+      let data: any = null
+      try { data = await res.json() } catch { /* non-JSON */ }
+      if (data?.success) {
+        setSmspvaModal(m => ({
+          ...m,
+          purchasing: false,
+          result: {
+            number_id: data.data.number_id,
+            number: data.data.number,
+            expires_at: data.data.expires_at,
+            price: data.data.price,
+          },
+        }))
+        fetchActiveNumbers()
+        refreshUser()
+      } else {
+        setSmspvaModal(m => ({ ...m, purchasing: false, error: data?.error || "Purchase failed" }))
+      }
+    } catch {
+      setSmspvaModal(m => ({ ...m, purchasing: false, error: "Network error. Please try again." }))
+    }
+  }
 
   const fetchServices = useCallback(async () => {
     try {
@@ -681,7 +747,8 @@ export default function VerificationPage() {
     fetchServices()
     fetchActiveNumbers()
     fetchGlobalSettings()
-  }, [fetchServices, fetchActiveNumbers, refreshUser, fetchGlobalSettings])
+    fetchSmspvaServices()
+  }, [fetchServices, fetchActiveNumbers, refreshUser, fetchGlobalSettings, fetchSmspvaServices])
 
   useEffect(() => {
     if (isAdmin && adminPanelOpen && adminServices.length === 0) {
@@ -879,7 +946,7 @@ export default function VerificationPage() {
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Number Verification</h1>
           <p className="text-muted-foreground mt-1.5 text-xs sm:text-sm leading-relaxed">
-            Get temporary US phone numbers for SMS verification on any app or website.
+            Get temporary phone numbers for SMS verification — USA numbers via PVADeals or international numbers from 20+ countries via SMSPVA.
           </p>
         </div>
         <Link href="/dashboard/verification/history" className="shrink-0 self-start">
@@ -1149,6 +1216,103 @@ export default function VerificationPage() {
         </Card>
       )}
 
+      {/* Provider Tab */}
+      <div className="flex gap-2 border rounded-xl p-1 bg-muted/40">
+        <button
+          type="button"
+          onClick={() => setProviderTab("usa")}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all",
+            providerTab === "usa" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          🇺🇸 <span>USA Numbers</span>
+          <Badge variant="outline" className="text-[10px] h-4 px-1.5 hidden sm:flex">PVADeals</Badge>
+        </button>
+        <button
+          type="button"
+          onClick={() => setProviderTab("international")}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all",
+            providerTab === "international" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Globe className="h-4 w-4" /> <span>International</span>
+          <Badge variant="outline" className="text-[10px] h-4 px-1.5 hidden sm:flex">SMSPVA</Badge>
+        </button>
+      </div>
+
+      {providerTab === "international" && (
+        <div className="space-y-4">
+          {/* Country Selector */}
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <div className="flex-1">
+              <Select value={selectedSmspvaCountry} onValueChange={setSelectedSmspvaCountry}>
+                <SelectTrigger className="h-10">
+                  <Globe className="h-4 w-4 mr-2 shrink-0" />
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {smspvaCountries.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      {c.flag} {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">STR 20-min only · Wallet payment</p>
+          </div>
+
+          {smspvaServicesLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div>
+              {CATEGORIES.map((cat) => {
+                const catSvcs = smspvaServices.filter(s => s.category === cat.id)
+                if (catSvcs.length === 0) return null
+                const CatIcon = cat.icon
+                return (
+                  <div key={cat.id} className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <CatIcon className="h-4 w-4 text-muted-foreground" />
+                      <h3 className="text-sm font-semibold">{cat.name}</h3>
+                    </div>
+                    <div className="grid gap-2 sm:gap-4 grid-cols-2 min-[380px]:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6">
+                      {catSvcs.map((svc) => (
+                        <motion.div
+                          key={svc.code}
+                          whileHover={{ y: -2 }}
+                          className="group cursor-pointer"
+                          onClick={() => setSmspvaModal({ open: true, serviceCode: svc.code, serviceName: svc.name, ghsPrice: svc.ghsPrice, purchasing: false, result: null, error: null })}
+                        >
+                          <Card className="h-full hover:border-primary/40 transition-all hover:shadow-sm">
+                            <CardContent className="p-3 sm:p-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <ServiceIcon name={svc.name} fallbackIcon={CatIcon} fallbackColor={cat.color} />
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-xs sm:text-sm truncate">{svc.name}</h4>
+                                  <p className="text-[10px] text-muted-foreground">STR 20min</p>
+                                </div>
+                              </div>
+                              <p className="font-semibold text-xs text-primary">{formatCurrency(svc.ghsPrice)}</p>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {providerTab === "usa" && (
+      <>
       {/* Search and Filters */}
       <div className="space-y-3">
         <div className="relative">
@@ -1387,6 +1551,137 @@ export default function VerificationPage() {
         ))}
       </Tabs>
       )}
+
+      </>
+      )}
+
+      {/* SMSPVA Purchase Modal */}
+      <AnimatePresence>
+        {smspvaModal.open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget && !smspvaModal.purchasing) setSmspvaModal(m => ({ ...m, open: false })) }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="mx-auto flex max-h-[90dvh] w-full flex-col rounded-xl border bg-background shadow-xl sm:max-w-md"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b p-4 sm:p-5">
+                <div className="min-w-0 mr-2">
+                  <h2 className="font-semibold text-sm sm:text-base truncate">{smspvaModal.serviceName}</h2>
+                  <p className="text-xs text-muted-foreground">
+                    {smspvaCountries.find(c => c.code === selectedSmspvaCountry)?.flag}{" "}
+                    {smspvaCountries.find(c => c.code === selectedSmspvaCountry)?.name} · STR 20-min
+                  </p>
+                </div>
+                <button
+                  onClick={() => { if (!smspvaModal.purchasing) setSmspvaModal(m => ({ ...m, open: false })) }}
+                  className="p-2 rounded hover:bg-muted transition-colors shrink-0 sm:p-1"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+                {smspvaModal.result ? (
+                  <>
+                    <div className="flex items-center gap-2 text-green-600">
+                      <Check className="h-5 w-5 shrink-0" />
+                      <span className="font-semibold text-sm">Number purchased!</span>
+                    </div>
+                    <div className="bg-muted rounded-lg p-3 sm:p-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <p className="font-mono text-lg sm:text-xl font-bold flex-1 break-all">{smspvaModal.result.number}</p>
+                        <button onClick={() => copyNumber(smspvaModal.result!.number)} className="p-1.5 rounded hover:bg-background transition-colors shrink-0">
+                          {copied === smspvaModal.result.number ? (
+                            <Check className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Copy className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Expires: {new Date(smspvaModal.result.expires_at).toLocaleString()}</p>
+                      <p className="text-xs font-medium">Charged: {formatCurrency(smspvaModal.result.price)}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center">Use this number on your target app. SMS messages will appear in your <strong>Active Numbers</strong> list above.</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Service</span>
+                        <span className="font-semibold text-sm">{smspvaModal.serviceName}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Country</span>
+                        <span className="text-sm">{smspvaCountries.find(c => c.code === selectedSmspvaCountry)?.flag} {smspvaCountries.find(c => c.code === selectedSmspvaCountry)?.name}</span>
+                      </div>
+                      <div className="flex items-center justify-between border-t pt-3">
+                        <span className="text-sm font-medium">Price</span>
+                        <span className="font-bold text-primary">{formatCurrency(smspvaModal.ghsPrice)}</span>
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-amber-200 bg-amber-50/50 dark:bg-amber-950/10 p-3">
+                      <p className="text-xs text-amber-700 dark:text-amber-400">
+                        <strong>Note:</strong> Availability varies by country and service. If no number is available, the purchase will fail and no charge will be applied.
+                      </p>
+                    </div>
+                    {smspvaModal.error && (
+                      <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 p-3">
+                        <p className="text-xs text-red-700 dark:text-red-400">{smspvaModal.error}</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div className="border-t p-4 sm:p-5 flex gap-2">
+                {smspvaModal.result ? (
+                  <>
+                    <Link href="/dashboard/verification/history" className="flex-1">
+                      <Button variant="outline" size="sm" className="w-full gap-2">
+                        <History className="h-3.5 w-3.5" />
+                        View History
+                      </Button>
+                    </Link>
+                    <Button size="sm" className="flex-1" onClick={() => setSmspvaModal(m => ({ ...m, open: false, result: null }))}
+                    >
+                      Done
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline" size="sm" className="flex-1"
+                      onClick={() => setSmspvaModal(m => ({ ...m, open: false }))}
+                      disabled={smspvaModal.purchasing}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm" className="flex-1"
+                      onClick={() => void handleSmspvaPurchase()}
+                      disabled={smspvaModal.purchasing}
+                    >
+                      {smspvaModal.purchasing ? (
+                        <><Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />Purchasing…</>
+                      ) : (
+                        <>Confirm · {formatCurrency(smspvaModal.ghsPrice)}</>
+                      )}
+                    </Button>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* How it works */}
       <Card className="bg-muted/30 mb-8">

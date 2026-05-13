@@ -15,6 +15,7 @@ const envSchema = z.object({
   PVADEALS_API_KEY: z.string().optional(),
   PVADEALS_BASE_URL: optionalUrl,
   PVADEALS_MARKUP_PERCENT: z.string().optional(),
+  SMSPVA_API_KEY: z.string().optional(),
   DATAMART_API_KEY: z.string().optional(),
   DATAMART_BASE_URL: optionalUrl,
   DATAMART_WEBHOOK_SECRET: z.string().optional(),
@@ -162,6 +163,7 @@ let cachedAiraloEnv: AiraloEnv | null = null;
 let cachedVtpassEnv: VtpassEnv | null = null;
 let cachedGoogleAuthEnv: GoogleAuthEnv | null = null;
 let cachedPvadealsEnv: PvadealsEnv | null = null;
+
 
 export function getServerEnv(): ServerEnv {
   if (cachedEnv) {
@@ -389,4 +391,12 @@ export function getPvadealsEnv(): PvadealsEnv {
  */
 export function isPvadealsConfigured(): boolean {
   return Boolean(process.env.PVADEALS_API_KEY?.trim());
+}
+
+export function getSmspvaApiKey(): string | undefined {
+  return process.env.SMSPVA_API_KEY?.trim() || undefined;
+}
+
+export function isSmspvaConfigured(): boolean {
+  return Boolean(process.env.SMSPVA_API_KEY?.trim());
 }

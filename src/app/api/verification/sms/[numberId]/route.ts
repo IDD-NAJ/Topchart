@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
 import { syncPvadealsRequestAndSms } from "@/lib/verification-sms-sync";
+import { getSmspvaSMS } from "@/lib/smspva";
 
 export async function GET(
   request: NextRequest,
@@ -28,7 +29,7 @@ export async function GET(
     const userId = sessions[0].user_id;
 
     const numbers = await sql`
-      SELECT vn.id, vn.pvadeals_request_id, vn.status, vn.expires_at
+      SELECT vn.id, vn.pvadeals_request_id, vn.status, vn.expires_at, vn.metadata
       FROM verification_numbers vn
       WHERE vn.id = ${numberId} AND vn.user_id = ${userId}
     `;
@@ -38,11 +39,36 @@ export async function GET(
     }
 
     const number = numbers[0];
+    const meta = (number.metadata as any) || {};
+    const provider: string = meta.provider || "pvadeals";
+    const smspvaOrderId: number | undefined = meta.smspva_order_id
+      ? parseInt(String(meta.smspva_order_id), 10)
+      : undefined;
+    const smspvaService: string | undefined = meta.smspva_service;
 
     const isExpired = number.expires_at != null && new Date(number.expires_at as string) < new Date();
 
     let responseStatus = String(number.status ?? "");
-    if (number.pvadeals_request_id && !isExpired) {
+
+    if (isExpired) {
+      responseStatus = "expired";
+    } else if (provider === "smspva" && smspvaOrderId && smspvaService) {
+      const smsResult = await getSmspvaSMS(smspvaOrderId, smspvaService);
+      if (smsResult.ok && !("pending" in smsResult && smsResult.pending)) {
+        const data = (smsResult as any).data;
+        if (data?.sms) {
+          const smsId = `smspva-${smspvaOrderId}`;
+          await sql`
+            INSERT INTO verification_sms (id, number_id, from_number, message, received_at, is_read)
+            VALUES (${smsId}, ${numberId}, ${"SMSPVA"}, ${data.text || data.sms}, NOW(), false)
+            ON CONFLICT (id) DO NOTHING
+          `.catch(() => {});
+          responseStatus = "active";
+        }
+      } else if (!smsResult.ok) {
+        console.warn(`[SMS] SMSPVA poll failed for ${numberId}: ${(smsResult as any).error}`);
+      }
+    } else if (number.pvadeals_request_id && provider === "pvadeals") {
       const synced = await syncPvadealsRequestAndSms({
         numberId,
         pvadealsRequestId: number.pvadeals_request_id,
@@ -53,8 +79,6 @@ export async function GET(
         console.warn(`[SMS] Sync failed for ${numberId}: ${synced.error} — returning cached SMS`);
         responseStatus = "expired";
       }
-    } else if (isExpired) {
-      responseStatus = "expired";
     }
 
     const allSMS = await sql`

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
 import { flagNumber } from "@/lib/pvadeals";
+import { banSmspvaNumber } from "@/lib/smspva";
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     // Get number details including purchase_price for refund
     const numbers = await sql`
-      SELECT id, pvadeals_request_id, status, type, expires_at, allow_flag, purchase_price
+      SELECT id, pvadeals_request_id, status, type, expires_at, allow_flag, purchase_price, metadata
       FROM verification_numbers
       WHERE id = ${numberId} AND user_id = ${userId}
     `;
@@ -106,9 +107,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Flag/cancel with PVADeals
-    if (number.pvadeals_request_id) {
-      await flagNumber(number.pvadeals_request_id);
+    // Flag/cancel with the appropriate provider
+    const meta = (number.metadata as any) || {};
+    const provider = meta.provider || "pvadeals";
+    if (provider === "smspva" && meta.smspva_order_id && meta.smspva_service) {
+      await banSmspvaNumber(parseInt(String(meta.smspva_order_id), 10), String(meta.smspva_service)).catch(() => {});
+    } else if (number.pvadeals_request_id) {
+      await flagNumber(number.pvadeals_request_id).catch(() => {});
     }
 
     // Update status

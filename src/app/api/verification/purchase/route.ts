@@ -12,6 +12,8 @@ import {
   DEFAULT_MARKUP_PERCENT,
   type LTRDuration,
 } from "@/lib/pvadeals";
+import { getSmspvaNumber, banSmspvaNumber, SMSPVA_SERVICES, calculateSmspvaPrice } from "@/lib/smspva";
+import { isSmspvaConfigured } from "@/lib/env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -118,7 +120,7 @@ export async function POST(request: NextRequest) {
       pvaPriceUSD = dayMap[ltrDays];
     }
 
-    const price = calculateUserPrice(pvaPriceUSD, USD_TO_GHS_RATE, markupPercent);
+    let price = calculateUserPrice(pvaPriceUSD, USD_TO_GHS_RATE, markupPercent);
 
     // Check wallet balance
     const walletBalance = Number(user.wallet_balance) || 0;
@@ -135,31 +137,45 @@ export async function POST(request: NextRequest) {
 
     // Purchase from PVADeals
     let pvaData: any;
+    let smspvaFallbackData: { id: number; number: string; countryCode: string; fullNumber: string; service: string } | null = null;
+
     if (type === "STR") {
       const result = await purchaseSTR(pvadealsServiceId, areaCode);
       if (!result.success || !result.data) {
-        // Check for provider-specific errors
         const errorMsg = result.error || "";
-        let userError = errorMsg;
-        let errorCode = "PROVIDER_PURCHASE";
-        
-        if (errorMsg.toLowerCase().includes("insufficient credits") || errorMsg.toLowerCase().includes("out of credits")) {
-          userError = "Provider temporarily out of credits. Please try again in a few minutes or contact support.";
-          errorCode = "INSUFFICIENT_CREDITS";
+        console.warn(`[${correlationId}] PVADeals purchaseSTR failed, trying SMSPVA fallback: ${errorMsg}`);
+
+        if (isSmspvaConfigured()) {
+          const nameNorm = pvaService.name.toLowerCase();
+          const fallbackSvc = SMSPVA_SERVICES.find((s) =>
+            nameNorm.includes(s.name.toLowerCase()) || s.name.toLowerCase().includes(nameNorm)
+          ) || SMSPVA_SERVICES.find((s) => s.code === "ot");
+
+          if (fallbackSvc) {
+            const svaResult = await getSmspvaNumber(fallbackSvc.code, "0");
+            if (svaResult.ok) {
+              smspvaFallbackData = { ...svaResult.data, service: fallbackSvc.code };
+              price = calculateSmspvaPrice(fallbackSvc.baseUsdPrice, USD_TO_GHS_RATE, markupPercent);
+            }
+          }
         }
-        
-        console.error(`[${correlationId}] purchaseSTR failed:`, errorMsg)
-        return NextResponse.json(
-          { 
-            success: false, 
-            error: userError || "Failed to purchase number from provider",
-            code: errorCode,
-            correlationId 
-          },
-          { status: 502 }
-        );
+
+        if (!smspvaFallbackData) {
+          let userError = errorMsg;
+          let errorCode = "PROVIDER_PURCHASE";
+          if (errorMsg.toLowerCase().includes("insufficient credits") || errorMsg.toLowerCase().includes("out of credits")) {
+            userError = "Provider temporarily out of credits. Please try again in a few minutes or contact support.";
+            errorCode = "INSUFFICIENT_CREDITS";
+          }
+          console.error(`[${correlationId}] purchaseSTR failed:`, errorMsg);
+          return NextResponse.json(
+            { success: false, error: userError || "Failed to purchase number from provider", code: errorCode, correlationId },
+            { status: 502 }
+          );
+        }
+      } else {
+        pvaData = result.data.requests[0];
       }
-      pvaData = result.data.requests[0];
     } else {
       const result = await purchaseLTR(pvadealsServiceId, ltrDays as LTRDuration, areaCode);
       if (!result.success || !result.data) {
@@ -188,8 +204,16 @@ export async function POST(request: NextRequest) {
     }
 
     const reference = `VER-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    const expiresAt = new Date(pvaData.endTime);
     const numberId = uuidv4();
+
+    const isFallback = !!smspvaFallbackData;
+    const finalNumber = isFallback ? (smspvaFallbackData!.fullNumber || smspvaFallbackData!.number) : pvaData.number;
+    const expiresAt = isFallback
+      ? new Date(Date.now() + 20 * 60 * 1000)
+      : new Date(pvaData.endTime);
+    const finalRequestId = isFallback
+      ? `smspva:${smspvaFallbackData!.id}:${smspvaFallbackData!.service}`
+      : pvaData._id;
     const category = mapCategoryByName(pvaService.name);
 
     try {
@@ -225,23 +249,55 @@ export async function POST(request: NextRequest) {
         serviceDbId = svcRows.length > 0 ? (svcRows[0] as any).id : null;
       } catch { /* ignore */ }
 
+      const smspvaMeta = isFallback ? JSON.stringify({
+        provider: "smspva",
+        smspva_order_id: smspvaFallbackData!.id,
+        smspva_service: smspvaFallbackData!.service,
+        smspva_country: "0",
+        service_name: pvaService.name,
+        fallback_from: "pvadeals",
+      }) : null;
+
       // Create number record
-      await sql`
-        INSERT INTO verification_numbers (
-          id, user_id, service_id, number, type, status,
-          pvadeals_request_id, purchase_price,
-          ltr_duration_days, rental_duration_hours,
-          allow_flag, allow_reuse, auto_renew,
-          expires_at, created_at, updated_at
-        ) VALUES (
-          ${numberId}, ${userId}, ${serviceDbId}, ${pvaData.number}, ${type}, 'active',
-          ${pvaData._id}, ${price},
-          ${type === "LTR" ? ltrDays : null},
-          ${type === "LTR" ? ltrDays * 24 : 0},
-          ${pvaData.allowFlag ?? true}, ${pvaData.allowReuse ?? false}, ${pvaData.autoRenewEnable ?? false},
-          ${expiresAt.toISOString()}, NOW(), NOW()
-        )
-      `;
+      try {
+        await sql`
+          INSERT INTO verification_numbers (
+            id, user_id, service_id, number, type, status,
+            pvadeals_request_id, purchase_price,
+            ltr_duration_days, rental_duration_hours,
+            allow_flag, allow_reuse, auto_renew,
+            expires_at, created_at, updated_at,
+            metadata
+          ) VALUES (
+            ${numberId}, ${userId}, ${serviceDbId}, ${finalNumber}, ${type}, 'active',
+            ${isFallback ? null : pvaData._id}, ${price},
+            ${type === "LTR" ? ltrDays : null},
+            ${type === "LTR" ? ltrDays * 24 : 0},
+            ${isFallback ? true : (pvaData.allowFlag ?? true)},
+            ${isFallback ? false : (pvaData.allowReuse ?? false)},
+            ${isFallback ? false : (pvaData.autoRenewEnable ?? false)},
+            ${expiresAt.toISOString()}, NOW(), NOW(),
+            ${smspvaMeta}::jsonb
+          )
+        `;
+      } catch {
+        await sql`
+          INSERT INTO verification_numbers (
+            id, user_id, service_id, number, type, status,
+            pvadeals_request_id, purchase_price,
+            ltr_duration_days, rental_duration_hours,
+            allow_flag, allow_reuse, auto_renew,
+            expires_at, created_at, updated_at
+          ) VALUES (
+            ${numberId}, ${userId}, ${serviceDbId}, ${finalNumber}, ${type}, 'active',
+            ${finalRequestId}, ${price},
+            ${type === "LTR" ? ltrDays : null},
+            ${type === "LTR" ? ltrDays * 24 : 0},
+            ${true}, ${false}, ${false},
+            ${expiresAt.toISOString()}, NOW(), NOW()
+          )
+        `;
+      }
 
       // Create transaction record
       const transactionId = uuidv4();
@@ -252,7 +308,7 @@ export async function POST(request: NextRequest) {
           description, verification_number_id, created_at
         ) VALUES (
           ${transactionId}, ${userId}, ${transactionType}, ${price}, 'success', ${reference},
-          ${`${pvaService.name} ${type}${type === "LTR" ? ` ${ltrDays}-day` : " 20-min"} verification`},
+          ${`${pvaService.name} ${type}${type === "LTR" ? ` ${ltrDays}-day` : " 20-min"} verification${isFallback ? " (via SMSPVA)" : ""}`},
           ${numberId}, NOW()
         )
       `;
@@ -261,26 +317,31 @@ export async function POST(request: NextRequest) {
         success: true,
         data: {
           number_id: numberId,
-          pvadeals_request_id: pvaData._id,
-          number: pvaData.number,
+          pvadeals_request_id: isFallback ? null : pvaData._id,
+          provider: isFallback ? "smspva" : "pvadeals",
+          number: finalNumber,
           service_name: pvaService.name,
           type,
           ltr_days: type === "LTR" ? ltrDays : null,
           price,
           expires_at: expiresAt.toISOString(),
-          allow_flag: pvaData.allowFlag,
-          allow_reuse: pvaData.allowReuse,
-          auto_renew: pvaData.autoRenewEnable ?? false,
+          allow_flag: isFallback ? true : pvaData.allowFlag,
+          allow_reuse: isFallback ? false : pvaData.allowReuse,
+          auto_renew: isFallback ? false : (pvaData.autoRenewEnable ?? false),
           reference,
         },
       });
     } catch (dbError) {
-      // Attempt to flag/cancel the PVADeals number on DB failure
+      // Attempt to cancel the number on DB failure
       try {
-        const { flagNumber } = await import("@/lib/pvadeals");
-        await flagNumber(pvaData._id);
+        if (isFallback) {
+          await banSmspvaNumber(smspvaFallbackData!.id, smspvaFallbackData!.service);
+        } else {
+          const { flagNumber } = await import("@/lib/pvadeals");
+          await flagNumber(pvaData._id);
+        }
       } catch (cancelError) {
-        console.error("Failed to cancel PVADeals number after DB error:", cancelError);
+        console.error("Failed to cancel number after DB error:", cancelError);
       }
       console.error("Database transaction error:", dbError);
       const errorMessage = dbError instanceof Error ? dbError.message : "Unknown database error";
