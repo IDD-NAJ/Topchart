@@ -659,6 +659,20 @@ export function DataTable({
                     <option value="false">No</option>
                     <option value="true">Yes</option>
                   </select>
+                ) : col.options && col.options.length > 0 ? (
+                  <select
+                    id={col.key}
+                    value={formData[col.key] || ""}
+                    onChange={(e) => setFormData({ ...formData, [col.key]: e.target.value })}
+                    className="w-full border rounded-md p-2"
+                  >
+                    <option value="">-- Select {col.label} --</option>
+                    {col.options.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
                 ) : col.type === "select" ? (
                   <select
                     id={col.key}

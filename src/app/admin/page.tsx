@@ -85,6 +85,12 @@ interface AdminStats {
   recentTickets: any[]
   transactionsByType: any[]
   transactionsByDay: any[]
+  networkCount: number
+  esimOrderCount: number
+  proxyOrderCount: number
+  giftcardOrderCount: number
+  billPaymentCount: number
+  marketingAssetCount: number
 }
 
 export default function AdminDashboard() {
@@ -703,7 +709,7 @@ export default function AdminDashboard() {
               <Gift className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">Assets</div>
+              <div className="text-xl sm:text-2xl font-bold">{stats?.marketingAssetCount ?? 0}</div>
               <p className="text-xs text-muted-foreground">Reseller kits</p>
             </CardContent>
           </Card>
@@ -716,7 +722,7 @@ export default function AdminDashboard() {
               <Phone className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">3</div>
+              <div className="text-xl sm:text-2xl font-bold">{stats?.networkCount ?? 0}</div>
               <p className="text-xs text-muted-foreground">Supported</p>
             </CardContent>
           </Card>
@@ -755,7 +761,7 @@ export default function AdminDashboard() {
               <Phone className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">Orders</div>
+              <div className="text-xl sm:text-2xl font-bold">{stats?.esimOrderCount ?? 0}</div>
               <p className="text-xs text-muted-foreground">Digital SIM</p>
             </CardContent>
           </Card>
@@ -768,7 +774,7 @@ export default function AdminDashboard() {
               <Shield className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">Orders</div>
+              <div className="text-xl sm:text-2xl font-bold">{stats?.proxyOrderCount ?? 0}</div>
               <p className="text-xs text-muted-foreground">Residential & DC</p>
             </CardContent>
           </Card>
@@ -781,7 +787,7 @@ export default function AdminDashboard() {
               <Gift className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">Orders</div>
+              <div className="text-xl sm:text-2xl font-bold">{stats?.giftcardOrderCount ?? 0}</div>
               <p className="text-xs text-muted-foreground">Digital Cards</p>
             </CardContent>
           </Card>
@@ -794,7 +800,7 @@ export default function AdminDashboard() {
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">Payments</div>
+              <div className="text-xl sm:text-2xl font-bold">{stats?.billPaymentCount ?? 0}</div>
               <p className="text-xs text-muted-foreground">Utilities</p>
             </CardContent>
           </Card>

@@ -67,6 +67,12 @@ export async function GET(request: NextRequest) {
       dataBundlePurchasesExists,
       walletsExists,
       disputesExists,
+      networksExists,
+      esimOrdersExists,
+      proxyOrdersExists,
+      giftcardOrdersExists,
+      billPaymentsExists,
+      marketingAssetsExists,
     ] = await Promise.all([
       tableExists("users"),
       tableExists("transactions"),
@@ -79,6 +85,12 @@ export async function GET(request: NextRequest) {
       tableExists("data_bundle_purchases"),
       tableExists("wallets"),
       tableExists("disputes"),
+      tableExists("networks"),
+      tableExists("esim_orders"),
+      tableExists("proxy_orders"),
+      tableExists("giftcard_orders"),
+      tableExists("bill_payments"),
+      tableExists("marketing_assets"),
     ]);
 
     const totalUsersPromise = usersExists
@@ -202,6 +214,30 @@ export async function GET(request: NextRequest) {
         `)
       : Promise.resolve([]);
 
+    const networkCountPromise = networksExists
+      ? safeNumberQuery("network_count", () => sql`SELECT COUNT(*)::int AS value FROM networks`)
+      : Promise.resolve(0);
+
+    const esimOrderCountPromise = esimOrdersExists
+      ? safeNumberQuery("esim_order_count", () => sql`SELECT COUNT(*)::int AS value FROM esim_orders`)
+      : Promise.resolve(0);
+
+    const proxyOrderCountPromise = proxyOrdersExists
+      ? safeNumberQuery("proxy_order_count", () => sql`SELECT COUNT(*)::int AS value FROM proxy_orders`)
+      : Promise.resolve(0);
+
+    const giftcardOrderCountPromise = giftcardOrdersExists
+      ? safeNumberQuery("giftcard_order_count", () => sql`SELECT COUNT(*)::int AS value FROM giftcard_orders`)
+      : Promise.resolve(0);
+
+    const billPaymentCountPromise = billPaymentsExists
+      ? safeNumberQuery("bill_payment_count", () => sql`SELECT COUNT(*)::int AS value FROM bill_payments`)
+      : Promise.resolve(0);
+
+    const marketingAssetCountPromise = marketingAssetsExists
+      ? safeNumberQuery("marketing_asset_count", () => sql`SELECT COUNT(*)::int AS value FROM marketing_assets`)
+      : Promise.resolve(0);
+
     const [
       totalUsers,
       totalTransactions,
@@ -219,6 +255,12 @@ export async function GET(request: NextRequest) {
       recentTickets,
       transactionsByType,
       transactionsByDay,
+      networkCount,
+      esimOrderCount,
+      proxyOrderCount,
+      giftcardOrderCount,
+      billPaymentCount,
+      marketingAssetCount,
     ] = await Promise.all([
       totalUsersPromise,
       totalTransactionsPromise,
@@ -236,6 +278,12 @@ export async function GET(request: NextRequest) {
       recentTicketsPromise,
       transactionsByTypePromise,
       transactionsByDayPromise,
+      networkCountPromise,
+      esimOrderCountPromise,
+      proxyOrderCountPromise,
+      giftcardOrderCountPromise,
+      billPaymentCountPromise,
+      marketingAssetCountPromise,
     ]);
 
     const now = Date.now();
@@ -293,6 +341,12 @@ export async function GET(request: NextRequest) {
       recentTickets,
       transactionsByType,
       transactionsByDay,
+      networkCount,
+      esimOrderCount,
+      proxyOrderCount,
+      giftcardOrderCount,
+      billPaymentCount,
+      marketingAssetCount,
     };
 
     return NextResponse.json(
@@ -321,6 +375,12 @@ export async function GET(request: NextRequest) {
           recentTickets: [],
           transactionsByType: [],
           transactionsByDay: [],
+          networkCount: 0,
+          esimOrderCount: 0,
+          proxyOrderCount: 0,
+          giftcardOrderCount: 0,
+          billPaymentCount: 0,
+          marketingAssetCount: 0,
         },
       },
       { status: 200 }
