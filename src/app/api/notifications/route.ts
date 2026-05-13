@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/actions/auth";
-import { sql } from "@/lib/db";
+import { sql, isPgMissingRelation } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 
 export const runtime = "nodejs";
@@ -33,7 +33,12 @@ export async function GET() {
       unreadCount: unreadCount[0]?.count || 0,
     });
   } catch (error: any) {
-    if (error?.code === "42P01") {
+    if (
+      isPgMissingRelation(error) ||
+      error?.code === "42703" ||
+      error?.code === "22P02" ||
+      (typeof error?.message === "string" && /does not exist|invalid input syntax/i.test(error.message))
+    ) {
       return NextResponse.json({ success: true, notifications: [], unreadCount: 0 });
     }
     console.error("[Notifications API] GET error:", error);
