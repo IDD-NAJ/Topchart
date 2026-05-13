@@ -674,7 +674,9 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     <div className="divide-y divide-border">
-                      {recentTransactions.map((tx) => (
+                      {recentTransactions.map((tx) => {
+                        const isReferral = tx.type === "deposit" && /referral|reward|bonus/i.test(tx.description ?? "")
+                        return (
                         <div key={tx.id}>
                           <div 
                             className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors cursor-pointer"
@@ -688,8 +690,8 @@ export default function DashboardPage() {
                                 {tx.type === "deposit" ? <ArrowDownRight className="w-5 h-5" /> : <Wifi className="w-4 h-4" />}
                               </div>
                               <div>
-                                <p className="text-sm font-bold truncate max-w-[150px] sm:max-w-[200px]">{tx.description}</p>
-                                <p className="text-[10px] text-muted-foreground uppercase">
+                                <p className="text-sm font-bold font-serif truncate max-w-[150px] sm:max-w-[200px]">{tx.description}</p>
+                                <p className="text-[10px] text-muted-foreground uppercase font-serif">
                                   {new Date(tx.created_at).toLocaleDateString("en-GH", { day: 'numeric', month: 'short' })} · 
                                   {new Date(tx.created_at).toLocaleTimeString("en-GH", { hour: '2-digit', minute: '2-digit' })}
                                 </p>
@@ -697,7 +699,7 @@ export default function DashboardPage() {
                             </div>
                             <div className="flex items-center gap-2">
                               <div className="text-right">
-                                <p className={cn("text-sm font-bold", tx.type === "deposit" ? "text-[#0052CC]" : "text-foreground")}>
+                                <p className={cn("text-sm font-bold font-serif", isReferral ? "text-green-600" : tx.type === "deposit" ? "text-[#0052CC]" : "text-foreground")}>
                                   {tx.type === "deposit" ? "+" : "-"}{formatCurrency(tx.amount)}
                                 </p>
                                 <Badge variant={tx.status === "success" ? "outline" : "secondary"} className={cn(
@@ -715,6 +717,7 @@ export default function DashboardPage() {
                             </div>
                           </div>
                           {expandedTransaction === tx.id && (
+
                             <div className="px-4 pb-4 space-y-2 bg-muted/30 border-t border-border">
                               <div className="grid grid-cols-2 gap-2 text-xs">
                                 <div className="p-2 rounded bg-background border">
@@ -751,7 +754,7 @@ export default function DashboardPage() {
                             </div>
                           )}
                         </div>
-                      ))}
+                      )})}
                     </div>
                   )}
                 </CardContent>
