@@ -39,8 +39,10 @@ export async function GET(
 
     const number = numbers[0];
 
+    const isExpired = number.expires_at != null && new Date(number.expires_at as string) < new Date();
+
     let responseStatus = String(number.status ?? "");
-    if (number.pvadeals_request_id) {
+    if (number.pvadeals_request_id && !isExpired) {
       const synced = await syncPvadealsRequestAndSms({
         numberId,
         pvadealsRequestId: number.pvadeals_request_id,
@@ -48,8 +50,11 @@ export async function GET(
       if (synced.ok) {
         responseStatus = synced.dbStatus;
       } else {
-        return NextResponse.json({ success: false, error: synced.error || "Failed to sync SMS from provider" }, { status: 502 });
+        console.warn(`[SMS] Sync failed for ${numberId}: ${synced.error} — returning cached SMS`);
+        responseStatus = "expired";
       }
+    } else if (isExpired) {
+      responseStatus = "expired";
     }
 
     const allSMS = await sql`
@@ -72,8 +77,7 @@ export async function GET(
       data: {
         sms: allSMS,
         status: responseStatus,
-        expired:
-          number.expires_at != null ? new Date(number.expires_at as string) < new Date() : false,
+        expired: isExpired,
         has_verification_code: hasVerificationCode,
       },
     });

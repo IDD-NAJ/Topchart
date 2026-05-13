@@ -32,7 +32,10 @@ export async function GET() {
       notifications,
       unreadCount: unreadCount[0]?.count || 0,
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === "42P01") {
+      return NextResponse.json({ success: true, notifications: [], unreadCount: 0 });
+    }
     console.error("[Notifications API] GET error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch notifications" },

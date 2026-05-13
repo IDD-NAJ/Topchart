@@ -180,6 +180,7 @@ export default function DataPage() {
   const [plansError, setPlansError] = useState("")
   const [plansStale, setPlansStale] = useState(false)
   const [plansFetchedAt, setPlansFetchedAt] = useState<string>("")
+  const [plansProviderError, setPlansProviderError] = useState<string>("")
   const [activeType, setActiveType] = useState<string>("ALL")
   const [favoritesRefreshKey, setFavoritesRefreshKey] = useState(0)
   const [currentIdempotencyKey, setCurrentIdempotencyKey] = useState<string | null>(null)
@@ -323,6 +324,7 @@ export default function DataPage() {
         setPlans(json.data)
         setPlansStale(Boolean(json.stale))
         setPlansFetchedAt(String(json.fetchedAt || ""))
+        setPlansProviderError(json.providerError || "")
         setPlansError("")
       } else {
         setPlansError(json.error || "Failed to load plans from provider.")
@@ -1052,9 +1054,9 @@ export default function DataPage() {
                     )}
                   </div>
                 </div>
-                {plansStale && plansFetchedAt && (
+                {plansStale && plansFetchedAt && plansProviderError && (
                   <p className="text-xs text-amber-600 dark:text-amber-500 mt-2">
-                    Provider is temporarily unavailable. Showing cached plans from {new Date(plansFetchedAt).toLocaleDateString()}.
+                    Showing cached plans from {new Date(plansFetchedAt).toLocaleDateString()}.
                   </p>
                 )}
               </CardHeader>
