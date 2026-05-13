@@ -1,13 +1,9 @@
 "use client"
 
-import dynamic from "next/dynamic"
+import Script from "next/script"
 import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { usePathname } from "next/navigation"
-
-const TawkMessengerReact = dynamic(() => import("@tawk.to/tawk-messenger-react"), { ssr: false })
-
-const noop = () => {}
 
 export function TawkChat() {
   const propertyId = process.env.NEXT_PUBLIC_TAWK_PROPERTY_ID?.trim()
@@ -62,29 +58,23 @@ export function TawkChat() {
   }
 
   return (
-    <TawkMessengerReact
-      propertyId={propertyId}
-      widgetId={widgetId}
-      onBeforeLoad={noop}
-      onLoad={noop}
-      onStatusChange={noop}
-      onChatMaximized={noop}
-      onChatMinimized={noop}
-      onChatHidden={noop}
-      onChatStarted={noop}
-      onChatEnded={noop}
-      onPrechatSubmit={noop}
-      onOfflineSubmit={noop}
-      onChatMessageVisitor={noop}
-      onChatMessageAgent={noop}
-      onChatMessageSystem={noop}
-      onAgentJoinChat={noop}
-      onAgentLeaveChat={noop}
-      onChatSatisfaction={noop}
-      onVisitorNameChanged={noop}
-      onFileUpload={noop}
-      onTagsUpdated={noop}
-      onUnreadCountChanged={noop}
+    <Script
+      id="tawk-to"
+      strategy="lazyOnload"
+      dangerouslySetInnerHTML={{
+        __html: `
+          var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+          (function(){
+            var s1 = document.createElement("script"),
+                s0 = document.getElementsByTagName("script")[0];
+            s1.async = true;
+            s1.src = "https://embed.tawk.to/${propertyId}/${widgetId}";
+            s1.charset = "UTF-8";
+            s1.setAttribute("crossorigin", "*");
+            s0.parentNode.insertBefore(s1, s0);
+          })();
+        `,
+      }}
     />
   )
 }
