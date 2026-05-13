@@ -541,7 +541,7 @@ export default function DashboardPage() {
           
           {/* Active Processing & Usage Breakdown */}
           <div className="space-y-8">
-            <section className="space-y-4">
+            <section id="system-activity" className="space-y-4">
               <div className="flex items-center gap-2 px-1">
                 <Activity className="w-5 h-5 text-[#0052CC]" />
                 <h2 className="text-lg font-bold">System Activity</h2>

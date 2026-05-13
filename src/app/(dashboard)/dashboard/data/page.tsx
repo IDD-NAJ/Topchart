@@ -196,8 +196,10 @@ export default function DataPage() {
   const pendingNetworkIdRef = useRef<string | null>(null)
   const confirmTimerRef = useRef<number | null>(null)
   const successTimerRef = useRef<number | null>(null)
+  const processingRedirectTimerRef = useRef<number | null>(null)
   const [countdown, setCountdown] = useState<number>(0)
   const [successCountdown, setSuccessCountdown] = useState<number>(0)
+  const [processingRedirectCountdown, setProcessingRedirectCountdown] = useState<number>(0)
 
   const closeConfirmToForm = useCallback(() => {
     if (confirmTimerRef.current) {
@@ -221,6 +223,11 @@ export default function DataPage() {
       clearInterval(successTimerRef.current)
       successTimerRef.current = null
     }
+    if (processingRedirectTimerRef.current) {
+      clearInterval(processingRedirectTimerRef.current)
+      processingRedirectTimerRef.current = null
+    }
+    setProcessingRedirectCountdown(0)
     setPollingOrder(false)
     setPollError(null)
     setCurrentOrder(null)
@@ -307,6 +314,51 @@ export default function DataPage() {
       }
     }
   }, [step, dismissOutcomeDialogToForm])
+
+  useEffect(() => {
+    if (step === "processing" && currentOrder) {
+      setProcessingRedirectCountdown(30)
+      processingRedirectTimerRef.current = window.setInterval(() => {
+        setProcessingRedirectCountdown((prev) => {
+          if (prev <= 1) {
+            if (processingRedirectTimerRef.current) {
+              clearInterval(processingRedirectTimerRef.current)
+              processingRedirectTimerRef.current = null
+            }
+            queueMicrotask(() => {
+              stopPolling()
+              setPollingOrder(false)
+              setPollError(null)
+              setCurrentOrder(null)
+              setOrderStatusSnapshot(null)
+              setCorrelationId("")
+              setNewWalletBalance(null)
+              setDeliveryTracker(null)
+              setSelectedPlan(null)
+              setError("")
+              setStep("form")
+              router.push("/dashboard#system-activity")
+            })
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    } else {
+      if (processingRedirectTimerRef.current) {
+        clearInterval(processingRedirectTimerRef.current)
+        processingRedirectTimerRef.current = null
+      }
+      setProcessingRedirectCountdown(0)
+    }
+
+    return () => {
+      if (processingRedirectTimerRef.current) {
+        clearInterval(processingRedirectTimerRef.current)
+        processingRedirectTimerRef.current = null
+      }
+    }
+  }, [step, currentOrder, stopPolling, router])
 
   const fetchPlans = useCallback(async () => {
     setPlansLoading(true)
@@ -1379,6 +1431,11 @@ export default function DataPage() {
                 )}
                 {pollingOrder && (
                   <div className="text-xs text-muted-foreground">Refreshing provider status automatically…</div>
+                )}
+                {step === "processing" && processingRedirectCountdown > 0 && (
+                  <div className="text-xs text-muted-foreground/70 mt-1">
+                    Redirecting to dashboard in {processingRedirectCountdown}s…
+                  </div>
                 )}
                 {!pollingOrder && step === "processing" && !currentOrder.order_reference && (
                   <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2 mt-1">
