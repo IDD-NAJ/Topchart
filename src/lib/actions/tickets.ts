@@ -1,5 +1,3 @@
-"use server";
-
 import { sql } from "@/lib/db";
 import { getCurrentUser } from "@/lib/actions/auth";
 import { nanoid } from "nanoid";
