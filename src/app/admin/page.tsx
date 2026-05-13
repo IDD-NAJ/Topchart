@@ -415,7 +415,7 @@ export default function AdminDashboard() {
           <div className="h-8 w-48 bg-muted rounded animate-pulse" />
           <div className="h-8 w-32 bg-muted rounded animate-pulse" />
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} className="h-32">
               <CardContent className="p-6">
@@ -526,80 +526,80 @@ export default function AdminDashboard() {
 
       {/* Primary Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Link href="/admin/users">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4">
+          <Link href="/admin/users" className="min-w-0">
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
                 <CardTitle className="text-xs font-medium text-muted-foreground">Total Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalUsers}</div>
-                <p className="text-xs text-muted-foreground">+{stats.recentSignups} this week</p>
+              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6 pt-0">
+                <div className="text-xl sm:text-2xl font-bold truncate">{stats.totalUsers}</div>
+                <p className="text-xs text-muted-foreground truncate">+{stats.recentSignups} this week</p>
               </CardContent>
             </Card>
           </Link>
 
-          <Link href="/admin/active-users">
+          <Link href="/admin/active-users" className="min-w-0">
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
                 <CardTitle className="text-xs font-medium text-muted-foreground">Active Users</CardTitle>
-                <Activity className="h-4 w-4 text-[color:var(--marketing-accent)]" />
+                <Activity className="h-4 w-4 shrink-0 text-[color:var(--marketing-accent)]" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.activeUsers}</div>
+              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6 pt-0">
+                <div className="text-xl sm:text-2xl font-bold truncate">{stats.activeUsers}</div>
                 <p className="text-xs text-muted-foreground">Currently logged in</p>
               </CardContent>
             </Card>
           </Link>
 
-          <Link href="/admin/transactions">
+          <Link href="/admin/transactions" className="min-w-0">
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
                 <CardTitle className="text-xs font-medium text-muted-foreground">Transactions</CardTitle>
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                <BarChart3 className="h-4 w-4 shrink-0 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalTransactions}</div>
+              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6 pt-0">
+                <div className="text-xl sm:text-2xl font-bold truncate">{stats.totalTransactions}</div>
                 <p className="text-xs text-muted-foreground">All time</p>
               </CardContent>
             </Card>
           </Link>
 
-          <Link href="/admin/transactions?type=deposit&status=success">
+          <Link href="/admin/transactions?type=deposit&status=success" className="min-w-0">
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
                 <CardTitle className="text-xs font-medium text-muted-foreground">Revenue</CardTitle>
-                <DollarSign className="h-4 w-4 text-[color:var(--marketing-accent)]" />
+                <DollarSign className="h-4 w-4 shrink-0 text-[color:var(--marketing-accent)]" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">GH₵{Number(stats.totalRevenue || 0).toFixed(0)}</div>
+              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6 pt-0">
+                <div className="text-xl sm:text-2xl font-bold truncate">GH₵{Number(stats.totalRevenue || 0).toFixed(0)}</div>
                 <p className="text-xs text-muted-foreground">Total deposits</p>
               </CardContent>
             </Card>
           </Link>
 
-          <Link href="/admin/wallets">
+          <Link href="/admin/wallets" className="min-w-0">
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
                 <CardTitle className="text-xs font-medium text-muted-foreground">Wallet Balance</CardTitle>
-                <Wallet className="h-4 w-4 text-[#1A85B8]" />
+                <Wallet className="h-4 w-4 shrink-0 text-[#1A85B8]" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">GH₵{Number(stats.totalWalletBalance || 0).toFixed(0)}</div>
+              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6 pt-0">
+                <div className="text-xl sm:text-2xl font-bold truncate">GH₵{Number(stats.totalWalletBalance || 0).toFixed(0)}</div>
                 <p className="text-xs text-muted-foreground">User balances</p>
               </CardContent>
             </Card>
           </Link>
 
-          <Link href="/admin/referrals">
+          <Link href="/admin/referrals" className="min-w-0">
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
                 <CardTitle className="text-xs font-medium text-muted-foreground">Referrals</CardTitle>
-                <Gift className="h-4 w-4 text-[#FF5630]" />
+                <Gift className="h-4 w-4 shrink-0 text-[#FF5630]" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalReferrals}</div>
+              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6 pt-0">
+                <div className="text-xl sm:text-2xl font-bold truncate">{stats.totalReferrals}</div>
                 <p className="text-xs text-muted-foreground">Total referrals</p>
               </CardContent>
             </Card>
@@ -609,41 +609,41 @@ export default function AdminDashboard() {
 
       {/* Secondary Stats - Action Required */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Link href="/admin/tickets">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+          <Link href="/admin/tickets" className="min-w-0">
             <Card className={`cursor-pointer hover:shadow-md transition-shadow ${stats.openTickets > 0 ? 'border-amber-500/50' : ''}`}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
                 <CardTitle className="text-xs font-medium text-muted-foreground">Open Tickets</CardTitle>
-                <MessageSquare className={`h-4 w-4 ${stats.openTickets > 0 ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                <MessageSquare className={`h-4 w-4 shrink-0 ${stats.openTickets > 0 ? 'text-amber-500' : 'text-muted-foreground'}`} />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.openTickets}</div>
+              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6 pt-0">
+                <div className="text-xl sm:text-2xl font-bold">{stats.openTickets}</div>
                 <p className="text-xs text-muted-foreground">Needs attention</p>
               </CardContent>
             </Card>
           </Link>
 
-          <Link href="/admin/kyc-profiles">
+          <Link href="/admin/kyc-profiles" className="min-w-0">
             <Card className={`cursor-pointer hover:shadow-md transition-shadow ${stats.pendingKyc > 0 ? 'border-amber-500/50' : ''}`}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
                 <CardTitle className="text-xs font-medium text-muted-foreground">Pending KYC</CardTitle>
-                <Shield className={`h-4 w-4 ${stats.pendingKyc > 0 ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                <Shield className={`h-4 w-4 shrink-0 ${stats.pendingKyc > 0 ? 'text-amber-500' : 'text-muted-foreground'}`} />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.pendingKyc}</div>
+              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6 pt-0">
+                <div className="text-xl sm:text-2xl font-bold">{stats.pendingKyc}</div>
                 <p className="text-xs text-muted-foreground">Awaiting review</p>
               </CardContent>
             </Card>
           </Link>
 
-          <Link href="/admin/disputes">
+          <Link href="/admin/disputes" className="min-w-0">
             <Card className={`cursor-pointer hover:shadow-md transition-shadow ${stats.openDisputes > 0 ? 'border-red-500/50' : ''}`}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
                 <CardTitle className="text-xs font-medium text-muted-foreground">Open Disputes</CardTitle>
-                <AlertCircle className={`h-4 w-4 ${stats.openDisputes > 0 ? 'text-red-500' : 'text-muted-foreground'}`} />
+                <AlertCircle className={`h-4 w-4 shrink-0 ${stats.openDisputes > 0 ? 'text-red-500' : 'text-muted-foreground'}`} />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.openDisputes}</div>
+              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6 pt-0">
+                <div className="text-xl sm:text-2xl font-bold">{stats.openDisputes}</div>
                 <p className="text-xs text-muted-foreground">Requires action</p>
               </CardContent>
             </Card>
@@ -677,7 +677,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Content Management */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
         <HealthCheck />
 
         <Link href="/admin/homepage-media">
@@ -811,7 +811,7 @@ export default function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
               {stats.transactionsByType.map((item: any) => (
                 <div key={item.type} className="p-4 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2 mb-2">
