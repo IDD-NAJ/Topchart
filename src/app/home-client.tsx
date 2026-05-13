@@ -625,8 +625,16 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
         <section
           className="relative overflow-hidden px-4 pb-32 pt-20 sm:px-6 sm:pb-40 sm:pt-28 lg:pt-36 selection:bg-primary/30 selection:text-white flex min-h-[85vh] flex-col items-center justify-center bg-[#0d1627]"
         >
+          <Image
+            src="/images/topchart-way.jpg"
+            alt=""
+            fill
+            priority
+            className="absolute inset-0 object-cover object-center opacity-30 pointer-events-none"
+            aria-hidden="true"
+          />
           <HeroBackgroundVideoSlider />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0d1627]/80 via-[#0d1627]/60 to-[#0d1627] pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0d1627]/70 via-[#0d1627]/50 to-[#0d1627] pointer-events-none" />
           <ConnectionsGrid />
           
           {/* Bottom fade blending into the next white section */}
