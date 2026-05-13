@@ -512,8 +512,11 @@ export default function VerificationPage() {
   const [providerTab, setProviderTab] = useState<"usa" | "international">("usa")
   const [smspvaServices, setSmspvaServices] = useState<Array<{ code: string; name: string; category: string; ghsPrice: number; baseUsdPrice: number }>>([]) 
   const [smspvaCountries, setSmspvaCountries] = useState<Array<{ code: string; name: string; flag: string }>>([])
-  const [selectedSmspvaCountry, setSelectedSmspvaCountry] = useState("0")
+  const [selectedSmspvaCountry, setSelectedSmspvaCountry] = useState("7")
   const [smspvaServicesLoading, setSmspvaServicesLoading] = useState(false)
+  const [smspvaAvailability, setSmspvaAvailability] = useState<Record<string, { count: number; ghsPrice: number; available: boolean }>>({})
+  const [smspvaAvailabilityLoading, setSmspvaAvailabilityLoading] = useState(false)
+  const [smspvaCountrySearch, setSmspvaCountrySearch] = useState("")
   const [smspvaModal, setSmspvaModal] = useState<{
     open: boolean
     serviceCode: string
@@ -608,6 +611,24 @@ export default function VerificationPage() {
       }
     } catch {}
     finally { setSmspvaServicesLoading(false) }
+  }, [])
+
+  const fetchSmspvaAvailability = useCallback(async (country: string) => {
+    setSmspvaAvailabilityLoading(true)
+    setSmspvaAvailability({})
+    try {
+      const res = await fetch(`/api/verification/smspva/availability?country=${encodeURIComponent(country)}`)
+      let data: any = null
+      try { data = await res.json() } catch { /* non-JSON */ }
+      if (data?.success) {
+        const map: Record<string, { count: number; ghsPrice: number; available: boolean }> = {}
+        for (const svc of (data?.data?.services || [])) {
+          map[svc.code] = { count: svc.count, ghsPrice: svc.ghsPrice, available: svc.available }
+        }
+        setSmspvaAvailability(map)
+      }
+    } catch {}
+    finally { setSmspvaAvailabilityLoading(false) }
   }, [])
 
   const handleSmspvaPurchase = async () => {
@@ -748,7 +769,22 @@ export default function VerificationPage() {
     fetchActiveNumbers()
     fetchGlobalSettings()
     fetchSmspvaServices()
+    const stored = typeof window !== "undefined" ? localStorage.getItem("smspva_country") : null
+    if (stored) setSelectedSmspvaCountry(stored)
   }, [fetchServices, fetchActiveNumbers, refreshUser, fetchGlobalSettings, fetchSmspvaServices])
+
+  useEffect(() => {
+    if (providerTab !== "international") return
+    if (typeof window !== "undefined") localStorage.setItem("smspva_country", selectedSmspvaCountry)
+    fetchSmspvaAvailability(selectedSmspvaCountry)
+  }, [selectedSmspvaCountry, providerTab, fetchSmspvaAvailability])
+
+  const handleProviderTabChange = (tab: "usa" | "international") => {
+    setProviderTab(tab)
+    if (tab === "international" && Object.keys(smspvaAvailability).length === 0) {
+      fetchSmspvaAvailability(selectedSmspvaCountry)
+    }
+  }
 
   useEffect(() => {
     if (isAdmin && adminPanelOpen && adminServices.length === 0) {
@@ -1220,7 +1256,7 @@ export default function VerificationPage() {
       <div className="flex gap-2 border rounded-xl p-1 bg-muted/40">
         <button
           type="button"
-          onClick={() => setProviderTab("usa")}
+          onClick={() => handleProviderTabChange("usa")}
           className={cn(
             "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all",
             providerTab === "usa" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
@@ -1231,7 +1267,7 @@ export default function VerificationPage() {
         </button>
         <button
           type="button"
-          onClick={() => setProviderTab("international")}
+          onClick={() => handleProviderTabChange("international")}
           className={cn(
             "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all",
             providerTab === "international" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
@@ -1245,23 +1281,58 @@ export default function VerificationPage() {
       {providerTab === "international" && (
         <div className="space-y-4">
           {/* Country Selector */}
-          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-            <div className="flex-1">
-              <Select value={selectedSmspvaCountry} onValueChange={setSelectedSmspvaCountry}>
-                <SelectTrigger className="h-10">
-                  <Globe className="h-4 w-4 mr-2 shrink-0" />
-                  <SelectValue placeholder="Select country" />
-                </SelectTrigger>
-                <SelectContent>
-                  {smspvaCountries.map((c) => (
-                    <SelectItem key={c.code} value={c.code}>
-                      {c.flag} {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-2">
+            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+              <div className="flex-1 w-full">
+                <Select
+                  value={selectedSmspvaCountry}
+                  onValueChange={(val) => setSelectedSmspvaCountry(val)}
+                >
+                  <SelectTrigger className="h-11 text-sm font-medium">
+                    <Globe className="h-4 w-4 mr-2 shrink-0 text-muted-foreground" />
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    <div className="px-2 pb-1 pt-1 sticky top-0 bg-popover z-10">
+                      <Input
+                        placeholder="Search country..."
+                        value={smspvaCountrySearch}
+                        onChange={(e) => setSmspvaCountrySearch(e.target.value)}
+                        className="h-8 text-xs"
+                        onKeyDown={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    {smspvaCountries
+                      .filter((c) =>
+                        smspvaCountrySearch === "" ||
+                        c.name.toLowerCase().includes(smspvaCountrySearch.toLowerCase())
+                      )
+                      .map((c) => (
+                        <SelectItem key={c.code} value={c.code} className="py-2">
+                          <span className="flex items-center gap-2">
+                            <span className="text-base leading-none">{c.flag}</span>
+                            <span>{c.name}</span>
+                          </span>
+                        </SelectItem>
+                      ))
+                    }
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                {smspvaAvailabilityLoading ? (
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Checking availability…
+                  </span>
+                ) : Object.keys(smspvaAvailability).length > 0 ? (
+                  <span className="text-xs text-muted-foreground">
+                    {Object.values(smspvaAvailability).filter(a => a.available).length} services available
+                  </span>
+                ) : null}
+                <p className="text-xs text-muted-foreground hidden sm:block">STR 20-min · Wallet</p>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">STR 20-min only · Wallet payment</p>
           </div>
 
           {smspvaServicesLoading ? (
@@ -1281,27 +1352,47 @@ export default function VerificationPage() {
                       <h3 className="text-sm font-semibold">{cat.name}</h3>
                     </div>
                     <div className="grid gap-2 sm:gap-4 grid-cols-2 min-[380px]:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6">
-                      {catSvcs.map((svc) => (
-                        <motion.div
-                          key={svc.code}
-                          whileHover={{ y: -2 }}
-                          className="group cursor-pointer"
-                          onClick={() => setSmspvaModal({ open: true, serviceCode: svc.code, serviceName: svc.name, ghsPrice: svc.ghsPrice, purchasing: false, result: null, error: null })}
-                        >
-                          <Card className="h-full hover:border-primary/40 transition-all hover:shadow-sm">
-                            <CardContent className="p-3 sm:p-4">
-                              <div className="flex items-center gap-2 mb-2">
-                                <ServiceIcon name={svc.name} fallbackIcon={CatIcon} fallbackColor={cat.color} />
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-xs sm:text-sm truncate">{svc.name}</h4>
-                                  <p className="text-[10px] text-muted-foreground">STR 20min</p>
+                      {catSvcs.map((svc) => {
+                        const avail = smspvaAvailability[svc.code]
+                        const availChecked = Object.keys(smspvaAvailability).length > 0
+                        const isAvailable = !availChecked || (avail?.available ?? true)
+                        const displayPrice = avail?.ghsPrice ?? svc.ghsPrice
+                        const count = avail?.count ?? 0
+                        return (
+                          <motion.div
+                            key={svc.code}
+                            whileHover={{ y: isAvailable ? -2 : 0 }}
+                            className={cn("group cursor-pointer", !isAvailable && "opacity-50")}
+                            onClick={() => setSmspvaModal({ open: true, serviceCode: svc.code, serviceName: svc.name, ghsPrice: displayPrice, purchasing: false, result: null, error: null })}
+                          >
+                            <Card className={cn("h-full transition-all", isAvailable ? "hover:border-primary/40 hover:shadow-sm" : "border-dashed")}>
+                              <CardContent className="p-3 sm:p-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <ServiceIcon name={svc.name} fallbackIcon={CatIcon} fallbackColor={cat.color} />
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-semibold text-xs sm:text-sm truncate">{svc.name}</h4>
+                                    <p className="text-[10px] text-muted-foreground">STR 20min</p>
+                                  </div>
                                 </div>
-                              </div>
-                              <p className="font-semibold text-xs text-primary">{formatCurrency(svc.ghsPrice)}</p>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      ))}
+                                <div className="flex items-center justify-between gap-1 flex-wrap">
+                                  <p className="font-semibold text-xs text-primary">{formatCurrency(displayPrice)}</p>
+                                  {availChecked && smspvaAvailabilityLoading === false && (
+                                    isAvailable ? (
+                                      <Badge variant="outline" className="text-[9px] h-4 px-1 text-green-600 border-green-300 bg-green-50 dark:bg-green-950/30">
+                                        {count > 99 ? "99+" : count} avail.
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="text-[9px] h-4 px-1 text-muted-foreground border-dashed">
+                                        None
+                                      </Badge>
+                                    )
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </motion.div>
+                        )
+                      })}
                     </div>
                   </div>
                 )
