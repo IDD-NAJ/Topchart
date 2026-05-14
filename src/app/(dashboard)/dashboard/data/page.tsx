@@ -8,6 +8,7 @@ import { NetworkSelector } from "@/components/network-selector"
 import { ServiceGuard } from "@/components/service-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { DataServiceSchema } from "./schema"
 import { Input } from "@/components/ui/input"
 import {
   Dialog,
@@ -785,6 +786,7 @@ export default function DataPage() {
 
   return (
     <ServiceGuard serviceKey="data">
+    <DataServiceSchema />
     <div className="max-w-5xl mx-auto space-y-8 pt-4 pb-24 px-4 sm:px-6">
       
       <div className="flex flex-col gap-2 mb-8">

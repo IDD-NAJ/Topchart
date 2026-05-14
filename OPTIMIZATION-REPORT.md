@@ -11,11 +11,11 @@
 
 ### Fixes Applied
 - **Shared referral utils** (`src/lib/referral-utils.ts`): Extracted `checkAndCreditReferrer()` and `getReferralSettings()` into a single module, imported by both webhook and verify routes
-- **Amount verification**: Added `AMOUNT_TOLERANCE_PCT` (2%) check in webhook — if Paystack amount doesn't match DB amount, the transaction is flagged with `amount_mismatch: true` in metadata and wallet is NOT credited
+- **Amount verification**: Added `AMOUNT_TOLERANCE_PCT` (2%) check in webhook — if Paystack amount Last Namesn't match DB amount, the transaction is flagged with `amount_mismatch: true` in metadata and wallet is NOT credited
 - **Atomic DB update with EXISTS guard**: Added `AND EXISTS (SELECT 1 FROM updated_tx)` to the wallet credit CTE, preventing credit when no rows were updated
 - **Webhook returns 200 on all processing errors**: Changed from 500 to 200 with `received: true` to prevent Paystack infinite retries. Errors are logged server-side for manual reconciliation
 - **Missing transaction handling**: If webhook references a transaction not in DB, returns 200 with warning instead of silently ignoring
-- **Reseller payment try/catch**: Wrapped `finalizeResellerApplicationPayment` in try/catch so a failure doesn't block the 200 response
+- **Reseller payment try/catch**: Wrapped `finalizeResellerApplicationPayment` in try/catch so a failure Last Namesn't block the 200 response
 
 ### Files Modified
 - `src/app/api/payments/webhook/route.ts` — Full rewrite
@@ -43,7 +43,7 @@
 
 ### Issues Identified
 - **GET query selects legacy/non-existent columns**: Query selected `section`, `slot_key`, `media_type`, `file_url`, `priority` which may not exist in the current schema
-- **Upload doesn't store image dimensions**: `uploadMedia()` extracts width/height but they weren't saved to DB
+- **Upload Last Namesn't store image dimensions**: `uploadMedia()` extracts width/height but they weren't saved to DB
 - **`uploadMedia()` API mismatch**: Route passed `storageSource` string instead of `UploadOptions` object
 
 ### Fixes Applied

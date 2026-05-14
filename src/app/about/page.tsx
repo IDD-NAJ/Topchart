@@ -9,6 +9,8 @@ import { ArrowRight, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { PageTransition, ScrollReveal, StaggerReveal, StaggerRevealItem } from "@/components/animations"
+import { BreadcrumbSchema } from "./breadcrumb-schema"
+import { WebPageSchema } from "./page-schema"
 
 const VALUES = [
   {
@@ -84,6 +86,8 @@ export default function AboutPage() {
 
   return (
     <PageTransition className="min-h-screen flex flex-col bg-[color:var(--marketing-cream)]">
+      <BreadcrumbSchema />
+      <WebPageSchema />
       <Header />
 
       <main className="flex-1">

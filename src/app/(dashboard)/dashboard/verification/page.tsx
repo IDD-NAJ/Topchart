@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { VerificationServiceSchema } from "./schema"
 import {
   MessageCircle,
   CreditCard,
@@ -957,6 +958,7 @@ export default function VerificationPage() {
 
   return (
     <ServiceGuard serviceKey="verification">
+    <VerificationServiceSchema />
     <div className="space-y-6 pb-4">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div className="min-w-0 flex-1">

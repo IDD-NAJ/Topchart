@@ -9,6 +9,7 @@ import { Calendar, User, ArrowLeft, Tag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { notFound } from "next/navigation"
+import { ArticleSchema } from "./schema"
 
 const posts = [
   {
@@ -149,6 +150,7 @@ export default function BlogPostPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[color:var(--marketing-cream)] selection:bg-[color:var(--marketing-accent)]/15">
+      <ArticleSchema title={post.title} description={post.excerpt} slug={post.slug} />
       <Header />
 
       <main className="flex-1 pb-12 pt-[calc(72px+1.5rem)]">

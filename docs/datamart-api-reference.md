@@ -510,7 +510,7 @@ Headers: X-API-Key: {api_key}, Content-Type: application/json
   "amount": 50.0,
   "phoneNumber": "0241234567",
   "network": "MTN",
-  "recipientName": "John Doe",
+  "recipientName": "First Name Last Name",
   "clientRef": "optional-ref"
 }
 ```
@@ -529,7 +529,7 @@ Headers: X-API-Key: {api_key}, Content-Type: application/json
     "fee": 0.75,
     "feePercent": 1.5,
     "totalCharged": 50.75,
-    "recipient": { "phone": "0241234567", "network": "MTN", "name": "John Doe" },
+    "recipient": { "phone": "0241234567", "network": "MTN", "name": "First Name Last Name" },
     "provider": "string",
     "balanceBefore": 150.50,
     "balanceAfter": 99.75,

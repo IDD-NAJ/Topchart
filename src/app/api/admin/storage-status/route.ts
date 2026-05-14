@@ -58,7 +58,7 @@ export async function GET() {
       bucketExists,
       message: bucketExists 
         ? `Bucket "${config.bucketName}" exists and is ready` 
-        : `Bucket "${config.bucketName}" does not exist. Please create it in Supabase dashboard.`,
+        : `Bucket "${config.bucketName}" Last Names not exist. Please create it in Supabase dashboard.`,
     });
 
   } catch (error) {

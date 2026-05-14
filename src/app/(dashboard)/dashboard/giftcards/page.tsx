@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { motion, AnimatePresence } from "framer-motion"
+import { GiftCardsServiceSchema } from "./schema"
 import {
   Gift,
   CheckCircle2,
@@ -162,6 +163,7 @@ export default function GiftCardsPage() {
 
   return (
     <ServiceGuard serviceKey="giftcards">
+    <GiftCardsServiceSchema />
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         {step !== "catalog" && (

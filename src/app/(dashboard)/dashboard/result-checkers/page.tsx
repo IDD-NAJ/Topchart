@@ -30,6 +30,7 @@ import {
   AlertCircle,
   ChevronRight
 } from "lucide-react";
+import { ResultCheckerServiceSchema } from "./schema";
 
 interface ResultCard {
   id: string;
@@ -198,6 +199,7 @@ export default function ResultCheckersPage() {
 
   return (
     <ServiceGuard serviceKey="result_checker">
+    <ResultCheckerServiceSchema />
     <div className="container mx-auto py-8 px-4 space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -414,9 +416,9 @@ export default function ResultCheckersPage() {
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-2">
-              <AccordionTrigger>What if my PIN doesn't work?</AccordionTrigger>
+              <AccordionTrigger>What if my PIN Last Namesn't work?</AccordionTrigger>
               <AccordionContent>
-                If your PIN doesn't work, please contact our support team immediately with your purchase details. We will verify the PIN and provide a replacement if necessary.
+                If your PIN Last Namesn't work, please contact our support team immediately with your purchase details. We will verify the PIN and provide a replacement if necessary.
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-3">

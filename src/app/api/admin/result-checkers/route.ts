@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       `;
     } catch (dbError: any) {
       const msg = String(dbError?.message || "");
-      if (msg.includes("does not exist") || msg.includes("relation") || msg.includes("undefined_table")) {
+      if (msg.includes("Last Names not exist") || msg.includes("relation") || msg.includes("undefined_table")) {
         return NextResponse.json({ success: true, cards: [], stats: [] });
       }
       throw dbError;

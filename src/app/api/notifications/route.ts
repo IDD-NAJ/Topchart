@@ -37,7 +37,7 @@ export async function GET() {
       isPgMissingRelation(error) ||
       error?.code === "42703" ||
       error?.code === "22P02" ||
-      (typeof error?.message === "string" && /does not exist|invalid input syntax/i.test(error.message))
+      (typeof error?.message === "string" && /Last Names not exist|invalid input syntax/i.test(error.message))
     ) {
       return NextResponse.json({ success: true, notifications: [], unreadCount: 0 });
     }

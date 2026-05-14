@@ -16,54 +16,69 @@ import './globals.css'
 export const metadata: Metadata = {
   metadataBase: new URL('https://topchart.store'),
   title: {
-    default: 'Topchart — Digital Services Platform',
-    template: '%s | Topchart',
+    default: 'Topchart — Cheap Data Bundles, Airtime & Verification Numbers Ghana',
+    template: '%s | Topchart Ghana',
   },
-  description: 'Topchart is Ghana\'s complete digital services platform for instant airtime top-up, MTN/Telecel/AirtelTigo data bundles, OTP verification numbers, WAEC and BECE result checkers, bill payments, gift cards, and reseller tools.',
-  applicationName: 'Topchart',
+  description: 'Buy cheap MTN, Telecel & AirtelTigo data bundles instantly. Get virtual numbers for OTP & SMS verification in Ghana. Secure, fast & always on.',
   keywords: [
-    'buy data online ghana',
-    'instant airtime top up ghana',
-    'cheap mobile data ghana',
-    'mtn data bundle ghana',
-    'telecel data bundle ghana',
-    'airteltigo data bundle ghana',
-    'verification numbers ghana',
-    'otp verification number',
-    'waec result checker',
-    'bece result checker',
-    'gift cards ghana',
-    'pay bills online ghana',
-    'reseller programme ghana',
-    'topchart',
+    'cheap data bundles Ghana',
+    'buy airtime online Ghana',
+    'verification numbers Ghana',
+    'OTP number Ghana',
+    'SMS verification Ghana',
+    'MTN data bundles',
+    'Telecel data bundles',
+    'AirtelTigo data',
+    'WAEC result checker',
+    'BECE result checker',
+    'NOVDEC checker',
+    'cheap internet Ghana',
+    'data reseller Ghana',
+    'digital services Ghana',
+    'virtual phone numbers',
+    'gift cards Ghana',
+    'bill payment Ghana',
+    'mobile money payments',
+    'Topchart Ghana',
   ],
   authors: [{ name: 'Topchart', url: 'https://topchart.store' }],
   creator: 'Topchart',
   publisher: 'Topchart',
+  category: 'Digital Services',
+  applicationName: 'Topchart',
+  referrer: 'origin-when-cross-origin',
   robots: {
     index: true,
     follow: true,
+    nocache: false,
     googleBot: {
       index: true,
       follow: true,
+      noimageindex: false,
       'max-video-preview': -1,
       'max-image-preview': 'large',
       'max-snippet': -1,
     },
+  },
+  verification: {
+    google: 'google860c28ee3c4b1e50.html',
+  },
+  alternates: {
+    canonical: 'https://topchart.store',
   },
   openGraph: {
     type: 'website',
     locale: 'en_GH',
     url: 'https://topchart.store',
     siteName: 'Topchart',
-    title: 'Topchart — Digital Services Platform',
-    description: 'Buy airtime, data bundles, verification numbers, result checker vouchers, gift cards, and pay bills instantly on Topchart. Built for speed, reliability, and secure checkout in Ghana.',
+    title: 'Topchart — Cheap Data Bundles, Airtime & Verification Numbers Ghana',
+    description: 'Buy cheap MTN, Telecel & AirtelTigo data bundles instantly. Get virtual numbers for OTP & SMS verification in Ghana. Fast, secure & reliable.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Topchart — Instant Data & Services',
+        alt: 'Topchart Ghana — Cheap Data Bundles, Airtime & Verification Numbers',
       },
     ],
   },
@@ -71,14 +86,17 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     site: '@topchartgh',
     creator: '@topchartgh',
-    title: 'Topchart — Digital Services Platform',
-    description: 'Buy airtime, data bundles, verification numbers, result checker vouchers, gift cards, and pay bills instantly on Topchart.',
+    title: 'Topchart — Cheap Data Bundles & Verification Numbers Ghana',
+    description: 'Buy cheap data bundles, airtime & OTP verification numbers in Ghana instantly.',
     images: ['/og-image.png'],
   },
-  alternates: {
-    canonical: 'https://topchart.store',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
   },
   other: {
+    'msvalidate.01': '7E495D7163563B23502D4333EA6974C4',
     'script:ld+json': JSON.stringify([
       {
         '@context': 'https://schema.org',
@@ -87,25 +105,37 @@ export const metadata: Metadata = {
         alternateName: 'Topchart Ghana',
         url: 'https://topchart.store',
         logo: 'https://topchart.store/logo.svg',
-        description: 'Ghana\'s digital services platform for data bundles, verification numbers, result checkers, and reseller services.',
-        contactPoint: [
-          {
-            '@type': 'ContactPoint',
-            telephone: '+233-20-000-0000',
-            contactType: 'customer service',
-            areaServed: 'GH',
-            availableLanguage: 'English',
-          },
-        ],
+        description: "Ghana's digital services platform for data bundles, airtime, verification numbers, result checkers, gift cards and bill payments.",
+        email: 'support@topchart.store',
+        telephone: '+233509122072',
+        foundingLocation: {
+          '@type': 'Place',
+          name: 'Accra, Ghana',
+        },
         address: {
           '@type': 'PostalAddress',
-          addressLocality: 'Accra',
-          addressCountry: 'GH',
           streetAddress: 'East Legon',
+          addressLocality: 'Accra',
+          addressRegion: 'Greater Accra',
+          addressCountry: 'GH',
+        },
+        areaServed: {
+          '@type': 'Country',
+          name: 'Ghana',
         },
         sameAs: [
           'https://twitter.com/topchartgh',
           'https://linkedin.com/company/topchartgh',
+          'https://wa.me/233509122072',
+        ],
+        contactPoint: [
+          {
+            '@type': 'ContactPoint',
+            telephone: '+233509122072',
+            contactType: 'customer support',
+            availableLanguage: ['English'],
+            areaServed: 'GH',
+          },
         ],
       },
       {
@@ -117,19 +147,44 @@ export const metadata: Metadata = {
         potentialAction: {
           '@type': 'SearchAction',
           target: 'https://topchart.store/search?q={search_term_string}',
-          'query-input': 'required name=search_term_string'
-        }
+          'query-input': 'required name=search_term_string',
+        },
       },
       {
         '@context': 'https://schema.org',
         '@type': 'ItemList',
         name: 'Topchart Popular Services',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Buy Airtime Online Ghana', url: 'https://topchart.store/buy-airtime-online-ghana' },
-          { '@type': 'ListItem', position: 2, name: 'Cheap Mobile Data Ghana', url: 'https://topchart.store/cheap-mobile-data-ghana' },
-          { '@type': 'ListItem', position: 3, name: 'Virtual Number for Verification', url: 'https://topchart.store/virtual-phone-number-for-verification' },
-          { '@type': 'ListItem', position: 4, name: 'WAEC Result Checker', url: 'https://topchart.store/waec-result-checker' },
-          { '@type': 'ListItem', position: 5, name: 'Reseller Programme', url: 'https://topchart.store/about' },
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Buy Airtime Online Ghana',
+            item: 'https://topchart.store/buy-airtime-online-ghana',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Cheap Mobile Data Ghana',
+            item: 'https://topchart.store/cheap-mobile-data-ghana',
+          },
+          {
+            '@type': 'ListItem',
+            position: 3,
+            name: 'Virtual Number for Verification',
+            item: 'https://topchart.store/virtual-phone-number-for-verification',
+          },
+          {
+            '@type': 'ListItem',
+            position: 4,
+            name: 'WAEC Result Checker',
+            item: 'https://topchart.store/waec-result-checker',
+          },
+          {
+            '@type': 'ListItem',
+            position: 5,
+            name: 'Reseller Programme',
+            item: 'https://topchart.store/about',
+          },
         ],
       },
       {
@@ -141,18 +196,11 @@ export const metadata: Metadata = {
           'https://topchart.store/faq',
           'https://topchart.store/blog',
           'https://topchart.store/privacy',
-          'https://topchart.store/terms'
-        ]
-      }
+          'https://topchart.store/terms',
+        ],
+      },
     ]),
   },
-  icons: {
-    icon: '/logo.svg',
-    apple: '/logo.svg',
-    shortcut: '/logo.svg',
-  },
-  manifest: '/site.webmanifest',
-  category: 'finance',
 }
 
 export const viewport: Viewport = {

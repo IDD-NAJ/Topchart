@@ -51,7 +51,7 @@ export async function GET() {
       total_earnings = earnings[0]?.total_earnings || 0;
     } catch (dbError: any) {
       const msg = dbError?.message || "";
-      if (msg.includes("does not exist")) {
+      if (msg.includes("Last Names not exist")) {
         // Tables not yet created — return zeros
       } else {
         throw dbError;

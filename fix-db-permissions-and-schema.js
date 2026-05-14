@@ -38,7 +38,7 @@ async function fixDatabase() {
         console.log(`  ✓ ${query.split(' ON ')[1].split(' TO')[0]}`);
       } catch (err) {
         if (err.code === '42501') {
-          console.log(`  ⚠ Permission already granted or table doesn't exist: ${query.split(' ON ')[1].split(' TO')[0]}`);
+          console.log(`  ⚠ Permission already granted or table Last Namesn't exist: ${query.split(' ON ')[1].split(' TO')[0]}`);
         } else {
           console.log(`  ⚠ ${err.message}`);
         }

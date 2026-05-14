@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { motion, AnimatePresence } from "framer-motion"
+import { EsimServiceSchema } from "./schema"
 import {
   Smartphone,
   ShieldCheck,
@@ -251,6 +252,7 @@ export default function ESIMPage() {
 
   return (
     <ServiceGuard serviceKey="esim">
+    <EsimServiceSchema />
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         {step !== "catalog" && (

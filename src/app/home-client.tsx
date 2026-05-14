@@ -65,9 +65,9 @@ type NetworkLogoConfig = {
 }
 
 const DEFAULT_NETWORK_LOGOS: NetworkLogoConfig[] = [
-  { key: "mtn_logo", name: "MTN", image: "/download.png", color: "bg-yellow-400" },
-  { key: "telecel_logo", name: "Telecel", image: "/download.jpg", color: "bg-red-500" },
-  { key: "airteltigo_logo", name: "AirtelTigo", image: "/download (1).png", color: "bg-red-600" },
+  { key: "mtn_logo", name: "MTN", image: "/mtn-ghana-logo.png", color: "bg-yellow-400" },
+  { key: "telecel_logo", name: "Telecel", image: "/telecel-ghana-logo.jpg", color: "bg-red-500" },
+  { key: "airteltigo_logo", name: "AirtelTigo", image: "/airteltigo-ghana-logo.png", color: "bg-red-600" },
 ]
 
 const DEFAULT_DEVELOPER_IMAGE = "/images/technical-partnership.jpg"
@@ -150,7 +150,7 @@ function ScaleConfidenceImageSlider() {
           transition={{ duration: 1, ease: "easeInOut" }}
           aria-hidden
         >
-          <Image src={src} alt="" fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" loading="lazy" />
+          <Image src={src} alt="Topchart platform background showing Ghana digital services" fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" loading="lazy" />
         </motion.div>
       ))}
     </>
@@ -623,11 +623,12 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
 
       <main className="flex-1 pt-[72px]">
         <section
+          aria-label="Topchart homepage hero"
           className="relative overflow-hidden px-4 pb-32 pt-20 sm:px-6 sm:pb-40 sm:pt-28 lg:pt-36 selection:bg-primary/30 selection:text-white flex min-h-[85vh] flex-col items-center justify-center bg-[#0d1627]"
         >
           <Image
             src="/images/topchart-way.jpg"
-            alt=""
+            alt="Topchart hero background showing digital services platform"
             fill
             priority
             className="absolute inset-0 object-cover object-center opacity-30 pointer-events-none"
@@ -648,16 +649,7 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               className="font-serif text-balance text-5xl leading-[1.1] tracking-tight text-white sm:text-6xl lg:text-[5.5rem]"
             >
-             Complete <br className="hidden md:block" />
-              <motion.span
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="text-sky-200 inline-block"
-              >
-                Digital Services
-              </motion.span>{" "}
-              Platform
+              Buy Cheap Data Bundles, Airtime & Verification Numbers in Ghana
             </motion.h1>
 
             <motion.p
@@ -666,7 +658,7 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
               transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
               className="mt-6 max-w-2xl text-[15px] sm:text-base leading-relaxed text-[#8a9ba8]"
             >
-              Airtime, dirtime, data bundles, verification numbers, exam results, and a full reseller programme — all in one secure platform.
+              Cheap data bundles, airtime, verification numbers, exam results, and a full reseller programme — all in one secure platform, delivered instantly.
             </motion.p>
 
             <motion.div
@@ -726,7 +718,7 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
                   <div className="relative h-8 w-8">
                     <Image
                       src={network.image}
-                      alt={network.name}
+                      alt={`${network.name} network logo for data bundles and airtime in Ghana`}
                       fill
                       className="object-contain"
                       sizes="32px"

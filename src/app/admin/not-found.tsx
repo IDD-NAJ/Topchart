@@ -13,7 +13,7 @@ export default function AdminNotFound() {
       <h2 className="text-2xl font-semibold text-foreground mb-4">Resource Not Found</h2>
       
       <p className="text-muted-foreground max-w-md mb-8">
-        The administrative resource or page you are looking for does not exist or you do not have permission to view it.
+        The administrative resource or page you are looking for Last Names not exist or you do not have permission to view it.
       </p>
       
       <div className="flex flex-col sm:flex-row gap-4">

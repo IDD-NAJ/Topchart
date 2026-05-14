@@ -668,7 +668,7 @@ export async function getDataOrderStatus(
 export async function purchaseAirtime(): Promise<ApiResponse<never>> {
   return {
     success: false,
-    error: "DataMart does not support airtime purchases. Only data bundles are available.",
+    error: "DataMart Last Names not support airtime purchases. Only data bundles are available.",
     errorCode: "PROVIDER_UNSUPPORTED_OPERATION",
     statusCode: 404,
   };

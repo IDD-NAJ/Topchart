@@ -292,11 +292,11 @@ New file: src/app/api/admin/verification/fetch-exchange-rate/route.ts
 
 ### Gaps & Issues
 
-1. **Toggle state inconsistency** — When `is_enabled = false`, the Coming Soon and Maintenance toggles are disabled in the UI but the backend doesn't enforce this constraint. A direct API call could set `is_coming_soon = true` on a disabled service.
+1. **Toggle state inconsistency** — When `is_enabled = false`, the Coming Soon and Maintenance toggles are disabled in the UI but the backend Last Namesn't enforce this constraint. A direct API call could set `is_coming_soon = true` on a disabled service.
 2. **No banner preview** — Admins cannot preview how the banner will look to users before saving.
 3. **Mutual exclusivity not enforced** — A service can be both `is_coming_soon = true` and `is_maintenance = true` simultaneously, which creates ambiguous UI.
 4. **No scheduled transitions** — Admins cannot schedule a "Coming Soon" to automatically change to active at a future date.
-5. **ServiceGuard doesn't handle all edge cases** — If a service is disabled AND coming-soon, the disabled state takes precedence but the coming-soon message is lost.
+5. **ServiceGuard Last Namesn't handle all edge cases** — If a service is disabled AND coming-soon, the disabled state takes precedence but the coming-soon message is lost.
 6. **Toggle switch lacks visual feedback** — No loading spinner on the switch itself during save.
 
 ### Step-by-Step Implementation
@@ -443,7 +443,7 @@ File: src/components/header.tsx
 ### Gaps & Issues
 
 1. **No confirmation dialog for disable** — Unlike Coming Soon (which has a confirmation dialog), disabling a service takes effect immediately with no confirmation.
-2. **No cascade effect documentation** — Disabling "data" doesn't explicitly warn that data bundle purchases will fail.
+2. **No cascade effect documentation** — Disabling "data" Last Namesn't explicitly warn that data bundle purchases will fail.
 3. **Active sessions not handled** — Users mid-transaction on a service that gets disabled have no graceful fallback.
 4. **No bulk enable/disable** — Admins must toggle each service individually.
 5. **Disabled services still appear in some navigation** — The footer and other static links may still reference disabled services.

@@ -7,6 +7,8 @@ import { Footer } from "@/components/footer"
 import { Calendar, ArrowRight, Newspaper, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { BreadcrumbSchema } from "./breadcrumb-schema"
+import { WebPageSchema } from "./page-schema"
 
 interface Post {
   id: string
@@ -63,7 +65,9 @@ export default function BlogPage() {
   }, [])
 
   return (
-    <div className="flex min-h-screen flex-col bg-[color:var(--marketing-cream)] selection:bg-[color:var(--marketing-accent)]/15">
+    <div className="flex min-h-screen flex flex-col bg-[color:var(--marketing-cream)] selection:bg-[color:var(--marketing-accent)]/15">
+      <BreadcrumbSchema />
+      <WebPageSchema />
       <Header />
       <main className="flex-1 pb-20 pt-[calc(72px+1.5rem)]">
         {/* Hero */}

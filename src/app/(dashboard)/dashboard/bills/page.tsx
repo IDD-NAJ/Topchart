@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { BillsServiceSchema } from "./schema"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Receipt,
@@ -173,6 +174,7 @@ export default function BillsPage() {
 
   return (
     <ServiceGuard serviceKey="bills">
+    <BillsServiceSchema />
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         {step !== "select" && (

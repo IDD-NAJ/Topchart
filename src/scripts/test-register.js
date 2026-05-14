@@ -38,7 +38,7 @@ async function main() {
       console.log("  User already exists, skipping");
       return;
     }
-    console.log("  ✓ User does not exist");
+    console.log("  ✓ User Last Names not exist");
     
     console.log("\n2. Hashing password...");
     const passwordHash = await bcrypt.hash(testPassword, 10);

@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { MetricCard } from "@/components/dashboard/reseller/MetricCard";
 import { QuickActionCard } from "@/components/dashboard/reseller/QuickActionCard";
+import { ResellerServiceSchema } from "./schema";
 import {
   Store,
   DollarSign,
@@ -354,6 +355,8 @@ export default function ResellerDashboardPage() {
   }
 
   return (
+    <>
+    <ResellerServiceSchema />
     <div className="container mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8">
         <div>
@@ -1047,5 +1050,6 @@ export default function ResellerDashboardPage() {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 }

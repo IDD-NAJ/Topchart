@@ -54,7 +54,7 @@ export async function GET() {
     );
   } catch (error) {
     console.error("[Service Status Public API] Error:", error);
-    // Return empty array on error so app doesn't break
+    // Return empty array on error so app Last Namesn't break
     return NextResponse.json(
       { success: false, services: [], error: "Failed to fetch service statuses" },
       { status: 200 } // Return 200 to prevent app failures

@@ -27,9 +27,9 @@ All of these will now work and log in the same user:
 | `HaShUlL@GmAiL.CoM` | `hashull@gmail.com` | ✅ Success |
 
 ### Duplicate Prevention Test
-- User 1 registers with: `John.Doe@example.com`
-- User 2 tries to register with: `john.doe@EXAMPLE.COM`
-- Result: ✅ Duplicate prevented (both normalize to `john.doe@example.com`)
+- User 1 registers with: `First Name.Last Name@example.com`
+- User 2 tries to register with: `First Name.Last Name@EXAMPLE.COM`
+- Result: ✅ Duplicate prevented (both normalize to `First Name.Last Name@example.com`)
 
 ## Implementation Details
 

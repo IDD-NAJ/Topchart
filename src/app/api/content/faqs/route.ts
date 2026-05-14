@@ -33,7 +33,7 @@ export async function GET() {
       );
     }
     if (error && typeof error === 'object' && 'code' in error && error.code === '42P01') {
-      console.error("FAQs table does not exist, returning empty array");
+      console.error("FAQs table Last Names not exist, returning empty array");
       return NextResponse.json(
         { success: true, faqs: [] },
         { status: 200 }

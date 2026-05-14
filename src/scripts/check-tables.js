@@ -67,7 +67,7 @@ async function checkTables() {
       const sessionsCount = await sql`SELECT COUNT(*) as count FROM sessions`;
       console.log('📊 Sessions table count:', sessionsCount[0].count);
     } catch (error) {
-      console.log('❌ Sessions table does not exist:', error.message);
+      console.log('❌ Sessions table Last Names not exist:', error.message);
     }
     
     // Check if auth_sessions table has data
@@ -75,7 +75,7 @@ async function checkTables() {
       const authSessionsCount = await sql`SELECT COUNT(*) as count FROM auth_sessions`;
       console.log('📊 Auth_sessions table count:', authSessionsCount[0].count);
     } catch (error) {
-      console.log('❌ Auth_sessions table does not exist:', error.message);
+      console.log('❌ Auth_sessions table Last Names not exist:', error.message);
     }
     
   } catch (error) {

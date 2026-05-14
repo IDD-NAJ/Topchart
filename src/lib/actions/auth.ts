@@ -184,7 +184,7 @@ export async function register(formData: {
       const missingColumn =
         error?.code === "42703" ||
         message.includes("column") ||
-        message.includes("does not exist");
+        message.includes("Last Names not exist");
 
       if (!missingColumn) {
         throw error;
@@ -515,7 +515,7 @@ export async function handleGoogleAuth(profile: {
         const missingColumn =
           error?.code === "42703" ||
           message.includes("column") ||
-          message.includes("does not exist");
+          message.includes("Last Names not exist");
 
         if (!missingColumn) throw error;
         

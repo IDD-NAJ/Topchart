@@ -215,7 +215,7 @@ export function AdminManagementPanel() {
                       id="firstName"
                       value={createForm.first_name}
                       onChange={(e) => setCreateForm(prev => ({ ...prev, first_name: e.target.value }))}
-                      placeholder="John"
+                      placeholder="First Name"
                     />
                   </div>
                   <div className="space-y-2">
@@ -224,7 +224,7 @@ export function AdminManagementPanel() {
                       id="lastName"
                       value={createForm.last_name}
                       onChange={(e) => setCreateForm(prev => ({ ...prev, last_name: e.target.value }))}
-                      placeholder="Doe"
+                      placeholder="Last Name"
                     />
                   </div>
                 </div>

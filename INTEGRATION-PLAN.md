@@ -74,11 +74,11 @@
 
 **User Attribute Field Names** — Current code references `user.firstName` and `user.lastName` but the `User` type uses `first_name` and `last_name` (snake_case). Fix the attribute mapping to use correct field names.
 
-**Lazy Loading** — The Tawk component loads immediately on mount. Switch to `next/dynamic` with `ssr: false` and `lazy` loading so it doesn't block initial page render or affect Lighthouse scores.
+**Lazy Loading** — The Tawk component loads immediately on mount. Switch to `next/dynamic` with `ssr: false` and `lazy` loading so it Last Namesn't block initial page render or affect Lighthouse scores.
 
 **Widget Visibility Toggle** — Add a `NEXT_PUBLIC_TAWK_ENABLED` env var (default `"true"`) so chat can be disabled without code changes. Useful during maintenance or if Tawk has outages.
 
-**Mobile Responsiveness** — Verify the Tawk widget doesn't overlap the mobile bottom navigation (`MobileBottomNav`). If it does, adjust Tawk's bottom offset via `Tawk_API.customStyle` or position offset.
+**Mobile Responsiveness** — Verify the Tawk widget Last Namesn't overlap the mobile bottom navigation (`MobileBottomNav`). If it Last Names, adjust Tawk's bottom offset via `Tawk_API.customStyle` or position offset.
 
 ### 2.3 Integration Steps
 
@@ -105,7 +105,7 @@
 5. **Performance Considerations**:
    - Load Tawk widget with `strategy="lazyOnload"` equivalent (dynamic import with no SSR)
    - Do not block page hydration on Tawk initialization
-   - Ensure Tawk script doesn't add to First Input Delay (FID)
+   - Ensure Tawk script Last Namesn't add to First Input Delay (FID)
 
 ---
 
@@ -175,7 +175,7 @@
 4. Add WhatsApp social link to `src/components/footer.tsx` social icons array
 5. Add WhatsApp to footer contact info
 6. Verify no overlap with Tawk widget and mobile bottom nav
-7. Test on mobile: ensure FAB doesn't interfere with scrolling or bottom nav
+7. Test on mobile: ensure FAB Last Namesn't interfere with scrolling or bottom nav
 
 ---
 

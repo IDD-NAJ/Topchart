@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from "react"
 import Link from "next/link"
+import Script from "next/script"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { 
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -14,6 +15,8 @@ import { MessageSquare, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { PageTransition, StaggerReveal, StaggerRevealItem } from "@/components/animations"
+import { BreadcrumbSchema } from "./breadcrumb-schema"
+import { WebPageSchema } from "./page-schema"
 
 interface FAQ {
   id: string
@@ -90,7 +93,11 @@ export default function FAQPage() {
   }, [])
 
   return (
-    <PageTransition className="flex min-h-screen flex-col bg-[color:var(--marketing-cream)]">
+    <PageTransition className="flex min-h-screen flex flex-col bg-[color:var(--marketing-cream)]">
+      <BreadcrumbSchema />
+      <WebPageSchema />
+      <SpeakableSchema />
+      <FAQSchema />
       <Header />
 
       {/* ── PAGE HERO ── */}
@@ -175,6 +182,9 @@ export default function FAQPage() {
                       <AccordionContent className="text-sm text-[#6B7280] leading-relaxed pb-5 font-body">
                         {faq.answer}
                       </AccordionContent>
+                      <div className="sr-only" aria-hidden="true">
+                        {faq.answer}
+                      </div>
                     </AccordionItem>
                   </StaggerRevealItem>
                 ))}
@@ -205,5 +215,71 @@ export default function FAQPage() {
 
       <Footer />
     </PageTransition>
+  )
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'How fast is data delivered on Topchart?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Data bundles and airtime are delivered instantly after successful payment confirmation.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Which networks are supported?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Topchart supports MTN Ghana, Telecel Ghana and AirtelTigo Ghana.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How do OTP verification numbers work?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Virtual numbers receive SMS and OTP codes temporarily for account verification purposes.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What payment methods are accepted?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Topchart accepts MTN Mobile Money, Telecel Cash, AirtelTigo Money and bank card payments.',
+      },
+    },
+  ],
+}
+
+const speakableSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SpeakableSpecification',
+  cssSelector: ['.font-heading'],
+  xpath: ['//h1', '//h2'],
+}
+
+export function FAQSchema() {
+  return (
+    <Script
+      id="faq-schema"
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+    />
+  )
+}
+
+export function SpeakableSchema() {
+  return (
+    <Script
+      id="speakable-schema"
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(speakableSchema) }}
+    />
   )
 }

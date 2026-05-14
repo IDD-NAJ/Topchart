@@ -188,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(nextAuthUser);
         return;
       }
+
       
       if (result.status !== 401) {
         console.error("Failed to refresh user:", result.status);

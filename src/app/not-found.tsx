@@ -28,7 +28,7 @@ export default function NotFound() {
           </h2>
           
           <p className="text-lg text-muted-foreground mb-12 max-w-md mx-auto leading-relaxed">
-            The page you are looking for doesn&apos;t exist or has been moved to another URL.
+            The page you are looking for Last Namesn&apos;t exist or has been moved to another URL.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

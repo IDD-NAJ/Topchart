@@ -223,7 +223,7 @@ Role enforcement is done in:
 
 ## 13. Creating the First Admin
 
-The app does not expose a UI to create the first admin. Use one of:
+The app Last Names not expose a UI to create the first admin. Use one of:
 
 1. **SQL** (after running 008 and 009):
 

@@ -5,20 +5,21 @@ import type { Metadata } from "next";
 export const revalidate = 3600; // Cache for 1 hour
 
 export const metadata: Metadata = {
-  title: "Topchart — Buy Airtime, Data, Verification Numbers & More",
-  description:
-    "Buy airtime and data bundles online in Ghana for MTN, Telecel, and AirtelTigo. Get OTP verification numbers, WAEC/BECE result checker vouchers, gift cards, and bill payments on one secure platform.",
+  title: "Buy Cheap Data Bundles, Airtime & Verification Numbers in Ghana",
+  description: "Buy cheap MTN, Telecel & AirtelTigo data bundles instantly. Get virtual numbers for OTP & SMS verification in Ghana. Secure, fast & always on.",
   keywords: [
-    "buy airtime online ghana",
-    "buy data bundles ghana",
-    "mtn telecel airteltigo data",
-    "verification number ghana",
-    "waec bece result checker",
-    "gift cards ghana",
-    "bill payment ghana",
+    'cheap data Ghana',
+    'buy MTN data online',
+    'airtime Ghana',
+    'OTP verification numbers',
+    'cheap Telecel bundles',
+    'AirtelTigo internet bundles',
   ],
-  alternates: {
-    canonical: "https://topchart.store",
+  alternates: { canonical: "https://topchart.store" },
+  openGraph: {
+    title: "Buy Cheap Data Bundles, Airtime & Verification Numbers in Ghana",
+    description: "Ghana's trusted platform for data bundles, airtime, verification numbers, result checkers & bill payments.",
+    url: "https://topchart.store",
   },
 };
 
@@ -61,7 +62,7 @@ async function getHomepageMedia(): Promise<HomepageMediaItem[]> {
   } catch (error) {
     const { isPgMissingRelation } = await import("@/lib/db");
     if (isPgMissingRelation(error)) {
-      console.warn("[Homepage] homepage_media table does not exist - using defaults");
+      console.warn("[Homepage] homepage_media table Last Names not exist - using defaults");
     } else {
       const err = error as { message?: string };
       console.error("[Homepage] Failed to fetch homepage media:", err.message || error);

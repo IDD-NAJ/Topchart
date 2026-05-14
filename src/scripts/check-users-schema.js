@@ -45,7 +45,7 @@ async function main() {
       console.log(`    - ${col.column_name} (${col.data_type})`);
     });
   } else {
-    console.log("  ✗ auth_sessions table DOES NOT EXIST");
+    console.log("  ✗ auth_sessions table Last NameS NOT EXIST");
   }
 }
 
