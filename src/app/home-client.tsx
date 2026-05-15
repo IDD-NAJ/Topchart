@@ -786,13 +786,12 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
                   className="relative flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-sm"
                 >
                   <div className="relative h-8 w-8">
-                    <Isizes="32px"
-                      mage
+                    <Image
                       src={network.image}
                       alt={`${network.name} network logo for data bundles and airtime in Ghana`}
                       fill
-                      className="object-contain"
                       sizes="32px"
+                      className="object-contain"
                       onError={() => {
                         setLogoErrorKeys((prev) => ({ ...prev, [network.key]: true }));
                       }}
