@@ -206,9 +206,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 5,
   themeColor: '#146EF5',
-  interactiveWidget: 'resizes-content',
 }
 
 export default function RootLayout({
@@ -217,8 +215,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
-      <body className="font-sans antialiased overflow-x-hidden">
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
+      <body className="font-sans antialiased overflow-x-hidden" suppressHydrationWarning>
         <AuthProvider>
           <PreloadWrapper>
             {children}

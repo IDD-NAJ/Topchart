@@ -119,7 +119,6 @@ const topLinks = [
 ] as const
 
 export function Header() {
-
   const { user } = useAuth()
   const { isEnabled, isComingSoon } = useServiceStatus()
   const [isOpen, setIsOpen] = useState(false)
@@ -158,7 +157,6 @@ export function Header() {
 
   const visibleServiceLinks = serviceLinks.filter((s: any) => {
     const key = SERVICE_KEY_MAP[s.href]
-    if (!key) return true
     return isEnabled(key)
   })
 

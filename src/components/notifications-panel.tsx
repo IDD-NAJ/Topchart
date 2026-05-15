@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/auth-context";
 import { useNotifications, type Notification } from "@/hooks/use-notifications";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -112,7 +114,9 @@ function NotificationItem({
 }
 
 export function NotificationsPanel() {
-  const { notifications, unreadCount, isLoading, markAsRead, markAllRead, deleteNotification } = useNotifications();
+  const { user } = useAuth()
+  const { notifications, markAsRead, deleteNotification, markAllRead, isLoading } = useNotifications()
+  const [unreadCount, setUnreadCount] = useState(0)
 
   return (
     <Popover>

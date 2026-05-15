@@ -11,10 +11,8 @@ interface PreloadOverlayProps {
 }
 
 export function PreloadOverlay({ isVisible, message }: PreloadOverlayProps) {
-  if (!isVisible) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-background ${!isVisible ? 'pointer-events-none opacity-0' : ''}`}>
       <div className="relative flex flex-col items-center gap-8">
         {/* Phone icon with ringing animation */}
         <div className="relative">

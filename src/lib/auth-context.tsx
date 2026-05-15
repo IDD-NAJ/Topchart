@@ -213,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Only refresh user on mount, not on every render
     let mounted = true;
-    
+
     // Show preload on initial load
     setShowPreload(true);
     authCompleteRef.current = false;
@@ -222,7 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (mounted) {
         setIsLoading(false);
         authCompleteRef.current = true;
-        
+
         // Hide preload after minimum duration
         setTimeout(() => {
           setShowPreload(false);
@@ -232,14 +232,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (mounted) {
         setIsLoading(false);
         authCompleteRef.current = true;
-        
+
         // Hide preload after minimum duration even on error
         setTimeout(() => {
           setShowPreload(false);
         }, MIN_PRELOAD_DURATION);
       }
     });
-    
+
     return () => {
       mounted = false;
     };
@@ -250,8 +250,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       invalidateAuthState();
     };
 
-    window.addEventListener("auth:changed", handleAuthChanged);
-    return () => window.removeEventListener("auth:changed", handleAuthChanged);
+    if (typeof window !== "undefined") {
+      window.addEventListener("auth:changed", handleAuthChanged);
+      return () => window.removeEventListener("auth:changed", handleAuthChanged);
+    }
   }, [invalidateAuthState]);
 
   const login = async (
@@ -415,7 +417,9 @@ const register = async (
       return;
     }
 
-    const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click', 'mousemove'];
+    if (typeof window === "undefined") return;
+
+    const activityEvents = ['keydown', 'scroll'];
     
     const handleActivity = () => {
       resetInactivityTimer();
@@ -465,8 +469,8 @@ const register = async (
       }}
     >
       {children}
-      <InactivityWarningModal 
-        isOpen={shouldShowWarning} 
+      <InactivityWarningModal
+        isOpen={shouldShowWarning}
         secondsRemaining={secondsRemaining}
         onStayActive={resetInactivityTimer}
         onLogout={handleLogout}

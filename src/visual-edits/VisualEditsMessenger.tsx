@@ -400,16 +400,9 @@ const wrapMultiline = (text: string): string => {
 export default function HoverReceiver() {
   const [hoverBox, setHoverBox] = useState<Box>(null);
   const [hoverBoxes, setHoverBoxes] = useState<Box[]>([]);
-  const [focusBox, setFocusBox] = useState<Box>(null);
+  const [focusBox, setFocusBox] = useState<Box | null>(null);
   const [focusedElementId, setFocusedElementId] = useState<string | null>(null);
-  const [isVisualEditMode, setIsVisualEditMode] = useState(() => {
-    // Initialize from localStorage if available
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(VISUAL_EDIT_MODE_KEY);
-      return stored === "true";
-    }
-    return false;
-  });
+  const [isVisualEditMode, setIsVisualEditMode] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [resizeHandle, setResizeHandle] = useState<string | null>(null);
   const [resizeStart, setResizeStart] = useState<{
@@ -453,7 +446,7 @@ export default function HoverReceiver() {
   // Keep ref in sync with state and persist to localStorage
   useEffect(() => {
     isVisualEditModeRef.current = isVisualEditMode;
-    // Persist to localStorage
+    // Persist to localStorage only after mount
     if (typeof window !== "undefined") {
       localStorage.setItem(VISUAL_EDIT_MODE_KEY, String(isVisualEditMode));
     }
@@ -1267,12 +1260,16 @@ export default function HoverReceiver() {
     };
 
     // Add listeners in capture phase to catch events early
-    document.addEventListener("click", preventLinkClick, true);
-    document.addEventListener("submit", preventFormSubmit, true);
+    if (isVisualEditMode) {
+      document.addEventListener("click", preventLinkClick, true);
+      document.addEventListener("submit", preventFormSubmit, true);
+    }
 
     return () => {
-      document.removeEventListener("click", preventLinkClick, true);
-      document.removeEventListener("submit", preventFormSubmit, true);
+      if (isVisualEditMode) {
+        document.removeEventListener("click", preventLinkClick, true);
+        document.removeEventListener("submit", preventFormSubmit, true);
+      }
     };
   }, [isVisualEditMode]);
 
@@ -1985,26 +1982,28 @@ export default function HoverReceiver() {
       }, 16); // One frame (16ms) for instant restoration
     }
 
-    // Add event listeners
+  // Add event listeners
+  if (isVisualEditMode) {
     document.addEventListener("pointermove", onPointerMove, { passive: true });
     document.addEventListener("pointerleave", onPointerLeave);
     document.addEventListener("mousedown", onMouseDownCapture, {
       capture: true,
     });
-    document.addEventListener("click", onClickCapture, { capture: false });
     window.addEventListener("message", onMsg);
     window.addEventListener("scroll", onScroll, true);
+  }
 
-    return () => {
+  return () => {
+    if (isVisualEditMode) {
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("pointerleave", onPointerLeave);
       document.removeEventListener("mousedown", onMouseDownCapture, true);
-      document.removeEventListener("click", onClickCapture, false);
       window.removeEventListener("message", onMsg);
       window.removeEventListener("scroll", onScroll, true);
       if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-    };
-  }, [focusedElementId, isResizing]); // Added focusedElementId and isResizing as dependencies
+    }
+  };
+  }, [focusedElementId, isResizing, isVisualEditMode]);
 
   return (
     <>
