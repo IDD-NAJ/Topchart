@@ -100,20 +100,22 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 export async function fetchDataBundles(
   networkId?: string
 ): Promise<{ bundles: DataBundle[]; fromCache: boolean }> {
-  // Check cache first
-  const cached = localStorage.getItem(CACHE_KEYS.bundles);
-  const cachedTimestamp = localStorage.getItem(CACHE_KEYS.bundlesTimestamp);
-  
-  if (cached && cachedTimestamp) {
-    const age = Date.now() - parseInt(cachedTimestamp, 10);
-    if (age < CACHE_TTL) {
-      const allBundles: DataBundle[] = JSON.parse(cached);
-      return {
-        bundles: networkId 
-          ? allBundles.filter((b) => b.networkId === networkId)
-          : allBundles,
-        fromCache: true,
-      };
+  // Check cache first (only on client)
+  if (typeof window !== "undefined") {
+    const cached = localStorage.getItem(CACHE_KEYS.bundles);
+    const cachedTimestamp = localStorage.getItem(CACHE_KEYS.bundlesTimestamp);
+    
+    if (cached && cachedTimestamp) {
+      const age = Date.now() - parseInt(cachedTimestamp, 10);
+      if (age < CACHE_TTL) {
+        const allBundles: DataBundle[] = JSON.parse(cached);
+        return {
+          bundles: networkId 
+            ? allBundles.filter((b) => b.networkId === networkId)
+            : allBundles,
+          fromCache: true,
+        };
+      }
     }
   }
 
@@ -129,9 +131,11 @@ export async function fetchDataBundles(
     const data = await response.json();
     const bundles: DataBundle[] = data.bundles || data.plans || [];
     
-    // Cache results
-    localStorage.setItem(CACHE_KEYS.bundles, JSON.stringify(bundles));
-    localStorage.setItem(CACHE_KEYS.bundlesTimestamp, Date.now().toString());
+    // Cache results (only on client)
+    if (typeof window !== "undefined") {
+      localStorage.setItem(CACHE_KEYS.bundles, JSON.stringify(bundles));
+      localStorage.setItem(CACHE_KEYS.bundlesTimestamp, Date.now().toString());
+    }
     
     return { bundles, fromCache: false };
   } catch (error) {
@@ -171,6 +175,7 @@ export function useDataBundles(networkId?: string) {
 
 // Get recent recipients from localStorage
 export function getRecentRecipients(): RecentRecipient[] {
+  if (typeof window === "undefined") return [];
   const stored = localStorage.getItem(CACHE_KEYS.recipients);
   if (!stored) return [];
   
@@ -186,6 +191,8 @@ export function addRecentRecipient(
   phoneNumber: string,
   networkId: string
 ): void {
+  if (typeof window === "undefined") return;
+  
   const recipients = getRecentRecipients();
   const existingIndex = recipients.findIndex(
     (r) => r.phoneNumber === phoneNumber

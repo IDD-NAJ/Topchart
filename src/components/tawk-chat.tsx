@@ -12,6 +12,7 @@ export function TawkChat() {
   const { user } = useAuth()
   const pathname = usePathname()
   const [isMounted, setIsMounted] = useState(false)
+  const [loadError, setLoadError] = useState(false)
 
   const hasValidConfig = Boolean(
     propertyId &&
@@ -26,13 +27,13 @@ export function TawkChat() {
   }, [])
 
   useEffect(() => {
-    if (!isMounted || !hasValidConfig || !user || isAdminRoute) return
+    if (!isMounted || !hasValidConfig || !user || isAdminRoute || loadError) return
 
     let attempts = 0
     const maxAttempts = 5
 
     const trySetAttributes = () => {
-      if (attempts >= maxAttempts) return
+      if (attempts >= maxAttempts || loadError) return
       attempts++
       try {
         const api = (window as unknown as { Tawk_API?: { setAttributes?: (a: Record<string, string>) => void } }).Tawk_API
@@ -45,17 +46,15 @@ export function TawkChat() {
           setTimeout(trySetAttributes, 1500)
         }
       } catch {
-        if (attempts < maxAttempts) {
+        if (attempts < maxAttempts && !loadError) {
           setTimeout(trySetAttributes, 1500)
         }
       }
     }
     trySetAttributes()
-  }, [hasValidConfig, user, isAdminRoute, isMounted])
+  }, [hasValidConfig, user, isAdminRoute, isMounted, loadError])
 
-  // Disable Tawk.to if not properly configured or if CORS issues occur
-  // Set NEXT_PUBLIC_TAWK_ENABLED=false in .env to disable
-  if (!isMounted || !hasValidConfig || isAdminRoute || !enabled || process.env.NODE_ENV === "development") {
+  if (!isMounted || !hasValidConfig || isAdminRoute || !enabled || process.env.NODE_ENV === "development" || loadError) {
     return null
   }
 
@@ -65,6 +64,10 @@ export function TawkChat() {
       strategy="lazyOnload"
       onError={(e) => {
         console.warn("Tawk.to widget failed to load:", e)
+        setLoadError(true)
+      }}
+      onLoad={() => {
+        console.log("Tawk.to widget loaded successfully")
       }}
       dangerouslySetInnerHTML={{
         __html: `
@@ -78,6 +81,7 @@ export function TawkChat() {
             s1.setAttribute("crossorigin", "*");
             s1.onerror = function() {
               console.warn("Tawk.to widget failed to load");
+              setLoadError(true);
             };
             s0.parentNode.insertBefore(s1, s0);
           })();
