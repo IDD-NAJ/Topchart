@@ -1,6 +1,5 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
-import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/lib/auth-context'
 import { PreloadWrapper } from '@/components/preload-wrapper'
 import { TawkChat } from '@/components/tawk-chat'
@@ -447,8 +446,6 @@ export default function RootLayout({
           <TawkChat />
           <WhatsAppFAB />
         </AuthProvider>
-        <Analytics />
-        {/* Client-side error tracking disabled to prevent noise */}
       </body>
     </html>
   )

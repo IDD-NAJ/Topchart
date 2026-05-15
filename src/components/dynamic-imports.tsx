@@ -9,8 +9,3 @@ export const DynamicAuthProvider = dynamic(
   () => import("@/lib/auth-context").then((mod) => mod.AuthProvider),
   { ssr: false }
 )
-
-export const DynamicAnalytics = dynamic(
-  () => import("@vercel/analytics/next").then((mod) => mod.Analytics),
-  { ssr: false }
-)

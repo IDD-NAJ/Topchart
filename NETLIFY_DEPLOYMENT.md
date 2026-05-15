@@ -30,7 +30,6 @@ Configure these environment variables in Netlify Dashboard → Site Settings →
 ### Optional Services
 - **NEXT_PUBLIC_TAWK_PROPERTY_ID** - Tawk.to property ID for chat widget
 - **NEXT_PUBLIC_TAWK_WIDGET_ID** - Tawk.to widget ID for chat widget
-- **NEXT_PUBLIC_VERCEL_ANALYTICS_ID** - Vercel Analytics ID (optional)
 
 ### Pricing Configuration
 - **PVADEALS_MARKUP_PERCENT** - Markup percentage on PVADeals prices (default: 40)
