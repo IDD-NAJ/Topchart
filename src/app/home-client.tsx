@@ -855,7 +855,7 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
               <div
                 className="absolute left-0 top-2 bottom-2 w-1 bg-primary"
               />
-              <h2 className="text-balance text-3xl font-bold text-neutral-900 sm:text-4xl">
+              <h2 className="text-balance text-2xl sm:text-3xl font-bold text-neutral-900 sm:text-4xl">
                 Scale With Confidence
               </h2>
               <p className="mt-6 max-w-lg text-neutral-600 leading-relaxed">
@@ -878,12 +878,12 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
           <DotGridCorner className="absolute bottom-8 right-8 opacity-80" />
           <div className="relative z-[1] mx-auto max-w-[1200px]">
             <ScrollReveal once={false} amount={0.2}>
-              <h2 className="text-3xl font-bold text-neutral-900 sm:text-4xl border-b-2 border-primary pb-4 inline-block">
+              <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 sm:text-4xl border-b-2 border-primary pb-4 inline-block">
                 Cheap Data Bundles & Digital Services in Ghana
               </h2>
             </ScrollReveal>
             <StaggerReveal
-              className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+              className="mt-8 sm:mt-12 grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
               stagger={0.09}
               once={false}
               stack
@@ -925,7 +925,7 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
               <div
                 className="absolute left-0 top-2 bottom-2 w-1 bg-primary"
               />
-              <h2 className="text-3xl font-bold text-neutral-900 sm:text-4xl">
+              <h2 className="t-bold text-neutral-900 sm:text-4xl">
                 Developer Community
               </h2>
               <p className="mt-6 text-neutral-600 leading-relaxed">
