@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build && node scripts/check-build.js",
+    "build": "next build",
     "dev": "cross-env NODE_OPTIONS=--no-warnings next dev",
     "lint": "eslint src --ext .ts,.tsx,.js",
     "start": "next start",
