@@ -98,7 +98,8 @@ function LoginPageContent() {
               : "/dashboard"
         window.dispatchEvent(new Event("auth:changed"))
         setTimeout(() => {
-          window.location.href = destination
+          // Use window.location.assign for better mobile compatibility
+          window.location.assign(destination)
         }, 300)
       } else {
         setError(result.error || "Invalid email or password")

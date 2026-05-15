@@ -38,7 +38,7 @@ async function POST(request: NextRequest) {
         // Set cookie on the response (this is what the browser receives)
         response.cookies.set("session_token", result.token, {
           httpOnly: true,
-          secure: false,
+          secure: shouldUseSecureCookies(),
           sameSite: "lax",
           maxAge: 24 * 60 * 60,
           path: "/",

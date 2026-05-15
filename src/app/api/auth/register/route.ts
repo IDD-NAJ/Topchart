@@ -55,7 +55,7 @@ async function POST(request: NextRequest) {
       if (result.token && result.expiresAt) {
         response.cookies.set("session_token", result.token, {
           httpOnly: true,
-          secure: false,
+          secure: shouldUseSecureCookies(),
           sameSite: "lax",
           maxAge: 24 * 60 * 60,
           path: "/",

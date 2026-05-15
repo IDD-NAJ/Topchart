@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateOAuthState, getGoogleEnv, getGoogleRedirectUri } from "@/lib/google-oauth";
 import { withRateLimit } from "@/lib/rate-limit";
+import { shouldUseSecureCookies } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
@@ -56,7 +57,7 @@ async function handler(request: NextRequest) {
 
     response.cookies.set("google_oauth_state", state, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: shouldUseSecureCookies(),
       sameSite: "lax",
       maxAge: 600,
       path: "/",
@@ -65,7 +66,7 @@ async function handler(request: NextRequest) {
 
     response.cookies.set("callback_url", callbackUrl, {
       httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
+      secure: shouldUseSecureCookies(),
       sameSite: "lax",
       maxAge: 600,
       path: "/",

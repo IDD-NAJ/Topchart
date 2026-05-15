@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Auth } from "@auth/core";
 import { authConfig } from "@/lib/auth.config";
+import { shouldUseSecureCookies } from "@/lib/utils";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,14 +36,14 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true });
     response.cookies.set("next-auth.session-token", "", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: shouldUseSecureCookies(),
       sameSite: "lax",
       path: "/",
       maxAge: 0,
     });
     response.cookies.set("session_token", "", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: shouldUseSecureCookies(),
       sameSite: "lax",
       path: "/",
       maxAge: 0,

@@ -68,7 +68,7 @@ async function POSTHandler(request: NextRequest) {
 
     const cookieOpts = {
       httpOnly: true,
-      secure: false,
+      secure: shouldUseSecureCookies(),
       sameSite: "lax" as const,
       maxAge: 24 * 60 * 60,
       path: "/",
