@@ -261,6 +261,23 @@ export async function fetchUserInfo(accessToken: string): Promise<GoogleUserInfo
   }
 }
 
+export function getAppOrigin(request: Request): string {
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  if (forwardedProto && forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}`.replace(/\/+$/, "");
+  }
+  const origin = request.headers.get("origin") || new URL(request.url).origin;
+  if (origin && origin !== "null") return origin.replace(/\/+$/, "");
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "");
+  if (envUrl) return envUrl;
+  return "https://topchart.store";
+}
+
+export function getGoogleRedirectUri(request: Request): string {
+  return `${getAppOrigin(request)}/api/auth/google/callback`;
+}
+
 export function getGoogleEnv(): { clientId: string; clientSecret: string } | null {
   const clientId = process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET;

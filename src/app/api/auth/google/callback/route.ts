@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { parseOAuthState, exchangeCodeForTokens, verifyIdToken, fetchUserInfo, encryptToken, type GoogleTokenResponse } from "@/lib/google-oauth";
+import { parseOAuthState, exchangeCodeForTokens, verifyIdToken, fetchUserInfo, encryptToken, getGoogleRedirectUri, type GoogleTokenResponse } from "@/lib/google-oauth";
 import { handleGoogleAuth } from "@/lib/actions/auth";
 import { shouldUseSecureCookies } from "@/lib/utils";
 import { withRateLimit } from "@/lib/rate-limit";
@@ -38,8 +38,7 @@ async function handler(request: NextRequest) {
 
     const callbackUrl = parsedState.callbackUrl || "/dashboard";
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") || "https://topchart.store";
-    const redirectUri = `${baseUrl}/api/auth/google/callback`;
+    const redirectUri = getGoogleRedirectUri(request);
 
     const { tokens, error: tokenError } = await exchangeCodeForTokens(
       code,

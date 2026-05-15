@@ -2,7 +2,8 @@
 
 import React from "react"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense } from "react"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
 import { GoogleAuthButton } from "@/components/google-auth-button"
@@ -69,8 +70,9 @@ const networks = [
   { name: "AirtelTigo", color: "#E60000", textColor: "#fff" }
 ]
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { login } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -87,7 +89,13 @@ export default function LoginPage() {
       const result = await login(email, password)
 
       if (result.success) {
-        const destination = result.user && isAdmin(result.user.role) ? "/admin" : "/dashboard"
+        const next = searchParams.get("next")
+        const destination =
+          next && next.startsWith("/") && !next.startsWith("//")
+            ? next
+            : result.user && isAdmin(result.user.role)
+              ? "/admin"
+              : "/dashboard"
         window.dispatchEvent(new Event("auth:changed"))
         setTimeout(() => {
           window.location.href = destination
@@ -327,5 +335,13 @@ export default function LoginPage() {
         </motion.div>
       </aside>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageContent />
+    </Suspense>
   )
 }

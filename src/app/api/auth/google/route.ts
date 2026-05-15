@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateOAuthState, getGoogleEnv } from "@/lib/google-oauth";
+import { generateOAuthState, getGoogleEnv, getGoogleRedirectUri } from "@/lib/google-oauth";
 import { withRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -18,8 +18,7 @@ async function handler(request: NextRequest) {
 
     const { state, challenge } = generateOAuthState(callbackUrl);
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") || "https://topchart.store";
-    const redirectUri = `${baseUrl}/api/auth/google/callback`;
+    const redirectUri = getGoogleRedirectUri(request);
 
     const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     authUrl.searchParams.set("client_id", env.clientId);

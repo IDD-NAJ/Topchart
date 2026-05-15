@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import Script from "next/script"
 import { Header } from "@/components/header"
@@ -11,60 +11,105 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { MessageSquare, Loader2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { MessageSquare, Loader2, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { PageTransition, StaggerReveal, StaggerRevealItem } from "@/components/animations"
 import { BreadcrumbSchema } from "./breadcrumb-schema"
 import { WebPageSchema } from "./page-schema"
+import { useAuth } from "@/lib/auth-context"
 
 interface FAQ {
   id: string
   question: string
   answer: string
-  category: string
-  sort_order: number
+  category?: string
+  priority?: number
+}
+
+const DEFAULT_TAGS = ["Airtime & Data", "Verification", "Result Checkers", "Reseller", "Payments", "Security"]
+
+function buildFaqSchema(faqs: FAQ[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  }
+}
+
+const speakableSchema = {
+  "@context": "https://schema.org",
+  "@type": "SpeakableSpecification",
+  cssSelector: [".font-heading"],
+  xpath: ["//h1", "//h2"],
+}
+
+export function FAQSchema({ faqs }: { faqs: FAQ[] }) {
+  if (faqs.length === 0) return null
+  return (
+    <Script
+      id="faq-schema"
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(buildFaqSchema(faqs)) }}
+    />
+  )
+}
+
+export function SpeakableSchema() {
+  return (
+    <Script
+      id="speakable-schema"
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(speakableSchema) }}
+    />
+  )
 }
 
 export default function FAQPage() {
+  const { user } = useAuth()
   const [faqs, setFaqs] = useState<FAQ[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [search, setSearch] = useState("")
   const [heroMedia, setHeroMedia] = useState<{ type: "image" | "video"; url: string }>({
     type: "image",
     url: "/images/topchart-way.jpg",
   })
 
+  const ticketHref = user
+    ? "/dashboard/tickets?new=1"
+    : `/login?next=${encodeURIComponent("/dashboard/tickets?new=1")}`
+
   useEffect(() => {
     const loadFAQs = async () => {
       try {
         const res = await fetch("/api/content/faqs", { cache: "no-store" })
-        
-        if (!res.ok) {
-          throw new Error(`HTTP error ${res.status}`)
-        }
-        
+        if (!res.ok) throw new Error(`HTTP error ${res.status}`)
         const data = await res.json()
-
         if (data.success) {
-          setFaqs(data.faqs)
+          setFaqs(data.faqs || [])
         } else {
           setError(data.error || "Failed to load FAQs")
         }
-      } catch (err) {
-        console.error("Failed to load FAQs:", err)
+      } catch {
         setError("Failed to load FAQs. Please try again.")
       } finally {
         setLoading(false)
       }
     }
-
     loadFAQs()
   }, [])
 
   useEffect(() => {
     let active = true
-
     const pickHeroItem = (items: Array<{ slot_key?: string; media_type?: string; asset_type?: string; file_url?: string; public_url?: string }>) =>
       items.find((entry) => entry.slot_key === "faq_hero_background") ||
       items.find((entry) => entry.slot_key === "hero_background") ||
@@ -77,7 +122,6 @@ export default function FAQPage() {
         const payload = await response.json()
         const item = Array.isArray(payload?.media) ? pickHeroItem(payload.media) : null
         if (!active || !payload?.success || !item) return
-
         const type = item.media_type || item.asset_type
         const url = item.file_url || item.public_url
         if (url && (type === "image" || type === "video")) {
@@ -85,22 +129,36 @@ export default function FAQPage() {
         }
       } catch {}
     }
-
     loadHeroMedia()
     return () => {
       active = false
     }
   }, [])
 
+  const filtered = useMemo(() => {
+    if (!search.trim()) return faqs
+    const q = search.toLowerCase()
+    return faqs.filter(
+      (f) =>
+        f.question.toLowerCase().includes(q) ||
+        f.answer.toLowerCase().includes(q) ||
+        (f.category?.toLowerCase().includes(q) ?? false)
+    )
+  }, [faqs, search])
+
+  const categoryTags = useMemo(() => {
+    const fromData = [...new Set(faqs.map((f) => f.category).filter(Boolean))] as string[]
+    return fromData.length > 0 ? fromData : DEFAULT_TAGS
+  }, [faqs])
+
   return (
-    <PageTransition className="flex min-h-screen flex flex-col bg-[color:var(--marketing-cream)]">
+    <PageTransition className="flex min-h-screen flex-col bg-[color:var(--marketing-cream)]">
       <BreadcrumbSchema />
       <WebPageSchema />
       <SpeakableSchema />
-      <FAQSchema />
+      <FAQSchema faqs={faqs} />
       <Header />
 
-      {/* ── PAGE HERO ── */}
       <section className="relative overflow-hidden bg-[color:var(--marketing-hero-dark)] pb-20 pt-[calc(72px+3rem)] sm:pt-[calc(72px+4rem)]">
         {heroMedia.type === "video" ? (
           <video
@@ -124,32 +182,40 @@ export default function FAQPage() {
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[color:var(--marketing-cream)] to-transparent" />
         <div className="relative z-10 container mx-auto px-4 text-center">
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/15 bg-white/8 text-white/60 text-xs font-semibold uppercase tracking-widest mb-8"
           >
             <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--marketing-accent)]" /> Help Centre
           </motion.div>
           <motion.h1
-            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             className="font-heading text-5xl sm:text-6xl font-normal text-white leading-tight tracking-tight"
           >
             Frequently asked questions
           </motion.h1>
           <motion.p
-            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="mt-5 text-base text-white/45 max-w-xl mx-auto font-body"
           >
             Everything you need to know about Topchart&apos;s services.
           </motion.p>
           <motion.div
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
             className="mt-8 flex flex-wrap justify-center gap-2"
           >
-            {['Airtime & Data', 'Verification', 'Result Checkers', 'Reseller', 'Payments', 'Security'].map((tag) => (
-              <span key={tag} className="px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider border border-white/15 text-white/50">
+            {categoryTags.slice(0, 8).map((tag) => (
+              <span
+                key={tag}
+                className="px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider border border-white/15 text-white/50"
+              >
                 {tag}
               </span>
             ))}
@@ -159,18 +225,30 @@ export default function FAQPage() {
 
       <main className="flex-1 py-20">
         <div className="container mx-auto px-4 max-w-3xl">
+          <div className="relative mb-8">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search questions…"
+              className="pl-10 h-11 bg-white"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-7 w-7 animate-spin text-[color:var(--marketing-accent)]" />
             </div>
           ) : error ? (
             <div className="text-center py-20 text-[#6B7280] text-sm">{error}</div>
-          ) : faqs.length === 0 ? (
-            <div className="text-center py-20 text-[#6B7280] text-sm">No FAQs available at the moment.</div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-20 text-[#6B7280] text-sm">
+              {search ? "No matching questions found." : "No FAQs available at the moment."}
+            </div>
           ) : (
             <StaggerReveal className="space-y-3">
               <Accordion type="single" collapsible className="space-y-3">
-                {faqs.map((faq, index) => (
+                {filtered.map((faq, index) => (
                   <StaggerRevealItem key={faq.id}>
                     <AccordionItem
                       value={`item-${index}`}
@@ -182,9 +260,6 @@ export default function FAQPage() {
                       <AccordionContent className="text-sm text-[#6B7280] leading-relaxed pb-5 font-body">
                         {faq.answer}
                       </AccordionContent>
-                      <div className="sr-only" aria-hidden="true">
-                        {faq.answer}
-                      </div>
                     </AccordionItem>
                   </StaggerRevealItem>
                 ))}
@@ -192,9 +267,10 @@ export default function FAQPage() {
             </StaggerReveal>
           )}
 
-          {/* Contact CTA */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 0.5 }}
             className="mt-12 rounded-2xl bg-[color:var(--marketing-hero-dark)] p-8 text-center"
           >
@@ -207,7 +283,7 @@ export default function FAQPage() {
               asChild
               className="h-10 rounded-xl bg-white px-6 font-semibold text-neutral-900 transition-all duration-200 hover:bg-[color:var(--marketing-cream-alt)]"
             >
-              <Link href="/dashboard/tickets">Open a support ticket</Link>
+              <Link href={ticketHref}>Open a support ticket</Link>
             </Button>
           </motion.div>
         </div>
@@ -215,71 +291,5 @@ export default function FAQPage() {
 
       <Footer />
     </PageTransition>
-  )
-}
-
-const faqSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
-    {
-      '@type': 'Question',
-      name: 'How fast is data delivered on Topchart?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Data bundles and airtime are delivered instantly after successful payment confirmation.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'Which networks are supported?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Topchart supports MTN Ghana, Telecel Ghana and AirtelTigo Ghana.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'How do OTP verification numbers work?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Virtual numbers receive SMS and OTP codes temporarily for account verification purposes.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'What payment methods are accepted?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Topchart accepts MTN Mobile Money, Telecel Cash, AirtelTigo Money and bank card payments.',
-      },
-    },
-  ],
-}
-
-const speakableSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'SpeakableSpecification',
-  cssSelector: ['.font-heading'],
-  xpath: ['//h1', '//h2'],
-}
-
-export function FAQSchema() {
-  return (
-    <Script
-      id="faq-schema"
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-    />
-  )
-}
-
-export function SpeakableSchema() {
-  return (
-    <Script
-      id="speakable-schema"
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(speakableSchema) }}
-    />
   )
 }

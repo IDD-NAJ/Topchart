@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -22,23 +23,14 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
-import { Ticket, TicketStatus, TicketPriority, TICKET_CATEGORIES } from "@/lib/actions/tickets"
+import { Ticket, TicketStatus, TICKET_CATEGORIES } from "@/lib/actions/tickets"
+import { TicketCreateForm } from "@/components/dashboard/ticket-create-form"
 
 const STATUS_FILTERS = ["All", "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"] as const
 type StatusFilter = (typeof STATUS_FILTERS)[number]
@@ -73,26 +65,30 @@ const PRIORITY_CLASS: Record<string, string> = {
   URGENT: "text-red-600 font-semibold",
 }
 
-export default function TicketsPage() {
+function TicketsPageContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All")
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [defaultCategory, setDefaultCategory] = useState<string | undefined>()
   const { toast } = useToast()
-
-  const [newTicket, setNewTicket] = useState({
-    subject: "",
-    message: "",
-    priority: "MEDIUM" as TicketPriority,
-    category: "General",
-  })
 
   const fetchTickets = async () => {
     setLoading(true)
     try {
       const res = await fetch("/api/dashboard/tickets")
+      if (res.status === 401) {
+        toast({
+          title: "Sign in required",
+          description: "Please sign in to view your support tickets.",
+          variant: "destructive",
+        })
+        router.push(`/login?next=${encodeURIComponent("/dashboard/tickets")}`)
+        return
+      }
       if (!res.ok) throw new Error(`HTTP error ${res.status}`)
       const data = await res.json()
       if (data.success) setTickets(data.tickets)
@@ -103,34 +99,25 @@ export default function TicketsPage() {
     }
   }
 
-  useEffect(() => { fetchTickets() }, [])
+  useEffect(() => {
+    fetchTickets()
+  }, [])
 
-  const handleCreateTicket = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newTicket.subject || !newTicket.message) return
-    setIsSubmitting(true)
-    try {
-      const res = await fetch("/api/dashboard/tickets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newTicket),
-      })
-      if (!res.ok) throw new Error(`HTTP error ${res.status}`)
-      const data = await res.json()
-      if (data.success) {
-        toast({ title: "Ticket Created", description: "Our support team will get back to you soon." })
-        setIsCreateModalOpen(false)
-        setNewTicket({ subject: "", message: "", priority: "MEDIUM", category: "General" })
-        fetchTickets()
-      } else {
-        toast({ title: "Error", description: data.error || "Failed to create ticket", variant: "destructive" })
-      }
-    } catch {
-      toast({ title: "Error", description: "An unexpected error occurred", variant: "destructive" })
-    } finally {
-      setIsSubmitting(false)
+  useEffect(() => {
+    const shouldOpen = searchParams.get("new") === "1"
+    if (!shouldOpen) return
+
+    const categoryParam = searchParams.get("category")
+    if (
+      categoryParam &&
+      TICKET_CATEGORIES.includes(categoryParam as (typeof TICKET_CATEGORIES)[number])
+    ) {
+      setDefaultCategory(categoryParam)
     }
-  }
+
+    setIsCreateModalOpen(true)
+    router.replace("/dashboard/tickets")
+  }, [searchParams, router])
 
   const stats = {
     total: tickets.length,
@@ -170,74 +157,21 @@ export default function TicketsPage() {
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
-              <form onSubmit={handleCreateTicket}>
-                <DialogHeader>
-                  <DialogTitle>Create Support Ticket</DialogTitle>
-                  <DialogDescription>Describe your issue and our team will assist you within 24 hours.</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select
-                      value={newTicket.category}
-                      onValueChange={(v) => setNewTicket({ ...newTicket, category: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TICKET_CATEGORIES.map((cat) => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="subject">Subject</Label>
-                    <Input
-                      id="subject"
-                      placeholder="e.g. Payment not reflecting"
-                      value={newTicket.subject}
-                      onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="priority">Priority</Label>
-                    <Select
-                      value={newTicket.priority}
-                      onValueChange={(v) => setNewTicket({ ...newTicket, priority: v as TicketPriority })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select priority" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="LOW">Low — general question</SelectItem>
-                        <SelectItem value="MEDIUM">Medium — needs attention</SelectItem>
-                        <SelectItem value="HIGH">High — affecting my usage</SelectItem>
-                        <SelectItem value="URGENT">Urgent — critical issue</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="message">Describe your issue</Label>
-                    <Textarea
-                      id="message"
-                      placeholder="Please provide as much detail as possible..."
-                      className="min-h-[120px] resize-none"
-                      value={newTicket.message}
-                      onChange={(e) => setNewTicket({ ...newTicket, message: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Creating…</> : "Submit Ticket"}
-                  </Button>
-                </DialogFooter>
-              </form>
+              <DialogHeader>
+                <DialogTitle>Create Support Ticket</DialogTitle>
+                <DialogDescription>Describe your issue and our team will assist you within 24 hours.</DialogDescription>
+              </DialogHeader>
+              <TicketCreateForm
+                key={defaultCategory ?? "general"}
+                defaultCategory={defaultCategory}
+                onCancel={() => setIsCreateModalOpen(false)}
+                onSuccess={(ticketId) => {
+                  setIsCreateModalOpen(false)
+                  setDefaultCategory(undefined)
+                  fetchTickets()
+                  router.push(`/dashboard/tickets/${ticketId}`)
+                }}
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -368,5 +302,20 @@ export default function TicketsPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function TicketsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Loader2 className="w-7 h-7 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading tickets…</p>
+        </div>
+      }
+    >
+      <TicketsPageContent />
+    </Suspense>
   )
 }

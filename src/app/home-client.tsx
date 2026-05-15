@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useEffect, useState, useCallback, useRef } from "react"
-import { useHomepageMedia } from "@/hooks/use-homepage-media"
+import { useEffect, useState, useCallback, useRef, useMemo } from "react"
+import { useHomepageMedia, type HomepageMediaItem } from "@/hooks/use-homepage-media"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import {
@@ -72,19 +72,42 @@ const DEFAULT_NETWORK_LOGOS: NetworkLogoConfig[] = [
 
 const DEFAULT_DEVELOPER_IMAGE = "/images/technical-partnership.jpg"
 
-const HERO_BACKGROUND_VIDEOS = [
-  "/homepage/15229-262569933_medium.mp4",
-  "/homepage/8501-210166782_medium.mp4",
-]
+function mediaUrl(item: { file_url?: string; public_url?: string; storage_path?: string }) {
+  return item.file_url || item.public_url || item.storage_path || ""
+}
 
-const SCALE_SLIDE_IMAGES = [
-  "/homepage/albertoadan-aerial-1880873_1920.jpg",
-  "/homepage/hbieser-ghana-684554_1920.jpg",
-]
+function pickHeroVideos(items: HomepageMediaItem[]): string[] {
+  const slots = new Set(["hero_background", "hero_overlay_video", "hero_background_video"])
+  return items
+    .filter((m) => m.is_active && (m.media_type === "video" || m.asset_type === "video"))
+    .filter((m) => slots.has(m.slot_key ?? "") || slots.has(m.section_key ?? ""))
+    .map(mediaUrl)
+    .filter(Boolean)
+}
 
-function HeroBackgroundVideoSlider() {
+function pickScaleImages(items: HomepageMediaItem[]): string[] {
+  const slots = new Set(["section_bg_1", "section_bg_2", "scale_background_video"])
+  return items
+    .filter((m) => m.is_active && (m.media_type === "image" || m.asset_type === "image"))
+    .filter((m) => slots.has(m.slot_key ?? "") || slots.has(m.section_key ?? ""))
+    .map(mediaUrl)
+    .filter(Boolean)
+}
+
+function HeroBackgroundVideoSlider({ sources }: { sources: string[] }) {
+  const [videos, setVideos] = useState(sources)
   const [activeIndex, setActiveIndex] = useState(0)
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
+
+  useEffect(() => {
+    setVideos(sources)
+    setActiveIndex(0)
+  }, [sources])
+
+  useEffect(() => {
+    if (videos.length === 0) return
+    if (activeIndex >= videos.length) setActiveIndex(0)
+  }, [videos.length, activeIndex])
 
   useEffect(() => {
     videoRefs.current.forEach((el, i) => {
@@ -96,18 +119,21 @@ function HeroBackgroundVideoSlider() {
         el.pause()
       }
     })
-  }, [activeIndex])
+  }, [activeIndex, videos])
 
   useEffect(() => {
+    if (videos.length <= 1) return
     const id = window.setInterval(() => {
-      setActiveIndex((i) => (i + 1) % HERO_BACKGROUND_VIDEOS.length)
+      setActiveIndex((i) => (i + 1) % videos.length)
     }, 9000)
     return () => clearInterval(id)
-  }, [activeIndex])
+  }, [videos.length])
+
+  if (videos.length === 0) return null
 
   return (
     <div className="absolute inset-0 h-full w-full opacity-40 pointer-events-none" aria-hidden>
-      {HERO_BACKGROUND_VIDEOS.map((src, i) => (
+      {videos.map((src, i) => (
         <video
           key={src}
           ref={(el) => {
@@ -120,9 +146,10 @@ function HeroBackgroundVideoSlider() {
           playsInline
           preload="metadata"
           loop={false}
+          onError={() => setVideos((prev) => prev.filter((u) => u !== src))}
           onEnded={() => {
             if (i !== activeIndex) return
-            setActiveIndex((x) => (x + 1) % HERO_BACKGROUND_VIDEOS.length)
+            setActiveIndex((x) => (x + 1) % videos.length)
           }}
         />
       ))}
@@ -130,19 +157,33 @@ function HeroBackgroundVideoSlider() {
   )
 }
 
-function ScaleConfidenceImageSlider() {
+function ScaleConfidenceImageSlider({ sources }: { sources: string[] }) {
+  const [images, setImages] = useState(sources)
   const [activeIndex, setActiveIndex] = useState(0)
 
   useEffect(() => {
+    setImages(sources)
+    setActiveIndex(0)
+  }, [sources])
+
+  useEffect(() => {
+    if (images.length === 0) return
+    if (activeIndex >= images.length) setActiveIndex(0)
+  }, [images.length, activeIndex])
+
+  useEffect(() => {
+    if (images.length <= 1) return
     const id = window.setInterval(() => {
-      setActiveIndex((i) => (i + 1) % SCALE_SLIDE_IMAGES.length)
+      setActiveIndex((i) => (i + 1) % images.length)
     }, 7000)
     return () => clearInterval(id)
-  }, [])
+  }, [images.length])
+
+  if (images.length === 0) return null
 
   return (
     <>
-      {SCALE_SLIDE_IMAGES.map((src, i) => (
+      {images.map((src, i) => (
         <motion.div
           key={src}
           className="absolute inset-0"
@@ -150,7 +191,15 @@ function ScaleConfidenceImageSlider() {
           transition={{ duration: 1, ease: "easeInOut" }}
           aria-hidden
         >
-          <Image src={src} alt="Topchart platform background showing Ghana digital services" fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" loading="lazy" />
+          <Image
+            src={src}
+            alt="Topchart platform background showing Ghana digital services"
+            fill
+            className="object-cover"
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            loading="lazy"
+            onError={() => setImages((prev) => prev.filter((u) => u !== src))}
+          />
         </motion.div>
       ))}
     </>
@@ -552,6 +601,12 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
   const [contentLoading, setContentLoading] = useState(true)
   const { media, isLoading: mediaLoading } = useHomepageMedia({ initialData: initialMedia })
 
+  const heroVideos = useMemo(() => pickHeroVideos(media), [media])
+  const scaleImages = useMemo(() => {
+    const fromDb = pickScaleImages(media)
+    return fromDb.length > 0 ? fromDb : ["/images/topchart-way.jpg"]
+  }, [media])
+
   useEffect(() => {
     if (mediaLoading || !media.length) return
 
@@ -634,7 +689,7 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
             className="absolute inset-0 object-cover object-center opacity-30 pointer-events-none"
             aria-hidden="true"
           />
-          <HeroBackgroundVideoSlider />
+          <HeroBackgroundVideoSlider sources={heroVideos} />
           <div className="absolute inset-0 bg-gradient-to-b from-[#0d1627]/70 via-[#0d1627]/50 to-[#0d1627] pointer-events-none" />
           <ConnectionsGrid />
           
@@ -795,7 +850,7 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
             </ScrollReveal>
             <ScrollReveal once={false} amount={0.22}>
               <div className="relative aspect-video overflow-hidden rounded-3xl bg-neutral-200/80 shadow-lg">
-                <ScaleConfidenceImageSlider />
+                <ScaleConfidenceImageSlider sources={scaleImages} />
               </div>
             </ScrollReveal>
           </div>

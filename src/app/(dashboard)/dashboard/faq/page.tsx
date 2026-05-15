@@ -40,42 +40,42 @@ const QUICK_LINKS = [
     icon: CreditCard,
     label: "Payment & Billing",
     description: "Deposits, refunds, and payment issues",
-    href: "/dashboard/wallet",
+    href: "/dashboard/tickets?new=1&category=Payment%20%26%20Billing",
     color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30",
   },
   {
     icon: Shield,
     label: "Account & Security",
     description: "Password, profile, and security settings",
-    href: "/dashboard/profile",
+    href: "/dashboard/tickets?new=1&category=Account%20%26%20Security",
     color: "text-purple-600 bg-purple-50 dark:bg-purple-950/30",
   },
   {
     icon: Wifi,
     label: "Data & Airtime",
     description: "Bundle issues, failed purchases",
-    href: "/dashboard/data",
+    href: "/dashboard/tickets?new=1&category=Data%20%26%20Airtime",
     color: "text-green-600 bg-green-50 dark:bg-green-950/30",
   },
   {
     icon: PhoneCall,
     label: "Verification Numbers",
     description: "SMS verification and number issues",
-    href: "/dashboard/verification",
+    href: "/dashboard/tickets?new=1&category=Verification%20Numbers",
     color: "text-amber-600 bg-amber-50 dark:bg-amber-950/30",
   },
   {
     icon: GraduationCap,
     label: "Result Checkers",
     description: "WAEC, BECE, and exam card help",
-    href: "/dashboard/result-checkers",
+    href: "/dashboard/tickets?new=1&category=Technical%20Issue",
     color: "text-rose-600 bg-rose-50 dark:bg-rose-950/30",
   },
   {
     icon: Store,
     label: "Reseller Programme",
     description: "Wholesale, commissions, and tiers",
-    href: "/dashboard/reseller",
+    href: "/dashboard/tickets?new=1&category=Reseller",
     color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/30",
   },
 ]
@@ -83,6 +83,7 @@ const QUICK_LINKS = [
 export default function DashboardFAQPage() {
   const [faqs, setFaqs] = useState<FAQ[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
 
   useEffect(() => {
@@ -90,9 +91,14 @@ export default function DashboardFAQPage() {
       try {
         const res = await fetch("/api/homepage/faqs", { cache: "no-store" })
         const data = await res.json()
-        if (data.success) setFaqs(data.faqs || [])
+        if (data.success) {
+          setFaqs(data.faqs || [])
+          setError(null)
+        } else {
+          setError(data.error || "Failed to load FAQs")
+        }
       } catch {
-        // silently fail — show empty state
+        setError("Failed to load FAQs. Please try again.")
       } finally {
         setLoading(false)
       }
@@ -121,7 +127,7 @@ export default function DashboardFAQPage() {
           </p>
         </div>
         <Button className="gap-2 self-start sm:self-auto" asChild>
-          <Link href="/dashboard/tickets">
+          <Link href="/dashboard/tickets?new=1">
             <Plus className="w-4 h-4" />
             Open Ticket
           </Link>
@@ -193,6 +199,14 @@ export default function DashboardFAQPage() {
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
             <p className="text-sm text-muted-foreground">Loading FAQs…</p>
           </div>
+        ) : error ? (
+          <Card>
+            <CardContent className="py-16 text-center">
+              <HelpCircle className="w-12 h-12 mx-auto text-destructive/30 mb-3" />
+              <h3 className="font-semibold mb-1">Could not load FAQs</h3>
+              <p className="text-sm text-muted-foreground">{error}</p>
+            </CardContent>
+          </Card>
         ) : filtered.length === 0 ? (
           <Card>
             <CardContent className="py-16 text-center">
@@ -206,7 +220,7 @@ export default function DashboardFAQPage() {
                   : "Check back soon — our team is adding answers to common questions."}
               </p>
               <Button asChild size="sm" className="gap-2">
-                <Link href="/dashboard/tickets">
+                <Link href="/dashboard/tickets?new=1">
                   <MessageSquare className="w-4 h-4" />
                   Open a Ticket
                 </Link>
@@ -258,7 +272,7 @@ export default function DashboardFAQPage() {
                 </Link>
               </Button>
               <Button asChild size="sm" className="gap-2">
-                <Link href="/dashboard/tickets">
+                <Link href="/dashboard/tickets?new=1">
                   <Plus className="w-4 h-4" />
                   New Ticket
                 </Link>

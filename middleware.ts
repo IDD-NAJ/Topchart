@@ -17,6 +17,7 @@ function getSecurityHeaders(request: NextRequest) {
     `${appProtocol}//${appDomain}`,
     `${appProtocol}//api.${appDomain}`,
     "https://*.tawk.to",
+    "https://va.tawk.to",
     "wss://*.tawk.to",
     "https://accounts.google.com",
     "https://oauth2.googleapis.com",
