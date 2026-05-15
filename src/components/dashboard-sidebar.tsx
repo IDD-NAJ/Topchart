@@ -104,15 +104,16 @@ export function DashboardSidebar({ collapsed: controlledCollapsed, onCollapsedCh
   const isResellerPage = pathname?.startsWith('/dashboard/reseller')
 
   return (
-    <motion.aside
-      initial={{ x: -20, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className={cn(
-        "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-[color:var(--marketing-accent)]/15 bg-[color:var(--marketing-cream)]/95 backdrop-blur-xl lg:flex transition-all duration-300 ease-out",
-        collapsed ? "w-20" : "w-64"
-      )}
-    >
+    <>
+      <motion.aside
+        initial={{ x: -20, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className={cn(
+          "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-[color:var(--marketing-accent)]/15 bg-[color:var(--marketing-cream)]/95 backdrop-blur-xl lg:flex transition-all duration-300 ease-out",
+          collapsed ? "w-20" : "w-64"
+        )}
+      >
       <div className={cn("flex items-center justify-between", collapsed ? "p-4 justify-center" : "p-6")}>
         <Link href="/dashboard" className={cn("flex items-center gap-2.5 group", collapsed && "hidden")}>
           <LogoVideo
@@ -328,5 +329,71 @@ export function DashboardSidebar({ collapsed: controlledCollapsed, onCollapsedCh
         </Button>
       </div>
     </motion.aside>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-[color:var(--marketing-cream)]/95 backdrop-blur-xl border-t border-[color:var(--marketing-accent)]/15 safe-area-bottom">
+        <nav className="flex items-center justify-around h-16 px-2">
+          <Link
+            href="/dashboard"
+            className={cn(
+              "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all",
+              pathname === "/dashboard"
+                ? "text-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/10"
+                : "text-muted-foreground hover:text-[color:var(--marketing-accent)]"
+            )}
+          >
+            <LayoutDashboard className="h-5 w-5" />
+            <span className="text-[10px] font-medium">Overview</span>
+          </Link>
+          
+          <Link
+            href="/dashboard/data"
+            className={cn(
+              "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all",
+              pathname?.startsWith("/dashboard/data")
+                ? "text-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/10"
+                : "text-muted-foreground hover:text-[color:var(--marketing-accent)]"
+            )}
+          >
+            <Wifi className="h-5 w-5" />
+            <span className="text-[10px] font-medium">Data</span>
+          </Link>
+          
+          <Link
+            href="/dashboard/history"
+            className={cn(
+              "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all",
+              pathname === "/dashboard/history"
+                ? "text-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/10"
+                : "text-muted-foreground hover:text-[color:var(--marketing-accent)]"
+            )}
+          >
+            <History className="h-5 w-5" />
+            <span className="text-[10px] font-medium">History</span>
+          </Link>
+          
+          <Link
+            href="/dashboard/profile"
+            className={cn(
+              "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all",
+              pathname === "/dashboard/profile"
+                ? "text-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/10"
+                : "text-muted-foreground hover:text-[color:var(--marketing-accent)]"
+            )}
+          >
+            <User className="h-5 w-5" />
+            <span className="text-[10px] font-medium">Profile</span>
+          </Link>
+          
+          <button
+            onClick={() => logout()}
+            className="flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg text-muted-foreground hover:text-destructive transition-all"
+          >
+            <LogOut className="h-5 w-5" />
+            <span className="text-[10px] font-medium">Logout</span>
+          </button>
+        </nav>
+      </div>
+    </>
   )
 }

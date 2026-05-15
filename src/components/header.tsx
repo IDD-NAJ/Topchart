@@ -164,7 +164,7 @@ export function Header() {
     <header
       className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 transition-all duration-300"
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
+      <div className="mx-auto flex h-14 sm:h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
         {/* LOGO */}
         <Link href="/" className="shrink-0 flex items-center group relative z-10">
@@ -172,21 +172,13 @@ export function Header() {
         </Link>
 
         {/* DESKTOP NAV */}
-        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex">
-          {topLinks.map((l) => {
-            if (l.label === "Home") {
-              return (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className="text-sm font-[family-name:var(--font-aesthetic)] font-medium text-slate-700 hover:text-[#F38F20] transition-colors"
-                >
-                  {l.label}
-                </Link>
-              )
-            }
-            return null
-          })}
+        <nav className="absolute left-1/2 hidden lg:flex -translate-x-1/2 items-center gap-6 xl:gap-8">
+          <Link
+            href="/"
+            className="text-sm font-[family-name:var(--font-aesthetic)] font-medium text-slate-700 hover:text-[#F38F20] transition-colors"
+          >
+            Home
+          </Link>
 
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -198,7 +190,7 @@ export function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="center"
-              className="min-w-[320px] rounded-lg border border-slate-200 bg-white p-2 shadow-lg"
+              className="min-w-[280px] sm:min-w-[320px] rounded-lg border border-slate-200 bg-white p-2 shadow-lg"
             >
               <div className="grid gap-1">
                 {visibleServiceLinks.map((s) => {
@@ -231,29 +223,27 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {topLinks.map((l) => {
-            if (l.label !== "Home") {
-              return (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className="text-sm font-[family-name:var(--font-aesthetic)] font-medium text-slate-700 hover:text-[#F38F20] transition-colors"
-                >
-                  {l.label}
-                </Link>
-              )
-            }
-            return null
-          })}
+          <Link
+            href="/about"
+            className="text-sm font-[family-name:var(--font-aesthetic)] font-medium text-slate-700 hover:text-[#F38F20] transition-colors"
+          >
+            About Us
+          </Link>
+          <Link
+            href="/faq"
+            className="text-sm font-[family-name:var(--font-aesthetic)] font-medium text-slate-700 hover:text-[#F38F20] transition-colors"
+          >
+            Support
+          </Link>
         </nav>
 
         {/* CTA ACTIONS */}
-        <div className="flex shrink-0 items-center gap-4 z-10">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-4 z-10">
           {user ? (
              <Button
                asChild
                variant="outline"
-               className="h-9 rounded-lg border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-900 text-sm font-[family-name:var(--font-aesthetic)] font-medium px-5"
+               className="h-8 sm:h-9 rounded-lg border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-900 text-xs sm:text-sm font-[family-name:var(--font-aesthetic)] font-medium px-3 sm:px-5"
              >
                <Link href="/dashboard">
                  Dashboard
@@ -290,7 +280,7 @@ export function Header() {
             <SheetTrigger asChild>
               <button
                 type="button"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg md:hidden text-slate-700 hover:bg-slate-100 transition-colors"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg lg:hidden text-slate-700 hover:bg-slate-100 transition-colors touch-target"
                 aria-label="Toggle menu"
               >
                 <Menu className="h-5 w-5" />
@@ -298,7 +288,7 @@ export function Header() {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="flex w-full sm:max-w-sm flex-col border-l border-slate-200 bg-white p-0"
+              className="flex w-[85%] max-w-sm flex-col border-l border-slate-200 bg-white p-0"
             >
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-4 pt-12">
@@ -379,11 +369,11 @@ export function Header() {
                 )}
               </div>
 
-              <div className="border-t border-slate-200 p-6 bg-slate-50">
+              <div className="border-t border-slate-200 p-4 sm:p-6 bg-slate-50 safe-area-bottom">
                 {user ? (
                    <Button
                      asChild
-                     className="w-full h-10 rounded-lg bg-[#F38F20] hover:bg-[#cc7414] text-white font-medium"
+                     className="w-full h-11 rounded-lg bg-[#F38F20] hover:bg-[#cc7414] text-white font-medium"
                    >
                      <Link href="/dashboard" onClick={() => setIsOpen(false)}>
                        Go to Dashboard
@@ -392,7 +382,7 @@ export function Header() {
                 ) : (
                    <Button
                      asChild
-                     className="w-full h-10 rounded-lg bg-[#F38F20] hover:bg-[#cc7414] text-white font-medium"
+                     className="w-full h-11 rounded-lg bg-[#F38F20] hover:bg-[#cc7414] text-white font-medium"
                    >
                      <Link href="/register" onClick={() => setIsOpen(false)}>
                        Get Started

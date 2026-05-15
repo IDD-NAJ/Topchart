@@ -267,10 +267,21 @@ button, a, [role="button"], input, textarea, select {
     line-height: 1.1;
   }
   
-  h1 { font-size: 4rem; text-transform: capitalize; }
-  h2 { font-size: 2.5rem; }
-  h3 { font-size: 1.75rem; font-weight: 600; }
-  h4 { font-size: 1.25rem; font-weight: 600; }
+  h1 { 
+    font-size: clamp(2rem, 5vw, 4rem); 
+    text-transform: capitalize; 
+  }
+  h2 { 
+    font-size: clamp(1.5rem, 4vw, 2.5rem); 
+  }
+  h3 { 
+    font-size: clamp(1.25rem, 3vw, 1.75rem); 
+    font-weight: 600; 
+  }
+  h4 { 
+    font-size: clamp(1rem, 2.5vw, 1.25rem); 
+    font-weight: 600; 
+  }
   
   p { line-height: 1.6; }
   
@@ -381,6 +392,20 @@ button, a, [role="button"], input, textarea, select {
     pointer-events: none;
     opacity: 0.6;
     z-index: 10;
+  }
+  
+  /* Responsive utilities */
+  .container-responsive {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 

@@ -443,20 +443,20 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header with Refresh */}
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold">Admin Dashboard</h1>
           {lastUpdated && (
             <p className="text-xs text-muted-foreground mt-1">
               Last updated: {lastUpdated.toLocaleTimeString()}
             </p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {(usersError || statsError || purchasesError) && (
-            <div className="text-sm text-destructive mr-2">
+            <div className="text-sm text-destructive mr-2 hidden sm:block">
               Some data failed to load
             </div>
           )}
@@ -469,9 +469,10 @@ export default function AdminDashboard() {
               setLoading(false)
             }}
             disabled={loading}
+            className="touch-target"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
           </Button>
         </div>
       </div>
@@ -957,8 +958,8 @@ export default function AdminDashboard() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5" />
               Recent Users
             </CardTitle>
             <div className="relative w-full sm:w-56">
@@ -967,7 +968,7 @@ export default function AdminDashboard() {
                 placeholder="Search users..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 w-full"
+                className="pl-9 w-full h-10"
               />
             </div>
           </div>
@@ -1042,10 +1043,10 @@ export default function AdminDashboard() {
 
       {/* Edit User Dialog */}
       <Dialog open={Boolean(editingUser)} onOpenChange={(open) => (!open ? closeUserDialog() : null)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-w-[95vw]">
           <DialogHeader>
-            <DialogTitle>{editMode === "view" ? "User Details" : "Edit User"}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">{editMode === "view" ? "User Details" : "Edit User"}</DialogTitle>
+            <DialogDescription className="text-sm">
               {editMode === "view" ? "View user profile information." : "Update user details and save changes."}
             </DialogDescription>
           </DialogHeader>
@@ -1057,6 +1058,7 @@ export default function AdminDashboard() {
                 value={editForm.first_name}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, first_name: e.target.value }))}
                 disabled={editMode === "view"}
+                className="h-10"
               />
             </div>
             <div className="grid gap-2">
@@ -1066,6 +1068,7 @@ export default function AdminDashboard() {
                 value={editForm.last_name}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, last_name: e.target.value }))}
                 disabled={editMode === "view"}
+                className="h-10"
               />
             </div>
             <div className="grid gap-2">
