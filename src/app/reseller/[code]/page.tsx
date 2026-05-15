@@ -84,9 +84,7 @@ export default async function PublicResellerPage({ params }: { params: Promise<{
     notFound();
   }
 
-  const shareUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/reseller/${profile.reseller_code}`
-    : `/reseller/${profile.reseller_code}`;
+  const shareUrl = `${getAppOrigin()}/reseller/${profile.reseller_code}`;
 
   return (
     <div className="min-h-screen bg-[color:var(--marketing-cream)]">

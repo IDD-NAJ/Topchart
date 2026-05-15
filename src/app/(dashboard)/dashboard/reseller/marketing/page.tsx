@@ -245,7 +245,7 @@ export default function ResellerMarketingPage() {
         <CardContent>
           <div className="space-y-3">
             {referralLinks.map((link) => {
-              const fullUrl = `${window.location.origin}/r/${link.referral_code}`;
+              const fullUrl = `${getAppOrigin()}/r/${link.referral_code}`;
               return (
                 <div key={link.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
                   <div className="flex items-center gap-3">

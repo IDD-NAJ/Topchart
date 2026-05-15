@@ -11,8 +11,9 @@
  * Falls back to localhost:3000 in development
  */
 export function getAppUrl(): string {
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    return 'http://localhost:3000';
+  // In production, always return the canonical domain
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://topchart.store';
   }
   
   const envUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL;
@@ -20,7 +21,7 @@ export function getAppUrl(): string {
     return envUrl.replace(/\/+$/, '');
   }
   
-  return 'https://topchart.store';
+  return 'http://localhost:3000';
 }
 
 /**

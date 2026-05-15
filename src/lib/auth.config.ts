@@ -2,7 +2,6 @@ import { AuthConfig } from "@auth/core";
 import Google from "@auth/core/providers/google";
 import { NeonAdapter } from "./auth-adapter";
 import { sql } from "./db";
-import { getAppUrl } from "./app-url";
 
 export const authConfig: AuthConfig = {
   secret: process.env.AUTH_SECRET,
@@ -17,7 +16,7 @@ export const authConfig: AuthConfig = {
         params: {
           prompt: "consent",
           access_type: "offline",
-          redirect_uri: `${getAppUrl()}/api/auth/callback/google`,
+          redirect_uri: "https://topchart.store/api/auth/callback/google",
         },
       },
     }),

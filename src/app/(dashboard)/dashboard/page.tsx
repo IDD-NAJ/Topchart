@@ -386,7 +386,7 @@ export default function DashboardPage() {
   const processingPurchases = dashboardData.processingPurchases
 
   const referralCode = referralStats?.referralCode || (user ? user.id.slice(0, 8).toUpperCase() : "XXXXXX")
-  const referralLink = typeof window !== "undefined" ? `${window.location.origin}/r/${referralCode}` : `/r/${referralCode}`
+  const referralLink = `${getAppOrigin()}/r/${referralCode}`
   const referralText = `Join me on Topchart ! Sign up using my link: ${referralLink}`
 
   return (

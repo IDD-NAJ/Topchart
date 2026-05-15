@@ -4,7 +4,6 @@ import { handleGoogleAuth } from "@/lib/actions/auth";
 import { shouldUseSecureCookies } from "@/lib/utils";
 import { withRateLimit } from "@/lib/rate-limit";
 import { sql } from "@/lib/db";
-import { getAppUrl } from "@/lib/app-url";
 
 export const runtime = "nodejs";
 
@@ -119,7 +118,7 @@ async function handler(request: NextRequest) {
 
       userId = result.user.id;
 
-      const response = NextResponse.redirect(new URL(callbackUrl, getAppUrl()));
+      const response = NextResponse.redirect(new URL(callbackUrl, request.url));
       response.cookies.set("session_token", result.token, {
         httpOnly: true,
         secure: shouldUseSecureCookies(),

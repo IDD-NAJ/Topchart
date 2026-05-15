@@ -164,7 +164,7 @@ export default function ProfilePage() {
   }
 
   const referralCode = referralStats?.referralCode || (user?.id ? user.id.slice(0, 8).toUpperCase() : "")
-  const referralLink = typeof window !== "undefined" ? `${window.location.origin}/r/${referralCode}` : `/r/${referralCode}`
+  const referralLink = `${getAppOrigin()}/r/${referralCode}`
 
   const handleCopyReferral = async () => {
     const success = await copyToClipboard(referralLink)

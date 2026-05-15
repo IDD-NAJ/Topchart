@@ -73,7 +73,7 @@ export function DynamicHeaderLogo() {
       loading="eager"
       onError={(e) => {
         const target = e.target as HTMLImageElement;
-        if (target.src !== window.location.origin + "/logo.svg") {
+        if (target.src !== getAppOrigin() + "/logo.svg") {
           target.src = "/logo.svg";
         }
       }}

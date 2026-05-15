@@ -61,6 +61,21 @@ function applySecurityHeaders(response: NextResponse, request: NextRequest): Nex
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const host = request.headers.get("host") || "";
+  
+  // Force production domain in production
+  const productionHost = "topchart.store";
+  const wwwProductionHost = "www.topchart.store";
+  
+  if (process.env.NODE_ENV === "production") {
+    // Redirect from Netlify preview URLs to production domain
+    if (host !== productionHost && host !== wwwProductionHost) {
+      const url = new URL(request.url);
+      url.hostname = productionHost;
+      url.protocol = "https";
+      return NextResponse.redirect(url.toString(), 301);
+    }
+  }
   
   // Check session token
   const sessionToken = request.cookies.get("session_token")?.value;
@@ -101,7 +116,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/admin/:path*",
+    "/((?!api|_next/static|_next/image|favicon.ico|logo.svg|icon.png).*)",
   ],
 };

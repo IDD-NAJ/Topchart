@@ -262,22 +262,24 @@ export async function fetchUserInfo(accessToken: string): Promise<GoogleUserInfo
 }
 
 export function getAppOrigin(request: Request): string {
+  // In production, always return the canonical domain
+  if (process.env.NODE_ENV === 'production') {
+    return "https://topchart.store";
+  }
+  
   const envUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "");
   if (envUrl) return envUrl;
   
-  // Fallback to checking headers only in development
-  if (process.env.NODE_ENV === 'development') {
-    const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
-    const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
-    if (forwardedProto && forwardedHost) {
-      return `${forwardedProto}://${forwardedHost}`.replace(/\/+$/, "");
-    }
-    const origin = request.headers.get("origin") || new URL(request.url).origin;
-    if (origin && origin !== "null") return origin.replace(/\/+$/, "");
+  // Fallback to checking headers in development
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  if (forwardedProto && forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}`.replace(/\/+$/, "");
   }
+  const origin = request.headers.get("origin") || new URL(request.url).origin;
+  if (origin && origin !== "null") return origin.replace(/\/+$/, "");
   
-  // In production, always return the canonical domain
-  return "https://topchart.store";
+  return "http://localhost:3000";
 }
 
 export function getGoogleRedirectUri(request: Request): string {
