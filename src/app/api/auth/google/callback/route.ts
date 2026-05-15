@@ -21,24 +21,28 @@ async function handler(request: NextRequest) {
 
     if (error) {
       console.error('[GoogleAuth Callback] OAuth error from Google:', error);
-      return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error)}`, request.url));
+      const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
+      return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error)}`, productionUrl), 307);
     }
 
     if (!code || !state) {
       console.error('[GoogleAuth Callback] Missing required params');
-      return NextResponse.redirect(new URL("/login?error=missing_params", request.url));
+      const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
+      return NextResponse.redirect(new URL("/login?error=missing_params", productionUrl), 307);
     }
 
     const cookieState = request.cookies.get("google_oauth_state")?.value;
     if (!cookieState || cookieState !== state) {
       console.error('[GoogleAuth Callback] State mismatch - possible CSRF attack');
-      return NextResponse.redirect(new URL("/login?error=invalid_state", request.url));
+      const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
+      return NextResponse.redirect(new URL("/login?error=invalid_state", productionUrl), 307);
     }
 
     const parsedState = parseOAuthState(state);
     if (!parsedState) {
       console.error('[GoogleAuth Callback] State parsing failed or expired');
-      return NextResponse.redirect(new URL("/login?error=expired_state", request.url));
+      const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
+      return NextResponse.redirect(new URL("/login?error=expired_state", productionUrl), 307);
     }
 
     let callbackUrl = parsedState.callbackUrl || "/dashboard";
@@ -75,7 +79,8 @@ async function handler(request: NextRequest) {
 
     if (tokenError || !tokens.access_token) {
       console.error('[GoogleAuth Callback] Token exchange failed:', tokenError);
-      return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(tokenError || "no_token")}`, request.url));
+      const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
+      return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(tokenError || "no_token")}`, productionUrl), 307);
     }
 
     console.log('[GoogleAuth Callback] Token exchange successful');
@@ -104,7 +109,8 @@ async function handler(request: NextRequest) {
       const userInfo = await fetchUserInfo(tokens.access_token);
       if (!userInfo || !userInfo.email) {
         console.error('[GoogleAuth Callback] No email from user info');
-        return NextResponse.redirect(new URL("/login?error=no_email", request.url));
+        const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
+        return NextResponse.redirect(new URL("/login", productionUrl), 307);
       }
       googleSub = googleSub || userInfo.sub;
       googleEmail = userInfo.email;
@@ -157,7 +163,8 @@ async function handler(request: NextRequest) {
       if (!result.success || !result.token || !result.expiresAt || !result.user) {
         const errorMsg = result.error || "auth_failed";
         console.error('[GoogleAuth Callback] handleGoogleAuth failed:', errorMsg);
-        return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(errorMsg)}`, request.url));
+        const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
+        return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(errorMsg)}`, productionUrl), 307);
       }
 
       userId = result.user.id;
@@ -190,7 +197,8 @@ async function handler(request: NextRequest) {
 
     if (!result.success || !result.token || !result.expiresAt) {
       console.error('[GoogleAuth Callback] Session creation failed for existing user');
-      return NextResponse.redirect(new URL("/login?error=session_failed", request.url));
+      const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
+      return NextResponse.redirect(new URL("/login?error=session_failed", productionUrl), 307);
     }
 
     const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
@@ -213,7 +221,8 @@ async function handler(request: NextRequest) {
       console.error('[GoogleAuth Callback] Error message:', error.message);
       console.error('[GoogleAuth Callback] Error stack:', error.stack);
     }
-    return NextResponse.redirect(new URL("/login?error=callback_error", request.url));
+    const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
+    return NextResponse.redirect(new URL("/login?error=callback_error", productionUrl), 307);
   }
 }
 
