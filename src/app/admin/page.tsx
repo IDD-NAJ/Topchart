@@ -280,8 +280,8 @@ export default function AdminDashboard() {
 
   const loadUsers = async (query = "") => {
     setUsersError(null)
-    try {getAbsoluteUrl()geAppO()
-      const url = new URL("/api/admin/users", window.location.origin)
+    try {
+      const url = new URL(getAbsoluteUrl("/api/admin/users"), getAppOrigin())
       if (query.trim()) url.searchParams.set("q", query.trim())
       const response = await fetch(url.toString(), {
         credentials: 'include',
