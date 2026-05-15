@@ -98,6 +98,7 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  initialized: boolean;
   showPreload: boolean;
   /** True when user.role === 'ADMIN' */
   isAdmin: boolean;
@@ -143,6 +144,7 @@ const MIN_PRELOAD_DURATION = 2500;
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
   const [showPreload, setShowPreload] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(30);
@@ -207,24 +209,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Only refresh user on mount, not on every render
     let mounted = true;
 
+    console.log('[Auth] Initializing auth provider');
+
     // Show preload on initial load
     setShowPreload(true);
     authCompleteRef.current = false;
 
     refreshUser().then(() => {
       if (mounted) {
+        console.log('[Auth] Auth refresh completed, setting initialized=true');
         setIsLoading(false);
+        setInitialized(true);
         authCompleteRef.current = true;
+
+        // Clear auth_loading cookie after auth initialization completes
+        document.cookie = 'auth_loading=; path=/; max-age=0; SameSite=Lax' + (process.env.NODE_ENV === 'production' ? '; domain=.topchart.store' : '');
 
         // Hide preload after minimum duration
         setTimeout(() => {
           setShowPreload(false);
         }, MIN_PRELOAD_DURATION);
       }
-    }).catch(() => {
+    }).catch((error) => {
+      console.error('[Auth] Auth refresh failed:', error);
       if (mounted) {
         setIsLoading(false);
+        setInitialized(true);
         authCompleteRef.current = true;
+
+        // Clear auth_loading cookie even on error
+        document.cookie = 'auth_loading=; path=/; max-age=0; SameSite=Lax' + (process.env.NODE_ENV === 'production' ? '; domain=.topchart.store' : '');
 
         // Hide preload after minimum duration even on error
         setTimeout(() => {
@@ -451,6 +465,7 @@ const register = async (
       value={{
         user,
         isLoading,
+        initialized,
         showPreload,
         isAdmin,
         isUser,

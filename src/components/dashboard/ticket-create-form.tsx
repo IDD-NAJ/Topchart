@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -38,6 +39,7 @@ export function TicketCreateForm({
   submitLabel = "Submit Ticket",
   showCancel = true,
 }: TicketCreateFormProps) {
+  const router = useRouter()
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [form, setForm] = useState({
@@ -66,7 +68,7 @@ export function TicketCreateForm({
           variant: "destructive",
         })
         const next = encodeURIComponent("/dashboard/tickets?new=1")
-        window.location.href = `/login?next=${next}`
+        router.replace(`/login?next=${next}`)
         return
       }
 

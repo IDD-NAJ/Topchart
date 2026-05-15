@@ -2,6 +2,7 @@ import React from "react"
 import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/lib/auth-context'
+import { AuthLoadingScreen } from "@/components/auth-loading-screen"
 import { PreloadWrapper } from '@/components/preload-wrapper'
 import { TawkChat } from '@/components/tawk-chat'
 import { WhatsAppFAB } from '@/components/whatsapp-fab'
@@ -392,6 +393,7 @@ export default function RootLayout({
     <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="font-sans antialiased overflow-x-hidden" suppressHydrationWarning>
         <AuthProvider>
+          <AuthLoadingScreen />
           <PreloadWrapper>
             {children}
           </PreloadWrapper>

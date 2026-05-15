@@ -16,7 +16,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { user, isLoading, refreshUser } = useAuth()
+  const { user, isLoading, initialized, refreshUser } = useAuth()
   const router = useRouter()
   const [retryCount, setRetryCount] = useState(0)
   const [stabilized, setStabilized] = useState(false)
@@ -29,7 +29,7 @@ export default function DashboardLayout({
   }, [])
 
   useEffect(() => {
-    if (!stabilized || isLoading || user || retryCount >= maxRetries) return
+    if (!stabilized || isLoading || initialized || user || retryCount >= maxRetries) return
     const delays = [500, 1000, 2000, 3000]
     const attemptRefresh = async () => {
       await new Promise(resolve => setTimeout(resolve, delays[retryCount] ?? 1000))
@@ -37,13 +37,14 @@ export default function DashboardLayout({
       setRetryCount(prev => prev + 1)
     }
     attemptRefresh()
-  }, [stabilized, isLoading, user, retryCount, refreshUser])
+  }, [stabilized, isLoading, initialized, user, retryCount, refreshUser])
 
   useEffect(() => {
-    if (!stabilized || isLoading || user || retryCount < maxRetries) return
+    if (!stabilized || isLoading || !initialized || user || retryCount < maxRetries) return
+    console.log('[Dashboard Layout] Auth initialized but no user, redirecting to login')
     const timer = setTimeout(() => router.replace("/login"), 200)
     return () => clearTimeout(timer)
-  }, [stabilized, user, isLoading, retryCount, router])
+  }, [stabilized, user, isLoading, initialized, retryCount, router])
 
   useEffect(() => {
     if (!user) return
@@ -55,7 +56,7 @@ export default function DashboardLayout({
     return () => clearInterval(interval)
   }, [user, refreshUser])
 
-  if (isLoading || !stabilized || (!user && retryCount < maxRetries)) {
+  if (isLoading || !initialized || !stabilized || (!user && retryCount < maxRetries)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[color:var(--marketing-cream)]">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-[color:var(--marketing-accent)]/30 border-t-transparent" />
@@ -64,6 +65,7 @@ export default function DashboardLayout({
   }
 
   if (!user) {
+    console.log('[Dashboard Layout] No user after auth initialization, redirecting to login')
     return (
       <div className="flex min-h-screen items-center justify-center bg-[color:var(--marketing-cream)]">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-[color:var(--marketing-accent)]/30 border-t-transparent" />

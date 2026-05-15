@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
       sameSite: "lax",
       path: "/",
       maxAge: 0,
+      domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
     });
     response.cookies.set("session_token", "", {
       httpOnly: true,
@@ -47,6 +48,7 @@ export async function POST(request: NextRequest) {
       sameSite: "lax",
       path: "/",
       maxAge: 0,
+      domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
     });
     return response;
   }

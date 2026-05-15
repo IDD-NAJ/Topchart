@@ -72,10 +72,22 @@ async function POSTHandler(request: NextRequest) {
       sameSite: "lax" as const,
       maxAge: 24 * 60 * 60,
       path: "/",
+      domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
     };
+
+    // Set auth loading cookie to prevent middleware redirect during auth flow
+    response.cookies.set("auth_loading", "true", {
+      httpOnly: true,
+      secure: shouldUseSecureCookies(),
+      sameSite: "lax",
+      maxAge: 30,
+      path: "/",
+      domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
+    });
 
     response.cookies.set("session_token", result.token, cookieOpts);
     response.cookies.set("admin_role", "ADMIN", cookieOpts);
+    console.log('[Admin Login API] Login successful, set session_token, admin_role, and auth_loading cookies');
 
     return response;
   } catch (error) {

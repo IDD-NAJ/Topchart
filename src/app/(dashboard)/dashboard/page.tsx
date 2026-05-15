@@ -280,7 +280,7 @@ export default function DashboardPage() {
       clearTimeout(timeoutId);
       
       if (dashRes.status === 401) {
-        window.location.href = "/login?redirect=/dashboard"
+        router.replace("/login?redirect=/dashboard")
         return
       }
 
@@ -306,7 +306,7 @@ export default function DashboardPage() {
       if (!refRes.ok) {
         if (refRes.status === 401) {
           // Redirect to login if unauthorized
-          window.location.href = "/login?redirect=/dashboard"
+          router.replace("/login?redirect=/dashboard")
           return
         }
         let errorMessage = `Referral API error: ${refRes.status}`;

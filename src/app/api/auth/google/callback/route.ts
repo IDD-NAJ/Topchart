@@ -204,6 +204,15 @@ async function handler(request: NextRequest) {
           'Content-Type': 'text/html; charset=utf-8',
         },
       });
+      // Set auth loading cookie to prevent middleware redirect during auth flow
+      response.cookies.set("auth_loading", "true", {
+        httpOnly: true,
+        secure: shouldUseSecureCookies(),
+        sameSite: "lax",
+        maxAge: 30,
+        path: "/",
+        domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
+      });
       response.cookies.set("session_token", result.token, {
         httpOnly: true,
         secure: shouldUseSecureCookies(),
@@ -265,6 +274,15 @@ async function handler(request: NextRequest) {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
       },
+    });
+    // Set auth loading cookie to prevent middleware redirect during auth flow
+    response.cookies.set("auth_loading", "true", {
+      httpOnly: true,
+      secure: shouldUseSecureCookies(),
+      sameSite: "lax",
+      maxAge: 30,
+      path: "/",
+      domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
     });
     response.cookies.set("session_token", result.token, {
       httpOnly: true,

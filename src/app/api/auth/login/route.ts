@@ -35,6 +35,16 @@ async function POST(request: NextRequest) {
     if (result.success && result.user && result.token && result.expiresAt) {
       const response = NextResponse.json({ success: true, user: result.user, token: result.token, expiresAt: result.expiresAt }, { status: 200 });
 
+        // Set auth loading cookie to prevent middleware redirect during auth flow
+        response.cookies.set("auth_loading", "true", {
+          httpOnly: true,
+          secure: shouldUseSecureCookies(),
+          sameSite: "lax",
+          maxAge: 30,
+          path: "/",
+          domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
+        });
+
         // Set cookie on the response (this is what the browser receives)
         response.cookies.set("session_token", result.token, {
           httpOnly: true,
@@ -42,8 +52,10 @@ async function POST(request: NextRequest) {
           sameSite: "lax",
           maxAge: 24 * 60 * 60,
           path: "/",
+          domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
         });
 
+      console.log('[Login API] Login successful, set session_token and auth_loading cookies');
       return response;
     } else {
       // Return 200 with success: false so the client

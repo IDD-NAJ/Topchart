@@ -65,23 +65,24 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host") || "";
   
-  // Force production domain in production
-  const productionHost = "topchart.store";
-  const wwwProductionHost = "www.topchart.store";
+  console.log('[Middleware] Request:', pathname, 'Host:', host);
   
-  if (process.env.NODE_ENV === "production") {
-    // Redirect from Netlify preview URLs to production domain
-    if (host !== productionHost && host !== wwwProductionHost) {
-      const url = new URL(request.url);
-      url.hostname = productionHost;
-      url.protocol = "https";
-      return NextResponse.redirect(url.toString(), 301);
-    }
+  // Force HTTPS in production
+  if (process.env.NODE_ENV === "production" && request.nextUrl.protocol === "http:") {
+    const secureUrl = new URL(request.url);
+    secureUrl.protocol = "https";
+    return NextResponse.redirect(secureUrl.toString(), 301);
   }
   
   // Check session token
   const sessionToken = request.cookies.get("session_token")?.value;
   const hasSession = Boolean(sessionToken);
+
+  // Check for auth loading state (temporary cookie set during auth flow)
+  const authLoading = request.cookies.get("auth_loading")?.value;
+  const isAuthLoading = Boolean(authLoading);
+
+  console.log('[Middleware] Session token:', !!sessionToken, 'Auth loading:', isAuthLoading);
 
   const isServerAction = request.headers.get("next-action");
   if (isServerAction) {
@@ -90,17 +91,21 @@ export async function middleware(request: NextRequest) {
 
   // Dashboard protection
   if (pathname.startsWith("/dashboard")) {
-    if (!hasSession) {
+    // Allow access if auth is loading (to prevent redirect loops during auth flow)
+    if (!hasSession && !isAuthLoading) {
+      console.log('[Middleware] No session and not loading, redirecting to login');
       return applySecurityHeaders(
         NextResponse.redirect(new URL(LOGIN, request.url)),
         request
       );
     }
+    console.log('[Middleware] Has session or auth loading, allowing access');
   }
 
   // Admin protection
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
-    if (!hasSession) {
+    if (!hasSession && !isAuthLoading) {
+      console.log('[Middleware] Admin: No session and not loading, redirecting to admin login');
       return applySecurityHeaders(
         NextResponse.redirect(new URL(ADMIN_LOGIN, request.url)),
         request

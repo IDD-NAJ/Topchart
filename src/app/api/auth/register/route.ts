@@ -53,14 +53,26 @@ async function POST(request: NextRequest) {
         { status: 201 }
       );
       if (result.token && result.expiresAt) {
+        // Set auth loading cookie to prevent middleware redirect during auth flow
+        response.cookies.set("auth_loading", "true", {
+          httpOnly: true,
+          secure: shouldUseSecureCookies(),
+          sameSite: "lax",
+          maxAge: 30,
+          path: "/",
+          domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
+        });
+
         response.cookies.set("session_token", result.token, {
           httpOnly: true,
           secure: shouldUseSecureCookies(),
           sameSite: "lax",
           maxAge: 24 * 60 * 60,
           path: "/",
+          domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
         });
       }
+      console.log('[Register API] Registration successful, set session_token and auth_loading cookies');
       return response;
     } else {
       return NextResponse.json(
