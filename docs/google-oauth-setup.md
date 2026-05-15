@@ -8,12 +8,21 @@ If you encounter this error on your production domain, follow these steps to fix
 
 Determine your actual production domain:
 - If using Netlify: Check your Netlify site URL (e.g., `https://your-site.netlify.app`)
+- If using Vercel: Check your Vercel project URL (e.g., `https://your-project.vercel.app`)
 - If using custom domain: Your custom domain (e.g., `https://topchart.store`)
 
 ## Step 2: Configure Environment Variable
 
+Add or update `NEXT_PUBLIC_APP_URL` in your hosting platform:
+
 ### Netlify
 1. Go to Site Settings → Environment Variables
+2. Add variable: `NEXT_PUBLIC_APP_URL`
+3. Value: Your production domain (e.g., `https://topchart.store`)
+4. Save and redeploy
+
+### Vercel
+1. Go to Project Settings → Environment Variables
 2. Add variable: `NEXT_PUBLIC_APP_URL`
 3. Value: Your production domain (e.g., `https://topchart.store`)
 4. Save and redeploy

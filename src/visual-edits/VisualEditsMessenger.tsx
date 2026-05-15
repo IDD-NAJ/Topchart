@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Send, X, Minimize2, Maximize2, Trash2, Copy, Check } from "lucide-react";
+import { getAppOrigin } from "@/lib/app-url";
 
 export const CHANNEL = "ORCHIDS_HOVER_v1" as const;
 const VISUAL_EDIT_MODE_KEY = "orchids_visual_edit_mode" as const;
@@ -375,7 +377,7 @@ const getCurrentStyles = (
 const normalizeImageSrc = (input: string): string => {
   if (!input) return "";
   try {
-    const url = new URL(input, window.location.origin);
+    const url = new URL(input, getAppOrigin());
     // Handle Next.js <Image> optimization wrapper
     if (url.pathname === "/_next/image") {
       const real = url.searchParams.get("url");

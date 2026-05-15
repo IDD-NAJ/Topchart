@@ -1,5 +1,6 @@
 "use client";
 
+import { getAppOrigin } from "@/lib/app-url";
 import useSWR from "swr";
 
 interface LogoData {

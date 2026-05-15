@@ -80,7 +80,6 @@ function TicketsPageContent() {
     setLoading(true)
     try {
       const res = await fetch("/api/dashboard/tickets")
-      
       if (res.status === 401) {
         toast({
           title: "Sign in required",
@@ -90,26 +89,11 @@ function TicketsPageContent() {
         router.push(`/login?next=${encodeURIComponent("/dashboard/tickets")}`)
         return
       }
-      
-      const errorData = await res.json().catch(() => ({}))
-      
-      if (!res.ok) {
-        console.error("Tickets API error:", errorData)
-        // If database connection failed, just set empty tickets
-        if (errorData.error?.includes("Database connection failed")) {
-          setTickets([])
-          return
-        }
-        throw new Error(errorData.error || errorData.details || `HTTP error ${res.status}`)
-      }
-      
-      if (errorData.success) {
-        setTickets(errorData.tickets || [])
-      }
-    } catch (error: any) {
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`)
+      const data = await res.json()
+      if (data.success) setTickets(data.tickets)
+    } catch (error) {
       console.error("Failed to fetch tickets:", error)
-      // Set empty array on error to prevent page from breaking
-      setTickets([])
     } finally {
       setLoading(false)
     }

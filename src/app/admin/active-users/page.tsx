@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getAbsoluteUrl } from "@/lib/app-url";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +32,7 @@ export default function AdminActiveUsersPage() {
     setLoading(true);
     setError(null);
     try {
-      const url = new URL("/api/admin/active-users", window.location.origin);
+      const url = new URL(getAbsoluteUrl("/api/admin/active-users"), getAppOrigin());
       if (q.trim()) url.searchParams.set("q", q.trim());
       const res = await fetch(url.toString(), { credentials: "include", cache: "no-store" });
       const data = await res.json();

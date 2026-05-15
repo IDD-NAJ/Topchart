@@ -2,6 +2,8 @@
 
 import React from "react"
 import { useEffect, useState } from "react"
+import { getAbsoluteUrl } from "@/lib/app-url"
+import { getAppOrigin } from "@/lib/app-url"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -90,7 +92,7 @@ export default function AdminUserTable() {
   const router = useRouter()
 
   const loadUsers = async (query = "") => {
-    try {
+    try {getAbsoluteUrl()geAppO()
       const url = new URL("/api/admin/users", window.location.origin)
       if (query.trim()) url.searchParams.set("q", query.trim())
       const response = await fetch(url.toString(), {

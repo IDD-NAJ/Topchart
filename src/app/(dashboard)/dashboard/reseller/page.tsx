@@ -987,7 +987,7 @@ export default function ResellerDashboardPage() {
               {referralLinks.length > 0 ? (
                 <div className="space-y-3">
                   {referralLinks.map((link) => {
-                    const fullUrl = `${window.location.origin}/r/${link.code}`;
+                    const fullUrl = `${getAppOrigin()}/r/${link.code}`;
                     return (
                       <div key={link.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
                         <div className="flex items-center gap-3 flex-1 min-w-0">

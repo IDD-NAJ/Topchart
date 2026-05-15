@@ -2,102 +2,49 @@
 
 import Script from "next/script"
 
-const proxiesServiceSchema = {
+const productSchema = {
   '@context': 'https://schema.org',
-  '@type': 'Service',
-  name: 'Proxy Services Ghana',
-  description: 'Buy secure residential, mobile and datacenter proxies in Ghana. IP rotation, sticky sessions, multi-country support via 9Proxy.',
-  provider: {
-    '@type': 'Organization',
+  '@type': 'Product',
+  name: 'Topchart Proxy Services',
+  description: 'High-quality residential, mobile, and datacenter proxies in Ghana for SEO, scraping, and privacy.',
+  brand: {
+    '@type': 'Brand',
     name: 'Topchart Ghana',
-    url: 'https://topchart.store'
   },
-  areaServed: [
+  offers: [
     {
-      '@type': 'Country',
-      name: 'Ghana'
+      '@type': 'Offer',
+      name: 'Residential Proxies',
+      description: 'Real residential IPs — hardest to detect',
+      price: '2.00',
+      priceCurrency: 'GHS',
+      availability: 'https://schema.org/InStock',
     },
     {
-      '@type': 'Country',
-      name: 'Nigeria'
+      '@type': 'Offer',
+      name: 'Mobile Proxies',
+      description: 'Mobile carrier IPs — ideal for social/mobile',
+      price: '3.00',
+      priceCurrency: 'GHS',
+      availability: 'https://schema.org/InStock',
     },
     {
-      '@type': 'Country',
-      name: 'Kenya'
-    },
-    {
-      '@type': 'Country',
-      name: 'South Africa'
-    },
-    {
-      '@type': 'Country',
-      name: 'United States'
-    },
-    {
-      '@type': 'Country',
-      name: 'United Kingdom'
-    },
-    {
-      '@type': 'Country',
-      name: 'Germany'
-    },
-    {
-      '@type': 'Country',
-      name: 'France'
-    },
-    {
-      '@type': 'Country',
-      name: 'UAE'
-    },
-    {
-      '@type': 'Country',
-      name: 'India'
+      '@type': 'Offer',
+      name: 'Datacenter Proxies',
+      description: 'Fast datacenter IPs — best for high volume',
+      price: '1.00',
+      priceCurrency: 'GHS',
+      availability: 'https://schema.org/InStock',
     },
   ],
-  offers: {
-    '@type': 'Offer',
-    availability: 'https://schema.org/InStock',
-    priceCurrency: 'GHS',
-    priceRange: '10-500'
-  },
-  hasOfferCatalog: {
-    '@type': 'OfferCatalog',
-    name: 'Proxy Types',
-    itemListElement: [
-      {
-        '@type': 'Offer',
-        itemOffered: {
-          '@type': 'Service',
-          name: 'Residential Proxies',
-          description: 'IP rotates on each request for maximum anonymity'
-        }
-      },
-      {
-        '@type': 'Offer',
-        itemOffered: {
-          '@type': 'Service',
-          name: 'Mobile Proxies',
-          description: 'Mobile IP addresses for mobile-specific targeting'
-        }
-      },
-      {
-        '@type': 'Offer',
-        itemOffered: {
-          '@type': 'Service',
-          name: 'Datacenter Proxies',
-          description: 'High-speed datacenter IPs for performance'
-        }
-      }
-    ]
-  }
 }
 
-export function ProxiesServiceSchema() {
+export function ProxySchema() {
   return (
     <Script
-      id="proxies-service-schema"
+      id="proxy-schema"
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(proxiesServiceSchema) }}
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
     />
   )
 }

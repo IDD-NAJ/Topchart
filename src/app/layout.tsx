@@ -1,5 +1,6 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
+import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/lib/auth-context'
 import { PreloadWrapper } from '@/components/preload-wrapper'
 import { TawkChat } from '@/components/tawk-chat'
@@ -36,9 +37,6 @@ export const metadata: Metadata = {
     'cheap internet Ghana',
     'Topchart Accra',
     'Ghana data bundles',
-    'data bundles Takoradi',
-    'internet bundles Cape Coast',
-    'cheap data Tamale',
   ],
   authors: [{ name: 'Topchart', url: 'https://topchart.store' }],
   creator: 'Topchart',
@@ -172,14 +170,6 @@ export const metadata: Metadata = {
           {
             '@type': 'City',
             name: 'Takoradi',
-          },
-          {
-            '@type': 'City',
-            name: 'Cape Coast',
-          },
-          {
-            '@type': 'City',
-            name: 'Tamale',
           },
           {
             '@type': 'Country',
@@ -318,46 +308,6 @@ export const metadata: Metadata = {
               text: 'Topchart accepts MTN MoMo, Telecel Cash, AirtelTigo Money, Visa, Mastercard, and wallet balance via Paystack for buying data bundles in Ghana. All payments are secure and instant.',
             },
           },
-          {
-            '@type': 'Question',
-            name: 'How can I renew DSTV subscription online in Ghana?',
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: 'You can renew DSTV subscription online in Ghana through Topchart using MTN MoMo, Telecel Cash, Visa, or Mastercard. Enter your smartcard number, select your package, and pay. Your DSTV will be renewed instantly.',
-            },
-          },
-          {
-            '@type': 'Question',
-            name: 'Where can I buy verification numbers in Ghana?',
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: 'Topchart provides temporary virtual phone numbers for OTP and SMS verification in Ghana. Get WhatsApp, Telegram, Google, Facebook verification numbers with instant activation and secure service.',
-            },
-          },
-          {
-            '@type': 'Question',
-            name: 'How do I buy gift cards in Ghana?',
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: 'You can buy gift cards in Ghana through Topchart including Netflix, Steam, Amazon, Google Play, and iTunes gift cards. Pay via MTN MoMo, Telecel Cash, or card. Instant digital delivery.',
-            },
-          },
-          {
-            '@type': 'Question',
-            name: 'How can I pay electricity bills online in Ghana?',
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: 'Pay ECG and electricity bills online in Ghana through Topchart using MTN MoMo, Telecel Cash, Visa, or Mastercard. Enter your meter number, amount, and pay. Instant bill payment confirmation.',
-            },
-          },
-          {
-            '@type': 'Question',
-            name: 'What are the best proxy services in Ghana?',
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: 'Topchart offers residential, mobile, and datacenter proxies in Ghana via 9Proxy. Get rotating or sticky proxies for secure browsing, with multi-country support including Ghana, Nigeria, Kenya, and more.',
-            },
-          },
         ],
       },
       {
@@ -446,6 +396,8 @@ export default function RootLayout({
           <TawkChat />
           <WhatsAppFAB />
         </AuthProvider>
+        <Analytics />
+        {/* Client-side error tracking disabled to prevent noise */}
       </body>
     </html>
   )

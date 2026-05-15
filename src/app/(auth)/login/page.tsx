@@ -340,11 +340,7 @@ function LoginPageContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[color:var(--marketing-cream-alt)]">
-        <Loader2 className="w-8 h-8 animate-spin text-[color:var(--marketing-accent)]" />
-      </div>
-    }>
+    <Suspense fallback={null}>
       <LoginPageContent />
     </Suspense>
   )

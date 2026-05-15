@@ -44,23 +44,16 @@ export interface Ticket {
 }
 
 export async function getTickets() {
-  try {
-    const user = await getCurrentUser();
-    if (!user) throw new Error("Unauthorized - No user found");
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
 
-    const tickets = await sql`
-      SELECT * FROM tickets 
-      WHERE "userId" = ${user.id} 
-      ORDER BY "createdAt" DESC
-    `;
-    return tickets as unknown as Ticket[];
-  } catch (error: any) {
-    console.error("getTickets error:", error);
-    if (error.message.includes("Unauthorized")) {
-      throw error;
-    }
-    throw new Error(`Database error: ${error.message}`);
-  }
+  const tickets = await sql`
+    SELECT * FROM tickets 
+    WHERE "userId" = ${user.id} 
+    ORDER BY "createdAt" DESC
+  `;
+
+  return tickets as unknown as Ticket[];
 }
 
 export async function getTicketById(id: string) {
@@ -92,51 +85,41 @@ export async function createTicket(data: {
   priority?: TicketPriority;
   category?: string;
 }) {
-  try {
-    const user = await getCurrentUser();
-    if (!user) throw new Error("Unauthorized");
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
 
-    const ticketId = `TKT-${nanoid(10).toUpperCase()}`;
-    const now = new Date();
-    const category = data.category || "General";
+  const ticketId = `TKT-${nanoid(10).toUpperCase()}`;
+  const now = new Date();
+  const category = data.category || "General";
 
-    console.log("Creating ticket with userId:", user.id, "type:", typeof user.id);
+  await sql`
+    INSERT INTO tickets (id, "userId", subject, category, status, priority, channel, "createdAt", "updatedAt")
+    VALUES (
+      ${ticketId},
+      ${user.id},
+      ${data.subject},
+      ${category},
+      'OPEN'::"TicketStatus",
+      ${data.priority || 'MEDIUM'}::"TicketPriority",
+      'IN_APP'::"TicketChannel",
+      ${now},
+      ${now}
+    )
+  `;
 
-    await sql`
-      INSERT INTO tickets (id, "userId", subject, category, status, priority, channel, "createdAt", "updatedAt")
-      VALUES (
-        ${ticketId},
-        ${user.id},
-        ${data.subject},
-        ${category},
-        'OPEN'::"TicketStatus",
-        ${data.priority || 'MEDIUM'}::"TicketPriority",
-        'IN_APP'::"TicketChannel",
-        ${now},
-        ${now}
-      )
-    `;
+  const messageId = nanoid();
+  await sql`
+    INSERT INTO ticket_messages (id, "ticketId", "senderType", body, "createdAt")
+    VALUES (
+      ${messageId},
+      ${ticketId},
+      'USER'::"TicketSenderType",
+      ${data.message},
+      ${now}
+    )
+  `;
 
-    const messageId = nanoid();
-    await sql`
-      INSERT INTO ticket_messages (id, "ticketId", "senderType", body, "createdAt")
-      VALUES (
-        ${messageId},
-        ${ticketId},
-        'USER'::"TicketSenderType",
-        ${data.message},
-        ${now}
-      )
-    `;
-
-    return { id: ticketId };
-  } catch (error: any) {
-    console.error("createTicket error:", error);
-    if (error.message.includes("Unauthorized")) {
-      throw error;
-    }
-    throw new Error(`Failed to create ticket: ${error.message}`);
-  }
+  return { id: ticketId };
 }
 
 export async function closeTicket(ticketId: string) {

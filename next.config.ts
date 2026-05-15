@@ -58,7 +58,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '*.netlify.app',
+        hostname: 'www.topchart.store',
       },
       {
         protocol: 'https',

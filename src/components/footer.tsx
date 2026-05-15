@@ -115,7 +115,7 @@ export function Footer() {
               </h3>
               <ul className="mt-6 space-y-3">
                 {col.links.map((link, linkIndex) => (
-                  <li key={`${col.title}-${linkIndex}`}>
+                  <li key={link.href}>
                     <motion.div whileHover={{ x: 4 }}>
                       <Link
                         href={link.href}

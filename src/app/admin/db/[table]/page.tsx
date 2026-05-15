@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getAbsoluteUrl } from "@/lib/app-url";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -108,7 +109,7 @@ export default function AdminTableManager() {
 
   async function loadRows(nextPage = page, nextQ = q) {
     const offset = nextPage * limit;
-    const url = new URL(`/api/admin/db/${table}`, window.location.origin);
+    const url = new URL(getAbsoluteUrl(`/api/admin/db/${table}`), getAppOrigin());
     url.searchParams.set("limit", String(limit));
     url.searchParams.set("offset", String(offset));
     if (nextQ.trim()) url.searchParams.set("q", nextQ.trim());

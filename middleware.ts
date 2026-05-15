@@ -15,6 +15,7 @@ function getSecurityHeaders(request: NextRequest) {
     "https://*.supabase.co",
     "https://cibtsrkdatuymjpzcfol.supabase.co",
     `${appProtocol}//${appDomain}`,
+    `${appProtocol}//www.${appDomain}`,
     `${appProtocol}//api.${appDomain}`,
     "https://*.tawk.to",
     "https://va.tawk.to",
@@ -24,12 +25,8 @@ function getSecurityHeaders(request: NextRequest) {
     "https://www.googleapis.com"
   ];
 
-  // If we are on a subdomain (like netlify), allow it too
-  const host = request.headers.get("host") || "";
-  if (host && !host.includes(appDomain)) {
-    connectSources.push(`https://${host}`);
-    connectSources.push(`http://${host}`);
-  }
+  // Only allow the canonical production domain
+  // Do NOT allow preview deployment URLs
 
   return {
     "X-Frame-Options": "DENY",

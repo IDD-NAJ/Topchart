@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { getAbsoluteUrl } from "@/lib/app-url"
+import { getAppOrigin } from "@/lib/app-url"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -278,7 +280,7 @@ export default function AdminDashboard() {
 
   const loadUsers = async (query = "") => {
     setUsersError(null)
-    try {
+    try {getAbsoluteUrl()geAppO()
       const url = new URL("/api/admin/users", window.location.origin)
       if (query.trim()) url.searchParams.set("q", query.trim())
       const response = await fetch(url.toString(), {

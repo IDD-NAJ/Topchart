@@ -11,17 +11,13 @@
   NEXT_TELEMETRY_DISABLED = "1"
   NETLIFY_NEXT_PLUGIN_SKIP = "false"
   NEXT_PUBLIC_APP_URL = "https://topchart.store"
+  NEXTAUTH_URL = "https://topchart.store"
+  NEXT_PUBLIC_SITE_URL = "https://topchart.store"
 
-# Redirects for auth callbacks and API routes
-[[redirects]]
-  from = "/api/auth/callback/google"
-  to = "/api/auth/google/callback"
-  status = 200
-
-[[redirects]]
-  from = "/api/auth/callback"
-  to = "/api/auth/callback/google"
-  status = 200
+# Important: NEXT_PUBLIC_APP_URL must be set in Netlify environment variables
+# Go to Site Settings > Environment Variables and set:
+# NEXT_PUBLIC_APP_URL = https://topchart.store
+# Do NOT set it to http://localhost:3000
 
 # Headers for security and caching
 [[headers]]
@@ -60,21 +56,10 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
-  for = "/*.woff"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/*.woff2"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
   for = "/*"
   [headers.values]
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "geolocation=(self), microphone=(), camera=()"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
     X-XSS-Protection = "1; mode=block"
-    Content-Security-Policy = "default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: https://www.google.com https://www.gstatic.com https://checkout.paystack.co https://embed.tawk.to https://va.tawk.to; style-src 'self' 'unsafe-inline' https: https://fonts.googleapis.com https://checkout.paystack.co; img-src 'self' data: https: https://*.googleapis.com https://*.gstatic.com https://checkout.paystack.co; font-src 'self' https: https://fonts.gstatic.com https://fonts.googleapis.com; connect-src 'self' https: https://*.googleapis.com https://checkout.paystack.co https://embed.tawk.to https://va.tawk.to wss://*.tawk.to wss://va.tawk.to; frame-src 'self' https: https://checkout.paystack.co https://embed.tawk.to;"

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
+import { getAppOrigin } from "@/lib/app-url"
 import { formatCurrency } from "@/lib/networks"
 import { copyToClipboard } from "@/lib/clipboard"
 import { toast } from "sonner"
