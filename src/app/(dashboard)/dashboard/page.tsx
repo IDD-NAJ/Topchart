@@ -70,6 +70,9 @@ const TX_TYPE_LABELS: Record<string, string> = {
   proxy: "Proxy Purchase",
   giftcard: "Gift Card",
   bill: "Bill Payment",
+  verification: "Number Verification",
+  verification_str: "Number Verification (Short-term)",
+  verification_ltr: "Number Verification (Long-term)",
 }
 
 const TX_STATUS_LABELS: Record<string, string> = {

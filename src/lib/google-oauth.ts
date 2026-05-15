@@ -275,7 +275,15 @@ export function getAppOrigin(request: Request): string {
 }
 
 export function getGoogleRedirectUri(request: Request): string {
-  return `${getAppOrigin(request)}/api/auth/google/callback`;
+  const origin = getAppOrigin(request);
+  const redirectUri = `${origin}/api/auth/google/callback`;
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[GoogleOAuth] Redirect URI:', redirectUri);
+    console.log('[GoogleOAuth] App Origin:', origin);
+  }
+  
+  return redirectUri;
 }
 
 export function getGoogleEnv(): { clientId: string; clientSecret: string } | null {

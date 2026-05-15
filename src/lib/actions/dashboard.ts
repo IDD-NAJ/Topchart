@@ -74,26 +74,26 @@ export async function getDashboardData(options?: {
       sql`
         SELECT
           COALESCE(SUM(amount) FILTER (
-            WHERE status = 'success'
+            WHERE LOWER(status) = 'success'
               AND type = 'deposit'
           ), 0) AS "totalDeposits",
           COALESCE(SUM(amount) FILTER (
-            WHERE status = 'success'
-              AND type IN ('data', 'verification', 'result_checker')
+            WHERE LOWER(status) = 'success'
+              AND (type IN ('data', 'verification', 'result_checker') OR type LIKE 'verification_%')
           ), 0) AS "totalSpend",
           COALESCE(SUM(amount) FILTER (
-            WHERE status = 'success'
+            WHERE LOWER(status) = 'success'
               AND type = 'data'
           ), 0) AS "dataSpend",
           COALESCE(SUM(amount) FILTER (
-            WHERE status = 'success'
-              AND type = 'verification'
+            WHERE LOWER(status) = 'success'
+              AND (type = 'verification' OR type LIKE 'verification_%')
           ), 0) AS "verificationSpend",
           COALESCE(SUM(amount) FILTER (
-            WHERE status = 'success'
+            WHERE LOWER(status) = 'success'
               AND type = 'result_checker'
           ), 0) AS "resultCheckerSpend",
-          COALESCE(COUNT(*) FILTER (WHERE status = 'success'), 0) AS "successfulCount",
+          COALESCE(COUNT(*) FILTER (WHERE LOWER(status) = 'success'), 0) AS "successfulCount",
           COALESCE(COUNT(*), 0) AS "totalCount"
         FROM transactions
         WHERE user_id = ${user.id}
@@ -122,7 +122,7 @@ export async function getDashboardData(options?: {
         FROM transactions
         WHERE user_id = ${user.id}
           AND type IN ('data', 'DATA')
-          AND status IN ('pending', 'PENDING', 'processing', 'PROCESSING')
+          AND LOWER(status) IN ('pending', 'processing')
         ORDER BY created_at DESC
         LIMIT 10
       `,
@@ -145,7 +145,7 @@ export async function getDashboardData(options?: {
           created_at AS created_at
         FROM transactions
         WHERE user_id = ${user.id}
-          AND status IN ('success', 'SUCCESS')
+          AND LOWER(status) = 'success'
           AND type IN ('data', 'DATA')
           AND COALESCE(
             metadata->>'phoneNumber',
@@ -174,26 +174,26 @@ export async function getDashboardData(options?: {
       sql`
         SELECT
           COALESCE(SUM(amount) FILTER (
-            WHERE status = 'success'
+            WHERE LOWER(status) = 'success'
               AND type = 'deposit'
           ), 0) AS "totalDeposits",
           COALESCE(SUM(amount) FILTER (
-            WHERE status = 'success'
-              AND type IN ('data', 'verification', 'result_checker')
+            WHERE LOWER(status) = 'success'
+              AND (type IN ('data', 'verification', 'result_checker') OR type LIKE 'verification_%')
           ), 0) AS "totalSpend",
           COALESCE(SUM(amount) FILTER (
-            WHERE status = 'success'
+            WHERE LOWER(status) = 'success'
               AND type = 'data'
           ), 0) AS "dataSpend",
           COALESCE(SUM(amount) FILTER (
-            WHERE status = 'success'
-              AND type = 'verification'
+            WHERE LOWER(status) = 'success'
+              AND (type = 'verification' OR type LIKE 'verification_%')
           ), 0) AS "verificationSpend",
           COALESCE(SUM(amount) FILTER (
-            WHERE status = 'success'
+            WHERE LOWER(status) = 'success'
               AND type = 'result_checker'
           ), 0) AS "resultCheckerSpend",
-          COALESCE(COUNT(*) FILTER (WHERE status = 'success'), 0) AS "successfulCount",
+          COALESCE(COUNT(*) FILTER (WHERE LOWER(status) = 'success'), 0) AS "successfulCount",
           COALESCE(COUNT(*), 0) AS "totalCount"
         FROM transactions
         WHERE user_id = ${user.id}
@@ -222,7 +222,7 @@ export async function getDashboardData(options?: {
         FROM transactions
         WHERE user_id = ${user.id}
           AND type IN ('data', 'DATA')
-          AND status IN ('pending', 'PENDING', 'processing', 'PROCESSING')
+          AND LOWER(status) IN ('pending', 'processing')
         ORDER BY created_at DESC
         LIMIT 10
       `,
@@ -233,7 +233,7 @@ export async function getDashboardData(options?: {
           created_at
         FROM transactions
         WHERE user_id = ${user.id}
-          AND status IN ('success', 'SUCCESS')
+          AND LOWER(status) = 'success'
           AND type IN ('data', 'DATA')
           AND phone_number IS NOT NULL
         ORDER BY phone_number, created_at DESC
@@ -245,17 +245,26 @@ export async function getDashboardData(options?: {
   const totalsRow = (totalsResult?.[0] ?? {}) as any;
 
   // Helper to map raw DB rows to DashboardTransactionRow
-  const mapTransaction = (row: any): DashboardTransactionRow => ({
-    id: row.id,
-    reference: row.reference,
-    type: String(row.type || "").toLowerCase() as DashboardTransactionType,
-    amount: Number(row.amount ?? 0),
-    status: String(row.status || "").toLowerCase() as DashboardTransactionStatus,
-    description: row.metadata?.description || row.metadata?.memo || null,
-    network: row.metadata?.network || row.metadata?.network_name || row.metadata?.provider || null,
-    phone_number: row.metadata?.phoneNumber || row.metadata?.phone_number || null,
-    created_at: row.created_at,
-  });
+  const mapTransaction = (row: any): DashboardTransactionRow => {
+    let type = String(row.type || "").toLowerCase();
+    
+    // Map verification subtypes to main verification type
+    if (type.startsWith('verification_')) {
+      type = 'verification';
+    }
+    
+    return {
+      id: row.id,
+      reference: row.reference,
+      type: type as DashboardTransactionType,
+      amount: Number(row.amount ?? 0),
+      status: String(row.status || "").toLowerCase() as DashboardTransactionStatus,
+      description: row.metadata?.description || row.metadata?.memo || null,
+      network: row.metadata?.network || row.metadata?.network_name || row.metadata?.provider || null,
+      phone_number: row.metadata?.phoneNumber || row.metadata?.phone_number || null,
+      created_at: row.created_at,
+    };
+  };
 
   const recentTransactions = recentRaw.map(mapTransaction);
   const processingPurchases = processingRaw.map(mapTransaction);

@@ -1991,7 +1991,7 @@ export default function HoverReceiver() {
     document.addEventListener("mousedown", onMouseDownCapture, {
       capture: true,
     });
-    document.addEventListener("click", onClickCapture, { capture: true });
+    document.addEventListener("click", onClickCapture, { capture: false });
     window.addEventListener("message", onMsg);
     window.addEventListener("scroll", onScroll, true);
 
@@ -1999,7 +1999,7 @@ export default function HoverReceiver() {
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("pointerleave", onPointerLeave);
       document.removeEventListener("mousedown", onMouseDownCapture, true);
-      document.removeEventListener("click", onClickCapture, true);
+      document.removeEventListener("click", onClickCapture, false);
       window.removeEventListener("message", onMsg);
       window.removeEventListener("scroll", onScroll, true);
       if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);

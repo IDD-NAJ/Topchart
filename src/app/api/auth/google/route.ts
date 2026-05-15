@@ -19,6 +19,11 @@ async function handler(request: NextRequest) {
     const { state, challenge } = generateOAuthState(callbackUrl);
 
     const redirectUri = getGoogleRedirectUri(request);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[GoogleAuth] Using redirect URI:', redirectUri);
+      console.log('[GoogleAuth] Client ID:', env.clientId);
+    }
 
     const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     authUrl.searchParams.set("client_id", env.clientId);

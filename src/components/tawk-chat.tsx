@@ -20,13 +20,9 @@ export function TawkChat() {
     widgetId !== "your-tawk-widget-id"
   )
   const isAdminRoute = pathname?.startsWith("/admin")
-  const [isLocalhost, setIsLocalhost] = useState(false)
 
   useEffect(() => {
     setIsMounted(true)
-    setIsLocalhost(
-      window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-    )
   }, [])
 
   useEffect(() => {
@@ -57,7 +53,7 @@ export function TawkChat() {
     trySetAttributes()
   }, [hasValidConfig, user, isAdminRoute, isMounted])
 
-  if (!isMounted || !hasValidConfig || isAdminRoute || !enabled || isLocalhost) {
+  if (!isMounted || !hasValidConfig || isAdminRoute || !enabled || process.env.NODE_ENV === "development") {
     return null
   }
 
