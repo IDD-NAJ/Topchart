@@ -20,7 +20,8 @@ export function GoogleAuthButton({ text = "Continue with Google", callbackUrl = 
     try {
       const url = new URL("/api/auth/google", getAppOrigin())
       url.searchParams.set("callbackUrl", callbackUrl)
-      window.location.href = url.toString()
+      // Use window.location.assign for better mobile compatibility
+      window.location.assign(url.toString())
     } finally {
       setLoading(false)
     }
