@@ -44,6 +44,7 @@ async function handler(request: NextRequest) {
       sameSite: "lax",
       maxAge: 600,
       path: "/",
+      domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
     });
 
     return response;

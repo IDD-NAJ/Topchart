@@ -36,7 +36,26 @@ async function handler(request: NextRequest) {
       return NextResponse.redirect(new URL("/login?error=expired_state", request.url));
     }
 
-    const callbackUrl = parsedState.callbackUrl || "/dashboard";
+    let callbackUrl = parsedState.callbackUrl || "/dashboard";
+    
+    // Force callback URL to use production domain
+    if (process.env.NODE_ENV === "production") {
+      const productionUrl = "https://topchart.store";
+      try {
+        const callbackObj = new URL(callbackUrl, request.url);
+        if (callbackObj.hostname !== "topchart.store" && callbackObj.hostname !== "www.topchart.store") {
+          callbackUrl = callbackObj.pathname;
+          callbackUrl = `${productionUrl}${callbackUrl}`;
+        }
+      } catch {
+        // If URL parsing fails, ensure it's a relative path
+        if (callbackUrl.startsWith("/")) {
+          callbackUrl = `${productionUrl}${callbackUrl}`;
+        } else {
+          callbackUrl = `${productionUrl}/${callbackUrl}`;
+        }
+      }
+    }
 
     const redirectUri = getGoogleRedirectUri(request);
 
@@ -118,13 +137,15 @@ async function handler(request: NextRequest) {
 
       userId = result.user.id;
 
-      const response = NextResponse.redirect(new URL(callbackUrl, request.url));
+      const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
+      const response = NextResponse.redirect(new URL(callbackUrl, productionUrl));
       response.cookies.set("session_token", result.token, {
         httpOnly: true,
         secure: shouldUseSecureCookies(),
         sameSite: "lax",
         expires: new Date(result.expiresAt),
         path: "/",
+        domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
       });
       response.cookies.delete("google_oauth_state");
       return response;
@@ -140,13 +161,15 @@ async function handler(request: NextRequest) {
       return NextResponse.redirect(new URL("/login?error=session_failed", request.url));
     }
 
-    const response = NextResponse.redirect(new URL(callbackUrl, request.url));
+    const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
+    const response = NextResponse.redirect(new URL(callbackUrl, productionUrl));
     response.cookies.set("session_token", result.token, {
       httpOnly: true,
       secure: shouldUseSecureCookies(),
       sameSite: "lax",
       expires: new Date(result.expiresAt),
       path: "/",
+      domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
     });
     response.cookies.delete("google_oauth_state");
     return response;

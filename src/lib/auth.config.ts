@@ -33,6 +33,7 @@ export const authConfig: AuthConfig = {
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
+        domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
       },
     },
   },
@@ -66,6 +67,20 @@ export const authConfig: AuthConfig = {
       return session;
     },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
+      // In production, force redirect to production domain
+      if (process.env.NODE_ENV === "production") {
+        const productionUrl = "https://topchart.store";
+        if (url.startsWith("/")) return `${productionUrl}${url}`;
+        try {
+          const urlObj = new URL(url);
+          if (urlObj.hostname !== "topchart.store" && urlObj.hostname !== "www.topchart.store") {
+            return `${productionUrl}${urlObj.pathname}`;
+          }
+        } catch {
+          // If URL parsing fails, return production URL
+        }
+        return productionUrl;
+      }
       // Allows relative callback URLs
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       // Allows callback URLs on the same origin
