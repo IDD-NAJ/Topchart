@@ -173,7 +173,36 @@ async function handler(request: NextRequest) {
       const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
       const targetUrl = new URL(callbackUrl, productionUrl);
       
-      const response = NextResponse.redirect(targetUrl, 307);
+      // Use HTML with JavaScript URL replacement to hide OAuth parameters
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Redirecting...</title>
+          <style>body{margin:0;padding:20px;font-family:sans-serif;}</style>
+        </head>
+        <body>
+          <p>Redirecting...</p>
+          <script>
+            // Replace URL without OAuth parameters
+            if (window.history.replaceState) {
+              window.history.replaceState({}, document.title, '${targetUrl.toString()}');
+            }
+            window.location.href = '${targetUrl.toString()}';
+          </script>
+          <noscript>
+            <meta http-equiv="refresh" content="0;url=${targetUrl.toString()}">
+          </noscript>
+        </body>
+        </html>
+      `;
+      
+      const response = new NextResponse(html, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+        },
+      });
       response.cookies.set("session_token", result.token, {
         httpOnly: true,
         secure: shouldUseSecureCookies(),
@@ -205,7 +234,36 @@ async function handler(request: NextRequest) {
     const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
     const targetUrl = new URL(callbackUrl, productionUrl);
     
-    const response = NextResponse.redirect(targetUrl, 307);
+    // Use HTML with JavaScript URL replacement to hide OAuth parameters
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Redirecting...</title>
+        <style>body{margin:0;padding:20px;font-family:sans-serif;}</style>
+      </head>
+      <body>
+        <p>Redirecting...</p>
+        <script>
+          // Replace URL without OAuth parameters
+          if (window.history.replaceState) {
+            window.history.replaceState({}, document.title, '${targetUrl.toString()}');
+          }
+          window.location.href = '${targetUrl.toString()}';
+        </script>
+        <noscript>
+          <meta http-equiv="refresh" content="0;url=${targetUrl.toString()}">
+        </noscript>
+      </body>
+      </html>
+    `;
+    
+    const response = new NextResponse(html, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+      },
+    });
     response.cookies.set("session_token", result.token, {
       httpOnly: true,
       secure: shouldUseSecureCookies(),
