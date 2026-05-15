@@ -488,21 +488,29 @@ export async function handleGoogleAuth(profile: {
     const { email, firstName, lastName } = profile;
     const normalizedEmail = email.toLowerCase();
     
+    console.log('[handleGoogleAuth] Starting OAuth auth for email:', normalizedEmail);
+    
     // Check if user exists
     let result = await sql`
       SELECT id, email, phone, password_hash, first_name, last_name, wallet_balance, is_verified, role, created_at
       FROM users WHERE email = ${normalizedEmail}
     `;
 
+    console.log('[handleGoogleAuth] User exists check:', result.length > 0);
+
     let user: any;
 
     if (result.length === 0) {
       // Create new user
+      console.log('[handleGoogleAuth] Creating new user');
       const userId = uuidv4();
       const newReferralCode = userId.slice(0, 8).toUpperCase();
       const now = new Date().toISOString();
-      const placeholderPhone = "0000000000"; 
+      // Generate unique placeholder phone using UUID to avoid UNIQUE constraint violation
+      const placeholderPhone = `oauth_${userId.slice(0, 10)}`; 
       const placeholderHash = await bcrypt.hash(uuidv4(), 10);
+
+      console.log('[handleGoogleAuth] Attempting user insert with phone:', placeholderPhone);
 
       try {
         result = await sql`
@@ -510,45 +518,61 @@ export async function handleGoogleAuth(profile: {
           VALUES (${userId}, ${normalizedEmail}, ${placeholderPhone}, ${placeholderHash}, ${firstName}, ${lastName}, 0.00, true, ${ROLES.USER}, ${newReferralCode}, 0.00, 0.00, ${now}, ${now})
           RETURNING id, email, phone, first_name, last_name, wallet_balance, is_verified, role, referral_code, created_at
         `;
+        console.log('[handleGoogleAuth] User created successfully with ID:', userId);
       } catch (error: any) {
+        console.error('[handleGoogleAuth] First insert attempt failed:', error);
         const message = `${error?.message || ""}`.toLowerCase();
         const missingColumn =
           error?.code === "42703" ||
           message.includes("column") ||
           message.includes("Last Names not exist");
 
-        if (!missingColumn) throw error;
+        if (!missingColumn) {
+          console.error('[handleGoogleAuth] Non-column error, throwing:', error);
+          throw error;
+        }
         
+        console.log('[handleGoogleAuth] Missing column detected, trying fallback insert');
         try {
           result = await sql`
             INSERT INTO users (id, email, phone, password_hash, first_name, last_name, wallet_balance, is_verified, role, referral_code, created_at, updated_at)
             VALUES (${userId}, ${normalizedEmail}, ${placeholderPhone}, ${placeholderHash}, ${firstName}, ${lastName}, 0.00, true, ${ROLES.USER}, ${newReferralCode}, ${now}, ${now})
             RETURNING id, email, phone, first_name, last_name, wallet_balance, is_verified, role, referral_code, created_at
           `;
+          console.log('[handleGoogleAuth] Fallback insert succeeded');
         } catch (fallbackError: any) {
+          console.error('[handleGoogleAuth] Fallback insert failed:', fallbackError);
           const fallbackMessage = `${fallbackError?.message || ""}`.toLowerCase();
           const referralCodeMissing =
             fallbackError?.code === "42703" ||
             fallbackMessage.includes("referral_code");
 
-          if (!referralCodeMissing) throw fallbackError;
+          if (!referralCodeMissing) {
+            console.error('[handleGoogleAuth] Non-referral-code error in fallback, throwing:', fallbackError);
+            throw fallbackError;
+          }
 
+          console.log('[handleGoogleAuth] referral_code missing, trying minimal insert');
           result = await sql`
             INSERT INTO users (id, email, phone, password_hash, first_name, last_name, wallet_balance, is_verified, role, created_at, updated_at)
             VALUES (${userId}, ${normalizedEmail}, ${placeholderPhone}, ${placeholderHash}, ${firstName}, ${lastName}, 0.00, true, ${ROLES.USER}, ${now}, ${now})
             RETURNING id, email, phone, first_name, last_name, wallet_balance, is_verified, role, NULL::text AS referral_code, created_at
           `;
+          console.log('[handleGoogleAuth] Minimal insert succeeded');
         }
       }
     }
 
     user = result[0];
+    console.log('[handleGoogleAuth] User record obtained, ID:', user.id);
 
-    // Create session
+    // Create session with 24-hour expiry (was 5 minutes)
     const token = uuidv4();
     const sessionId = uuidv4();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
     const nowIso = new Date().toISOString();
+
+    console.log('[handleGoogleAuth] Creating session, expires at:', expiresAt.toISOString());
 
     await insertSessionRecord({
       sessionId,
@@ -558,6 +582,7 @@ export async function handleGoogleAuth(profile: {
       nowIso,
     });
     await pruneUserSessions(user.id);
+    console.log('[handleGoogleAuth] Session created and pruned');
 
     const userResponse: User = {
       id: user.id,
@@ -571,6 +596,7 @@ export async function handleGoogleAuth(profile: {
       created_at: user.created_at,
     };
 
+    console.log('[handleGoogleAuth] Authentication successful for user:', userResponse.email);
     return { 
       success: true, 
       user: userResponse,
@@ -578,7 +604,11 @@ export async function handleGoogleAuth(profile: {
       expiresAt
     };
   } catch (error: unknown) {
-    console.error("[handleGoogleAuth] Error:", error);
+    console.error('[handleGoogleAuth] Error:', error);
+    if (error instanceof Error) {
+      console.error('[handleGoogleAuth] Error message:', error.message);
+      console.error('[handleGoogleAuth] Error stack:', error.stack);
+    }
     return { success: false, error: "Failed to authenticate with Google." };
   }
 }
