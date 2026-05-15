@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { getCurrentUser } from "@/lib/actions/auth";
 
 export const runtime = "nodejs";
@@ -8,35 +7,28 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("session_token")?.value;
-    const hasToken = !!token;
-
-    console.log("[api/auth/me] cookie check:", {
-      hasToken,
-      tokenPrefix: hasToken ? token.slice(0, 8) + "..." : null,
-      userAgent: request.headers.get("user-agent")?.slice(0, 40),
-    });
-
     const user = await getCurrentUser();
-
-    if (user) {
-      return NextResponse.json(
-        { success: true, user },
-        { status: 200 }
-      );
-    } else {
-      console.log("[api/auth/me] getCurrentUser returned null");
-      return NextResponse.json(
-        { success: false, error: "Not authenticated" },
-        { status: 401 }
-      );
-    }
-  } catch (error) {
-    console.error("Get current user API error:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
-    );
+    
+    return NextResponse.json({
+      success: true,
+      user: user ? {
+        id: user.id,
+        email: user.email,
+        phone: user.phone,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        wallet_balance: user.wallet_balance,
+        is_verified: user.is_verified,
+        role: user.role,
+        referral_code: user.referral_code,
+        created_at: user.created_at,
+      } : null
+    });
+  } catch (error: any) {
+    console.error("[Auth Me API] Error:", error);
+    return NextResponse.json({
+      success: true,
+      user: null
+    });
   }
 }

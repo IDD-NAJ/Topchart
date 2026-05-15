@@ -5,20 +5,28 @@ import type { Metadata } from "next";
 export const revalidate = 3600; // Cache for 1 hour
 
 export const metadata: Metadata = {
-  title: "Buy Cheap Data Bundles, Airtime & Verification Numbers in Ghana",
-  description: "Buy cheap MTN, Telecel & AirtelTigo data bundles instantly. Get virtual numbers for OTP & SMS verification in Ghana. Secure, fast & always on.",
+  title: "Cheap Data Bundles Ghana | MTN, Telecel & AirtelTigo | Instant Delivery",
+  description: "Buy cheap MTN, Telecel & AirtelTigo data bundles instantly in Ghana. Lowest prices, non-expiry bundles, instant delivery via MoMo. Trusted by 500K+ users.",
   keywords: [
-    'cheap data Ghana',
-    'buy MTN data online',
-    'airtime Ghana',
-    'OTP verification numbers',
-    'cheap Telecel bundles',
-    'AirtelTigo internet bundles',
+    'cheap data bundles Ghana',
+    'MTN cheap data bundles',
+    'buy MTN data online Ghana',
+    'affordable internet bundles Ghana',
+    'instant data delivery Ghana',
+    'cheapest MTN bundles Ghana',
+    'buy cheap data online',
+    'Telecel cheap bundles',
+    'AirtelTigo cheap data',
+    'non expiry data bundles Ghana',
+    'fast data bundles Ghana',
+    'buy data with MoMo Ghana',
+    'data reseller Ghana',
+    'cheap internet Ghana',
   ],
   alternates: { canonical: "https://topchart.store" },
   openGraph: {
-    title: "Buy Cheap Data Bundles, Airtime & Verification Numbers in Ghana",
-    description: "Ghana's trusted platform for data bundles, airtime, verification numbers, result checkers & bill payments.",
+    title: "Cheap Data Bundles Ghana | MTN, Telecel & AirtelTigo | Instant Delivery",
+    description: "Buy cheap MTN, Telecel & AirtelTigo data bundles instantly in Ghana. Lowest prices, non-expiry bundles, instant delivery via MoMo.",
     url: "https://topchart.store",
   },
 };

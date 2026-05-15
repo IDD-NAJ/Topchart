@@ -128,23 +128,15 @@ export default function HistoryPage() {
           cache: 'no-store'
         })
         
-        if (!response.ok) {
-          throw new Error(`HTTP error: ${response.status}`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data?.success && data?.user) {
+            setUser(data.user)
+            loadTransactions(data.user.id)
+          }
         }
-        
-        const result = await response.json()
-        if (result.success) {
-          setUser(result.user)
-          loadTransactions(result.user.id)
-        } else {
-          setUser(null)
-          setError(result.error || "Failed to load user")
-          setLoading(false)
-        }
-      } catch (err) {
-        console.error('Failed to load user:', err)
-        setError(err instanceof Error ? err.message : "Network error. Please try again.")
-        setUser(null)
+        setLoading(false)
+      } catch {
         setLoading(false)
       }
     }

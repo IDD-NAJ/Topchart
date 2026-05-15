@@ -247,7 +247,7 @@ export default function AboutPage() {
               <ScrollReveal className="order-1 lg:order-2">
                 <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#FF5630] mb-4">Our Team</p>
                 <h2 className="font-heading text-4xl lg:text-5xl font-normal text-neutral-900 tracking-tight mb-8 text-balance">
-                  Built by ians, for .
+                  Built by Ghanaians, for Ghana.
                 </h2>
                 <p className="text-base text-[#6B7280] leading-relaxed mb-8 font-body">
                   Our team spans engineering, product, design, and support — united by a shared belief that technology should remove barriers, not create them.
@@ -279,7 +279,7 @@ export default function AboutPage() {
                 Ready to experience Topchart?
               </h2>
               <p className="text-base text-white/45 mb-10 max-w-xl mx-auto font-body leading-relaxed">
-                Join 500,000+ ians using our platform. Free to sign up, no subscription fees.
+                Join 500,000+ Ghanaians using our platform. Free to sign up, no subscription fees.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button asChild size="lg"

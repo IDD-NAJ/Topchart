@@ -63,7 +63,6 @@ async function fetchNextAuthSession(): Promise<User | null> {
       credentials: "include",
       cache: "no-store",
     });
-    if (!response.ok) return null;
     const session = await response.json();
     if (session?.user?.id) {
       return {
@@ -169,7 +168,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await fetchMe();
       if (requestId !== refreshSequenceRef.current) return;
       if (result.kind === "network") {
-        console.warn("Network error during user refresh");
         return;
       }
       if (result.status >= 200 && result.status < 300) {
@@ -189,10 +187,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      
-      if (result.status !== 401) {
-        console.error("Failed to refresh user:", result.status);
-      }
       if (requestId !== refreshSequenceRef.current) return;
       setUser(null);
     } catch (error) {
@@ -201,14 +195,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             error.name === "NetworkError" ||
             error.message?.includes("fetch") ||
             error.message?.includes("network"))) {
-        console.warn("Network error during user refresh:", error);
         return;
       }
-      console.error("Failed to refresh user:", error);
+      console.error("Error refreshing user:", error);
       if (requestId !== refreshSequenceRef.current) return;
       setUser(null);
     }
-  }, []);
+  }, [invalidateAuthState]);
 
   useEffect(() => {
     // Only refresh user on mount, not on every render

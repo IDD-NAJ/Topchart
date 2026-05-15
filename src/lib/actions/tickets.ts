@@ -44,16 +44,23 @@ export interface Ticket {
 }
 
 export async function getTickets() {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("Unauthorized");
+  try {
+    const user = await getCurrentUser();
+    if (!user) throw new Error("Unauthorized - No user found");
 
-  const tickets = await sql`
-    SELECT * FROM tickets 
-    WHERE "userId" = ${user.id} 
-    ORDER BY "createdAt" DESC
-  `;
-
-  return tickets as unknown as Ticket[];
+    const tickets = await sql`
+      SELECT * FROM tickets 
+      WHERE "userId" = ${user.id} 
+      ORDER BY "createdAt" DESC
+    `;
+    return tickets as unknown as Ticket[];
+  } catch (error: any) {
+    console.error("getTickets error:", error);
+    if (error.message.includes("Unauthorized")) {
+      throw error;
+    }
+    throw new Error(`Database error: ${error.message}`);
+  }
 }
 
 export async function getTicketById(id: string) {
@@ -85,41 +92,51 @@ export async function createTicket(data: {
   priority?: TicketPriority;
   category?: string;
 }) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("Unauthorized");
+  try {
+    const user = await getCurrentUser();
+    if (!user) throw new Error("Unauthorized");
 
-  const ticketId = `TKT-${nanoid(10).toUpperCase()}`;
-  const now = new Date();
-  const category = data.category || "General";
+    const ticketId = `TKT-${nanoid(10).toUpperCase()}`;
+    const now = new Date();
+    const category = data.category || "General";
 
-  await sql`
-    INSERT INTO tickets (id, "userId", subject, category, status, priority, channel, "createdAt", "updatedAt")
-    VALUES (
-      ${ticketId},
-      ${user.id},
-      ${data.subject},
-      ${category},
-      'OPEN'::"TicketStatus",
-      ${data.priority || 'MEDIUM'}::"TicketPriority",
-      'IN_APP'::"TicketChannel",
-      ${now},
-      ${now}
-    )
-  `;
+    console.log("Creating ticket with userId:", user.id, "type:", typeof user.id);
 
-  const messageId = nanoid();
-  await sql`
-    INSERT INTO ticket_messages (id, "ticketId", "senderType", body, "createdAt")
-    VALUES (
-      ${messageId},
-      ${ticketId},
-      'USER'::"TicketSenderType",
-      ${data.message},
-      ${now}
-    )
-  `;
+    await sql`
+      INSERT INTO tickets (id, "userId", subject, category, status, priority, channel, "createdAt", "updatedAt")
+      VALUES (
+        ${ticketId},
+        ${user.id},
+        ${data.subject},
+        ${category},
+        'OPEN'::"TicketStatus",
+        ${data.priority || 'MEDIUM'}::"TicketPriority",
+        'IN_APP'::"TicketChannel",
+        ${now},
+        ${now}
+      )
+    `;
 
-  return { id: ticketId };
+    const messageId = nanoid();
+    await sql`
+      INSERT INTO ticket_messages (id, "ticketId", "senderType", body, "createdAt")
+      VALUES (
+        ${messageId},
+        ${ticketId},
+        'USER'::"TicketSenderType",
+        ${data.message},
+        ${now}
+      )
+    `;
+
+    return { id: ticketId };
+  } catch (error: any) {
+    console.error("createTicket error:", error);
+    if (error.message.includes("Unauthorized")) {
+      throw error;
+    }
+    throw new Error(`Failed to create ticket: ${error.message}`);
+  }
 }
 
 export async function closeTicket(ticketId: string) {

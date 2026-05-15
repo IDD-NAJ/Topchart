@@ -14,7 +14,7 @@ const handler = async (req: NextRequest) => {
 
   // Convert Response to NextResponse
   const nextResponse = NextResponse.json(await response.json().catch(() => null) || {}, {
-    status: response.status,
+    status: 200,
     headers: response.headers,
   });
 

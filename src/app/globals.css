@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 * {
   -webkit-tap-highlight-color: transparent;
@@ -392,7 +390,7 @@ button, a, [role="button"], input, textarea, select {
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center rounded px-6 py-3 font-semibold transition-all shadow-sm;
+    @apply inline-flex items-center justify-center rounded-md px-6 py-3 font-semibold transition-all shadow-sm;
     transition-duration: var(--duration-fast);
   }
   
@@ -408,7 +406,7 @@ button, a, [role="button"], input, textarea, select {
   .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
   
   .input {
-    @apply rounded border bg-background px-4 py-2 transition-all;
+    @apply rounded-md border bg-background px-4 py-2 transition-all;
     border-color: var(--input);
   }
   

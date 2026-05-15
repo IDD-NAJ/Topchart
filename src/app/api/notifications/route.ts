@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ success: true, notifications: [], unreadCount: 0 });
     }
 
     const notifications = await sql`
@@ -37,15 +37,18 @@ export async function GET() {
       isPgMissingRelation(error) ||
       error?.code === "42703" ||
       error?.code === "22P02" ||
-      (typeof error?.message === "string" && /Last Names not exist|invalid input syntax/i.test(error.message))
+      error?.code === "3D000" ||
+      error?.code === "42P01" ||
+      (typeof error?.message === "string" && /Last Names not exist|invalid input syntax|does not exist|relation/i.test(error.message))
     ) {
       return NextResponse.json({ success: true, notifications: [], unreadCount: 0 });
     }
     console.error("[Notifications API] GET error:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to fetch notifications" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      success: true,
+      notifications: [],
+      unreadCount: 0,
+    });
   }
 }
 

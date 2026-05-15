@@ -20,8 +20,18 @@ export function Footer() {
     {
       title: "Services",
       links: [
-        { href: "/dashboard/data", label: "Data bundles" },
-        { href: "/dashboard/verification", label: "Verification numbers" },
+        { href: "/dashboard/data", label: "Cheap Data Bundles" },
+        { href: "/dashboard/verification", label: "Verification Numbers" },
+        { href: "/dashboard/result-checkers", label: "WAEC Result Checker" },
+        { href: "/dashboard/reseller", label: "Data Reseller Programme" },
+      ],
+    },
+    {
+      title: "Networks",
+      links: [
+        { href: "/dashboard/data", label: "MTN Data Bundles" },
+        { href: "/dashboard/data", label: "Telecel Data Bundles" },
+        { href: "/dashboard/data", label: "AirtelTigo Data Bundles" },
       ],
     },
   ]
@@ -32,7 +42,7 @@ export function Footer() {
     { icon: Mail, text: "support@topchart.store" },
     { icon: Phone, text: "+233 20 123 4567" },
     ...(whatsappNumber ? [{ icon: MessageCircle, text: `WhatsApp`, href: `https://wa.me/${whatsappNumber}` }] : []),
-    { icon: MapPin, text: "Accra, " },
+    { icon: MapPin, text: "Accra, Ghana" },
   ]
 
   return (
@@ -65,7 +75,7 @@ export function Footer() {
                 </motion.span>
               </Link>
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-[#8a9ba8]">
-                &apos;s platform for data, verification numbers, exam results, and reseller tools — fast, secure, and always on.
+                Ghana&apos;s leading platform for cheap data bundles, airtime, verification numbers, exam results, and reseller tools — fast, secure, and always on.
               </p>
               
               <div className="mt-8 flex items-center gap-4">
@@ -105,7 +115,7 @@ export function Footer() {
               </h3>
               <ul className="mt-6 space-y-3">
                 {col.links.map((link, linkIndex) => (
-                  <li key={link.href}>
+                  <li key={`${col.title}-${linkIndex}`}>
                     <motion.div whileHover={{ x: 4 }}>
                       <Link
                         href={link.href}
@@ -156,7 +166,7 @@ export function Footer() {
             <div className="md:col-span-2">
               <h4 className="mb-4 text-sm font-bold uppercase tracking-wider text-white">Stay Updated</h4>
               <p className="mb-4 text-sm text-[#8a9ba8]">
-                Get the latest updates on new features and special offers.
+                Get the latest updates on cheap data bundles, special offers, and new features in Ghana.
               </p>
               <div className="flex gap-2">
                 <input
@@ -184,7 +194,7 @@ export function Footer() {
           className="flex flex-col items-center justify-between gap-4 border-t border-white/10 py-8 text-center sm:flex-row sm:text-left"
         >
           <p className="text-xs font-mono text-[#8a9ba8]">
-            Copyright — {currentYear} | Topchart. All rights reserved.
+            Copyright — {currentYear} | Topchart Ghana. All rights reserved.
           </p>
           <motion.div
             className="flex items-center gap-2 text-xs text-[#8a9ba8]"

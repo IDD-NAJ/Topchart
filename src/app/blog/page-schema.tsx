@@ -5,8 +5,8 @@ import Script from "next/script"
 const webPageSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
-  name: 'Blog — Cheap Data Tips & Ghana Tech Guides',
-  description: 'Read guides about cheap data bundles, OTP verification numbers, internet tricks & digital services in Ghana.',
+  name: 'Topchart Blog — Cheap Data Bundles Ghana, MTN Tips & Tech Guides',
+  description: 'Read guides about cheap data bundles in Ghana, MTN tricks, OTP verification numbers, internet tips, and digital services. Stay updated with the latest Ghana tech news.',
   url: 'https://topchart.store/blog',
   lastReviewed: new Date().toISOString(),
 }

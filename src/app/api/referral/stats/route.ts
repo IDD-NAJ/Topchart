@@ -51,7 +51,7 @@ export async function GET() {
       total_earnings = earnings[0]?.total_earnings || 0;
     } catch (dbError: any) {
       const msg = dbError?.message || "";
-      if (msg.includes("Last Names not exist")) {
+      if (msg.includes("Last Names not exist") || msg.includes("does not exist") || msg.includes("relation")) {
         // Tables not yet created — return zeros
       } else {
         throw dbError;
@@ -82,7 +82,7 @@ export async function GET() {
     }
     console.error("Referral stats error:", error instanceof Error ? error.message : String(error));
     return NextResponse.json(
-      { success: false, error: "Internal server error: " + (error?.message || String(error)) },
+      { success: false, error: "Internal server error" },
       { status: 500 }
     );
   }

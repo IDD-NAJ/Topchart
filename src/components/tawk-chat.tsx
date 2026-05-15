@@ -53,6 +53,8 @@ export function TawkChat() {
     trySetAttributes()
   }, [hasValidConfig, user, isAdminRoute, isMounted])
 
+  // Disable Tawk.to if not properly configured or if CORS issues occur
+  // Set NEXT_PUBLIC_TAWK_ENABLED=false in .env to disable
   if (!isMounted || !hasValidConfig || isAdminRoute || !enabled || process.env.NODE_ENV === "development") {
     return null
   }
@@ -61,6 +63,9 @@ export function TawkChat() {
     <Script
       id="tawk-to"
       strategy="lazyOnload"
+      onError={(e) => {
+        console.warn("Tawk.to widget failed to load:", e)
+      }}
       dangerouslySetInnerHTML={{
         __html: `
           var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
@@ -71,6 +76,9 @@ export function TawkChat() {
             s1.src = "https://embed.tawk.to/${propertyId}/${widgetId}";
             s1.charset = "UTF-8";
             s1.setAttribute("crossorigin", "*");
+            s1.onerror = function() {
+              console.warn("Tawk.to widget failed to load");
+            };
             s0.parentNode.insertBefore(s1, s0);
           })();
         `,

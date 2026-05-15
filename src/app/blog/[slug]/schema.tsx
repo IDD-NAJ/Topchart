@@ -18,12 +18,12 @@ export function ArticleSchema({ title, description, datePublished, dateModified,
     description: description || 'Cheap data bundle tips, verification guides and Ghana digital service news.',
     author: {
       '@type': 'Organization',
-      name: 'Topchart',
+      name: 'Topchart Ghana',
       url: 'https://topchart.store',
     },
     publisher: {
       '@type': 'Organization',
-      name: 'Topchart',
+      name: 'Topchart Ghana',
       url: 'https://topchart.store',
       logo: {
         '@type': 'ImageObject',
@@ -33,6 +33,10 @@ export function ArticleSchema({ title, description, datePublished, dateModified,
     datePublished: datePublished || new Date().toISOString(),
     dateModified: dateModified || new Date().toISOString(),
     url: slug ? `https://topchart.store/blog/${slug}` : 'https://topchart.store/blog',
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': slug ? `https://topchart.store/blog/${slug}` : 'https://topchart.store/blog',
+    },
   }
 
   return (

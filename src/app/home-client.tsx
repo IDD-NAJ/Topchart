@@ -449,10 +449,10 @@ const DEFAULT_SERVICES: ServiceItem[] = [
   {
     id: "default-1",
     icon: "Wifi",
-    title: "Data Bundles",
-    description: "Affordable daily, weekly and monthly data packages for every network.",
+    title: "Cheap Data Bundles",
+    description: "Buy cheap MTN, Telecel & AirtelTigo data bundles in Ghana. Lowest prices, non-expiry options, instant delivery.",
     href: "/dashboard/data",
-    label: "Browse bundles",
+    label: "Buy bundles",
     priority: 1,
     is_active: true,
   },
@@ -460,7 +460,7 @@ const DEFAULT_SERVICES: ServiceItem[] = [
     id: "default-2",
     icon: "PhoneCall",
     title: "Verification Numbers",
-    description: "Temporary virtual numbers for OTP verification on any platform.",
+    description: "Temporary virtual phone numbers for WhatsApp, Telegram, Google & SMS verification in Ghana.",
     href: "/dashboard/verification",
     label: "Get a number",
     priority: 2,
@@ -469,8 +469,8 @@ const DEFAULT_SERVICES: ServiceItem[] = [
   {
     id: "default-3",
     icon: "GraduationCap",
-    title: "Result Checkers",
-    description: "WAEC, BECE, and NOVDEC results with your index number.",
+    title: "WAEC Result Checker",
+    description: "Buy WAEC, BECE & NOVDEC result checker vouchers online in Ghana. Instant digital delivery.",
     href: "/dashboard/result-checkers",
     label: "Check results",
     priority: 3,
@@ -479,8 +479,8 @@ const DEFAULT_SERVICES: ServiceItem[] = [
   {
     id: "default-4",
     icon: "Smartphone",
-    title: "eSIM",
-    description: "Get a US phone number or travel data eSIM for 50+ countries.",
+    title: "eSIM Ghana",
+    description: "Get a US phone number or travel data eSIM for 50+ countries. Instant activation from Ghana.",
     href: "/dashboard/esim",
     label: "Get eSIM",
     priority: 4,
@@ -490,7 +490,7 @@ const DEFAULT_SERVICES: ServiceItem[] = [
     id: "default-5",
     icon: "Shield",
     title: "Proxies",
-    description: "Residential, mobile & datacenter proxies via 9Proxy.",
+    description: "Residential, mobile & datacenter proxies via 9Proxy for secure browsing in Ghana.",
     href: "/dashboard/proxies",
     label: "Get proxies",
     priority: 5,
@@ -500,7 +500,7 @@ const DEFAULT_SERVICES: ServiceItem[] = [
     id: "default-6",
     icon: "Gift",
     title: "Gift Cards",
-    description: "Digital gift cards for Netflix, Amazon, Steam & more — delivered instantly.",
+    description: "Digital gift cards for Netflix, Amazon, Steam & more — delivered instantly in Ghana.",
     href: "/dashboard/giftcards",
     label: "Buy gift cards",
     priority: 6,
@@ -510,7 +510,7 @@ const DEFAULT_SERVICES: ServiceItem[] = [
     id: "default-7",
     icon: "CreditCard",
     title: "Pay Bills",
-    description: "Electricity, TV, water & internet bill payments in Ghana.",
+    description: "Electricity, TV, water & internet bill payments in Ghana via MTN MoMo and cards.",
     href: "/dashboard/bills",
     label: "Pay now",
     priority: 7,
@@ -519,8 +519,8 @@ const DEFAULT_SERVICES: ServiceItem[] = [
   {
     id: "default-8",
     icon: "Store",
-    title: "Reseller Program",
-    description: "Earn commissions reselling our services under your own brand.",
+    title: "Data Reseller Programme",
+    description: "Become a data reseller in Ghana. Earn commissions reselling cheap data bundles under your brand.",
     href: "/dashboard/reseller",
     label: "Become a reseller",
     priority: 8,
@@ -531,23 +531,37 @@ const DEFAULT_SERVICES: ServiceItem[] = [
 const DEFAULT_FAQS: FAQItem[] = [
   {
     id: "default-1",
-    question: "How fast is airtime and data delivery?",
-    answer: "Most orders complete within seconds. Network congestion may occasionally add a short delay.",
+    question: "How fast is cheap data bundle delivery in Ghana?",
+    answer: "Most cheap data bundles are delivered instantly within seconds. Network congestion may occasionally cause short delays for MTN, Telecel, and AirtelTigo.",
     priority: 1,
     is_active: true,
   },
   {
     id: "default-2",
-    question: "What payment methods are supported?",
-    answer: "MTN MoMo, Telecel Cash, AirtelTigo Money, Visa, Mastercard, and wallet balance via Paystack.",
+    question: "What payment methods are accepted for data bundles?",
+    answer: "We accept MTN MoMo, Telecel Cash, AirtelTigo Money, Visa, Mastercard, and wallet balance via Paystack for buying cheap data bundles in Ghana.",
     priority: 2,
     is_active: true,
   },
   {
     id: "default-3",
-    question: "How do verification numbers work?",
-    answer: "You rent a temporary number; OTP SMS appears in your dashboard in real time.",
+    question: "Are your data bundles the cheapest in Ghana?",
+    answer: "Yes, we offer the cheapest MTN, Telecel, and AirtelTigo data bundles in Ghana with prices lower than direct carrier rates. We also have non-expiry data bundle options.",
     priority: 3,
+    is_active: true,
+  },
+  {
+    id: "default-4",
+    question: "How do I become a data reseller in Ghana?",
+    answer: "Join our data reseller programme to earn commissions reselling cheap data bundles, airtime, and verification numbers under your own brand. Daily payouts available.",
+    priority: 4,
+    is_active: true,
+  },
+  {
+    id: "default-5",
+    question: "Do you offer non-expiry data bundles in Ghana?",
+    answer: "Yes, we have non-expiry data bundles available for MTN and other networks in Ghana. Check our dashboard for current non-expiry bundle offers.",
+    priority: 5,
     is_active: true,
   },
 ]
@@ -704,7 +718,7 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               className="font-serif text-balance text-5xl leading-[1.1] tracking-tight text-white sm:text-6xl lg:text-[5.5rem]"
             >
-              Buy Cheap Data Bundles, Airtime & Verification Numbers in Ghana
+              Cheap Data Bundles Ghana | MTN, Telecel & AirtelTigo
             </motion.h1>
 
             <motion.p
@@ -713,7 +727,7 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
               transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
               className="mt-6 max-w-2xl text-[15px] sm:text-base leading-relaxed text-[#8a9ba8]"
             >
-              Cheap data bundles, airtime, verification numbers, exam results, and a full reseller programme — all in one secure platform, delivered instantly.
+              Buy cheap MTN, Telecel & AirtelTigo data bundles instantly in Ghana. Lowest prices, non-expiry bundles, instant delivery via MoMo. Trusted by 500K+ Ghanaians.
             </motion.p>
 
             <motion.div
@@ -865,7 +879,7 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
           <div className="relative z-[1] mx-auto max-w-[1200px]">
             <ScrollReveal once={false} amount={0.2}>
               <h2 className="text-3xl font-bold text-neutral-900 sm:text-4xl border-b-2 border-primary pb-4 inline-block">
-                Our Products
+                Cheap Data Bundles & Digital Services in Ghana
               </h2>
             </ScrollReveal>
             <StaggerReveal
@@ -950,14 +964,14 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
           <div className="relative z-[1] mx-auto max-w-[820px] text-center">
             <ScrollReveal once={false} amount={0.25} direction="up" className="text-center">
               <h2 className="text-balance text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl">
-                Full white-label solution
+                Become a Data Reseller in Ghana
               </h2>
               <p className="mx-auto mt-6 max-w-xl text-sm leading-relaxed text-white/65 sm:text-base">
-                Launch your own branded storefront, wallet, and service catalogue on top of Topchart infrastructure — with commissions, analytics, and support built in.
+                Launch your own branded data reseller business in Ghana. Earn daily commissions selling cheap MTN, Telecel & AirtelTigo data bundles under your brand.
               </p>
               <div className="mt-10 flex flex-col items-center gap-2">
-                <PrimaryLink href="/login">Login</PrimaryLink>
-                <p className="text-xs text-white/50">Sign in to access your dashboard and reseller tools.</p>
+                <PrimaryLink href="/dashboard/reseller">Start Reselling</PrimaryLink>
+                <p className="text-xs text-white/50">Join 500+ resellers earning daily in Ghana.</p>
               </div>
             </ScrollReveal>
           </div>
@@ -1024,7 +1038,7 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
               className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
             >
               <h2 className="text-3xl font-extrabold tracking-tight text-neutral-900 sm:text-4xl">
-                What people are saying
+                Trusted by Ghanaians for Cheap Data Bundles
               </h2>
             </ScrollReveal>
             <TestimonialCarousel items={testimonials.map(t => ({ brand: t.brand, quote: t.quote, name: t.name, role: t.role }))} />

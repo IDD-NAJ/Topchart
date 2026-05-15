@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   compress: true,
   productionBrowserSourceMaps: false,
+  poweredByHeader: false,
+  reactStrictMode: true,
   webpack: (config, { dev }) => {
     if (dev) {
       config.ignoreWarnings = [
