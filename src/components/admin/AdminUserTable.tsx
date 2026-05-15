@@ -203,17 +203,19 @@ export default function AdminUserTable() {
   }, [searchTerm])
 
   return (
-    <Card className="mb-8">
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <Users className="w-5 h-5 text-muted-foreground" />
-          User Management
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
+    <>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Users className="w-5 h-5 text-muted-foreground" />
+            User Management
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 scroll-indicator-right sm:after:hidden">
+            <div className="min-w-[700px] sm:min-w-0">
+              <table className="w-full">
+                <thead>
                   <tr className="border-b">
                     <th className="text-left p-3 font-medium">Name</th>
                     <th className="text-left p-3 font-medium">Email</th>
@@ -222,61 +224,56 @@ export default function AdminUserTable() {
                     <th className="text-left p-3 font-medium">Status</th>
                     <th className="text-left p-3 font-medium">Actions</th>
                   </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.id} className="border-b hover:bg-muted/50">
-                  <td className="p-3">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                        <span className="text-xs font-medium">
-                          {user.first_name[0]}{user.last_name[0]}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="font-medium">{user.first_name} {user.last_name}</div>
-                        <div className="text-sm text-muted-foreground">{user.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-3">{user.phone}</td>
-                  <td className="p-3">GH₵{Number(user.wallet_balance || 0).toFixed(2)}</td>
-                  <td className="p-3">
-                    <Badge variant={user.is_verified ? "default" : "secondary"}>
-                      {user.is_verified ? "Verified" : "Unverified"}
-                    </Badge>
-                  </td>
-                  <td className="p-3">
-                    <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm" onClick={() => openUserDialog(user, "view")}>
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => openUserDialog(user, "edit")}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => {
-                          setDeleteError(null)
-                          setDeleteTarget(user)
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </CardContent>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user.id} className="border-b hover:bg-muted/50">
+                      <td className="p-3">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                            <span className="text-xs font-medium">
+                              {user.first_name[0]}{user.last_name[0]}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="font-medium">{user.first_name} {user.last_name}</div>
+                            <div className="text-sm text-muted-foreground">{user.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-3">{user.phone}</td>
+                      <td className="p-3">GH₵{Number(user.wallet_balance || 0).toFixed(2)}</td>
+                      <td className="p-3">
+                        <Badge variant={user.is_verified ? "default" : "secondary"}>
+                          {user.is_verified ? "Verified" : "Unverified"}
+                        </Badge>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openUserDialog(user, "view")}>
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openUserDialog(user, "edit")}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteTarget(user)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       <Dialog open={Boolean(editingUser)} onOpenChange={(open) => (!open ? closeUserDialog() : null)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-w-[95vw]">
           <DialogHeader>
-            <DialogTitle>{editMode === "view" ? "User details" : "Edit user"}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">{editMode === "view" ? "User details" : "Edit user"}</DialogTitle>
+            <DialogDescription className="text-sm">
               {editMode === "view"
                 ? "View user profile information."
                 : "Update user details and save changes."}
@@ -290,6 +287,7 @@ export default function AdminUserTable() {
                 value={editForm.first_name}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, first_name: e.target.value }))}
                 disabled={editMode === "view"}
+                className="h-10"
               />
             </div>
             <div className="grid gap-2">
@@ -299,6 +297,7 @@ export default function AdminUserTable() {
                 value={editForm.last_name}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, last_name: e.target.value }))}
                 disabled={editMode === "view"}
+                className="h-10"
               />
             </div>
             <div className="grid gap-2">
@@ -309,6 +308,7 @@ export default function AdminUserTable() {
                 value={editForm.email}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
                 disabled={editMode === "view"}
+                className="h-10"
               />
             </div>
             <div className="grid gap-2">
@@ -318,6 +318,7 @@ export default function AdminUserTable() {
                 value={editForm.phone}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, phone: e.target.value }))}
                 disabled={editMode === "view"}
+                className="h-10"
               />
             </div>
             <div className="grid gap-2">
@@ -329,6 +330,7 @@ export default function AdminUserTable() {
                 value={editForm.wallet_balance}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, wallet_balance: e.target.value }))}
                 disabled={editMode === "view"}
+                className="h-10"
               />
             </div>
             <div className="grid gap-2">
@@ -387,6 +389,6 @@ export default function AdminUserTable() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Card>
+    </>
   )
 }
