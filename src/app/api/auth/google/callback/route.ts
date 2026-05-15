@@ -164,7 +164,8 @@ async function handler(request: NextRequest) {
       console.log('[GoogleAuth Callback] New user created, ID:', userId);
 
       const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
-      const response = NextResponse.redirect(new URL(callbackUrl, productionUrl));
+      const targetUrl = new URL(callbackUrl, productionUrl);
+      const response = NextResponse.redirect(targetUrl, 307); // Use 307 for temporary redirect
       response.cookies.set("session_token", result.token, {
         httpOnly: true,
         secure: shouldUseSecureCookies(),
@@ -174,7 +175,7 @@ async function handler(request: NextRequest) {
         domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
       });
       response.cookies.delete("google_oauth_state");
-      console.log('[GoogleAuth Callback] Redirecting to:', callbackUrl);
+      console.log('[GoogleAuth Callback] Redirecting to:', targetUrl.toString());
       return response;
     }
 
@@ -193,7 +194,8 @@ async function handler(request: NextRequest) {
     }
 
     const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
-    const response = NextResponse.redirect(new URL(callbackUrl, productionUrl));
+    const targetUrl = new URL(callbackUrl, productionUrl);
+    const response = NextResponse.redirect(targetUrl, 307); // Use 307 for temporary redirect
     response.cookies.set("session_token", result.token, {
       httpOnly: true,
       secure: shouldUseSecureCookies(),
@@ -203,7 +205,7 @@ async function handler(request: NextRequest) {
       domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
     });
     response.cookies.delete("google_oauth_state");
-    console.log('[GoogleAuth Callback] Redirecting existing user to:', callbackUrl);
+    console.log('[GoogleAuth Callback] Redirecting existing user to:', targetUrl.toString());
     return response;
   } catch (error) {
     console.error("[GoogleAuth Callback] Callback error:", error);
