@@ -195,9 +195,9 @@ function ScaleConfidenceImageSlider({ sources }: { sources: string[] }) {
             src={src}
             alt="Topchart platform background showing Ghana digital services"
             fill
-            className="object-cover"
             sizes="(max-width: 1024px) 100vw, 50vw"
             loading="lazy"
+            className="object-cover"
             onError={() => setImages((prev) => prev.filter((u) => u !== src))}
           />
         </motion.div>
@@ -699,6 +699,7 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
             src="/images/topchart-way.jpg"
             alt="Topchart hero background showing digital services platform"
             fill
+            sizes="100vw"
             priority
             className="absolute inset-0 object-cover object-center opacity-30 pointer-events-none"
             aria-hidden="true"
@@ -785,7 +786,8 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
                   className="relative flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-sm"
                 >
                   <div className="relative h-8 w-8">
-                    <Image
+                    <Isizes="32px"
+                      mage
                       src={network.image}
                       alt={`${network.name} network logo for data bundles and airtime in Ghana`}
                       fill
