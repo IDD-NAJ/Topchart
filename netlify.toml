@@ -23,14 +23,6 @@
   to = "/api/auth/callback/google"
   status = 200
 
-# SPA fallback for client-side routing
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  force = false
-  conditions = {Role = ["admin"]}
-
 # Headers for security and caching
 [[headers]]
   for = "/_next/static/*"
