@@ -105,38 +105,6 @@ async function handler(request: NextRequest) {
       if (!existingUser.last_name && lastName) {
         await sql`UPDATE users SET last_name = ${lastName}, updated_at = NOW() WHERE id = ${userId}`;
       }
-
-      const existingAccounts = await sql`
-        SELECT id FROM accounts
-        WHERE user_id = ${userId} AND provider = 'google' AND provider_account_id = ${googleSub}
-      `;
-
-      if (existingAccounts.length === 0) {
-        await sql`
-          INSERT INTO accounts (
-            user_id, type, provider, provider_account_id,
-            access_token, refresh_token, expires_at, token_type, scope, id_token
-          )
-          VALUES (
-            ${userId}, 'oauth', 'google', ${googleSub},
-            ${encryptToken(tokens.access_token)},
-            ${tokens.refresh_token ? encryptToken(tokens.refresh_token) : null},
-            ${tokens.expires_in ? Math.floor(Date.now() / 1000) + tokens.expires_in : null},
-            ${tokens.token_type || "Bearer"},
-            ${tokens.scope || null},
-            ${tokens.id_token ? encryptToken(tokens.id_token) : null}
-          )
-        `;
-      } else {
-        await sql`
-          UPDATE accounts
-          SET access_token = ${encryptToken(tokens.access_token)},
-              refresh_token = ${tokens.refresh_token ? encryptToken(tokens.refresh_token) : null},
-              expires_at = ${tokens.expires_in ? Math.floor(Date.now() / 1000) + tokens.expires_in : null},
-              id_token = ${tokens.id_token ? encryptToken(tokens.id_token) : null}
-          WHERE user_id = ${userId} AND provider = 'google' AND provider_account_id = ${googleSub}
-        `;
-      }
     } else {
       const result = await handleGoogleAuth({
         email: normalizedEmail,
@@ -150,28 +118,6 @@ async function handler(request: NextRequest) {
       }
 
       userId = result.user.id;
-
-      if (googleSub) {
-        try {
-          await sql`
-            INSERT INTO accounts (
-              user_id, type, provider, provider_account_id,
-              access_token, refresh_token, expires_at, token_type, scope, id_token
-            )
-            VALUES (
-              ${userId}, 'oauth', 'google', ${googleSub},
-              ${encryptToken(tokens.access_token)},
-              ${tokens.refresh_token ? encryptToken(tokens.refresh_token) : null},
-              ${tokens.expires_in ? Math.floor(Date.now() / 1000) + tokens.expires_in : null},
-              ${tokens.token_type || "Bearer"},
-              ${tokens.scope || null},
-              ${tokens.id_token ? encryptToken(tokens.id_token) : null}
-            )
-          `;
-        } catch (accountErr) {
-          console.error("[GoogleAuth] Account link error (non-fatal):", accountErr);
-        }
-      }
 
       const response = NextResponse.redirect(new URL(callbackUrl, request.url));
       response.cookies.set("session_token", result.token, {

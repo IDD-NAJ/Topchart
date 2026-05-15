@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
@@ -126,27 +126,35 @@ export function Header() {
   const [servicesOpen, setServicesOpen] = useState(false)
   const [serviceLinks, setServiceLinks] = useState(DEFAULT_SERVICE_LINKS)
 
-  useEffect(() => {
-    const fetchNavigation = async () => {
-      try {
-        const res = await fetch("/api/navigation", { cache: "no-store" })
-        const data = await res.json()
-        if (data.success && data.links?.length > 0) {
-          const seen = new Set<string>()
-          const deduped = data.links.filter((l: any) => {
-            if (!l.href || (!l.href.startsWith("/dashboard") )) return false
-            if (seen.has(l.href)) return false
-            seen.add(l.href)
-            return true
-          })
-          if (deduped.length > 0) setServiceLinks(deduped)
-        }
-      } catch (error) {
-        console.error("Failed to fetch navigation:", error)
+  const fetchNavigation = useCallback(async () => {
+    try {
+      const res = await fetch("/api/navigation", { cache: "no-store" })
+      const data = await res.json()
+      if (data.success && data.links?.length > 0) {
+        const seen = new Set<string>()
+        const deduped = data.links.filter((l: any) => {
+          if (!l.href || (!l.href.startsWith("/dashboard") )) return false
+          if (seen.has(l.href)) return false
+          seen.add(l.href)
+          return true
+        })
+        if (deduped.length > 0) setServiceLinks(deduped)
       }
+    } catch (error) {
+      console.error("Failed to fetch navigation:", error)
     }
-    fetchNavigation()
   }, [])
+
+  useEffect(() => {
+    fetchNavigation()
+  }, [fetchNavigation])
+
+  // Re-fetch navigation when user auth state changes
+  useEffect(() => {
+    if (user !== undefined) {
+      fetchNavigation()
+    }
+  }, [user, fetchNavigation])
 
   const visibleServiceLinks = serviceLinks.filter((s: any) => {
     const key = SERVICE_KEY_MAP[s.href]

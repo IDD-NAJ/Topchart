@@ -243,7 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [refreshUser]);
+  }, []);
 
   useEffect(() => {
     const handleAuthChanged = () => {

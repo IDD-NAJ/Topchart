@@ -43,7 +43,7 @@ function getSecurityHeaders(request: NextRequest) {
       `connect-src ${connectSources.join(" ")}`,
       "img-src 'self' data: blob: https://*.supabase.co https://cibtsrkdatuymjpzcfol.supabase.co https://*.tawk.to",
       "media-src 'self' blob: https://*.supabase.co https://cibtsrkdatuymjpzcfol.supabase.co",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.tawk.to",
+      "script-src 'self' 'unsafe-inline' https://*.tawk.to",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
       "frame-src 'self' https://*.tawk.to",
