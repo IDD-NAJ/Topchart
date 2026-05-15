@@ -173,24 +173,14 @@ async function handler(request: NextRequest) {
       const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
       const targetUrl = new URL(callbackUrl, productionUrl);
       
-      // Use HTML redirect to prevent callback URL from showing in browser
-      const html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta http-equiv="refresh" content="0;url=${targetUrl.toString()}">
-          <script>window.location.href="${targetUrl.toString()}";</script>
-        </head>
-        <body>Redirecting...</body>
-        </html>
-      `;
-      
-      const response = new NextResponse(html, {
-        status: 200,
-        headers: {
-          'Content-Type': 'text/html',
-          'Set-Cookie': `session_token=${result.token}; Path=/; HttpOnly; ${shouldUseSecureCookies() ? 'Secure; ' : ''}SameSite=lax; Expires=${new Date(result.expiresAt).toUTCString()}${process.env.NODE_ENV === 'production' ? '; Domain=.topchart.store' : ''}`,
-        },
+      const response = NextResponse.redirect(targetUrl, 307);
+      response.cookies.set("session_token", result.token, {
+        httpOnly: true,
+        secure: shouldUseSecureCookies(),
+        sameSite: "lax",
+        expires: new Date(result.expiresAt),
+        path: "/",
+        domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
       });
       response.cookies.delete("google_oauth_state");
       console.log('[GoogleAuth Callback] Redirecting to:', targetUrl.toString());
@@ -215,24 +205,14 @@ async function handler(request: NextRequest) {
     const productionUrl = process.env.NODE_ENV === "production" ? "https://topchart.store" : request.url;
     const targetUrl = new URL(callbackUrl, productionUrl);
     
-    // Use HTML redirect to prevent callback URL from showing in browser
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta http-equiv="refresh" content="0;url=${targetUrl.toString()}">
-        <script>window.location.href="${targetUrl.toString()}";</script>
-      </head>
-      <body>Redirecting...</body>
-      </html>
-    `;
-    
-    const response = new NextResponse(html, {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/html',
-        'Set-Cookie': `session_token=${result.token}; Path=/; HttpOnly; ${shouldUseSecureCookies() ? 'Secure; ' : ''}SameSite=lax; Expires=${new Date(result.expiresAt).toUTCString()}${process.env.NODE_ENV === 'production' ? '; Domain=.topchart.store' : ''}`,
-      },
+    const response = NextResponse.redirect(targetUrl, 307);
+    response.cookies.set("session_token", result.token, {
+      httpOnly: true,
+      secure: shouldUseSecureCookies(),
+      sameSite: "lax",
+      expires: new Date(result.expiresAt),
+      path: "/",
+      domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
     });
     response.cookies.delete("google_oauth_state");
     console.log('[GoogleAuth Callback] Redirecting existing user to:', targetUrl.toString());
