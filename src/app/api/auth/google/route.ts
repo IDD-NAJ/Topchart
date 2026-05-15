@@ -14,7 +14,23 @@ async function handler(request: NextRequest) {
     }
 
     const url = new URL(request.url);
-    const callbackUrl = url.searchParams.get("callbackUrl") || "/dashboard";
+    let callbackUrl = url.searchParams.get("callbackUrl") || "/dashboard";
+    
+    // Force callback URL to use production domain in production
+    if (process.env.NODE_ENV === "production") {
+      const productionUrl = "https://topchart.store";
+      try {
+        const callbackObj = new URL(callbackUrl, request.url);
+        if (callbackObj.hostname !== "topchart.store" && callbackObj.hostname !== "www.topchart.store") {
+          callbackUrl = callbackObj.pathname;
+        }
+      } catch {
+        // If URL parsing fails, ensure it's a relative path
+        if (!callbackUrl.startsWith("/")) {
+          callbackUrl = `/${callbackUrl}`;
+        }
+      }
+    }
 
     const { state, challenge } = generateOAuthState(callbackUrl);
 
@@ -40,6 +56,15 @@ async function handler(request: NextRequest) {
 
     response.cookies.set("google_oauth_state", state, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 600,
+      path: "/",
+      domain: process.env.NODE_ENV === "production" ? ".topchart.store" : undefined,
+    });
+
+    response.cookies.set("callback_url", callbackUrl, {
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 600,
