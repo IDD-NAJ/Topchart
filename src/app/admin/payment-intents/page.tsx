@@ -11,17 +11,16 @@ export default function PaymentIntentsPage() {
       icon={<CreditCard className="h-5 w-5" />}
       columns={[
         { key: "id", label: "ID" },
-        { key: "userId", label: "User ID" },
+        { key: "user_id", label: "User ID" },
         { key: "amount", label: "Amount", type: "number" },
         { key: "currency", label: "Currency" },
-        { key: "channel", label: "Channel", type: "badge", badgeVariants: { CARD: "default", MOBILE_MONEY: "secondary", BANK_TRANSFER: "outline", USSD: "outline" } },
-        { key: "status", label: "Status", type: "badge", badgeVariants: { SUCCESS: "default", PENDING: "secondary", FAILED: "destructive", CANCELLED: "outline" } },
-        { key: "paystackReference", label: "Reference" },
-        { key: "expiresAt", label: "Expires", type: "date" },
-        { key: "createdAt", label: "Created", type: "date" },
+        { key: "provider", label: "Provider" },
+        { key: "status", label: "Status", type: "badge", badgeVariants: { success: "default", pending: "secondary", failed: "destructive", cancelled: "outline" } },
+        { key: "paystack_reference", label: "Reference" },
+        { key: "created_at", label: "Created", type: "date" },
       ]}
-      searchableColumns={["userId", "paystackReference"]}
-      defaultOrderBy="createdAt"
+      searchableColumns={["user_id", "paystack_reference"]}
+      defaultOrderBy="created_at"
     />
   )
 }

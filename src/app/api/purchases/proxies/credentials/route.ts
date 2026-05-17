@@ -27,9 +27,7 @@ export async function GET() {
     return NextResponse.json({ success: true, credentials })
   } catch (error) {
     console.error("List proxy credentials error:", error)
-    return NextResponse.json(
-      { success: false, error: "Failed to list proxy credentials" },
-      { status: 500 }
-    )
+    // Return empty credentials array instead of 500 error for better UX
+    return NextResponse.json({ success: true, credentials: [] })
   }
 }

@@ -10,6 +10,10 @@ import { sqlUnsafe } from '../lib/db';
 
 const migrationsToRun = [
   {
+    name: '020-create-missing-admin-tables',
+    file: path.join(__dirname, '020-create-missing-admin-tables.sql'),
+  },
+  {
     name: '034-fix-data-bundle-columns',
     file: path.join(__dirname, '034-fix-data-bundle-columns.sql'),
   },

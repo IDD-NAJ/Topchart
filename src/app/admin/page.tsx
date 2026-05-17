@@ -632,24 +632,11 @@ export default function AdminDashboard() {
             </Card>
           </Link>
 
-          <Link href="/admin/kyc-profiles" className="min-w-0">
-            <Card className={`cursor-pointer hover:shadow-md transition-shadow ${stats.pendingKyc > 0 ? 'border-amber-500/50' : ''}`}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Pending KYC</CardTitle>
-                <Shield className={`h-4 w-4 shrink-0 ${stats.pendingKyc > 0 ? 'text-amber-500' : 'text-muted-foreground'}`} />
-              </CardHeader>
-              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6 pt-0">
-                <div className="text-xl sm:text-2xl font-bold">{stats.pendingKyc}</div>
-                <p className="text-xs text-muted-foreground">Awaiting review</p>
-              </CardContent>
-            </Card>
-          </Link>
-
           <Link href="/admin/disputes" className="min-w-0">
-            <Card className={`cursor-pointer hover:shadow-md transition-shadow ${stats.openDisputes > 0 ? 'border-red-500/50' : ''}`}>
+            <Card className={`cursor-pointer hover:shadow-md transition-shadow ${stats.openDisputes > 0 ? 'border-amber-500/50' : ''}`}>
               <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
                 <CardTitle className="text-xs font-medium text-muted-foreground">Open Disputes</CardTitle>
-                <AlertCircle className={`h-4 w-4 shrink-0 ${stats.openDisputes > 0 ? 'text-red-500' : 'text-muted-foreground'}`} />
+                <AlertTriangle className={`h-4 w-4 shrink-0 ${stats.openDisputes > 0 ? 'text-amber-500' : 'text-muted-foreground'}`} />
               </CardHeader>
               <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6 pt-0">
                 <div className="text-xl sm:text-2xl font-bold">{stats.openDisputes}</div>

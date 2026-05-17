@@ -100,8 +100,26 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error("Travel eSIM purchase error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Travel eSIM error details:", errorMessage);
+    
+    // Return more specific error message
+    if (errorMessage.includes("insufficient") || errorMessage.includes("balance")) {
+      return NextResponse.json(
+        { success: false, error: "Insufficient wallet balance. Please top up your wallet." },
+        { status: 400 }
+      );
+    }
+    
+    if (errorMessage.includes("Product not found") || errorMessage.includes("not found")) {
+      return NextResponse.json(
+        { success: false, error: "Product not found or no longer available." },
+        { status: 404 }
+      );
+    }
+    
     return NextResponse.json(
-      { success: false, error: "Failed to process Travel Data eSIM purchase" },
+      { success: false, error: "Failed to process Travel Data eSIM purchase. Please try again." },
       { status: 500 }
     );
   }

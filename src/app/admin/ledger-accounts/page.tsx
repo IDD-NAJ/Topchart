@@ -11,14 +11,15 @@ export default function LedgerAccountsPage() {
       icon={<Building className="h-5 w-5" />}
       columns={[
         { key: "id", label: "ID" },
-        { key: "type", label: "Type", type: "badge", badgeVariants: { USER_WALLET: "default", REVENUE: "secondary", FEE: "outline", SETTLEMENT: "outline", PROMO: "outline", REFERRAL: "outline" } },
-        { key: "refId", label: "Reference ID" },
+        { key: "name", label: "Name" },
+        { key: "type", label: "Type", type: "badge", badgeVariants: { asset: "default", liability: "secondary", revenue: "outline", expense: "outline" } },
         { key: "currency", label: "Currency" },
         { key: "balance", label: "Balance", type: "number" },
-        { key: "createdAt", label: "Created", type: "date" },
+        { key: "is_active", label: "Active", type: "boolean" },
+        { key: "created_at", label: "Created", type: "date" },
       ]}
-      searchableColumns={["refId"]}
-      defaultOrderBy="createdAt"
+      searchableColumns={["name"]}
+      defaultOrderBy="created_at"
     />
   )
 }

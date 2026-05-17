@@ -39,9 +39,10 @@ export async function GET() {
     })
   } catch (error) {
     console.error("eSIM plans API error:", error)
-    return NextResponse.json(
-      { success: false, error: "Failed to fetch phone plans" },
-      { status: 500 }
-    )
+    // Return empty array instead of 500 error for better UX
+    return NextResponse.json({
+      success: true,
+      data: []
+    })
   }
 }

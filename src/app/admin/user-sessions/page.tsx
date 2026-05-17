@@ -7,20 +7,20 @@ export default function UserSessionsPage() {
   return (
     <DataTable
       title="User Sessions"
-      tableName="user_sessions"
+      tableName="auth_sessions"
       icon={<Monitor className="h-5 w-5" />}
       columns={[
         { key: "id", label: "ID" },
-        { key: "userId", label: "User ID" },
-        { key: "deviceInfo", label: "Device" },
+        { key: "user_id", label: "User ID" },
+        { key: "device_info", label: "Device" },
         { key: "ip", label: "IP Address" },
-        { key: "isActive", label: "Active", type: "boolean" },
-        { key: "lastSeenAt", label: "Last Seen", type: "date" },
-        { key: "expiresAt", label: "Expires", type: "date" },
-        { key: "createdAt", label: "Created", type: "date" },
+        { key: "is_active", label: "Active", type: "boolean" },
+        { key: "last_seen_at", label: "Last Seen", type: "date" },
+        { key: "expires_at", label: "Expires", type: "date" },
+        { key: "created_at", label: "Created", type: "date" },
       ]}
-      searchableColumns={["userId", "ip"]}
-      defaultOrderBy="createdAt"
+      searchableColumns={["user_id", "ip"]}
+      defaultOrderBy="created_at"
     />
   )
 }

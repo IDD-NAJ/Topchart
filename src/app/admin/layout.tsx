@@ -67,7 +67,6 @@ const navItems: NavItem[] = [
     children: [
       { title: "All Users", href: "/admin/users", icon: Users },
       { title: "Active Users", href: "/admin/active-users", icon: Activity },
-      { title: "User Profiles", href: "/admin/user-profiles", icon: UserCog },
       { title: "User Sessions", href: "/admin/user-sessions", icon: History },
       { title: "Wallets", href: "/admin/wallets", icon: Wallet },
     ]
@@ -76,7 +75,6 @@ const navItems: NavItem[] = [
     title: "KYC Management",
     icon: FileText,
     children: [
-      { title: "KYC Profiles", href: "/admin/kyc-profiles", icon: FileText },
       { title: "KYC Documents", href: "/admin/kyc-documents", icon: Eye },
       { title: "KYC Reviews", href: "/admin/kyc-reviews", icon: Shield },
     ]

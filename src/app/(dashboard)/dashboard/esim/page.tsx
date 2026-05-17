@@ -54,8 +54,58 @@ interface DataPlan {
   description: string | null;
 }
 
-const DEFAULT_AREA_CODES = [
-  { code: "random", city: "Any available" },
+const US_STATES = [
+  { code: "random", name: "Any available" },
+  { code: "AL", name: "Alabama" },
+  { code: "AK", name: "Alaska" },
+  { code: "AZ", name: "Arizona" },
+  { code: "AR", name: "Arkansas" },
+  { code: "CA", name: "California" },
+  { code: "CO", name: "Colorado" },
+  { code: "CT", name: "Connecticut" },
+  { code: "DE", name: "Delaware" },
+  { code: "FL", name: "Florida" },
+  { code: "GA", name: "Georgia" },
+  { code: "HI", name: "Hawaii" },
+  { code: "ID", name: "Idaho" },
+  { code: "IL", name: "Illinois" },
+  { code: "IN", name: "Indiana" },
+  { code: "IA", name: "Iowa" },
+  { code: "KS", name: "Kansas" },
+  { code: "KY", name: "Kentucky" },
+  { code: "LA", name: "Louisiana" },
+  { code: "ME", name: "Maine" },
+  { code: "MD", name: "Maryland" },
+  { code: "MA", name: "Massachusetts" },
+  { code: "MI", name: "Michigan" },
+  { code: "MN", name: "Minnesota" },
+  { code: "MS", name: "Mississippi" },
+  { code: "MO", name: "Missouri" },
+  { code: "MT", name: "Montana" },
+  { code: "NE", name: "Nebraska" },
+  { code: "NV", name: "Nevada" },
+  { code: "NH", name: "New Hampshire" },
+  { code: "NJ", name: "New Jersey" },
+  { code: "NM", name: "New Mexico" },
+  { code: "NY", name: "New York" },
+  { code: "NC", name: "North Carolina" },
+  { code: "ND", name: "North Dakota" },
+  { code: "OH", name: "Ohio" },
+  { code: "OK", name: "Oklahoma" },
+  { code: "OR", name: "Oregon" },
+  { code: "PA", name: "Pennsylvania" },
+  { code: "RI", name: "Rhode Island" },
+  { code: "SC", name: "South Carolina" },
+  { code: "SD", name: "South Dakota" },
+  { code: "TN", name: "Tennessee" },
+  { code: "TX", name: "Texas" },
+  { code: "UT", name: "Utah" },
+  { code: "VT", name: "Vermont" },
+  { code: "VA", name: "Virginia" },
+  { code: "WA", name: "Washington" },
+  { code: "WV", name: "West Virginia" },
+  { code: "WI", name: "Wisconsin" },
+  { code: "WY", name: "Wyoming" },
 ]
 
 export default function ESIMPage() {
@@ -361,7 +411,7 @@ export default function ESIMPage() {
                      <CardContent className="space-y-4">
                        <div className="space-y-2">
                          <div className="flex items-center justify-between">
-                           <Label>Preferred Area Code</Label>
+                           <Label>Preferred State</Label>
                            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                              <input
                                type="checkbox"
@@ -374,24 +424,24 @@ export default function ESIMPage() {
                          </div>
                          {useCustomAreaCode ? (
                            <Input
-                             placeholder="e.g., 305"
+                             placeholder="e.g., CA"
                              value={customAreaCode}
-                             onChange={(e) => setCustomAreaCode(e.target.value.replace(/\D/g, "").slice(0, 3))}
-                             maxLength={3}
+                             onChange={(e) => setCustomAreaCode(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 2))}
+                             maxLength={2}
                            />
                          ) : (
                            <Select value={areaCode} onValueChange={setAreaCode}>
                              <SelectTrigger><SelectValue /></SelectTrigger>
                              <SelectContent>
-                               {DEFAULT_AREA_CODES.map((ac) => (
-                                 <SelectItem key={ac.code} value={ac.code}>
-                                   {ac.code === "random" ? "Any available" : `${ac.code} (${ac.city})`}
-                                 </SelectItem>
-                               ))}
+                               {US_STATES.map((state) => (
+                                <SelectItem key={state.code} value={state.code}>
+                                  {state.code === "random" ? "Any available" : `${state.name} (${state.code})`}
+                                </SelectItem>
+                              ))}
                              </SelectContent>
                            </Select>
                          )}
-                         <p className="text-xs text-muted-foreground">We will try your preferred area code; if unavailable, a similar one will be assigned.</p>
+                         <p className="text-xs text-muted-foreground">We will try your preferred state; if unavailable, a similar one will be assigned.</p>
                        </div>
 
                        <div className="space-y-2">

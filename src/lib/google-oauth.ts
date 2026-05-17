@@ -261,7 +261,7 @@ export async function fetchUserInfo(accessToken: string): Promise<GoogleUserInfo
   }
 }
 
-export function getAppOrigin(request: Request): string {
+export function getAppOriginFromRequest(request: Request): string {
   // In production, always return the canonical domain
   if (process.env.NODE_ENV === 'production') {
     return "https://topchart.store";
@@ -283,7 +283,7 @@ export function getAppOrigin(request: Request): string {
 }
 
 export function getGoogleRedirectUri(request: Request): string {
-  const origin = getAppOrigin(request);
+  const origin = getAppOriginFromRequest(request);
   const redirectUri = `${origin}/api/auth/google/callback`;
   
   if (process.env.NODE_ENV === 'development') {

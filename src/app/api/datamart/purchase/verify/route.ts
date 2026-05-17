@@ -167,21 +167,33 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Purchase failed";
+    console.error(`[DataMart Verify] Provider failed after Paystack success for ${reference}: ${message}`);
     await sql`
       UPDATE transactions
-      SET status = 'failed',
+      SET status = 'refunded',
           metadata = metadata || ${JSON.stringify({
             provider_error: message,
             failed_at: new Date().toISOString(),
             correlation_id: correlationId,
+            refunded_to_wallet: true,
+            refund_amount: basePrice,
+            refund_reason: "Provider delivery failed after Paystack payment succeeded",
           })}::jsonb,
           updated_at = NOW()
       WHERE reference = ${reference}
     `;
+    await sql`
+      UPDATE users
+      SET wallet_balance = wallet_balance + ${basePrice}
+      WHERE id = ${userId}
+    `;
+    console.log(`[DataMart Verify] Credited GHS ${basePrice} to wallet for user ${userId} (ref: ${reference})`);
     return NextResponse.json(
       {
         success: false,
-        error: message,
+        refunded: true,
+        refund_amount: basePrice,
+        error: `${message}. Your payment of GHS ${basePrice.toFixed(2)} has been credited to your wallet.`,
         idempotency_key: idempotencyKey,
         correlation_id: correlationId,
       },
@@ -195,7 +207,7 @@ export async function GET(request: NextRequest) {
     idempotencyKey,
     price: basePrice,
     correlationId,
-    refundWalletOnTerminalFailure: false,
+    refundWalletOnTerminalFailure: true,
   });
 
   return NextResponse.json({

@@ -1,31 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
-import { cookies } from "next/headers"
 import { sql } from "@/lib/db"
 import { initializePaystackTransaction, generatePaystackReference } from "@/lib/paystack"
+import { requireAuth } from "@/lib/auth"
 
 export const runtime = "nodejs"
 
 const PAYSTACK_SURCHARGE = 0.05
 
-async function getAuthenticatedUserId(): Promise<string | null> {
-  const cookieStore = await cookies()
-  const sessionToken = cookieStore.get("session_token")?.value
-  if (!sessionToken) return null
-
-  const sessions = await sql`
-    SELECT user_id FROM auth_sessions
-    WHERE token = ${sessionToken} AND expires_at > NOW()
-    LIMIT 1
-  `
-  return sessions.length > 0 ? String(sessions[0].user_id) : null
-}
-
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getAuthenticatedUserId()
-    if (!userId) {
+    const session = await requireAuth()
+    if (!session) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
     }
+    const userId = session.id
 
     const body = await request.json()
     const { paymentMethod, email, planType, planId, packageId, amount, areaCode } = body
@@ -100,6 +88,43 @@ export async function POST(request: NextRequest) {
           )
         `
 
+        const esimOrderId = crypto.randomUUID()
+        try {
+          if (planType === "phone-number") {
+            await sql`
+              INSERT INTO esim_orders (id, user_id, package_id, package_name, destination, validity_days, price, status, processing_status, transaction_reference, metadata, created_at, updated_at)
+              VALUES (
+                ${esimOrderId}, ${userId}, ${planId}, ${description}, ${areaCode === "random" ? "US" : areaCode}, 30, ${price}, 'pending', 'pending', ${txId},
+                ${JSON.stringify({
+                  planType,
+                  planId,
+                  email,
+                  areaCode: areaCode || null,
+                })}::jsonb,
+                NOW(), NOW()
+              )
+            `
+            console.log("Inserted esim_order for phone-number:", esimOrderId)
+          } else {
+            await sql`
+              INSERT INTO esim_orders (id, user_id, package_id, package_name, destination, data_gb, validity_days, price, status, processing_status, transaction_reference, metadata, created_at, updated_at)
+              VALUES (
+                ${esimOrderId}, ${userId}, ${packageId}, ${description}, 'Various', 1, 30, ${price}, 'pending', 'pending', ${txId},
+                ${JSON.stringify({
+                  planType,
+                  packageId,
+                  email,
+                })}::jsonb,
+                NOW(), NOW()
+              )
+            `
+            console.log("Inserted esim_order for travel-data:", esimOrderId)
+          }
+        } catch (esimError) {
+          console.error("Failed to insert esim_order:", esimError)
+          throw esimError
+        }
+
         await sql`COMMIT`
 
         return NextResponse.json({
@@ -143,6 +168,43 @@ export async function POST(request: NextRequest) {
         )
       `
 
+      const esimOrderId = crypto.randomUUID()
+      try {
+        if (planType === "phone-number") {
+          await sql`
+            INSERT INTO esim_orders (id, user_id, package_id, package_name, destination, validity_days, price, status, processing_status, transaction_reference, metadata, created_at, updated_at)
+            VALUES (
+              ${esimOrderId}, ${userId}, ${planId}, ${description}, ${areaCode === "random" ? "US" : areaCode}, 30, ${price}, 'pending', 'pending', ${txId},
+              ${JSON.stringify({
+                planType,
+                planId,
+                email,
+                areaCode: areaCode || null,
+              })}::jsonb,
+              NOW(), NOW()
+            )
+          `
+          console.log("Inserted esim_order for phone-number (paystack):", esimOrderId)
+        } else {
+          await sql`
+            INSERT INTO esim_orders (id, user_id, package_id, package_name, destination, data_gb, validity_days, price, status, processing_status, transaction_reference, metadata, created_at, updated_at)
+            VALUES (
+              ${esimOrderId}, ${userId}, ${packageId}, ${description}, 'Various', 1, 30, ${price}, 'pending', 'pending', ${txId},
+              ${JSON.stringify({
+                planType,
+                packageId,
+                email,
+              })}::jsonb,
+              NOW(), NOW()
+            )
+          `
+          console.log("Inserted esim_order for travel-data (paystack):", esimOrderId)
+        }
+      } catch (esimError) {
+        console.error("Failed to insert esim_order (paystack):", esimError)
+        throw esimError
+      }
+
       const result = await initializePaystackTransaction(
         userEmail,
         Math.round(chargeAmount * 100),
@@ -179,8 +241,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Invalid state" }, { status: 400 })
   } catch (error) {
     console.error("eSIM order error:", error)
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    console.error("eSIM order error details:", errorMessage)
+    
+    // Return more specific error message
+    if (errorMessage.includes("insufficient") || errorMessage.includes("balance")) {
+      return NextResponse.json(
+        { success: false, error: "Insufficient wallet balance. Please top up your wallet." },
+        { status: 400 }
+      )
+    }
+    
+    if (errorMessage.includes("Paystack")) {
+      return NextResponse.json(
+        { success: false, error: "Payment initialization failed. Please try again or use a different payment method." },
+        { status: 500 }
+      )
+    }
+    
     return NextResponse.json(
-      { success: false, error: "Failed to process eSIM order" },
+      { success: false, error: "Failed to process eSIM order. Please try again." },
       { status: 500 }
     )
   }

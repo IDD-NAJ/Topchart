@@ -742,6 +742,17 @@ export async function refreshOrderStatus(orderReference: string): Promise<Datama
     WHERE order_reference = ${orderReference}
   `;
 
+  await sql`
+    UPDATE transactions
+    SET metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+      order_status: data.orderStatus,
+      order_reference: data.orderReference,
+      provider_updated_at: data.updatedAt,
+    })}::jsonb,
+        updated_at = NOW()
+    WHERE metadata->>'order_reference' = ${orderReference}
+  `;
+
   return data;
 }
 

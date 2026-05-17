@@ -61,7 +61,6 @@ export async function GET(request: NextRequest) {
       authSessionsExists,
       sessionsExists,
       ticketsExists,
-      kycProfilesExists,
       referralsExists,
       airtimePurchasesExists,
       dataBundlePurchasesExists,
@@ -79,7 +78,6 @@ export async function GET(request: NextRequest) {
       tableExists("auth_sessions"),
       tableExists("sessions"),
       tableExists("tickets"),
-      tableExists("kyc_profiles"),
       tableExists("referrals"),
       tableExists("airtime_purchases"),
       tableExists("data_bundle_purchases"),
@@ -141,10 +139,6 @@ export async function GET(request: NextRequest) {
 
     const openTicketsPromise = ticketsExists
       ? safeNumberQuery("open_tickets", () => sql`SELECT COUNT(*)::int AS value FROM tickets WHERE status::text IN ('OPEN', 'IN_PROGRESS')`)
-      : Promise.resolve(0);
-
-    const pendingKycPromise = kycProfilesExists
-      ? safeNumberQuery("pending_kyc", () => sql`SELECT COUNT(*)::int AS value FROM kyc_profiles WHERE status::text = 'PENDING'`)
       : Promise.resolve(0);
 
     const totalReferralsPromise = referralsExists
@@ -245,7 +239,6 @@ export async function GET(request: NextRequest) {
       revenueRows,
       activeSessionRows,
       openTickets,
-      pendingKyc,
       totalReferrals,
       totalAirtimePurchases,
       totalDataPurchases,
@@ -268,7 +261,6 @@ export async function GET(request: NextRequest) {
       revenueRowsPromise,
       activeSessionRowsPromise,
       openTicketsPromise,
-      pendingKycPromise,
       totalReferralsPromise,
       totalAirtimePurchasesPromise,
       totalDataPurchasesPromise,
@@ -331,7 +323,6 @@ export async function GET(request: NextRequest) {
       totalRevenue,
       recentSignups,
       openTickets,
-      pendingKyc,
       totalReferrals,
       totalAirtimePurchases,
       totalDataPurchases,
@@ -365,7 +356,6 @@ export async function GET(request: NextRequest) {
           totalRevenue: 0,
           recentSignups: 0,
           openTickets: 0,
-          pendingKyc: 0,
           totalReferrals: 0,
           totalAirtimePurchases: 0,
           totalDataPurchases: 0,

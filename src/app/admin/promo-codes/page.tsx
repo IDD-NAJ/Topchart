@@ -12,16 +12,17 @@ export default function PromoCodesPage() {
       columns={[
         { key: "id", label: "ID" },
         { key: "code", label: "Code" },
-        { key: "type", label: "Type", type: "badge", badgeVariants: { PERCENTAGE: "default", FIXED: "secondary", BONUS_CREDIT: "outline" } },
-        { key: "value", label: "Value", type: "number" },
-        { key: "maxUsage", label: "Max Usage", type: "number" },
-        { key: "perUserLimit", label: "Per User", type: "number" },
-        { key: "startAt", label: "Start", type: "date" },
-        { key: "endAt", label: "End", type: "date" },
-        { key: "createdAt", label: "Created", type: "date" },
+        { key: "discount_type", label: "Type", type: "badge", badgeVariants: { percentage: "default", fixed: "secondary" } },
+        { key: "discount_value", label: "Value", type: "number" },
+        { key: "max_uses", label: "Max Usage", type: "number" },
+        { key: "max_uses_per_user", label: "Per User", type: "number" },
+        { key: "starts_at", label: "Start", type: "date" },
+        { key: "expires_at", label: "End", type: "date" },
+        { key: "is_active", label: "Active", type: "boolean" },
+        { key: "created_at", label: "Created", type: "date" },
       ]}
       searchableColumns={["code"]}
-      defaultOrderBy="createdAt"
+      defaultOrderBy="created_at"
     />
   )
 }

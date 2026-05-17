@@ -182,6 +182,7 @@ interface Transaction {
   created_at: string
   network?: string | null
   phone_number?: string | null
+  metadata?: Record<string, unknown> | null
 }
 
 interface ReferralStats {
@@ -772,6 +773,21 @@ export default function DashboardPage() {
                                 <div className="p-2 rounded bg-background border text-xs">
                                   <p className="text-muted-foreground font-bold uppercase">Reference</p>
                                   <p className="font-mono text-xs">{tx.reference}</p>
+                                </div>
+                              )}
+                              {typeof tx.metadata?.order_status === "string" && (
+                                <div className="p-2 rounded bg-background border text-xs">
+                                  <p className="text-muted-foreground font-bold uppercase">Delivery Status</p>
+                                  <span className={cn(
+                                    "inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase",
+                                    tx.metadata.order_status === "completed" || tx.metadata.order_status === "delivered"
+                                      ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                                    : tx.metadata.order_status === "failed" || tx.metadata.order_status === "refunded"
+                                      ? "bg-destructive/10 text-destructive"
+                                    : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                  )}>
+                                    {tx.metadata.order_status.replace(/_/g, " ")}
+                                  </span>
                                 </div>
                               )}
                               <div className="p-2 rounded bg-background border text-xs">

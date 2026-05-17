@@ -3,8 +3,25 @@ import { sql } from "@/lib/db";
 import { finalizeResellerApplicationPayment } from "@/lib/reseller-payment";
 import { validatePaystackWebhook } from "@/lib/paystack-utils";
 import { checkAndCreditReferrer } from "@/lib/referral-utils";
+import {
+  createProxyConnection,
+  createSubUser,
+  ProxyType,
+  PROXY_TYPE_LABELS,
+} from "@/lib/nineproxy";
 
 const AMOUNT_TOLERANCE_PCT = 0.02;
+
+const SERVICE_PURCHASE_TYPES = new Set([
+  "data",
+  "bill_payment",
+  "giftcard",
+  "esim_data",
+  "esim_phone",
+  "proxy",
+  "verification_str",
+  "verification_ltr",
+]);
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,7 +43,7 @@ export async function POST(req: NextRequest) {
       const userId = data.metadata?.user_id;
 
       const existingTx = await sql`
-        SELECT id, status, type, amount, metadata
+        SELECT id, status, type, amount, metadata, user_id
         FROM transactions
         WHERE reference = ${reference}
         LIMIT 1
@@ -43,6 +60,7 @@ export async function POST(req: NextRequest) {
         amount: number | string;
         type?: string;
         metadata?: Record<string, unknown>;
+        user_id?: string;
       };
 
       if (transaction.status === "success") {
@@ -84,6 +102,193 @@ export async function POST(req: NextRequest) {
           console.error(`[Paystack Webhook] Reseller finalization failed for ${reference}:`, err);
         }
         return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      const isServicePurchase = SERVICE_PURCHASE_TYPES.has(paymentType);
+      const txUserId = userId || transaction.user_id;
+
+      if (isServicePurchase && (transaction.status === "failed" || transaction.status === "refunded")) {
+        const alreadyRefunded = transaction.metadata?.refunded_to_wallet === true;
+
+        if (alreadyRefunded) {
+          console.log(`[Paystack Webhook] Service purchase ${reference} already refunded to wallet, skipping`);
+          await sql`
+            UPDATE transactions
+            SET metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+              webhook_at: new Date().toISOString(),
+              paystack_id: data.id,
+              webhook_note: "Paystack confirmed success; wallet already credited by verify route",
+            })}::jsonb,
+                updated_at = NOW()
+            WHERE reference = ${reference}
+          `;
+          return NextResponse.json({ received: true, already_refunded: true }, { status: 200 });
+        }
+
+        console.log(`[Paystack Webhook] Service purchase ${reference} failed but Paystack succeeded — crediting wallet`);
+        try {
+          await sql`
+            UPDATE transactions
+            SET status = 'refunded',
+                metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+                  webhook_at: new Date().toISOString(),
+                  paystack_id: data.id,
+                  paid_at: data.paid_at,
+                  channel: data.channel,
+                  gateway_response: data.gateway_response,
+                  refunded_to_wallet: true,
+                  refund_amount: expectedAmount,
+                  refund_reason: "Paystack payment succeeded but service delivery failed — credited to wallet",
+                })}::jsonb,
+                payment_channel = ${data.channel},
+                paid_at = ${data.paid_at ? new Date(data.paid_at).toISOString() : null},
+                updated_at = NOW()
+            WHERE reference = ${reference}
+          `;
+
+          if (txUserId) {
+            await sql`
+              UPDATE users
+              SET wallet_balance = wallet_balance + ${expectedAmount}
+              WHERE id::text = ${String(txUserId)}
+            `;
+            console.log(`[Paystack Webhook] Credited GHS ${expectedAmount} to wallet for user ${txUserId} (ref: ${reference})`);
+          }
+        } catch (dbError) {
+          console.error(`[Paystack Webhook] DB error crediting wallet for failed service ${reference}:`, dbError);
+        }
+        return NextResponse.json({ received: true, refunded_to_wallet: true }, { status: 200 });
+      }
+
+      if (isServicePurchase && transaction.status === "pending") {
+        console.log(`[Paystack Webhook] Service purchase ${reference} is pending — processing fulfillment`);
+        
+        // Handle proxy purchases specially - create the proxy connection
+        if (paymentType === "proxy") {
+          try {
+            const proxyMetadata = transaction.metadata as {
+              proxyType?: number;
+              countryCode?: string | null;
+              quantity?: number;
+              sessionType?: number;
+              sessionTime?: number;
+            };
+            
+            const parsedProxyType = (proxyMetadata.proxyType || 1) as ProxyType;
+            const parsedSessionType = (proxyMetadata.sessionType || 1) as number;
+            const numQuantity = proxyMetadata.quantity || 1;
+            
+            const connectionResult = await createProxyConnection({
+              proxyType: parsedProxyType,
+              countryCode: proxyMetadata.countryCode || undefined,
+              quantity: numQuantity,
+              sessionType: parsedSessionType,
+              sessionTime: proxyMetadata.sessionTime,
+            });
+            
+            const connection = connectionResult.result;
+            
+            // Create sub-user for credentials
+            const userName = `tc_${txUserId}_${Date.now()}`;
+            const password = `pw_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
+            
+            let subUserResult = null;
+            try {
+              const subUserRes = await createSubUser({
+                userName,
+                password,
+                status: 1,
+                note: `Topchart user via Paystack payment ${reference}`,
+              });
+              subUserResult = subUserRes.result;
+            } catch (err) {
+              console.error("9Proxy sub-user creation failed (non-fatal):", err);
+            }
+            
+            // Update transaction with connection details
+            await sql`
+              UPDATE transactions
+              SET status = 'completed',
+                  metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+                    webhook_at: new Date().toISOString(),
+                    paystack_id: data.id,
+                    paid_at: data.paid_at,
+                    channel: data.channel,
+                    gateway_response: data.gateway_response,
+                    paystack_confirmed: true,
+                    proxy_connection: {
+                      id: connection.id,
+                      proxyType: connection.proxy_type,
+                      proxyTypeLabel: PROXY_TYPE_LABELS[connection.proxy_type as ProxyType] || "Unknown",
+                      countryCode: connection.country_code,
+                      startPort: connection.start_port,
+                      endPort: connection.end_port,
+                      sessionTime: connection.session_time,
+                    },
+                    credentials: subUserResult ? { username: userName, password } : null,
+                  })}::jsonb,
+                  payment_channel = ${data.channel},
+                  paid_at = ${data.paid_at ? new Date(data.paid_at).toISOString() : null},
+                  updated_at = NOW()
+              WHERE reference = ${reference}
+            `;
+            
+            console.log(`[Paystack Webhook] Proxy connection created for ${reference}`);
+            return NextResponse.json({ received: true, proxy_created: true }, { status: 200 });
+          } catch (proxyError) {
+            console.error(`[Paystack Webhook] Proxy creation failed for ${reference}:`, proxyError);
+            // Credit wallet as fallback
+            await sql`
+              UPDATE transactions
+              SET status = 'refunded',
+                  metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+                    webhook_at: new Date().toISOString(),
+                    paystack_id: data.id,
+                    paid_at: data.paid_at,
+                    channel: data.channel,
+                    gateway_response: data.gateway_response,
+                    proxy_creation_failed: true,
+                    refunded_to_wallet: true,
+                })}::jsonb,
+                  payment_channel = ${data.channel},
+                  paid_at = ${data.paid_at ? new Date(data.paid_at).toISOString() : null},
+                  updated_at = NOW()
+              WHERE reference = ${reference}
+            `;
+            
+            if (txUserId) {
+              await sql`
+                UPDATE users
+                SET wallet_balance = wallet_balance + ${expectedAmount}
+                WHERE id::text = ${String(txUserId)}
+              `;
+              console.log(`[Paystack Webhook] Credited GHS ${expectedAmount} to wallet for failed proxy creation (ref: ${reference})`);
+            }
+            return NextResponse.json({ received: true, refunded: true, error: "Proxy creation failed" }, { status: 200 });
+          }
+        }
+        
+        // For other service purchases, just update metadata
+        try {
+          await sql`
+            UPDATE transactions
+            SET metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+              webhook_at: new Date().toISOString(),
+              paystack_id: data.id,
+              paid_at: data.paid_at,
+              channel: data.channel,
+              gateway_response: data.gateway_response,
+              paystack_confirmed: true,
+            })}::jsonb,
+                payment_channel = ${data.channel},
+                paid_at = ${data.paid_at ? new Date(data.paid_at).toISOString() : null},
+                updated_at = NOW()
+            WHERE reference = ${reference}
+          `;
+        } catch (dbError) {
+          console.error(`[Paystack Webhook] DB error updating pending service ${reference}:`, dbError);
+        }
+        return NextResponse.json({ received: true, service_pending: true }, { status: 200 });
       }
 
       console.log(`[Paystack Webhook] Processing wallet deposit: ${reference}, amount: ${paidAmount}`);

@@ -11,14 +11,14 @@ export default function DataPurchasesPage() {
       icon={<Wifi className="h-5 w-5" />}
       columns={[
         { key: "id", label: "ID" },
-        { key: "userId", label: "User ID" },
-        { key: "bundleId", label: "Bundle ID" },
-        { key: "recipientPhone", label: "Phone" },
-        { key: "status", label: "Status", type: "badge", badgeVariants: { SUCCESS: "default", PENDING: "secondary", FAILED: "destructive" }, bulkEditable: true },
-        { key: "createdAt", label: "Created", type: "date" },
+        { key: "user_id", label: "User ID" },
+        { key: "bundle_id", label: "Bundle ID" },
+        { key: "recipient_phone", label: "Phone" },
+        { key: "status", label: "Status", type: "badge", badgeVariants: { success: "default", pending: "secondary", failed: "destructive" }, bulkEditable: true },
+        { key: "created_at", label: "Created", type: "date" },
       ]}
-      searchableColumns={["userId", "recipientPhone"]}
-      defaultOrderBy="createdAt"
+      searchableColumns={["user_id", "recipient_phone"]}
+      defaultOrderBy="created_at"
     />
   )
 }

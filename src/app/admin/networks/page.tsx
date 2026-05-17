@@ -12,15 +12,15 @@ export default function NetworksPage() {
       columns={[
         { key: "id", label: "ID" },
         { key: "name", label: "Name" },
-        { key: "code", label: "Code", type: "badge", badgeVariants: { MTN: "default", VODAFONE: "secondary", AIRTELTIGO: "outline", GLO: "outline" } },
+        { key: "code", label: "Code", type: "badge", badgeVariants: { mtn: "default", vodafone: "secondary", airteltigo: "outline", glo: "outline" } },
         { key: "prefixes", label: "Prefixes", type: "json" },
-        { key: "minAmount", label: "Min Amount", type: "number" },
-        { key: "maxAmount", label: "Max Amount", type: "number" },
-        { key: "status", label: "Status", type: "badge", badgeVariants: { ACTIVE: "default", INACTIVE: "secondary" }, bulkEditable: true },
-        { key: "createdAt", label: "Created", type: "date" },
+        { key: "min_amount", label: "Min Amount", type: "number" },
+        { key: "max_amount", label: "Max Amount", type: "number" },
+        { key: "is_active", label: "Active", type: "boolean", bulkEditable: true },
+        { key: "created_at", label: "Created", type: "date" },
       ]}
       searchableColumns={["name", "code"]}
-      defaultOrderBy="createdAt"
+      defaultOrderBy="created_at"
     />
   )
 }

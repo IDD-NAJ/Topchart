@@ -11,14 +11,14 @@ export default function PromoRedemptionsPage() {
       icon={<Gift className="h-5 w-5" />}
       columns={[
         { key: "id", label: "ID" },
-        { key: "promoCodeId", label: "Promo Code ID" },
-        { key: "userId", label: "User ID" },
-        { key: "transactionId", label: "Transaction ID" },
-        { key: "appliedAmount", label: "Amount Applied", type: "number" },
-        { key: "createdAt", label: "Created", type: "date" },
+        { key: "promo_id", label: "Promo ID" },
+        { key: "user_id", label: "User ID" },
+        { key: "order_id", label: "Order ID" },
+        { key: "discount_applied", label: "Amount Applied", type: "number" },
+        { key: "created_at", label: "Created", type: "date" },
       ]}
-      searchableColumns={["userId", "promoCodeId"]}
-      defaultOrderBy="createdAt"
+      searchableColumns={["user_id", "promo_id"]}
+      defaultOrderBy="created_at"
     />
   )
 }

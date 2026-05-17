@@ -7,18 +7,18 @@ export default function PaymentEventsPage() {
   return (
     <DataTable
       title="Payment Provider Events"
-      tableName="payment_provider_events"
+      tableName="payment_events"
       icon={<Webhook className="h-5 w-5" />}
       columns={[
         { key: "id", label: "ID" },
         { key: "provider", label: "Provider" },
-        { key: "eventType", label: "Event Type" },
+        { key: "event_type", label: "Event Type" },
         { key: "status", label: "Status" },
-        { key: "rawPayload", label: "Payload", type: "json" },
-        { key: "processedAt", label: "Processed", type: "date" },
+        { key: "payload", label: "Payload", type: "json" },
+        { key: "created_at", label: "Created", type: "date" },
       ]}
-      searchableColumns={["provider", "eventType"]}
-      defaultOrderBy="processedAt"
+      searchableColumns={["provider", "event_type"]}
+      defaultOrderBy="created_at"
     />
   )
 }

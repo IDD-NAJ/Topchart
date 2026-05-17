@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { ServiceGuard } from "@/components/service-guard"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -97,6 +98,10 @@ const PROXY_TYPE_MAP: Record<number, string> = { 1: "Residential", 2: "Mobile", 
 
 export default function ProxiesPage() {
   const { user } = useAuth()
+  const searchParams = useSearchParams()
+  const paymentSuccess = searchParams.get("payment_success")
+  const paymentReference = searchParams.get("reference")
+  
   const [view, setView] = useState<View>("create")
   const [step, setStep] = useState<Step>("form")
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("wallet")
@@ -118,6 +123,58 @@ export default function ProxiesPage() {
 
   const [proxyPricing, setProxyPricing] = useState<ProxyPricing[]>([])
   const [loadingPricing, setLoadingPricing] = useState(true)
+
+  const fetchConnections = useCallback(async () => {
+    try {
+      setLoadingConnections(true)
+      const res = await fetch("/api/purchases/proxies/connections", { credentials: "include" })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success) setConnections(data.connections ?? [])
+      }
+    } catch { /* ignore */ } finally {
+      setLoadingConnections(false)
+    }
+  }, [])
+
+  const fetchCredentials = useCallback(async () => {
+    try {
+      setLoadingCredentials(true)
+      const res = await fetch("/api/purchases/proxies/credentials", { credentials: "include" })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success) setCredentials(data.credentials ?? null)
+      }
+    } catch { /* ignore */ } finally {
+      setLoadingCredentials(false)
+    }
+  }, [])
+
+  // Handle payment success from callback
+  useEffect(() => {
+    if (paymentSuccess === "true" && paymentReference) {
+      setStep("success")
+      setOrderResult({
+        orderId: paymentReference,
+        connection: {
+          id: 0,
+          proxyType: 1,
+          proxyTypeLabel: "Proxy",
+          countryCode: "GH",
+          startPort: 0,
+          endPort: 0,
+          sessionTime: "30",
+        },
+        credentials: null,
+        message: "Payment successful! Your proxy is being provisioned.",
+      })
+      toast.success("Payment successful! Redirecting to your proxies...")
+      setTimeout(() => {
+        setView("connections")
+        fetchConnections()
+      }, 2000)
+    }
+  }, [paymentSuccess, paymentReference, fetchConnections])
 
   useEffect(() => {
     const fetchPricing = async () => {
@@ -158,32 +215,6 @@ export default function ProxiesPage() {
     }
     if (user) fetchBalance()
   }, [user])
-
-  const fetchConnections = useCallback(async () => {
-    try {
-      setLoadingConnections(true)
-      const res = await fetch("/api/purchases/proxies/connections", { credentials: "include" })
-      if (res.ok) {
-        const data = await res.json()
-        if (data.success) setConnections(data.connections ?? [])
-      }
-    } catch { /* ignore */ } finally {
-      setLoadingConnections(false)
-    }
-  }, [])
-
-  const fetchCredentials = useCallback(async () => {
-    try {
-      setLoadingCredentials(true)
-      const res = await fetch("/api/purchases/proxies/credentials", { credentials: "include" })
-      if (res.ok) {
-        const data = await res.json()
-        if (data.success) setCredentials(data.credentials ?? null)
-      }
-    } catch { /* ignore */ } finally {
-      setLoadingCredentials(false)
-    }
-  }, [])
 
   useEffect(() => {
     if (user && view === "connections") {
@@ -442,6 +473,7 @@ export default function ProxiesPage() {
                             <Icon className={cn("h-6 w-6", proxyType === type.proxyType ? "text-[color:var(--marketing-accent)]" : "text-muted-foreground")} />
                             <span className="text-sm font-medium">{type.label}</span>
                             <span className="text-xs text-muted-foreground">{type.description}</span>
+                            <span className="text-sm font-bold text-[color:var(--marketing-accent)]">₵{type.pricePerPort}/port</span>
                           </button>
                         )
                       })}

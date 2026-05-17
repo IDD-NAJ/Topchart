@@ -28,6 +28,7 @@ import { PurchaseCard } from "@/components/purchase/PurchaseCard"
 import { RecentRecipients } from "@/components/purchase/RecentRecipients"
 import { addRecentRecipient, getRecentRecipients, type RecentRecipient } from "@/lib/purchase-data"
 import { Skeleton } from "@/components/ui/skeleton"
+import { DeliveryTrackerWidget } from "@/components/datamart/delivery-tracker-widget"
 
 interface DatamartPlan {
   id: string
@@ -802,6 +803,7 @@ export default function DataPage() {
           </div>
         </div>
         <p className="text-muted-foreground">Purchase direct data bundles across all major networks.</p>
+        <DeliveryTrackerWidget />
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 mt-2 text-xs sm:text-sm font-semibold text-muted-foreground">
           <span className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-primary/10 text-primary">
             <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -1396,9 +1398,18 @@ export default function DataPage() {
 
               {currentOrder && (
               <div className="w-full space-y-3 rounded-xl border border-muted/60 p-4 text-left">
-                <div className="flex items-center justify-between text-sm font-medium">
-                  <span className="text-muted-foreground">Status</span>
-                  <span className="capitalize">{((orderStatusSnapshot?.orderStatus || currentOrder.status || "pending").toLowerCase().replace(/_/g, " "))}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">Status</span>
+                  <span className={cn(
+                    "px-3 py-1 rounded-full text-xs font-bold uppercase",
+                    (orderStatusSnapshot?.orderStatus || currentOrder.status || "pending").toLowerCase() === "completed" || (orderStatusSnapshot?.orderStatus || currentOrder.status || "pending").toLowerCase() === "delivered"
+                      ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                    : (orderStatusSnapshot?.orderStatus || currentOrder.status || "pending").toLowerCase() === "failed" || (orderStatusSnapshot?.orderStatus || currentOrder.status || "pending").toLowerCase() === "refunded"
+                      ? "bg-destructive/10 text-destructive"
+                    : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  )}>
+                    {(orderStatusSnapshot?.orderStatus || currentOrder.status || "pending").toLowerCase().replace(/_/g, " ")}
+                  </span>
                 </div>
                 {currentOrder.order_reference && (
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -1423,12 +1434,6 @@ export default function DataPage() {
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Transaction Ref</span>
                     <span className="font-mono">{orderStatusSnapshot.transactionReference}</span>
-                  </div>
-                )}
-                {correlationId && (
-                  <div className="flex items-center justify-between text-[11px] text-muted-foreground/80">
-                    <span>Trace ID</span>
-                    <span className="font-mono">{correlationId}</span>
                   </div>
                 )}
                 {pollingOrder && (

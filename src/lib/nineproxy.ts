@@ -166,6 +166,11 @@ async function nineProxyFetch<T>(
         throw new Error("9Proxy API authentication failed. Check your API key.");
       }
 
+      if (response.status === 403) {
+        const body = await response.text().catch(() => "");
+        throw new Error(`9Proxy API permission denied: ${body.slice(0, 200)}. Check your API key permissions and account balance.`);
+      }
+
       if (response.status >= 500 || response.status === 429) {
         if (skipRetry || attempt >= maxAttempts - 1) {
           const body = await response.text().catch(() => "");

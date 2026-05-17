@@ -11,14 +11,15 @@ export default function LedgerEntriesPage() {
       icon={<BookOpen className="h-5 w-5" />}
       columns={[
         { key: "id", label: "ID" },
-        { key: "transactionId", label: "Transaction ID" },
-        { key: "ledgerAccountId", label: "Ledger Account ID" },
-        { key: "direction", label: "Direction", type: "badge", badgeVariants: { DEBIT: "destructive", CREDIT: "default" } },
+        { key: "account_id", label: "Account ID" },
+        { key: "transaction_id", label: "Transaction ID" },
+        { key: "entry_type", label: "Direction", type: "badge", badgeVariants: { debit: "destructive", credit: "default" } },
         { key: "amount", label: "Amount", type: "number" },
-        { key: "createdAt", label: "Created", type: "date" },
+        { key: "balance_after", label: "Balance After", type: "number" },
+        { key: "created_at", label: "Created", type: "date" },
       ]}
-      searchableColumns={["transactionId", "ledgerAccountId"]}
-      defaultOrderBy="createdAt"
+      searchableColumns={["account_id", "transaction_id"]}
+      defaultOrderBy="created_at"
     />
   )
 }

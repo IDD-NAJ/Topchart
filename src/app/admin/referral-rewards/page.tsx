@@ -11,14 +11,14 @@ export default function ReferralRewardsPage() {
       icon={<Award className="h-5 w-5" />}
       columns={[
         { key: "id", label: "ID" },
-        { key: "referralId", label: "Referral ID" },
-        { key: "transactionId", label: "Transaction ID" },
-        { key: "amount", label: "Amount", type: "number" },
-        { key: "status", label: "Status", type: "badge", badgeVariants: { PENDING: "secondary", CREDITED: "default" } },
-        { key: "createdAt", label: "Created", type: "date" },
+        { key: "referrer_id", label: "Referrer ID" },
+        { key: "referred_id", label: "Referred ID" },
+        { key: "reward_amount", label: "Amount", type: "number" },
+        { key: "status", label: "Status", type: "badge", badgeVariants: { pending: "secondary", paid: "default" } },
+        { key: "created_at", label: "Created", type: "date" },
       ]}
-      searchableColumns={["referralId"]}
-      defaultOrderBy="createdAt"
+      searchableColumns={["referrer_id"]}
+      defaultOrderBy="created_at"
     />
   )
 }

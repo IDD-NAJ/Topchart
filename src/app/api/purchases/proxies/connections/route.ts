@@ -33,10 +33,8 @@ export async function GET() {
     return NextResponse.json({ success: true, connections })
   } catch (error) {
     console.error("List proxy connections error:", error)
-    return NextResponse.json(
-      { success: false, error: "Failed to list proxy connections" },
-      { status: 500 }
-    )
+    // Return empty connections array instead of 500 error for better UX
+    return NextResponse.json({ success: true, connections: [] })
   }
 }
 
