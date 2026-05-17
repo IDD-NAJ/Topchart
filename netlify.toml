@@ -1,5 +1,5 @@
 [build]
-  command = "rm -rf .next && npm run build"
+  command = "npm run build"
   publish = ".next"
 
 [[plugins]]
@@ -14,10 +14,53 @@
   NEXTAUTH_URL = "https://topchart.store"
   NEXT_PUBLIC_SITE_URL = "https://topchart.store"
 
-# Important: NEXT_PUBLIC_APP_URL must be set in Netlify environment variables
-# Go to Site Settings > Environment Variables and set:
-# NEXT_PUBLIC_APP_URL = https://topchart.store
-# Do NOT set it to http://localhost:3000
+# Important: Set these environment variables in Netlify Dashboard
+# Site Settings > Environment Variables > Environment variables for production
+#
+# Required variables:
+# - DATABASE_URL (your Neon/Supabase connection string)
+# - NEXTAUTH_SECRET (generate with: openssl rand -base64 32)
+# - AUTH_GOOGLE_ID (from Google Cloud Console)
+# - AUTH_GOOGLE_SECRET (from Google Cloud Console)
+# - PAYSTACK_SECRET_KEY (for payments)
+#
+# Optional variables:
+# - NEXT_PUBLIC_SUPABASE_URL (for homepage media)
+# - SUPABASE_SERVICE_ROLE_KEY (for homepage media)
+# - SUPABASE_BUCKET_HOMEPAGE_MEDIA (for homepage media)
+# - DATAMART_API_KEY (for data bundles)
+# - DATAMART_BASE_URL (for data bundles)
+# - DATAMART_WEBHOOK_SECRET (for data bundles)
+# - DATAMART_SIGNING_SECRET (for data bundles)
+# - PVADEALS_API_KEY (for verification numbers)
+# - PVADEALS_BASE_URL (for verification numbers)
+# - PVADEALS_MARKUP_PERCENT (for verification numbers)
+# - USD_TO_GHS_RATE (for verification numbers)
+# - NEXT_PUBLIC_USD_TO_GHS_RATE (for verification numbers)
+# - RELOADLY_CLIENT_ID (for airtime/data)
+# - RELOADLY_CLIENT_SECRET (for airtime/data)
+# - RELOADLY_BASE_URL (for airtime/data)
+# - RELOADLY_API_BASE_URL (for airtime/data)
+# - RELOADLY_AUTH_URL (for airtime/data)
+# - NINEPROXY_API_KEY (for proxies)
+# - NINEPROXY_BASE_URL (for proxies)
+# - AIRALO_CLIENT_ID (for eSIM)
+# - AIRALO_CLIENT_SECRET (for eSIM)
+# - AIRALO_WEBHOOK_SECRET (for eSIM)
+# - VTPASS_API_KEY (for bill payments)
+# - VTPASS_SECRET_KEY (for bill payments)
+# - VTPASS_BASE_URL (for bill payments)
+# - NEXT_PUBLIC_WHATSAPP_NUMBER (for WhatsApp)
+# - NEXT_PUBLIC_WHATSAPP_ENABLED (for WhatsApp)
+# - NEXT_PUBLIC_TAWK_PROPERTY_ID (for Tawk.to chat)
+# - NEXT_PUBLIC_TAWK_WIDGET_ID (for Tawk.to chat)
+# - NEXT_PUBLIC_TAWK_ENABLED (for Tawk.to chat)
+# - EMAIL_HOST (for email)
+# - EMAIL_PORT (for email)
+# - EMAIL_USER (for email)
+# - EMAIL_PASS (for email)
+# - EMAIL_FROM (for email)
+# - CRON_SECRET (for cron jobs)
 
 # Headers for security and caching
 [[headers]]
