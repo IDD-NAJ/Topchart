@@ -106,3 +106,12 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(), microphone=(), camera=()"
     X-XSS-Protection = "1; mode=block"
+
+# Scheduled jobs (cron)
+[[scheduled]]
+  path = "/api/admin/datamart/sync-order-status-scheduled"
+  schedule = "*/2 * * * *"
+
+[[scheduled]]
+  path = "/api/admin/sync-datamart-plans-scheduled"
+  schedule = "0 */6 * * *"

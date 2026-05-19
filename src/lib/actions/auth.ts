@@ -374,7 +374,7 @@ export async function login(formData: {
   }
 }
 
-export async function logout(): Promise<void> {
+export async function logout(): Promise<{ success: boolean }> {
   const cookieStore = await cookies();
   const token = cookieStore.get("session_token")?.value;
 
@@ -384,7 +384,7 @@ export async function logout(): Promise<void> {
     cookieStore.delete("session_token");
   }
 
-  redirect("/login");
+  return { success: true };
 }
 
 export async function getCurrentUser(): Promise<User | null> {

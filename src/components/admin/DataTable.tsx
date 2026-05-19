@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -111,7 +111,7 @@ export function DataTable({
   // Select options state for dropdown columns
   const [selectOptions, setSelectOptions] = useState<Record<string, { value: string; label: string }[]>>({})
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -142,11 +142,11 @@ export function DataTable({
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, tableName, search, defaultOrderBy, defaultOrderDir, pageSize, searchableColumns])
 
   useEffect(() => {
     fetchData()
-  }, [page, tableName])
+  }, [fetchData])
 
   // Reset selection when data changes
   useEffect(() => {
@@ -156,7 +156,6 @@ export function DataTable({
   useEffect(() => {
     const timer = setTimeout(() => {
       setPage(1)
-      fetchData()
     }, 300)
     return () => clearTimeout(timer)
   }, [search])

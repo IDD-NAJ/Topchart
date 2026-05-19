@@ -29,7 +29,7 @@ export function useNotifications() {
     "/api/notifications",
     fetcher,
     {
-      revalidateOnFocus: true,
+      revalidateOnFocus: false,
       dedupingInterval: 10000,
       refreshInterval: 60000,
     }

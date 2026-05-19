@@ -32,8 +32,8 @@ export default function AdminActiveUsersPage() {
     setLoading(true);
     setError(null);
     try {
-      const url = new URL(getAbsoluteUrl("/api/admin/active-users"), getAppOrigin());
-      if (q.trim()) url.searchParams.set("q", q.trim());
+      const url = new URL("/api/admin/active-users", window.location.origin)
+      if (q.trim()) url.searchParams.set("q", q.trim())
       const res = await fetch(url.toString(), { credentials: "include", cache: "no-store" });
       const data = await res.json();
       if (!data.success) throw new Error(data.error || "Failed to load active users");

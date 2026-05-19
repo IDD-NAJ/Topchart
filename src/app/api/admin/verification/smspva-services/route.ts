@@ -88,7 +88,9 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { serviceCode, isActive, markupPercentage } = body;
+    const serviceCode = body.serviceCode;
+    const isActive = body.isActive ?? body.is_active;
+    const markupPercentage = body.markupPercentage ?? body.markup_percentage;
 
     if (!serviceCode) {
       return NextResponse.json(

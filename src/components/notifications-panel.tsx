@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useNotifications, type Notification } from "@/hooks/use-notifications";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,7 @@ import {
   Info,
   AlertTriangle,
   CheckCircle2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -115,16 +116,31 @@ function NotificationItem({
 
 export function NotificationsPanel() {
   const { user } = useAuth()
-  const { notifications, markAsRead, deleteNotification, markAllRead, isLoading } = useNotifications()
-  const [unreadCount, setUnreadCount] = useState(0)
+  const { notifications, markAsRead, deleteNotification, markAllRead, isLoading, unreadCount } = useNotifications()
+  const [isOpen, setIsOpen] = useState(false)
+  const [prevUnreadCount, setPrevUnreadCount] = useState(0)
+  const [animateBell, setAnimateBell] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => {
+    if (unreadCount > prevUnreadCount && prevUnreadCount === 0) {
+      setAnimateBell(true)
+      setTimeout(() => setAnimateBell(false), 1000)
+    }
+    setPrevUnreadCount(unreadCount)
+  }, [unreadCount, prevUnreadCount])
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open)
+  }
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
-          <Bell className="w-5 h-5" />
+          <Bell className={cn("w-5 h-5 transition-transform", animateBell && "animate-bounce")} />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[9px] font-bold bg-red-500 text-white border-0">
+            <Badge className={cn("absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[9px] font-bold bg-red-500 text-white border-0 transition-all", animateBell && "scale-110")}>
               {unreadCount > 9 ? "9+" : unreadCount}
             </Badge>
           )}
@@ -132,18 +148,27 @@ export function NotificationsPanel() {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex items-center justify-between p-3 border-b">
-          <h4 className="text-sm font-semibold">Notifications</h4>
-          {unreadCount > 0 && (
-            <button
-              onClick={markAllRead}
-              className="text-[10px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
-            >
-              <CheckCheck className="w-3 h-3" />
-              Mark all read
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            <h4 className="text-sm font-semibold">Notifications</h4>
+            {unreadCount > 0 && (
+              <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                {unreadCount}
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <button
+                onClick={markAllRead}
+                className="text-[10px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+              >
+                <CheckCheck className="w-3 h-3" />
+                Mark all read
+              </button>
+            )}
+          </div>
         </div>
-        <div className="max-h-80 overflow-y-auto">
+        <div className="max-h-96 overflow-y-auto">
           {isLoading ? (
             <div className="p-6 text-center text-xs text-muted-foreground animate-pulse">Loading...</div>
           ) : notifications.length === 0 ? (
@@ -152,16 +177,28 @@ export function NotificationsPanel() {
               <p className="text-xs text-muted-foreground">No notifications yet</p>
             </div>
           ) : (
-            <div className="divide-y divide-border">
-              {notifications.map((n) => (
-                <NotificationItem
-                  key={n.id}
-                  notification={n}
-                  onMarkRead={markAsRead}
-                  onDelete={deleteNotification}
-                />
-              ))}
-            </div>
+            <>
+              <div className="divide-y divide-border">
+                {notifications.slice(0, 5).map((n) => (
+                  <NotificationItem
+                    key={n.id}
+                    notification={n}
+                    onMarkRead={markAsRead}
+                    onDelete={deleteNotification}
+                  />
+                ))}
+              </div>
+              {notifications.length > 5 && (
+                <div className="p-2 border-t">
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="w-full text-xs text-center text-muted-foreground hover:text-foreground py-2 rounded hover:bg-muted transition-colors"
+                  >
+                    View all {notifications.length} notifications
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </PopoverContent>

@@ -55,6 +55,7 @@ interface DataBundle {
   isPopular: boolean;
   isActive: boolean;
   isFeatured: boolean;
+  stock: number | null;
   updatedAt: string | null;
 }
 
@@ -141,6 +142,7 @@ export default function DataBundlesPricingPage() {
         isActive: bundle.isActive,
         isFeatured: bundle.isFeatured,
         isPopular: bundle.isPopular,
+        stock: bundle.stock,
       }
     }));
   };
@@ -163,6 +165,7 @@ export default function DataBundlesPricingPage() {
             isActive: updates.isActive,
             isFeatured: updates.isFeatured,
             isPopular: updates.isPopular,
+            stock: updates.stock,
           }
         }),
       });
@@ -227,7 +230,7 @@ export default function DataBundlesPricingPage() {
       return;
     }
 
-    const dbCode = networkFilter === "MTN" ? "MTN" : networkFilter === "Telecel" ? "VODAFONE" : "AIRTELTIGO";
+    const dbCode = networkFilter === "MTN" ? "MTN" : networkFilter === "Telecel" ? "Telecel" : "AirtelTigo";
 
     try {
       setBulkSaving(true);
@@ -261,7 +264,7 @@ export default function DataBundlesPricingPage() {
   };
 
   const executeBulkClear = async () => {
-    const dbCode = networkFilter === "MTN" ? "MTN" : networkFilter === "Telecel" ? "VODAFONE" : "AIRTELTIGO";
+    const dbCode = networkFilter === "MTN" ? "MTN" : networkFilter === "Telecel" ? "Telecel" : "AirtelTigo";
     try {
       setBulkSaving(true);
       const response = await fetch("/api/admin/data-bundles-pricing", {
@@ -413,6 +416,7 @@ export default function DataBundlesPricingPage() {
                   <TableHead className="text-right">Override</TableHead>
                   <TableHead className="text-right">Markup %</TableHead>
                   <TableHead className="text-right">Effective</TableHead>
+                  <TableHead className="text-right">Stock</TableHead>
                   <TableHead className="text-center">Active</TableHead>
                   <TableHead className="text-center">Featured</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -492,6 +496,26 @@ export default function DataBundlesPricingPage() {
                           <span className="text-[10px] text-muted-foreground block">
                             {effectivePrice > bundle.providerPrice ? "↑" : "↓"}
                             {Math.abs(((effectivePrice - bundle.providerPrice) / bundle.providerPrice) * 100).toFixed(1)}%
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {isEditing ? (
+                          <Input
+                            type="number"
+                            step="1"
+                            min="0"
+                            value={editValue.stock ?? ""}
+                            onChange={(e) => updateEditValue(bundle.id, "stock", e.target.value ? parseInt(e.target.value) : null)}
+                            className="w-20 h-8 text-right"
+                            placeholder="∞"
+                          />
+                        ) : (
+                          <span className={cn(
+                            "font-mono text-sm",
+                            bundle.stock !== null && bundle.stock <= 10 && "text-red-500 font-bold"
+                          )}>
+                            {bundle.stock !== null ? bundle.stock : "∞"}
                           </span>
                         )}
                       </TableCell>

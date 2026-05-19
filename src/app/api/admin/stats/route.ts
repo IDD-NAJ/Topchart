@@ -111,6 +111,7 @@ export async function GET(request: NextRequest) {
           SELECT
             COALESCE(to_jsonb(t)->>'status', '') AS status,
             COALESCE(to_jsonb(t)->>'type', '') AS type,
+            COALESCE(to_jsonb(t)->>'payment_method', '') AS payment_method,
             COALESCE(
               to_jsonb(t)->>'amount',
               to_jsonb(t)->>'amount_paid',
@@ -295,7 +296,15 @@ export async function GET(request: NextRequest) {
       ? revenueRows.reduce((sum, row: any) => {
           const status = String(row?.status ?? "").toUpperCase();
           const type = String(row?.type ?? "").toLowerCase();
-          if (status !== "SUCCESS" || type !== "deposit") return sum;
+          const paymentMethod = String(row?.payment_method ?? "").toLowerCase();
+          
+          if (status !== "SUCCESS") return sum;
+          
+          const isDeposit = type === "deposit";
+          const isPaystackDirect = paymentMethod === "paystack" && type !== "deposit";
+          
+          if (!isDeposit && !isPaystackDirect) return sum;
+          
           const amount = Number(row?.amount);
           if (!Number.isFinite(amount)) return sum;
           return sum + amount;

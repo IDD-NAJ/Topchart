@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
             b."isPopular",
             b."isActive",
             b."isFeatured",
+            b.stock,
             b."updatedAt"
           FROM data_bundles b
           LEFT JOIN networks n ON COALESCE(b."networkId", b.network_id::uuid) = n.id
@@ -60,6 +61,7 @@ export async function GET(request: NextRequest) {
             b."isPopular",
             b."isActive",
             b."isFeatured",
+            b.stock,
             b."updatedAt"
           FROM data_bundles b
           LEFT JOIN networks n ON COALESCE(b."networkId", b.network_id::uuid) = n.id
@@ -79,6 +81,7 @@ export async function GET(request: NextRequest) {
       isPopular: Boolean(row.isPopular),
       isActive: Boolean(row.isActive),
       isFeatured: Boolean(row.isFeatured),
+      stock: row.stock ? Number(row.stock) : null,
       updatedAt: row.updatedAt ? String(row.updatedAt) : null,
     }));
 
@@ -201,7 +204,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const { priceOverride, markupPercent, isActive, isFeatured, isPopular } = updates;
+    const { priceOverride, markupPercent, isActive, isFeatured, isPopular, stock } = updates;
 
     await sqlUnsafe(
       `UPDATE data_bundles
@@ -211,14 +214,16 @@ export async function PATCH(request: NextRequest) {
         "isActive" = $3,
         "isFeatured" = $4,
         "isPopular" = $5,
+        stock = $6,
         "updatedAt" = NOW()
-      WHERE id = $6`,
+      WHERE id = $7`,
       [
         priceOverride !== undefined ? priceOverride : null,
         markupPercent !== undefined ? markupPercent : null,
         isActive !== undefined ? isActive : undefined,
         isFeatured !== undefined ? isFeatured : undefined,
         isPopular !== undefined ? isPopular : undefined,
+        stock !== undefined ? stock : null,
         id,
       ]
     );

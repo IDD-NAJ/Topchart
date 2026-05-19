@@ -11,6 +11,7 @@ interface DeliveryStats {
 
 interface DeliveryTrackerData {
   stats: DeliveryStats
+  dbStats?: DeliveryStats
   lastDelivered?: Record<string, unknown> | null
   checkingNow?: Record<string, unknown> | null
   yourOrders?: Record<string, unknown> | null
@@ -67,22 +68,26 @@ export function DeliveryTrackerWidget() {
 
   if (!data) return null
 
-  const { stats } = data
+  const { stats, dbStats } = data
+  const displayStats = dbStats || stats
 
   return (
     <div className="flex items-center gap-3">
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400">
         <CheckCircle2 className="w-3.5 h-3.5" />
-        <span className="text-xs font-semibold">{stats.delivered} Delivered</span>
+        <span className="text-xs font-semibold">{displayStats.delivered} Delivered</span>
       </div>
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
         <Clock className="w-3.5 h-3.5" />
-        <span className="text-xs font-semibold">{stats.pending} Pending</span>
+        <span className="text-xs font-semibold">{displayStats.pending} Pending</span>
       </div>
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 text-destructive">
         <AlertTriangle className="w-3.5 h-3.5" />
-        <span className="text-xs font-semibold">{stats.failed} Failed</span>
+        <span className="text-xs font-semibold">{displayStats.failed} Failed</span>
       </div>
+      {dbStats && (
+        <span className="text-[10px] text-muted-foreground">DB</span>
+      )}
       <button
         onClick={() => fetchStats(true)}
         disabled={refreshing}

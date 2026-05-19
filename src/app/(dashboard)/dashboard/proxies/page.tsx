@@ -220,7 +220,7 @@ export default function ProxiesPage() {
     if (user && view === "connections") {
       fetchConnections()
       fetchCredentials()
-      const interval = setInterval(fetchConnections, 30000)
+      const interval = setInterval(fetchConnections, 60000)
       return () => clearInterval(interval)
     }
   }, [user, view, fetchConnections, fetchCredentials])

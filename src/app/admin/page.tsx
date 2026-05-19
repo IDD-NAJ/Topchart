@@ -281,7 +281,7 @@ export default function AdminDashboard() {
   const loadUsers = async (query = "") => {
     setUsersError(null)
     try {
-      const url = new URL(getAbsoluteUrl("/api/admin/users"), getAppOrigin())
+      const url = new URL("/api/admin/users", window.location.origin)
       if (query.trim()) url.searchParams.set("q", query.trim())
       const response = await fetch(url.toString(), {
         credentials: 'include',

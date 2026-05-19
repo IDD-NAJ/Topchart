@@ -73,6 +73,11 @@ export interface DatamartDeliveryTrackerPayload {
   checkingNow?: Record<string, unknown> | null;
   yourOrders?: Record<string, unknown> | null;
   message?: string;
+  dbStats?: {
+    delivered: number;
+    pending: number;
+    failed: number;
+  };
 }
 
 interface DatamartApiResult<T> {
@@ -756,6 +761,89 @@ export async function refreshOrderStatus(orderReference: string): Promise<Datama
   return data;
 }
 
+export async function syncAllPendingOrders(maxOrders: number = 15): Promise<{
+  checked: number;
+  updated: number;
+  failed: number;
+  skipped: number;
+  errors: string[];
+}> {
+  const errors: string[] = [];
+  let checked = 0;
+  let updated = 0;
+  let failed = 0;
+  let skipped = 0;
+
+  try {
+    const pendingOrders = await sql`
+      SELECT id, order_reference, status, created_at, last_attempt_at, retry_count
+      FROM datamart_orders
+      WHERE status IN ('pending', 'waiting')
+        AND order_reference IS NOT NULL
+        AND (last_attempt_at IS NULL OR last_attempt_at < NOW() - (INTERVAL '1 minute' * 2))
+      ORDER BY created_at ASC
+      LIMIT ${maxOrders}
+    `;
+
+    for (const order of pendingOrders as any[]) {
+      checked++;
+      const orderRef = order.order_reference;
+      const createdAt = new Date(order.created_at);
+      const now = new Date();
+      const ageMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+      const retryCount = order.retry_count || 0;
+
+      try {
+        if (ageMinutes > 120) {
+          await sql`
+            UPDATE datamart_orders
+            SET status = 'failed',
+                error_message = 'Order timed out after 2 hours',
+                error_code = 'TIMEOUT',
+                retry_count = retry_count + 1,
+                last_attempt_at = NOW(),
+                updated_at = NOW()
+            WHERE id = ${order.id}
+          `;
+          failed++;
+          logger.warn(`[DataMart Sync] Order ${orderRef} timed out after 2 hours, marked as failed`);
+        } else if (ageMinutes > 30 && retryCount >= 5) {
+          await sql`
+            UPDATE datamart_orders
+            SET status = 'failed',
+                error_message = 'Order stuck pending after 30 minutes with 5+ retries',
+                error_code = 'STUCK_PENDING',
+                retry_count = retry_count + 1,
+                last_attempt_at = NOW(),
+                updated_at = NOW()
+            WHERE id = ${order.id}
+          `;
+          failed++;
+          logger.warn(`[DataMart Sync] Order ${orderRef} stuck pending after 30 minutes with ${retryCount} retries, marked as failed`);
+        } else {
+          const result = await refreshOrderStatus(orderRef);
+          if (result) {
+            updated++;
+            logger.info(`[DataMart Sync] Order ${orderRef} status updated to ${result.orderStatus}`);
+          } else {
+            skipped++;
+            logger.debug(`[DataMart Sync] Order ${orderRef} status check returned no data`);
+          }
+        }
+      } catch (err: any) {
+        const errMsg = err?.message || String(err);
+        errors.push(`${orderRef}: ${errMsg}`);
+        logger.error(`[DataMart Sync] Failed to check order ${orderRef}: ${errMsg}`);
+      }
+    }
+  } catch (err: any) {
+    errors.push(`Query failed: ${err?.message || String(err)}`);
+    logger.error(`[DataMart Sync] Failed to query pending orders: ${err}`);
+  }
+
+  return { checked, updated, failed, skipped, errors };
+}
+
 export async function fetchDeliveryTracker(): Promise<DatamartDeliveryTrackerPayload> {
   const result = await datamartRequest<DatamartDeliveryTrackerPayload>("/delivery-tracker", {
     method: "GET",
@@ -766,7 +854,29 @@ export async function fetchDeliveryTracker(): Promise<DatamartDeliveryTrackerPay
     throw new Error(result.message || "Failed to fetch delivery tracker");
   }
 
-  return result.data;
+  const apiStats = result.data as DatamartDeliveryTrackerPayload;
+
+  try {
+    const dbStats = await sql`
+      SELECT 
+        COUNT(*) FILTER (WHERE status = 'completed') as completed,
+        COUNT(*) FILTER (WHERE status IN ('pending', 'waiting')) as pending,
+        COUNT(*) FILTER (WHERE status = 'failed') as failed
+      FROM datamart_orders
+      WHERE created_at > NOW() - (INTERVAL '1 hour' * 24)
+    `;
+
+    const dbRow = dbStats[0] as any;
+    apiStats.dbStats = {
+      delivered: parseInt(dbRow.completed || "0", 10),
+      pending: parseInt(dbRow.pending || "0", 10),
+      failed: parseInt(dbRow.failed || "0", 10),
+    };
+  } catch (err) {
+    logger.warn("[DataMart] Failed to fetch database stats for delivery tracker", err);
+  }
+
+  return apiStats;
 }
 
 export async function persistWebhookEvent(event: string, signature: string | null, verified: boolean, payload: Record<string, unknown>): Promise<void> {

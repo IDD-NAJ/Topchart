@@ -7,17 +7,21 @@ export default function DataPurchasesPage() {
   return (
     <DataTable
       title="Data Bundle Purchases"
-      tableName="data_bundle_purchases"
+      tableName="datamart_orders"
       icon={<Wifi className="h-5 w-5" />}
       columns={[
         { key: "id", label: "ID" },
-        { key: "user_id", label: "User ID" },
-        { key: "bundle_id", label: "Bundle ID" },
-        { key: "recipient_phone", label: "Phone" },
-        { key: "status", label: "Status", type: "badge", badgeVariants: { success: "default", pending: "secondary", failed: "destructive" }, bulkEditable: true },
+        { key: "phone_number", label: "Phone" },
+        { key: "network", label: "Network" },
+        { key: "capacity", label: "Capacity" },
+        { key: "price", label: "Price (GHS)" },
+        { key: "gateway", label: "Gateway" },
+        { key: "status", label: "Status", type: "badge", badgeVariants: { completed: "default", pending: "secondary", failed: "destructive", refunded: "outline" }, bulkEditable: true },
+        { key: "order_reference", label: "Order Ref" },
+        { key: "error_message", label: "Error" },
         { key: "created_at", label: "Created", type: "date" },
       ]}
-      searchableColumns={["user_id", "recipient_phone"]}
+      searchableColumns={["phone_number", "network", "order_reference"]}
       defaultOrderBy="created_at"
     />
   )

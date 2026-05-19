@@ -139,7 +139,7 @@ function ServiceDetailPageContent() {
           
           // Start polling for SMS if active
           if (found.status === "active" && !found.is_expired) {
-            const interval = setInterval(() => fetchSMS(numberId), 5000)
+            const interval = setInterval(() => fetchSMS(numberId), 10000)
             setPollingInterval(interval)
           }
         }

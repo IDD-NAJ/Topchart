@@ -28,7 +28,6 @@ import { PurchaseCard } from "@/components/purchase/PurchaseCard"
 import { RecentRecipients } from "@/components/purchase/RecentRecipients"
 import { addRecentRecipient, getRecentRecipients, type RecentRecipient } from "@/lib/purchase-data"
 import { Skeleton } from "@/components/ui/skeleton"
-import { DeliveryTrackerWidget } from "@/components/datamart/delivery-tracker-widget"
 
 interface DatamartPlan {
   id: string
@@ -183,6 +182,8 @@ export default function DataPage() {
   const [plansStale, setPlansStale] = useState(false)
   const [plansFetchedAt, setPlansFetchedAt] = useState<string>("")
   const [plansProviderError, setPlansProviderError] = useState<string>("")
+  const [planAvailability, setPlanAvailability] = useState<Record<string, boolean>>({})
+  const [availabilityLoading, setAvailabilityLoading] = useState(false)
   const [activeType, setActiveType] = useState<string>("ALL")
   const [favoritesRefreshKey, setFavoritesRefreshKey] = useState(0)
   const [currentIdempotencyKey, setCurrentIdempotencyKey] = useState<string | null>(null)
@@ -362,6 +363,18 @@ export default function DataPage() {
     }
   }, [step, currentOrder, stopPolling, router])
 
+  const fetchAvailability = useCallback(async () => {
+    setAvailabilityLoading(true)
+    try {
+      const res = await fetch("/api/purchases/plans/availability", { credentials: "include" })
+      const json = await res.json()
+      if (json.success && json.data) setPlanAvailability(json.data)
+    } catch {
+    } finally {
+      setAvailabilityLoading(false)
+    }
+  }, [])
+
   const fetchPlans = useCallback(async () => {
     setPlansLoading(true)
     setPlansError("")
@@ -394,7 +407,8 @@ export default function DataPage() {
 
   useEffect(() => {
     fetchPlans()
-  }, [fetchPlans])
+    fetchAvailability()
+  }, [fetchPlans, fetchAvailability])
 
   useEffect(() => {
     if (selectedNetwork && selectedPlan) {
@@ -419,6 +433,23 @@ export default function DataPage() {
   const availableNetworks = Array.from(new Set(plans.map(p => normalizeNetworkId(p.network))))
     .map(id => networks.find(n => n.id === id))
     .filter(Boolean) as Network[];
+
+  const NETWORK_TO_DATAMART: Record<string, string> = {
+    mtn: "YELLO", MTN: "YELLO",
+    vodafone: "TELECEL", telecel: "TELECEL", Telecel: "TELECEL",
+    airteltigo: "AT_PREMIUM", AirtelTigo: "AT_PREMIUM", "airtel-tigo": "AT_PREMIUM", at: "AT_PREMIUM",
+  }
+
+  const getPlanAvailability = (plan: DatamartPlan): boolean | undefined => {
+    if (Object.keys(planAvailability).length === 0) return undefined
+    const networkKey = plan.network ?? ""
+    const dmNetwork = NETWORK_TO_DATAMART[networkKey] ?? NETWORK_TO_DATAMART[networkKey.toLowerCase()] ?? null
+    if (!dmNetwork || !plan.datamartPlanId) return undefined
+    const capacity = String(plan.datamartPlanId).replace(/[^0-9]/g, "")
+    if (!capacity) return undefined
+    const key = `${dmNetwork}_${capacity}`
+    return key in planAvailability ? planAvailability[key] : undefined
+  }
 
   const validateForm = () => {
     if (!selectedNetwork) { setError("Please select a network provider."); return false }
@@ -803,7 +834,6 @@ export default function DataPage() {
           </div>
         </div>
         <p className="text-muted-foreground">Purchase direct data bundles across all major networks.</p>
-        <DeliveryTrackerWidget />
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 mt-2 text-xs sm:text-sm font-semibold text-muted-foreground">
           <span className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-primary/10 text-primary">
             <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -1182,6 +1212,8 @@ export default function DataPage() {
                               description: plan.datamartPlanType ? `Type: ${PLAN_TYPE_LABELS[plan.datamartPlanType] || plan.datamartPlanType}` : undefined,
                             }}
                             onPurchase={() => setSelectedPlan(plan)}
+                            inStock={getPlanAvailability(plan)}
+                            availabilityLoading={availabilityLoading}
                           />
                         </div>
                       ))}

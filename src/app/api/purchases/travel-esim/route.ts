@@ -24,6 +24,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Invalid quantity" }, { status: 400 });
     }
 
+    if (qty > 1) {
+      return NextResponse.json(
+        { success: false, error: "Please place one order for each number at a time, wait till order is confirmed to place an order for the same number" },
+        { status: 400 }
+      );
+    }
+
     // 1. Fetch Product
     const dbParams = await sql`SELECT id, price, is_active FROM esim_products WHERE id = ${productId}`;
     if (dbParams.length === 0) {

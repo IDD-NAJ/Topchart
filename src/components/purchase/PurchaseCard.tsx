@@ -11,6 +11,8 @@ interface PurchaseCardProps {
   onPurchase: (bundle: DataBundle) => void;
   isLoading?: boolean;
   className?: string;
+  inStock?: boolean;
+  availabilityLoading?: boolean;
 }
 
 export function PurchaseCard({
@@ -18,6 +20,8 @@ export function PurchaseCard({
   onPurchase,
   isLoading,
   className,
+  inStock,
+  availabilityLoading,
 }: PurchaseCardProps) {
   const network = _NETWORKS.find((n) => n.id === bundle.networkId);
   const originalPrice = bundle.originalPrice ?? bundle.price;
@@ -95,6 +99,21 @@ export function PurchaseCard({
           {bundle.description}
         </p>
       )}
+
+      {/* Availability */}
+      {availabilityLoading ? (
+        <div className="h-3.5 w-14 rounded-full bg-muted animate-pulse mb-1" />
+      ) : inStock === true ? (
+        <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-green-600 dark:text-green-400 mb-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+          In Stock
+        </span>
+      ) : inStock === false ? (
+        <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-muted-foreground mb-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+          Out of Stock
+        </span>
+      ) : null}
 
       {/* Price section */}
       <div className="mt-auto pt-1.5 border-t">

@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { LogoVideo } from "@/components/logo-video"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
@@ -86,10 +87,12 @@ interface DashboardSidebarProps {
 
 export function DashboardSidebar({ collapsed: controlledCollapsed, onCollapsedChange }: DashboardSidebarProps = {}) {
   const pathname = usePathname()
+  const router = useRouter()
   const { user, logout } = useAuth()
   const { isEnabled, isMaintenance, getMaintenanceMessage } = useServiceStatus()
   const [resellerMenuOpen, setResellerMenuOpen] = useState(true)
   const [internalCollapsed, setInternalCollapsed] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   
   const collapsed = controlledCollapsed ?? internalCollapsed
   const setCollapsed = (value: boolean) => {
@@ -102,6 +105,19 @@ export function DashboardSidebar({ collapsed: controlledCollapsed, onCollapsedCh
 
   const isReseller = user?.role === 'RESELLER'
   const isResellerPage = pathname?.startsWith('/dashboard/reseller')
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    try {
+      await logout()
+      router.push("/login")
+    } catch (error) {
+      console.error("Logout error:", error)
+      router.push("/login")
+    } finally {
+      setIsLoggingOut(false)
+    }
+  }
 
   return (
     <>
@@ -316,7 +332,8 @@ export function DashboardSidebar({ collapsed: controlledCollapsed, onCollapsedCh
         </div>
         <Button 
           variant="ghost" 
-          onClick={() => logout()}
+          onClick={handleLogout}
+          disabled={isLoggingOut}
           className={cn(
             "gap-3 h-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all duration-300",
             collapsed ? "w-full justify-center px-2" : "w-full justify-start"
@@ -324,8 +341,12 @@ export function DashboardSidebar({ collapsed: controlledCollapsed, onCollapsedCh
           style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
           title={collapsed ? "Sign Out" : undefined}
         >
-          <LogOut className={cn(collapsed ? "h-5 w-5" : "h-4 w-4")} />
-          {!collapsed && <span className="text-sm font-medium">Sign Out</span>}
+          {isLoggingOut ? (
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <LogOut className={cn(collapsed ? "h-5 w-5" : "h-4 w-4")} />
+          )}
+          {!collapsed && <span className="text-sm font-medium">{isLoggingOut ? "Signing out..." : "Sign Out"}</span>}
         </Button>
       </div>
     </motion.aside>

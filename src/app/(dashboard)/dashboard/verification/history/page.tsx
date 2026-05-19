@@ -203,7 +203,7 @@ function SMSPanel({
   // Auto-poll every 20 s for active numbers
   useEffect(() => {
     if (!isActive) return
-    const id = setInterval(() => fetchSMS(true), 20000)
+    const id = setInterval(() => fetchSMS(true), 60000)
     return () => clearInterval(id)
   }, [isActive, fetchSMS])
 

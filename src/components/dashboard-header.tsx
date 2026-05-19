@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { LogoVideo } from "@/components/logo-video"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
@@ -105,10 +106,27 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ sidebarCollapsed = false }: DashboardHeaderProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const { user, logout } = useAuth()
   const [open, setOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const pageTitle = resolvePageTitle(pathname)
   const isReseller = user?.role === "RESELLER"
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    try {
+      await logout()
+      setOpen(false)
+      router.push("/login")
+    } catch (error) {
+      console.error("Logout error:", error)
+      setOpen(false)
+      router.push("/login")
+    } finally {
+      setIsLoggingOut(false)
+    }
+  }
 
   return (
     <header className={cn(
@@ -275,14 +293,16 @@ export function DashboardHeader({ sidebarCollapsed = false }: DashboardHeaderPro
               <div className="mt-auto border-t border-[color:var(--marketing-accent)]/10 bg-[color:var(--marketing-cream-alt)]/40 p-6">
                 <Button
                   variant="ghost"
-                  onClick={() => {
-                    setOpen(false)
-                    logout()
-                  }}
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
                   className="h-11 w-full justify-start gap-3 rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 >
-                  <LogOut className="h-5 w-5" />
-                  <span className="text-sm font-semibold">Sign Out</span>
+                  {isLoggingOut ? (
+                    <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <LogOut className="h-5 w-5" />
+                  )}
+                  <span className="text-sm font-semibold">{isLoggingOut ? "Signing out..." : "Sign Out"}</span>
                 </Button>
               </div>
             </SheetContent>

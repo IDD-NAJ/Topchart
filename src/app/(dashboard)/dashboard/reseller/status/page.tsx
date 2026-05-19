@@ -91,7 +91,7 @@ export default function ResellerStatusPage() {
 
   useEffect(() => {
     fetchStatus();
-    pollRef.current = setInterval(fetchStatus, 5000);
+    pollRef.current = setInterval(fetchStatus, 30000);
     return () => {
       stopPolling();
       if (countdownRef.current) clearInterval(countdownRef.current);

@@ -27,7 +27,7 @@ interface UseHomepageMediaOptions {
 }
 
 export function useHomepageMedia(options: UseHomepageMediaOptions = {}) {
-  const { section, autoRefresh = false, refreshInterval = 30000, initialData = [] } = options;
+  const { section, autoRefresh = false, refreshInterval = 300000, initialData = [] } = options;
   
   const [media, setMedia] = useState<HomepageMediaItem[]>(initialData);
   const [isLoading, setIsLoading] = useState(initialData.length === 0);

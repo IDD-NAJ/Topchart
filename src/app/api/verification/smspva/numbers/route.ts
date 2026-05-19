@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
       `) as any[];
     } catch { /* table may not exist */ }
 
-    const availability: Record<string, { count: number; costUsd?: number }> = {};
+    const availability: Record<string, { count: number; costUsd?: number; apiError?: boolean }> = {};
 
     if (cached.length >= cacheThreshold) {
       // Serve from cache
@@ -123,12 +123,15 @@ export async function GET(request: NextRequest) {
           availability[result.value.code] = {
             count: result.value.count,
             costUsd: result.value.costUsd,
+            apiError: result.value.apiError,
           };
-          upserts.push({
-            code: result.value.code,
-            count: result.value.count,
-            costUsd: result.value.costUsd,
-          });
+          if (!result.value.apiError) {
+            upserts.push({
+              code: result.value.code,
+              count: result.value.count,
+              costUsd: result.value.costUsd,
+            });
+          }
         }
       }
 
@@ -151,10 +154,13 @@ export async function GET(request: NextRequest) {
 
     // ── 5. Build enriched service list (mirrors PVADeals services shape) ──
     const enriched = services.map((svc) => {
-      const avail = availability[svc.code] ?? { count: 0 };
+      const avail = availability[svc.code] ?? { count: 0, apiError: true };
       // Prefer live API cost; fall back to DB/static base price
       const costUsd = avail.costUsd ?? svc.baseUsdPrice;
       const ghsPrice = calculateSmspvaPrice(costUsd, exchangeRate, svc.markup);
+      // Show service if count > 0 (confirmed stock) OR if count check itself failed (apiError)
+      // Only hide when API explicitly confirmed count = 0 with response "1"
+      const available = avail.count > 0 || Boolean(avail.apiError);
       return {
         code: svc.code,
         name: svc.name,
@@ -162,7 +168,8 @@ export async function GET(request: NextRequest) {
         baseUsdPrice: costUsd,
         count: avail.count,
         ghsPrice,
-        available: avail.count > 0,
+        available,
+        countKnown: !avail.apiError,
         markup_percentage: svc.markup,
       };
     });

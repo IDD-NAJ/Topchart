@@ -115,7 +115,7 @@ function CallbackContent() {
       return
     }
     fetchCallbackSms(false)
-    const interval = setInterval(() => fetchCallbackSms(true), 12000)
+    const interval = setInterval(() => fetchCallbackSms(true), 60000)
     return () => clearInterval(interval)
   }, [successNumberId, fetchCallbackSms])
 

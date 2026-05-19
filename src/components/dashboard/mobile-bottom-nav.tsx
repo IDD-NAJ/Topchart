@@ -60,6 +60,22 @@ export function MobileBottomNav() {
   const router = useRouter()
   const { logout } = useAuth()
   const [moreOpen, setMoreOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    try {
+      await logout()
+      setMoreOpen(false)
+      router.push("/login")
+    } catch (error) {
+      console.error("Logout error:", error)
+      setMoreOpen(false)
+      router.push("/login")
+    } finally {
+      setIsLoggingOut(false)
+    }
+  }
 
   return (
     <>
@@ -127,14 +143,16 @@ export function MobileBottomNav() {
                 <div className="pt-4 border-t mt-4">
                   <Button
                     variant="ghost"
-                    onClick={() => {
-                      setMoreOpen(false)
-                      logout()
-                    }}
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
                     className="w-full justify-start gap-3 h-11 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl"
                   >
-                    <LogOut className="h-5 w-5" />
-                    <span className="text-sm font-semibold">Sign Out</span>
+                    {isLoggingOut ? (
+                      <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <LogOut className="h-5 w-5" />
+                    )}
+                    <span className="text-sm font-semibold">{isLoggingOut ? "Signing out..." : "Sign Out"}</span>
                   </Button>
                 </div>
               </nav>

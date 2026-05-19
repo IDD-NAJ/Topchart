@@ -44,6 +44,7 @@ import {
   MessageSquare,
   Flag,
 } from "lucide-react"
+import { SMSPVA_COUNTRIES } from "@/lib/smspva"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
 
@@ -511,9 +512,9 @@ export default function VerificationPage() {
 
   // International numbers state (unified — mirrors PVADeals pattern)
   const [providerTab, setProviderTab] = useState<"usa" | "international">("usa")
-  const [intlNumbers, setIntlNumbers] = useState<Array<{ code: string; name: string; category: string; ghsPrice: number; baseUsdPrice: number; count: number; available: boolean }>>([])
-  const [intlCountries, setIntlCountries] = useState<Array<{ code: string; name: string; flag: string }>>([])
-  const [selectedSmspvaCountry, setSelectedSmspvaCountry] = useState("55")
+  const [intlNumbers, setIntlNumbers] = useState<Array<{ code: string; name: string; category: string; ghsPrice: number; baseUsdPrice: number; count: number; available: boolean; countKnown?: boolean }>>([])
+  const [intlCountries, setIntlCountries] = useState<Array<{ code: string; name: string; flag: string }>>(SMSPVA_COUNTRIES)
+  const [selectedSmspvaCountry, setSelectedSmspvaCountry] = useState("ru")
   const [intlLoading, setIntlLoading] = useState(false)
   const [smspvaCountrySearch, setSmspvaCountrySearch] = useState("")
   const [smspvaModal, setSmspvaModal] = useState<{
@@ -751,7 +752,7 @@ export default function VerificationPage() {
     fetchActiveNumbers()
     fetchGlobalSettings()
     const stored = typeof window !== "undefined" ? localStorage.getItem("smspva_country") : null
-    if (stored) setSelectedSmspvaCountry(stored)
+    if (stored && /^[a-z]{2}$/.test(stored)) setSelectedSmspvaCountry(stored)
   }, [fetchServices, fetchActiveNumbers, refreshUser, fetchGlobalSettings])
 
   useEffect(() => {
@@ -821,7 +822,7 @@ export default function VerificationPage() {
       return
     }
     fetchPurchaseSms(false)
-    const interval = setInterval(() => fetchPurchaseSms(true), 12000)
+    const interval = setInterval(() => fetchPurchaseSms(true), 60000)
     return () => clearInterval(interval)
   }, [modal.result?.number_id, fetchPurchaseSms])
 
@@ -1321,60 +1322,64 @@ export default function VerificationPage() {
             </div>
           ) : (
             <div>
-              {CATEGORIES.map((cat) => {
-                const catSvcs = intlNumbers.filter(s => s.category === cat.id)
-                if (catSvcs.length === 0) return null
-                const CatIcon = cat.icon
-                return (
-                  <div key={cat.id} className="mb-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <CatIcon className="h-4 w-4 text-muted-foreground" />
-                      <h3 className="text-sm font-semibold">{cat.name}</h3>
-                    </div>
-                    <div className="grid gap-2 sm:gap-4 grid-cols-2 min-[380px]:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6">
-                      {catSvcs.map((svc) => {
-                        const isAvailable = svc.available
-                        const displayPrice = svc.ghsPrice
-                        const count = svc.count
-                        return (
-                          <motion.div
-                            key={svc.code}
-                            whileHover={{ y: isAvailable ? -2 : 0 }}
-                            className={cn("group cursor-pointer", !isAvailable && "opacity-50")}
-                            onClick={() => setSmspvaModal({ open: true, serviceCode: svc.code, serviceName: svc.name, ghsPrice: displayPrice, purchasing: false, result: null, error: null })}
-                          >
-                            <Card className={cn("h-full transition-all", isAvailable ? "hover:border-primary/40 hover:shadow-sm" : "border-dashed")}>
-                              <CardContent className="p-3 sm:p-4">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <ServiceIcon name={svc.name} fallbackIcon={CatIcon} fallbackColor={cat.color} />
-                                  <div className="flex-1 min-w-0">
-                                    <h4 className="font-semibold text-xs sm:text-sm truncate">{svc.name}</h4>
-                                    <p className="text-[10px] text-muted-foreground">STR 20min</p>
+              {intlNumbers.length === 0 ? (
+                <div className="py-12 text-center space-y-2">
+                  <Globe className="h-10 w-10 mx-auto text-muted-foreground/30" />
+                  <p className="text-muted-foreground font-medium">No services found</p>
+                  <p className="text-sm text-muted-foreground">Try selecting a different country from the dropdown above.</p>
+                </div>
+              ) : (
+                <div>
+                  {CATEGORIES.map((cat) => {
+                    const catSvcs = intlNumbers.filter(s => s.category === cat.id)
+                    if (catSvcs.length === 0) return null
+                    const CatIcon = cat.icon
+                    return (
+                      <div key={cat.id} className="mb-6">
+                        <div className="flex items-center gap-2 mb-3">
+                          <CatIcon className="h-4 w-4 text-muted-foreground" />
+                          <h3 className="text-sm font-semibold">{cat.name}</h3>
+                          <Badge variant="secondary" className="text-[10px] h-4 px-1">{catSvcs.length}</Badge>
+                        </div>
+                        <div className="grid gap-2 sm:gap-4 grid-cols-2 min-[380px]:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6">
+                          {catSvcs.map((svc) => (
+                            <motion.div
+                              key={svc.code}
+                              whileHover={{ y: -2 }}
+                              className={cn("group cursor-pointer", svc.count === 0 && svc.countKnown && "opacity-60")}
+                              onClick={() => setSmspvaModal({ open: true, serviceCode: svc.code, serviceName: svc.name, ghsPrice: svc.ghsPrice, purchasing: false, result: null, error: null })}
+                            >
+                              <Card className={cn("h-full transition-all hover:border-primary/40 hover:shadow-sm", svc.count === 0 && svc.countKnown && "border-dashed")}>
+                                <CardContent className="p-3 sm:p-4">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <ServiceIcon name={svc.name} fallbackIcon={CatIcon} fallbackColor={cat.color} />
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className="font-semibold text-xs sm:text-sm truncate">{svc.name}</h4>
+                                      <p className="text-[10px] text-muted-foreground">STR 20min</p>
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="flex items-center justify-between gap-1 flex-wrap">
-                                  <p className="font-semibold text-xs text-primary">{formatCurrency(displayPrice)}</p>
-                                  {!intlLoading && (
-                                    isAvailable ? (
+                                  <div className="flex items-center justify-between gap-1 flex-wrap">
+                                    <p className="font-semibold text-xs text-primary">{formatCurrency(svc.ghsPrice)}</p>
+                                    {svc.count > 0 ? (
                                       <Badge variant="outline" className="text-[9px] h-4 px-1 text-green-600 border-green-300 bg-green-50 dark:bg-green-950/30">
-                                        {count > 99 ? "99+" : count} avail.
+                                        {svc.count > 99 ? "99+" : svc.count} avail.
                                       </Badge>
-                                    ) : (
-                                      <Badge variant="outline" className="text-[9px] h-4 px-1 text-muted-foreground border-dashed">
-                                        None
+                                    ) : !svc.countKnown ? (
+                                      <Badge variant="outline" className="text-[9px] h-4 px-1 text-green-600 border-green-300 bg-green-50 dark:bg-green-950/30">
+                                        Available
                                       </Badge>
-                                    )
-                                  )}
-                                </div>
-                              </CardContent>
-                            </Card>
-                          </motion.div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              })}
+                                    ) : null}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
