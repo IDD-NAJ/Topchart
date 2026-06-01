@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
         user_id?: string;
       };
 
-      if (transaction.status === "success") {
+      if (transaction.status === "success" || transaction.status === "completed") {
         console.log(`[Paystack Webhook] Transaction ${reference} already processed, skipping`);
         return NextResponse.json({ received: true, skipped: true }, { status: 200 });
       }
@@ -158,6 +158,72 @@ export async function POST(req: NextRequest) {
           console.error(`[Paystack Webhook] DB error crediting wallet for failed service ${reference}:`, dbError);
         }
         return NextResponse.json({ received: true, refunded_to_wallet: true }, { status: 200 });
+      }
+
+      // Auto-finalize giftcards on Paystack success
+      if ((paymentType === "giftcard") && transaction.status === "pending") {
+        try {
+          const meta = (transaction.metadata || {}) as Record<string, unknown>;
+          let code: string | undefined = typeof meta.code === "string" ? meta.code : undefined;
+          if (!code) {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            const seg = () => Array.from({ length: 4 }).map(() => chars[Math.floor(Math.random() * chars.length)]).join("");
+            code = `${seg()}-${seg()}-${seg()}-${seg()}`;
+          }
+          await sql`
+            UPDATE transactions
+            SET status = 'completed',
+                metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+                  giftcard_code: null,
+                })}::jsonb,
+                payment_channel = ${data.channel},
+                card_type = ${data.authorization?.card_type},
+                card_last4 = ${data.authorization?.last4},
+                bank_name = ${data.authorization?.bank},
+                paid_at = ${data.paid_at ? new Date(data.paid_at).toISOString() : null},
+                ip_address = ${data.ip_address},
+                updated_at = NOW()
+            WHERE reference = ${reference}
+          `;
+          await sql`
+            UPDATE transactions
+            SET metadata = metadata || jsonb_build_object('code', ${code}, 'paystack_id', ${data.id}, 'gateway_response', ${data.gateway_response})
+            WHERE reference = ${reference}
+          `;
+        } catch (dbError) {
+          console.error(`[Paystack Webhook] Giftcard finalize error ${reference}:`, dbError);
+        }
+        return NextResponse.json({ received: true, giftcard_completed: true }, { status: 200 });
+      }
+
+      // Auto-finalize bills on Paystack success
+      if ((paymentType === "bill_payment") && transaction.status === "pending") {
+        try {
+          const receipt = `RCT-${Date.now()}`;
+          await sql`
+            UPDATE transactions
+            SET status = 'completed',
+                metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+                  receipt: null,
+                })}::jsonb,
+                payment_channel = ${data.channel},
+                card_type = ${data.authorization?.card_type},
+                card_last4 = ${data.authorization?.last4},
+                bank_name = ${data.authorization?.bank},
+                paid_at = ${data.paid_at ? new Date(data.paid_at).toISOString() : null},
+                ip_address = ${data.ip_address},
+                updated_at = NOW()
+            WHERE reference = ${reference}
+          `;
+          await sql`
+            UPDATE transactions
+            SET metadata = metadata || jsonb_build_object('receipt', ${receipt}, 'paystack_id', ${data.id}, 'gateway_response', ${data.gateway_response})
+            WHERE reference = ${reference}
+          `;
+        } catch (dbError) {
+          console.error(`[Paystack Webhook] Bill finalize error ${reference}:`, dbError);
+        }
+        return NextResponse.json({ received: true, bill_completed: true }, { status: 200 });
       }
 
       if (isServicePurchase && transaction.status === "pending") {
@@ -268,6 +334,19 @@ export async function POST(req: NextRequest) {
           }
         }
         
+        // eSIM orders: mark order as processing after Paystack success
+        if (paymentType === 'esim_phone' || paymentType === 'esim_data') {
+          try {
+            await sql`
+              UPDATE esim_orders
+              SET processing_status = 'processing', updated_at = NOW()
+              WHERE transaction_reference = ${transaction.id}
+            `;
+          } catch (esimErr) {
+            console.error(`[Paystack Webhook] eSIM processing update failed for ${reference}:`, esimErr);
+          }
+        }
+
         // For other service purchases, just update metadata
         try {
           await sql`

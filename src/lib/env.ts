@@ -20,6 +20,11 @@ const envSchema = z.object({
   DATAMART_BASE_URL: optionalUrl,
   DATAMART_WEBHOOK_SECRET: z.string().optional(),
   DATAMART_SIGNING_SECRET: z.string().optional(),
+  HUBNET_API_KEY: z.string().optional(),
+  HUBNET_BASE_URL: optionalUrl,
+  HUBNET_PURCHASE_PATH: z.string().optional(),
+  HUBNET_PLANS_PATH: z.string().optional(),
+  HUBNET_TIMEOUT_MS: z.string().optional(),
   NEXT_PUBLIC_WHATSAPP_NUMBER: z.string().optional(),
   NEXT_PUBLIC_WHATSAPP_ENABLED: z.enum(["true", "false"]).optional(),
   NEXT_PUBLIC_TAWK_ENABLED: z.enum(["true", "false"]).optional(),
@@ -105,6 +110,15 @@ const datamartEnvSchema = z.object({
 });
 type DatamartEnv = z.infer<typeof datamartEnvSchema>;
 
+const hubnetEnvSchema = z.object({
+  HUBNET_API_KEY: z.string().min(1, "HUBNET_API_KEY is required"),
+  HUBNET_BASE_URL: optionalUrl,
+  HUBNET_PURCHASE_PATH: z.string().optional(),
+  HUBNET_PLANS_PATH: z.string().optional(),
+  HUBNET_TIMEOUT_MS: z.string().optional(),
+});
+type HubnetEnv = z.infer<typeof hubnetEnvSchema>;
+
 const reloadlyEnvSchema = z.object({
   RELOADLY_CLIENT_ID: z.string().min(1, "RELOADLY_CLIENT_ID is required"),
   RELOADLY_CLIENT_SECRET: z.string().min(1, "RELOADLY_CLIENT_SECRET is required"),
@@ -157,6 +171,7 @@ let cachedDatabaseEnv: DatabaseEnv | null = null;
 let cachedPaystackEnv: PaystackEnv | null = null;
 let cachedSupabaseStorageEnv: SupabaseStorageEnv | null = null;
 let cachedDatamartEnv: DatamartEnv | null = null;
+let cachedHubnetEnv: HubnetEnv | null = null;
 let cachedReloadlyEnv: ReloadlyEnv | null = null;
 let cachedNineProxyEnv: NineProxyEnv | null = null;
 let cachedAiraloEnv: AiraloEnv | null = null;
@@ -258,6 +273,16 @@ export function getDatamartEnv(): DatamartEnv {
 
   cachedDatamartEnv = parsed.data;
   return cachedDatamartEnv;
+}
+
+export function getHubnetEnv(): HubnetEnv | null {
+  if (cachedHubnetEnv) return cachedHubnetEnv;
+  const parsed = hubnetEnvSchema.safeParse(process.env);
+  if (!parsed.success) {
+    return null;
+  }
+  cachedHubnetEnv = parsed.data;
+  return cachedHubnetEnv;
 }
 
 export function getReloadlyEnv(): ReloadlyEnv {

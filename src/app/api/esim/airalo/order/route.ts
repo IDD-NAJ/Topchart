@@ -6,7 +6,7 @@ import { initializePaystackTransaction, generatePaystackReference } from "@/lib/
 
 export const runtime = "nodejs"
 
-const PAYSTACK_SURCHARGE = 0.05
+const PAYSTACK_SURCHARGE = 0.04
 
 async function getAuthenticatedUserId(): Promise<string | null> {
   const cookieStore = await cookies()

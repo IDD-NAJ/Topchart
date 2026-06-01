@@ -5,7 +5,7 @@ import { initializePaystackTransaction, generatePaystackReference } from "@/lib/
 
 export const runtime = "nodejs"
 
-const PAYSTACK_SURCHARGE = 0.05
+const PAYSTACK_SURCHARGE = 0.04
 
 function generateGiftCode(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -149,11 +149,19 @@ export async function POST(request: NextRequest) {
         )
       `
 
+      const baseUrl =
+        request.headers.get("origin") ||
+        (request.nextUrl && request.nextUrl.origin) ||
+        process.env.NEXT_PUBLIC_APP_URL ||
+        ""
+      const callbackUrl = baseUrl ? `${baseUrl}/dashboard/giftcards/callback?reference=${reference}` : undefined
+
       const result = await initializePaystackTransaction(
         userEmail,
         Math.round(chargeAmount * 100),
         reference,
-        { user_id: userId, transaction_type: "giftcard", card_id: cardId, denomination }
+        { user_id: userId, transaction_type: "giftcard", card_id: cardId, denomination },
+        callbackUrl
       )
 
       if (result.success && result.data) {

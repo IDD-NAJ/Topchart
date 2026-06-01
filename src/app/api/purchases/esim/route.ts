@@ -5,7 +5,7 @@ import { requireAuth } from "@/lib/auth"
 
 export const runtime = "nodejs"
 
-const PAYSTACK_SURCHARGE = 0.05
+const PAYSTACK_SURCHARGE = 0.04
 
 export async function POST(request: NextRequest) {
   try {
@@ -205,11 +205,19 @@ export async function POST(request: NextRequest) {
         throw esimError
       }
 
+      const baseUrl =
+        request.headers.get("origin") ||
+        (request.nextUrl && request.nextUrl.origin) ||
+        process.env.NEXT_PUBLIC_APP_URL ||
+        ""
+      const callbackUrl = baseUrl ? `${baseUrl}/dashboard/esim/callback?reference=${reference}` : undefined
+
       const result = await initializePaystackTransaction(
         userEmail,
         Math.round(chargeAmount * 100),
         reference,
-        { user_id: userId, transaction_type: transactionType, plan_type: planType, description }
+        { user_id: userId, transaction_type: transactionType, plan_type: planType, description },
+        callbackUrl
       )
 
       if (result.success && result.data) {

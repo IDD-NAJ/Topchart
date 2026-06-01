@@ -12,6 +12,7 @@ import {
   fetchDatamartOrderByIdempotency,
   applyDatamartTransactionAfterProviderSubmit,
 } from "@/lib/datamart-purchase-shared";
+import { hubnetPurchase } from "@/lib/providers/hubnet";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -168,6 +169,22 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Purchase failed";
     console.error(`[DataMart Verify] Provider failed after Paystack success for ${reference}: ${message}`);
+    try {
+      const hubRes = await hubnetPurchase({ phoneNumber: phoneInput, network, capacity, idempotencyKey });
+      if (hubRes.success && hubRes.data) {
+        await sql`
+          UPDATE transactions
+          SET status = 'success',
+              metadata = metadata || ${JSON.stringify({ provider: "hubnet", state: "success", provider_message: hubRes.data.message || "completed" })}::jsonb,
+              updated_at = NOW()
+          WHERE reference = ${reference}
+        `;
+        return NextResponse.json({
+          success: true,
+          data: { status: "success", provider: "hubnet" },
+        });
+      }
+    } catch {}
     await sql`
       UPDATE transactions
       SET status = 'refunded',

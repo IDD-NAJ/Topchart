@@ -7,6 +7,7 @@ import {
   createDatamartOrder,
   submitDatamartPurchase,
 } from "@/lib/datamart-v2";
+import { hubnetPurchase } from "@/lib/providers/hubnet";
 import {
   resolveDatamartPurchaseIntent,
   fetchDatamartOrderByIdempotency,
@@ -182,6 +183,22 @@ export async function POST(request: NextRequest) {
           newBalance,
         });
       }
+
+      try {
+        const hubRes = await hubnetPurchase({ phoneNumber: phoneInput, network, capacity, idempotencyKey });
+        if (hubRes.success && hubRes.data) {
+          await sql`
+            UPDATE transactions
+            SET status = 'success',
+                metadata = metadata || ${JSON.stringify({ provider: "hubnet", state: "success", provider_message: hubRes.data.message || "completed" })}::jsonb,
+                updated_at = NOW()
+            WHERE reference = ${reference}
+          `;
+          const updatedUser = await sql`SELECT wallet_balance FROM users WHERE id = ${userId} LIMIT 1`;
+          const newBalance = updatedUser.length > 0 ? Number((updatedUser[0] as { wallet_balance: unknown }).wallet_balance) : undefined;
+          return NextResponse.json({ success: true, data: { provider: "hubnet", status: "success" }, idempotencyKey, correlationId, reference, newBalance });
+        }
+      } catch {}
 
       await withTransaction(async (tx) => {
         await tx(

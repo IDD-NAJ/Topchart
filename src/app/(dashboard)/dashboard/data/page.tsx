@@ -106,7 +106,7 @@ const NETWORK_TO_PROVIDER: Record<string, DatamartNetworkCode> = {
 
 const FINAL_ORDER_STATUSES = new Set(["completed", "delivered", "failed", "refunded"])
 const POLL_INTERVAL_MS = 12000
-const PAYSTACK_DATA_SURCHARGE = 0.05
+const PAYSTACK_DATA_SURCHARGE = 0.04
 
 function normalizeNetworkKey(value: string): string {
   return value.toLowerCase().replace(/[^a-z]/g, "")
@@ -912,7 +912,7 @@ export default function DataPage() {
                         <span>GH₵ {planPrice.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between w-full max-w-[240px] gap-4">
-                        <span className="text-white/70">Fee (5%)</span>
+                        <span className="text-white/70">Fee (4%)</span>
                         <span>GH₵ {planPaystackFee.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between w-full max-w-[240px] gap-4 font-bold text-green-300 text-lg mt-1">
@@ -968,7 +968,7 @@ export default function DataPage() {
                       <ExternalLink className="h-3.5 w-3.5 text-primary shrink-0" />
                       <p className="font-semibold text-sm">Paystack</p>
                     </div>
-                    <p className="text-xs text-muted-foreground">+5% processing fee</p>
+                    <p className="text-xs text-muted-foreground">+4% processing fee</p>
                   </button>
                 </div>
               </div>
@@ -1318,7 +1318,7 @@ export default function DataPage() {
                           <ExternalLink className="h-3.5 w-3.5 text-primary shrink-0" />
                           <p className="font-semibold text-sm">Paystack</p>
                         </div>
-                        <p className="text-xs text-muted-foreground">+5% fee</p>
+                        <p className="text-xs text-muted-foreground">+4% fee</p>
                       </button>
                     </div>
                   </div>
@@ -1330,7 +1330,7 @@ export default function DataPage() {
                         <span className="font-medium">GH₵ {planPrice.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Fee (5%)</span>
+                        <span className="text-muted-foreground">Fee (4%)</span>
                         <span className="font-medium">GH₵ {planPaystackFee.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between items-end pt-1">

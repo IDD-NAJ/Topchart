@@ -115,14 +115,14 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    if (transaction.status === "success") {
+    if (transaction.status === "success" || transaction.status === "completed") {
       return NextResponse.json({
         success: true,
         data: {
           status: "success",
           amount: Number(transaction.amount),
           reference,
-          message: "Payment already verified and credited",
+          message: "Payment already verified",
         },
       });
     }
@@ -160,19 +160,20 @@ export async function GET(request: NextRequest) {
               payment_channel = ${paystackData.channel},
               card_type = ${paystackData.authorization?.card_type},
               card_last4 = ${paystackData.authorization?.last4},
-                bank_name = ${paystackData.authorization?.bank},
-                paid_at = ${paystackData.paid_at ? new Date(paystackData.paid_at).toISOString() : null},
-                ip_address = ${paystackData.ip_address},
-                updated_at = NOW()
+              bank_name = ${paystackData.authorization?.bank},
+              paid_at = ${paystackData.paid_at ? new Date(paystackData.paid_at).toISOString() : null},
+              ip_address = ${paystackData.ip_address},
+              updated_at = NOW()
             WHERE reference = ${reference}
               AND status != 'success'
             RETURNING user_id, amount
-          )
-          UPDATE users
-          SET wallet_balance = wallet_balance + (SELECT amount FROM updated_tx),
-              total_deposits = total_deposits + (SELECT amount FROM updated_tx)
-          WHERE id::text = (SELECT user_id FROM updated_tx)
-        `;
+        )
+        UPDATE users
+        SET wallet_balance = wallet_balance + (SELECT amount FROM updated_tx),
+            total_deposits = total_deposits + (SELECT amount FROM updated_tx)
+        WHERE id::text = (SELECT user_id FROM updated_tx)
+          AND EXISTS (SELECT 1 FROM updated_tx)
+      `;
 
       // Get updated balance
       const userResult = await sql`

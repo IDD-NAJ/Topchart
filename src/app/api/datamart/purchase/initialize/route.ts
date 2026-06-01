@@ -14,7 +14,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const PAYSTACK_SURCHARGE = 0.05;
+const PAYSTACK_SURCHARGE = 0.04;
 
 export async function POST(request: NextRequest) {
   const correlationId = newDatamartCorrelationId();

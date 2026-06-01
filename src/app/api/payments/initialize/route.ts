@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate surcharge (5% of amount)
-    const surcharge = Number((amount * 0.05).toFixed(2));
+    const surcharge = Number((amount * 0.04).toFixed(2));
     const chargeAmount = amount + surcharge;
 
     // Generate unique reference

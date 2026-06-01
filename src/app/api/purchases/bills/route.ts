@@ -5,7 +5,7 @@ import { initializePaystackTransaction, generatePaystackReference } from "@/lib/
 
 export const runtime = "nodejs"
 
-const PAYSTACK_SURCHARGE = 0.05
+const PAYSTACK_SURCHARGE = 0.04
 
 async function getAuthenticatedUserId(): Promise<string | null> {
   const cookieStore = await cookies()
@@ -133,11 +133,19 @@ export async function POST(request: NextRequest) {
         )
       `
 
+      const baseUrl =
+        request.headers.get("origin") ||
+        (request.nextUrl && request.nextUrl.origin) ||
+        process.env.NEXT_PUBLIC_APP_URL ||
+        ""
+      const callbackUrl = baseUrl ? `${baseUrl}/dashboard/bills/callback?reference=${reference}` : undefined
+
       const result = await initializePaystackTransaction(
         userEmail,
         Math.round(chargeAmount * 100),
         reference,
-        { user_id: userId, transaction_type: "bill_payment", provider_id: providerId, account_number: accountNumber }
+        { user_id: userId, transaction_type: "bill_payment", provider_id: providerId, account_number: accountNumber },
+        callbackUrl
       )
 
       if (result.success && result.data) {

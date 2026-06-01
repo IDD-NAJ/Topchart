@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql, withTransaction } from "@/lib/db";
 import { purchaseDataBundle, resolveNetworkCode, getOrderStatus, isDatamartReachable, getReachabilityInfo } from "@/lib/datamart";
+import { hubnetPurchase } from "@/lib/providers/hubnet";
 import { logServiceEvent, apiResponse } from "@/lib/api-utils";
 
 export const runtime = "nodejs";
@@ -197,6 +198,18 @@ export async function POST(request: NextRequest) {
         );
         await tx(`UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2`, [price, userId]);
       });
+      const capacityGb = planSize ? String(parseInt(String(planSize), 10) || 1) : "1";
+      const hubRes = await hubnetPurchase({ phoneNumber: normalizedPhone, network: resolveNetworkCode(networkId), capacity: capacityGb, idempotencyKey });
+      if (hubRes.success && hubRes.data) {
+        await sql`
+          UPDATE transactions
+          SET status = 'success',
+              metadata = metadata || ${JSON.stringify({ provider: "hubnet", provider_message: hubRes.data.message || "completed" })}::jsonb,
+              updated_at = NOW()
+          WHERE reference = ${reference}
+        `;
+        return apiResponse(true, { reference, amount: price, network: networkName || networkId, phone, status: 'success', providerOrderId: hubRes.data.reference, message: 'Data bundle delivered via Hubnet' }, { correlationId });
+      }
       return apiResponse(false, `DataMart service is currently unavailable. Your wallet has been refunded.`, { status: 503, code: "SERVICE_UNAVAILABLE", correlationId, data: { reference, status: "failed" } });
     }
 
@@ -294,6 +307,23 @@ export async function POST(request: NextRequest) {
         message: "Data bundle delivered successfully"
       }, { correlationId });
     } else {
+      try {
+        const capacityGb = planSize ? String(parseInt(String(planSize), 10) || 1) : "1";
+        const hubRes = await hubnetPurchase({ phoneNumber: normalizedPhone, network: resolveNetworkCode(networkId), capacity: capacityGb, idempotencyKey });
+        if (hubRes.success && hubRes.data) {
+          await withTransaction(async (tx) => {
+            await tx(
+              `UPDATE transactions
+               SET status = 'success',
+                   metadata = metadata || $1::jsonb,
+                   updated_at = NOW()
+               WHERE reference = $2`,
+              [JSON.stringify({ provider: "hubnet", state: "success", provider_message: hubRes.data?.message || "completed" }), reference]
+            );
+          });
+          return apiResponse(true, { reference, amount: price, network: networkName || networkId, phone, status: 'success', message: 'Data bundle delivered via Hubnet' }, { correlationId });
+        }
+      } catch {}
       await withTransaction(async (tx) => {
         await tx(
           `UPDATE transactions
