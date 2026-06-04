@@ -6,6 +6,7 @@ import { AuthLoadingScreen } from "@/components/auth-loading-screen"
 import { PreloadWrapper } from '@/components/preload-wrapper'
 import { TawkChat } from '@/components/tawk-chat'
 import { WhatsAppFAB } from '@/components/whatsapp-fab'
+import Script from 'next/script'
 import '@fontsource-variable/inter'
 import '@fontsource/dm-serif-display'
 import '@fontsource/great-vibes/400.css'
@@ -400,6 +401,27 @@ export default function RootLayout({
           <TawkChat />
           <WhatsAppFAB />
         </AuthProvider>
+        {process.env.NEXT_PUBLIC_GOOGLE_ADS_ENABLED !== "false" && (
+          <>
+            <Script
+              id="gtag-base"
+              strategy="afterInteractive"
+              src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(process.env.NEXT_PUBLIC_GOOGLE_ADS_ID || 'AW-18200576208')}`}
+            />
+            <Script
+              id="gtag-init"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);} 
+                  gtag('js', new Date());
+                  gtag('config', '${process.env.NEXT_PUBLIC_GOOGLE_ADS_ID || 'AW-18200576208'}');
+                `,
+              }}
+            />
+          </>
+        )}
         <Analytics />
         {/* Client-side error tracking disabled to prevent noise */}
       </body>

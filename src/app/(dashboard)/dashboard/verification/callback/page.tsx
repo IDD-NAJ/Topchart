@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/networks"
 import { cn } from "@/lib/utils"
 import { Loader2, CheckCircle, XCircle, Copy, Check, ArrowLeft, RefreshCw, MessageSquare, History, AlertCircle } from "lucide-react"
+import { trackAdsPurchase } from "@/lib/ads"
 
 type State =
   | { phase: "verifying" }
@@ -58,6 +59,7 @@ function CallbackContent() {
           type: data?.data?.type,
           ltr_days: data?.data?.ltr_days ?? null,
         })
+        try { trackAdsPurchase(reference) } catch {}
       } else if (data?.data?.status === "pending" && attempts < 5) {
         setState({ phase: "pending" })
         setAttempts((a) => a + 1)

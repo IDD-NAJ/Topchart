@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { trackAdsPurchase } from "@/lib/ads";
 
 export default function PaymentCallbackPage() {
   const searchParams = useSearchParams();
@@ -40,6 +41,7 @@ export default function PaymentCallbackPage() {
         setStatus("success");
         setMessage("Payment verified. Redirecting to your reseller status...");
         toast.success("Payment verified successfully");
+        try { trackAdsPurchase(reference) } catch {}
         setTimeout(() => {
           router.replace("/dashboard/reseller/status");
         }, 800);

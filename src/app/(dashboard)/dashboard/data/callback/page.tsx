@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle, XCircle, ArrowLeft } from "lucide-react"
+import { trackAdsPurchase } from "@/lib/ads"
 
 type Phase = "verifying" | "pending" | "success" | "error"
 
@@ -47,6 +48,7 @@ function CallbackInner() {
           const order = d?.order as Record<string, unknown> | null | undefined
           const oref = order?.order_reference ? String(order.order_reference) : ""
           const idk = typeof d?.idempotency_key === "string" ? d.idempotency_key : ""
+          try { trackAdsPurchase(reference) } catch {}
           const qp = new URLSearchParams()
           if (oref) qp.set("oref", oref)
           if (idk) qp.set("idc", idk)

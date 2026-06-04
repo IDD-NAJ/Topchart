@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle, XCircle, ArrowLeft } from "lucide-react"
+import { trackAdsPurchase } from "@/lib/ads"
 
 type Phase = "verifying" | "pending" | "success" | "error"
 
@@ -42,6 +43,7 @@ function CallbackInner() {
 
         if (data?.success && status === "success") {
           setPhase("success")
+          try { trackAdsPurchase(reference) } catch {}
           router.replace(`/dashboard?giftcard_success=1&reference=${encodeURIComponent(reference)}`)
           return
         }
