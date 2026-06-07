@@ -47,6 +47,7 @@ import {
 import { SMSPVA_COUNTRIES } from "@/lib/smspva"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
+import { trackAdsPurchase } from "@/lib/ads"
 
 const CATEGORIES = [
   { id: "social_media", name: "Social Media", shortName: "Social", icon: MessageCircle, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/40" },
@@ -870,6 +871,12 @@ export default function VerificationPage() {
       let data: any = null
       try { data = await res.json() } catch { /* non-JSON response */ }
       if (data?.success) {
+        try {
+          trackAdsPurchase(data?.data?.reference, {
+            value: data?.data?.price,
+            currency: "GHS",
+          })
+        } catch {}
         setModal(m => ({
           ...m,
           purchasing: false,

@@ -23,6 +23,7 @@ import { useAuth } from "@/lib/auth-context"
 import { addFavorite } from "@/lib/actions/favorites"
 import { FavoriteNumbers } from "@/components/favorite-numbers"
 import { toast } from "sonner"
+import { trackAdsPurchase } from "@/lib/ads"
 import { Label } from "@/components/ui/label"
 import { PurchaseCard } from "@/components/purchase/PurchaseCard"
 import { RecentRecipients } from "@/components/purchase/RecentRecipients"
@@ -627,6 +628,14 @@ export default function DataPage() {
 
       setCorrelationId(result.correlationId || "")
       if (typeof result.newBalance === "number") setNewWalletBalance(result.newBalance)
+      if (paymentMethod === "wallet" && result.reference) {
+        try {
+          trackAdsPurchase(result.reference, {
+            value: selectedPlan?.effectivePrice ?? 0,
+            currency: "GHS",
+          })
+        } catch {}
+      }
       const order = result.data as DatamartOrderRow | null
       if (!order) {
         setError("Provider did not return order details. Please try again.")

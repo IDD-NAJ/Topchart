@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     if (tx.status === "completed" || tx.status === "success") {
       const meta = (tx.metadata || {}) as Record<string, unknown>;
-      return NextResponse.json({ success: true, data: { status: "success", receipt: meta.receipt || null, reference } });
+      return NextResponse.json({ success: true, data: { status: "success", receipt: meta.receipt || null, reference, amount: Number(tx.amount) } });
     }
 
     const verify = await verifyPaystackTransaction(reference);
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       WHERE reference = ${reference}
     `;
 
-    return NextResponse.json({ success: true, data: { status: "success", receipt, reference } });
+    return NextResponse.json({ success: true, data: { status: "success", receipt, reference, amount: Number(tx.amount) } });
   } catch (error) {
     console.error("Bills verify error:", error);
     return NextResponse.json({ success: false, error: "Failed to verify payment" }, { status: 500 });

@@ -33,6 +33,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { trackAdsPurchase } from "@/lib/ads"
 
 type View = "create" | "connections"
 type Step = "form" | "confirm" | "processing" | "success" | "failed"
@@ -255,6 +256,12 @@ export default function ProxiesPage() {
           window.location.href = data.authorizationUrl
           return
         }
+        try {
+          trackAdsPurchase(data.data?.orderId, {
+            value: estimatedPrice,
+            currency: "GHS",
+          })
+        } catch {}
         setOrderResult(data.data)
         setStep("success")
         toast.success("Proxy connection created!")

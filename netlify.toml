@@ -13,6 +13,8 @@
   NEXT_PUBLIC_APP_URL = "https://topchart.store"
   NEXTAUTH_URL = "https://topchart.store"
   NEXT_PUBLIC_SITE_URL = "https://topchart.store"
+  NEXT_PUBLIC_GOOGLE_ADS_ID = "AW-18200576208"
+  NEXT_PUBLIC_GOOGLE_ADS_SEND_TO = "AW-18200576208/zD3mCKe90rYcENCB2-ZD"
 
 # Important: Set these environment variables in Netlify Dashboard
 # Site Settings > Environment Variables > Environment variables for production
@@ -61,6 +63,9 @@
 # - EMAIL_PASS (for email)
 # - EMAIL_FROM (for email)
 # - CRON_SECRET (for cron jobs)
+# - NEXT_PUBLIC_GOOGLE_ADS_ENABLED (set to "false" to disable; enabled by default)
+# - NEXT_PUBLIC_GOOGLE_ADS_ID (Google Ads tag ID, default AW-18200576208)
+# - NEXT_PUBLIC_GOOGLE_ADS_SEND_TO (Purchase conversion label)
 
 # Headers for security and caching
 [[headers]]

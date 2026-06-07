@@ -12,6 +12,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
+import { trackAdsPurchase } from "@/lib/ads"
 import { motion } from "framer-motion"
 import {
   ArrowLeft,
@@ -192,6 +193,12 @@ function ServiceDetailPageContent() {
       }
       
       if (data?.success) {
+        try {
+          trackAdsPurchase(data?.data?.reference, {
+            value: data?.data?.price,
+            currency: "GHS",
+          })
+        } catch {}
         toast.success(`${purchaseType === "LTR" ? "LTR rental" : "STR number"} purchased successfully!`)
         refreshUser()
         

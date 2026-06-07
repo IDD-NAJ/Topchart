@@ -24,6 +24,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { trackAdsPurchase } from "@/lib/ads"
 
 type Step = "catalog" | "confirm" | "processing" | "success" | "failed"
 type PaymentMethod = "wallet" | "paystack"
@@ -134,6 +135,12 @@ export default function GiftCardsPage() {
           window.location.href = data.authorizationUrl
           return
         }
+        try {
+          trackAdsPurchase(data.data?.orderId, {
+            value: data.data?.amount ?? selectedDenomination,
+            currency: "GHS",
+          })
+        } catch {}
         setGiftCode(data.code || "XXXX-XXXX-XXXX-XXXX")
         setStep("success")
         toast.success("Gift card purchased!")

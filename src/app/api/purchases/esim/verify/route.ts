@@ -13,16 +13,16 @@ export async function GET(request: NextRequest) {
     }
 
     const rows = await sql`
-      SELECT id, status, metadata FROM transactions WHERE reference = ${reference} LIMIT 1
+      SELECT id, status, amount, metadata FROM transactions WHERE reference = ${reference} LIMIT 1
     `;
     if (rows.length === 0) {
       return NextResponse.json({ success: false, error: "Transaction not found" }, { status: 404 });
     }
 
-    const tx = rows[0] as { id: string; status: string; metadata: Record<string, unknown> | null };
+    const tx = rows[0] as { id: string; status: string; amount: number | string; metadata: Record<string, unknown> | null };
 
     if (tx.status === "success" || tx.status === "completed") {
-      return NextResponse.json({ success: true, data: { status: "success", reference } });
+      return NextResponse.json({ success: true, data: { status: "success", reference, amount: Number(tx.amount) } });
     }
 
     const verify = await verifyPaystackTransaction(reference);
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       WHERE reference = ${reference}
     `;
 
-    return NextResponse.json({ success: true, data: { status: "processing", reference } });
+    return NextResponse.json({ success: true, data: { status: "processing", reference, amount: Number(tx.amount) } });
   } catch (error) {
     console.error("eSIM verify error:", error);
     return NextResponse.json({ success: false, error: "Failed to verify payment" }, { status: 500 });

@@ -210,6 +210,7 @@ async function POSTHandler(request: NextRequest) {
       data: {
         application_id,
         amount: applicationFee,
+        reference: transactionId,
         status: "approved"
       }
     });

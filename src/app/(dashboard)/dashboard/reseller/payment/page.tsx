@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { trackAdsPurchase } from "@/lib/ads";
 import { secureFetch } from "@/lib/csrf";
 import { CreditCard, Wallet, ArrowLeft, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -139,6 +140,12 @@ export default function ResellerPaymentPage() {
       const data = await res.json();
 
       if (data.success) {
+        try {
+          trackAdsPurchase(data.data?.reference, {
+            value: data.data?.amount ?? application.application_fee,
+            currency: "GHS",
+          })
+        } catch {}
         toast.success("Payment successful! Your application has been approved.");
         router.push("/dashboard/reseller/status");
       } else {

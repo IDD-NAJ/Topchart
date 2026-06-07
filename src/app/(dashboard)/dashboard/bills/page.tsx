@@ -25,6 +25,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { trackAdsPurchase } from "@/lib/ads"
 
 type Step = "select" | "form" | "confirm" | "processing" | "success" | "failed"
 type PaymentMethod = "wallet" | "paystack"
@@ -150,6 +151,12 @@ export default function BillsPage() {
           window.location.href = data.authorizationUrl
           return
         }
+        try {
+          trackAdsPurchase(data.data?.orderId, {
+            value: data.data?.amount ?? numAmount,
+            currency: "GHS",
+          })
+        } catch {}
         setStep("success")
         toast.success("Bill payment successful!")
       } else {

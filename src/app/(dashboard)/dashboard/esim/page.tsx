@@ -28,6 +28,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { trackAdsPurchase } from "@/lib/ads"
 
 type ProductTab = "phone-number" | "travel-data"
 type Step = "catalog" | "processing" | "success" | "failed"
@@ -236,6 +237,12 @@ export default function ESIMPage() {
           window.location.href = data.authorizationUrl
           return
         }
+        try {
+          trackAdsPurchase(data.data?.orderId, {
+            value: currentAmount,
+            currency: "GHS",
+          })
+        } catch {}
         setStep("success")
         toast.success("Order placed successfully!")
       } else {

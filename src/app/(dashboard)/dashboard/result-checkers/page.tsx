@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
+import { trackAdsPurchase } from "@/lib/ads";
 import { motion } from "framer-motion";
 import {
   CreditCard,
@@ -146,6 +147,12 @@ export default function ResultCheckersPage() {
       const data = await res.json();
 
       if (data.success) {
+        try {
+          trackAdsPurchase(String(data.purchase?.id || cardId), {
+            value: data.purchase?.amount_paid,
+            currency: "GHS",
+          })
+        } catch {}
         toast.success("Purchase successful!");
         savePurchase({
           id: data.card.id,
