@@ -67,9 +67,6 @@ const TX_TYPE_LABELS: Record<string, string> = {
   withdrawal: "Withdrawal",
   refund: "Refund",
   result_checker: "Result Checker",
-  esim: "eSIM Purchase",
-  proxy: "Proxy Purchase",
-  giftcard: "Gift Card",
   bill: "Bill Payment",
   verification: "Number Verification",
   verification_str: "Number Verification (Short-term)",
@@ -129,30 +126,6 @@ const serviceConfig: Record<string, {
     icon: GraduationCap,
     color: "text-[#6B7280] bg-[#F3F4F6]",
     hoverColor: "group-hover:border-[#6B7280]/30"
-  },
-  [SERVICE_KEYS.ESIM]: {
-    href: "/dashboard/esim",
-    label: "eSIM",
-    description: "Digital SIM cards for global connectivity",
-    icon: Smartphone,
-    color: "text-emerald-600 bg-emerald-50",
-    hoverColor: "group-hover:border-emerald-300/50"
-  },
-  [SERVICE_KEYS.PROXY]: {
-    href: "/dashboard/proxies",
-    label: "Proxies",
-    description: "Residential, mobile & datacenter proxies",
-    icon: Shield,
-    color: "text-violet-600 bg-violet-50",
-    hoverColor: "group-hover:border-violet-300/50"
-  },
-  [SERVICE_KEYS.GIFTCARDS]: {
-    href: "/dashboard/giftcards",
-    label: "Gift Cards",
-    description: "Buy & send digital gift cards instantly",
-    icon: Gift,
-    color: "text-pink-600 bg-pink-50",
-    hoverColor: "group-hover:border-pink-300/50"
   },
   [SERVICE_KEYS.BILLS]: {
     href: "/dashboard/bills",

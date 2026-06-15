@@ -36,9 +36,6 @@ import {
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
-  Smartphone,
-  Globe2,
-  Gift,
   Receipt,
   Wrench,
 } from "lucide-react"
@@ -47,10 +44,7 @@ import { useState } from "react"
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, serviceKey: null },
   { href: "/dashboard/data", label: "Buy Data", icon: Wifi, serviceKey: SERVICE_KEYS.DATA },
-  { href: "/dashboard/esim", label: "Buy eSIM", icon: Smartphone, serviceKey: SERVICE_KEYS.ESIM },
-  { href: "/dashboard/giftcards", label: "Gift Cards", icon: Gift, serviceKey: SERVICE_KEYS.GIFTCARDS },
   { href: "/dashboard/bills", label: "Pay Bills", icon: Receipt, serviceKey: SERVICE_KEYS.BILLS },
-  { href: "/dashboard/proxies", label: "Proxies", icon: Globe2, serviceKey: SERVICE_KEYS.PROXY },
   { href: "/dashboard/verification", label: "Verification Numbers", icon: PhoneCall, serviceKey: SERVICE_KEYS.VERIFICATION },
   { href: "/dashboard/verification/history", label: "Verification History", icon: ClipboardList, indent: true, serviceKey: SERVICE_KEYS.VERIFICATION },
   { href: "/dashboard/result-checkers", label: "Result Checkers", icon: GraduationCap, serviceKey: SERVICE_KEYS.RESULT_CHECKER },

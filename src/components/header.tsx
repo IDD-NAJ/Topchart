@@ -38,9 +38,6 @@ const ICON_MAP: Record<string, any> = {
   Wifi,
   PhoneCall,
   GraduationCap,
-  Smartphone,
-  Shield,
-  Gift,
   CreditCard,
   Store,
 }
@@ -49,9 +46,6 @@ const SERVICE_KEY_MAP: Record<string, ServiceKey> = {
   "/dashboard/data": SERVICE_KEYS.DATA,
   "/dashboard/verification": SERVICE_KEYS.VERIFICATION,
   "/dashboard/result-checkers": SERVICE_KEYS.RESULT_CHECKER,
-  "/dashboard/esim": SERVICE_KEYS.ESIM,
-  "/dashboard/proxies": SERVICE_KEYS.PROXY,
-  "/dashboard/giftcards": SERVICE_KEYS.GIFTCARDS,
   "/dashboard/bills": SERVICE_KEYS.BILLS,
 }
 
@@ -79,24 +73,6 @@ const DEFAULT_SERVICE_LINKS: { href: string; label: string; description: string;
     label: "Result checkers",
     description: "Exam results and PINs",
     icon: "GraduationCap",
-  },
-  {
-    href: "/dashboard/esim",
-    label: "eSIM",
-    description: "US phone numbers & travel data eSIMs",
-    icon: "Smartphone",
-  },
-  {
-    href: "/dashboard/proxies",
-    label: "Proxies",
-    description: "Residential, mobile & datacenter proxies",
-    icon: "Shield",
-  },
-  {
-    href: "/dashboard/giftcards",
-    label: "Gift Cards",
-    description: "Digital gift cards delivered instantly",
-    icon: "Gift",
   },
   {
     href: "/dashboard/bills",

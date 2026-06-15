@@ -50,6 +50,8 @@ export default function PaymentCallbackPage() {
         setTimeout(() => {
           router.replace("/dashboard/reseller/status");
         }, 800);
+      } else if (data.data?.status === "pending") {
+        setTimeout(() => verifyPayment(), 4000);
       } else {
         setStatus("failed");
         setMessage(data.error || "Payment verification failed");

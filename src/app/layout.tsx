@@ -106,7 +106,7 @@ export const metadata: Metadata = {
         alternateName: 'Topchart Ghana',
         url: 'https://topchart.store',
         logo: 'https://topchart.store/logo.svg',
-        description: "Ghana's leading digital services platform for cheap data bundles, airtime, verification numbers, result checkers, gift cards and bill payments. Instant delivery via MTN MoMo, Telecel Cash, and AirtelTigo Money.",
+        description: "Ghana's leading digital services platform for cheap data bundles, airtime, verification numbers, result checkers, and bill payments. Instant delivery via MTN MoMo, Telecel Cash, and AirtelTigo Money.",
         email: 'support@topchart.store',
         telephone: '+233509122072',
         foundingLocation: {
@@ -195,7 +195,7 @@ export const metadata: Metadata = {
         '@type': 'WebSite',
         url: 'https://topchart.store',
         name: 'Topchart',
-        description: 'Digital services platform for cheap data bundles, airtime, verification numbers, result checkers, gift cards, and bill payments in Ghana. Instant delivery.',
+        description: 'Digital services platform for cheap data bundles, airtime, verification numbers, result checkers, and bill payments in Ghana. Instant delivery.',
         potentialAction: {
           '@type': 'SearchAction',
           target: 'https://topchart.store/search?q={search_term_string}',
@@ -342,12 +342,6 @@ export const metadata: Metadata = {
             position: 4,
             name: 'Data Reseller Programme',
             item: 'https://topchart.store/about',
-          },
-          {
-            '@type': 'ListItem',
-            position: 5,
-            name: 'eSIM Ghana',
-            item: 'https://topchart.store/dashboard/esim',
           },
         ],
       },

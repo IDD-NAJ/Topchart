@@ -26,7 +26,7 @@ interface FundWalletModalProps {
 type Step = "amount" | "redirecting" | "verifying" | "success" | "failed"
 
 export function FundWalletModal({ open, onOpenChange, pendingReference }: FundWalletModalProps) {
-  const { user, refreshUser } = useAuth()
+  const { user, refreshUser, updateBalance } = useAuth()
   const [amount, setAmount] = useState("")
   const [step, setStep] = useState<Step>("amount")
   const [error, setError] = useState("")
@@ -115,7 +115,7 @@ export function FundWalletModal({ open, onOpenChange, pendingReference }: FundWa
 
   const verifyPayment = async (ref: string) => {
     try {
-      const response = await fetch(`/api/payments/verify?reference=${encodeURIComponent(ref)}`)
+      const response = await fetch(`/api/payments/auto-verify?reference=${encodeURIComponent(ref)}`)
       let result: any
       try {
         result = await response.json()
@@ -126,11 +126,13 @@ export function FundWalletModal({ open, onOpenChange, pendingReference }: FundWa
       }
 
       if (result.success && result.data.status === "success") {
+        if (result.data.newBalance !== undefined) {
+          updateBalance(result.data.newBalance)
+        }
         await refreshUser()
         setStep("success")
       } else if (result.data?.status === "pending") {
-        // Payment still processing, wait and retry
-        setTimeout(() => verifyPayment(ref), 3000)
+        setTimeout(() => verifyPayment(ref), 4000)
       } else {
         setError(result.data?.message || result.error || "Payment verification failed")
         setStep("failed")

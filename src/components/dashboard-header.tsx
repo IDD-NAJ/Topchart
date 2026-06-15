@@ -25,8 +25,6 @@ import {
   MessageSquare,
   ShieldAlert,
   GraduationCap,
-  Smartphone,
-  Gift,
   Receipt,
 } from "lucide-react"
 
@@ -42,9 +40,6 @@ const mainNavItems = [
   { href: "/dashboard/verification", label: "Verification Numbers", icon: PhoneCall },
   { href: "/dashboard/verification/history", label: "Verification History", icon: ClipboardList, indent: true },
   { href: "/dashboard/result-checkers", label: "Result Checkers", icon: GraduationCap },
-  { href: "/dashboard/esim", label: "Buy eSIM", icon: Smartphone },
-  { href: "/dashboard/proxies", label: "Proxies", icon: Shield },
-  { href: "/dashboard/giftcards", label: "Gift Cards", icon: Gift },
   { href: "/dashboard/bills", label: "Pay Bills", icon: Receipt },
   { href: "/dashboard/history", label: "Transaction History", icon: History },
 ]

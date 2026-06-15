@@ -271,7 +271,7 @@ export async function POST(req: NextRequest) {
               console.error("9Proxy sub-user creation failed (non-fatal):", err);
             }
             
-            // Update transaction with connection details
+            // Update transaction with connection details and mark as completed
             await sql`
               UPDATE transactions
               SET status = 'completed',
@@ -347,11 +347,12 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // For other service purchases, just update metadata
+        // For other service purchases, update status to success and metadata
         try {
           await sql`
             UPDATE transactions
-            SET metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+            SET status = 'success',
+                metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
               webhook_at: new Date().toISOString(),
               paystack_id: data.id,
               paid_at: data.paid_at,
@@ -367,7 +368,7 @@ export async function POST(req: NextRequest) {
         } catch (dbError) {
           console.error(`[Paystack Webhook] DB error updating pending service ${reference}:`, dbError);
         }
-        return NextResponse.json({ received: true, service_pending: true }, { status: 200 });
+        return NextResponse.json({ received: true, service_success: true }, { status: 200 });
       }
 
       console.log(`[Paystack Webhook] Processing wallet deposit: ${reference}, amount: ${paidAmount}`);
