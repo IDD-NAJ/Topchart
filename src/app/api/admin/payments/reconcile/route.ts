@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
       SELECT id, reference, type, status, metadata, user_id
       FROM transactions
       WHERE status = 'pending'
-      AND (metadata->>'paystack_confirmed')::boolean IS TRUE
       ORDER BY updated_at DESC
       LIMIT 200
     `;
