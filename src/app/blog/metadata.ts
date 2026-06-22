@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Topchart Blog — Cheap Data Bundles Ghana, MTN Tips & Tech Guides',
-  description: 'Read guides about cheap data bundles in Ghana, MTN tricks, OTP verification numbers, internet tips, and digital services. Stay updated with the latest Ghana tech news.',
+  description: 'Read guides about cheap data bundles in Ghana, MTN tricks, OTP Foreign Numbers, internet tips, and digital services. Stay updated with the latest Ghana tech news.',
   keywords: [
     'cheap data bundles Ghana blog',
     'MTN data tips Ghana',
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://topchart.store/blog' },
   openGraph: {
     title: 'Topchart Blog — Cheap Data Bundles Ghana, MTN Tips & Tech Guides',
-    description: 'Read guides about cheap data bundles in Ghana, MTN tricks, OTP verification numbers, and digital services.',
+    description: 'Read guides about cheap data bundles in Ghana, MTN tricks, OTP Foreign Numbers, and digital services.',
     url: 'https://topchart.store/blog',
   },
 }

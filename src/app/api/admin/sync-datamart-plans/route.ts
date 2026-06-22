@@ -19,9 +19,19 @@ export async function POST(request: NextRequest) {
 
     const result = await syncDatamartPlans({ force });
 
+    console.log("[DataMart Manual Sync] Completed", {
+      syncedCount: result.syncedCount,
+      errorCount: result.errorCount,
+      priceChanges: result.priceChanges.length,
+      deactivatedCount: result.deactivatedCount,
+      source: result.source,
+      networkResults: result.networkResults,
+      rejectedPrices: result.rejectedPrices.length,
+    });
+
     return NextResponse.json({
       success: true,
-      message: `Sync completed. Synced ${result.syncedCount} plans, ${result.errorCount} errors, ${result.priceChanges.length} price changes.`,
+      message: `Sync completed. Synced ${result.syncedCount} plans, ${result.errorCount} errors, ${result.priceChanges.length} price changes, ${result.rejectedPrices.length} rejected prices.`,
       ...result,
     });
   } catch (error) {

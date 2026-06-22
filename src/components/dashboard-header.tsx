@@ -37,7 +37,7 @@ import { NotificationsPanel } from "@/components/notifications-panel"
 const mainNavItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/data", label: "Buy Data", icon: Wifi },
-  { href: "/dashboard/verification", label: "Verification Numbers", icon: PhoneCall },
+  { href: "/dashboard/verification", label: "Foreign Numbers", icon: PhoneCall },
   { href: "/dashboard/verification/history", label: "Verification History", icon: ClipboardList, indent: true },
   { href: "/dashboard/result-checkers", label: "Result Checkers", icon: GraduationCap },
   { href: "/dashboard/bills", label: "Pay Bills", icon: Receipt },

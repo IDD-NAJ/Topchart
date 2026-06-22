@@ -21,7 +21,7 @@ export const TICKET_CATEGORIES = [
   "Payment & Billing",
   "Account & Security",
   "Data & Airtime",
-  "Verification Numbers",
+  "Foreign Numbers",
   "Technical Issue",
   "Reseller",
   "Other",

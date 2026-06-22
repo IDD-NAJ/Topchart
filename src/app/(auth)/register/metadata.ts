@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Register for Topchart Ghana | Create Free Account',
-  description: 'Create a free Topchart account to buy cheap data bundles, airtime, verification numbers and more in Ghana. Instant signup, no fees.',
+  description: 'Create a free Topchart account to buy cheap data bundles, airtime, Foreign Numbers and more in Ghana. Instant signup, no fees.',
   keywords: [
     'register Topchart Ghana',
     'create account Ghana',

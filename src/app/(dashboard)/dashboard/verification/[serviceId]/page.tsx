@@ -311,7 +311,7 @@ function ServiceDetailPageContent() {
 
         <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight truncate">{service.name}</h1>
-          <p className="text-muted-foreground mt-2 text-sm sm:text-base">Your verification number</p>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">Your Foreign Number</p>
         </div>
 
         {/* Number Card */}

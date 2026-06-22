@@ -18,6 +18,10 @@ const NETWORK_NAMES_TO_UUID: Record<string, string> = {
   AIRTELTIGO: "a1b2c3d4-0003-0000-0000-000000000003",
 };
 
+const PRICE_CHANGE_THRESHOLD_PERCENT = 5;
+const MIN_VALID_PRICE = 0.1;
+const MAX_VALID_PRICE = 1000;
+
 async function getNetworkUuidMap(): Promise<Record<string, string>> {
   try {
     const rows = await sql`SELECT id, name FROM networks`;
@@ -34,6 +38,35 @@ async function getNetworkUuidMap(): Promise<Record<string, string>> {
 
 function normalizeCategoryKey(value: unknown): string {
   return String(value || "").trim().toUpperCase();
+}
+
+function validatePrice(price: number, oldPrice: number | null): { valid: boolean; reason?: string } {
+  if (!Number.isFinite(price) || price <= 0) {
+    return { valid: false, reason: `Price must be positive and finite, got ${price}` };
+  }
+  if (price < MIN_VALID_PRICE) {
+    return { valid: false, reason: `Price below minimum threshold (${MIN_VALID_PRICE}), got ${price}` };
+  }
+  if (price > MAX_VALID_PRICE) {
+    return { valid: false, reason: `Price above maximum threshold (${MAX_VALID_PRICE}), got ${price}` };
+  }
+  if (oldPrice && oldPrice > 0) {
+    const percentChange = Math.abs((price - oldPrice) / oldPrice) * 100;
+    if (percentChange < PRICE_CHANGE_THRESHOLD_PERCENT) {
+      return { valid: false, reason: `Price change below threshold (${PRICE_CHANGE_THRESHOLD_PERCENT}%), changed by ${percentChange.toFixed(2)}%` };
+    }
+  }
+  return { valid: true };
+}
+
+function logStructured(level: "info" | "warn" | "error", message: string, data: any) {
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    level,
+    message,
+    ...data,
+  };
+  console.log(JSON.stringify(logEntry));
 }
 
 export async function getLastSuccessfulSync(): Promise<{ syncedAt: string | null; hoursAgo: number | null; syncedCount: number }> {
@@ -55,11 +88,13 @@ export interface SyncResult {
   syncedCount: number;
   errorCount: number;
   errors: string[];
-  priceChanges: Array<{ bundleId: string; oldPrice: number; newPrice: number }>;
+  priceChanges: Array<{ bundleId: string; oldPrice: number; newPrice: number; network: string; capacity: string; percentChange: number }>;
   deactivatedCount: number;
   syncedAt: string;
   lastSuccessfulSyncAt: string | null;
   source: "api" | "website";
+  networkResults: Array<{ network: string; syncedCount: number; errorCount: number; priceChangesCount: number }>;
+  rejectedPrices: Array<{ bundleId: string; price: number; reason: string }>;
 }
 
 export interface SyncOptions {
@@ -335,6 +370,8 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
   const priceChanges: SyncResult["priceChanges"] = [];
   const syncedPlanKeys: Set<string> = new Set();
   let source: "api" | "website" = "api";
+  const networkResults: SyncResult["networkResults"] = [];
+  const rejectedPrices: SyncResult["rejectedPrices"] = [];
 
   let lastSuccessfulSyncAt: string | null = null;
   try {
@@ -364,27 +401,38 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
   }
 
   for (const code of targetNetworkCodes) {
+    const networkStartTime = Date.now();
+    let networkSyncedCount = 0;
+    let networkErrorCount = 0;
+    let networkPriceChangesCount = 0;
+    
     try {
       const plansResult = await getDataPackages(code);
       if (!plansResult.success || !plansResult.data) {
+        networkErrorCount++;
         errorCount++;
         errors.push(`Failed to fetch packages for ${code}: ${plansResult.error}`);
+        networkResults.push({ network: code, syncedCount: 0, errorCount: networkErrorCount, priceChangesCount: 0 });
         continue;
       }
 
       const packages_ = plansResult.data;
       if (packages_.length === 0) {
         console.warn(`[DataMart Sync] API returned 0 packages for ${code} — skipping to protect existing DB data`);
+        networkErrorCount++;
         errorCount++;
         errors.push(`API returned empty packages for ${code} — DB data preserved`);
+        networkResults.push({ network: code, syncedCount: 0, errorCount: networkErrorCount, priceChangesCount: 0 });
         continue;
       }
       const displayName = getNetworkDisplayName(code);
       const dbNetworkCode = DATAMART_TO_DB_NETWORK[code];
       const networkUuid = networkUuidMap[dbNetworkCode.toUpperCase()];
       if (!networkUuid) {
+        networkErrorCount++;
         errorCount++;
         errors.push(`No network UUID found for ${dbNetworkCode}`);
+        networkResults.push({ network: code, syncedCount: 0, errorCount: networkErrorCount, priceChangesCount: 0 });
         continue;
       }
       const categoryName = `${dbNetworkCode} Data Bundles`;
@@ -458,11 +506,39 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
           }
 
           if (!force && existingPlan) {
-            if (Number(existingPlan.price) !== providerPrice) {
+            const priceValidation = validatePrice(providerPrice, Number(existingPlan.price));
+            if (!priceValidation.valid) {
+              rejectedPrices.push({
+                bundleId: String(existingPlan.id || bundleId),
+                price: providerPrice,
+                reason: priceValidation.reason || "Unknown validation error",
+              });
+              logStructured("warn", "Price change rejected", {
+                bundleId: String(existingPlan.id || bundleId),
+                network: code,
+                capacity: pkg.capacity,
+                oldPrice: Number(existingPlan.price),
+                newPrice: providerPrice,
+                reason: priceValidation.reason,
+              });
+            } else if (Number(existingPlan.price) !== providerPrice) {
+              const percentChange = ((providerPrice - Number(existingPlan.price)) / Number(existingPlan.price)) * 100;
               priceChanges.push({
                 bundleId: String(existingPlan.id || bundleId),
                 oldPrice: Number(existingPlan.price),
                 newPrice: providerPrice,
+                network: code,
+                capacity: pkg.capacity,
+                percentChange,
+              });
+              networkPriceChangesCount++;
+              logStructured("info", "Price updated", {
+                bundleId: String(existingPlan.id || bundleId),
+                network: code,
+                capacity: pkg.capacity,
+                oldPrice: Number(existingPlan.price),
+                newPrice: providerPrice,
+                percentChange: percentChange.toFixed(2),
               });
             }
           }
@@ -488,15 +564,35 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
           }
 
           syncedCount++;
+          networkSyncedCount++;
           syncedPlanKeys.add(`${networkUuid}:${datamartPlanId}:${datamartPlanType}`);
         } catch (planError) {
+          networkErrorCount++;
           errorCount++;
           errors.push(`Failed to sync ${code}_${pkg.capacity}GB: ${planError instanceof Error ? planError.message : String(planError)}`);
         }
       }
+      
+      const networkDuration = Date.now() - networkStartTime;
+      networkResults.push({
+        network: code,
+        syncedCount: networkSyncedCount,
+        errorCount: networkErrorCount,
+        priceChangesCount: networkPriceChangesCount,
+      });
+      
+      logStructured("info", "Network sync completed", {
+        network: code,
+        syncedCount: networkSyncedCount,
+        errorCount: networkErrorCount,
+        priceChangesCount: networkPriceChangesCount,
+        duration: networkDuration,
+      });
     } catch (networkError) {
+      networkErrorCount++;
       errorCount++;
       errors.push(`Failed to process ${code}: ${networkError instanceof Error ? networkError.message : String(networkError)}`);
+      networkResults.push({ network: code, syncedCount: 0, errorCount: networkErrorCount, priceChangesCount: 0 });
     }
   }
 
@@ -569,8 +665,23 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
               syncedCount++;
               syncedPlanKeys.add(`${networkUuid}:${datamartPlanId}:${datamartPlanType}`);
             } else {
-              if (Number(existingPlan.price) !== providerPrice) {
-                priceChanges.push({ bundleId: String(existingPlan.id || bundleId), oldPrice: Number(existingPlan.price), newPrice: providerPrice });
+              const priceValidation = validatePrice(providerPrice, Number(existingPlan.price));
+              if (!priceValidation.valid) {
+                rejectedPrices.push({
+                  bundleId: String(existingPlan.id || bundleId),
+                  price: providerPrice,
+                  reason: priceValidation.reason || "Unknown validation error",
+                });
+              } else if (Number(existingPlan.price) !== providerPrice) {
+                const percentChange = ((providerPrice - Number(existingPlan.price)) / Number(existingPlan.price)) * 100;
+                priceChanges.push({
+                  bundleId: String(existingPlan.id || bundleId),
+                  oldPrice: Number(existingPlan.price),
+                  newPrice: providerPrice,
+                  network: networkCode,
+                  capacity: pkg.capacity,
+                  percentChange,
+                });
               }
               const extra6 = extraNetworkCols(c, networkUuid, dbNetworkCode, 4);
               await sqlUnsafe(
@@ -637,7 +748,17 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
     lastSuccessfulSyncAt = syncedAt;
   }
 
-  console.log("[DataMart Sync] Completed", { requestId, syncedCount, errorCount, priceChanges: priceChanges.length, duration });
+  logStructured("info", "Sync completed", {
+    requestId,
+    syncedCount,
+    errorCount,
+    priceChanges: priceChanges.length,
+    deactivatedCount,
+    duration,
+    source,
+    networkResults,
+    rejectedPrices: rejectedPrices.length,
+  });
 
   return {
     syncedCount,
@@ -648,5 +769,7 @@ export async function syncDatamartPlans(options: SyncOptions = {}): Promise<Sync
     syncedAt,
     lastSuccessfulSyncAt,
     source,
+    networkResults,
+    rejectedPrices,
   };
 }

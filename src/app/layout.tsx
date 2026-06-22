@@ -70,14 +70,14 @@ export const metadata: Metadata = {
     locale: 'en_GH',
     url: 'https://topchart.store',
     siteName: 'Topchart',
-    title: 'Topchart — Cheap Data Bundles, Airtime & Verification Numbers Ghana',
+    title: 'Topchart — Cheap Data Bundles, Airtime & Foreign Numbers Ghana',
     description: 'Buy cheap MTN, Telecel & AirtelTigo data bundles instantly. Get virtual numbers for OTP & SMS verification in Ghana. Fast, secure & reliable.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Topchart Ghana — Cheap Data Bundles, Airtime & Verification Numbers',
+        alt: 'Topchart Ghana — Cheap Data Bundles, Airtime & Foreign Numbers',
       },
     ],
   },
@@ -85,8 +85,8 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     site: '@topchartgh',
     creator: '@topchartgh',
-    title: 'Topchart — Cheap Data Bundles & Verification Numbers Ghana',
-    description: 'Buy cheap data bundles, airtime & OTP verification numbers in Ghana instantly.',
+    title: 'Topchart — Cheap Data Bundles & Foreign Numbers Ghana',
+    description: 'Buy cheap data bundles, airtime & OTP Foreign Numbers in Ghana instantly.',
     images: ['/og-image.png'],
   },
   icons: {
@@ -106,7 +106,7 @@ export const metadata: Metadata = {
         alternateName: 'Topchart Ghana',
         url: 'https://topchart.store',
         logo: 'https://topchart.store/logo.svg',
-        description: "Ghana's leading digital services platform for cheap data bundles, airtime, verification numbers, result checkers, and bill payments. Instant delivery via MTN MoMo, Telecel Cash, and AirtelTigo Money.",
+        description: "Ghana's leading digital services platform for cheap data bundles, airtime, Foreign Numbers, result checkers, and bill payments. Instant delivery via MTN MoMo, Telecel Cash, and AirtelTigo Money.",
         email: 'support@topchart.store',
         telephone: '+233509122072',
         foundingLocation: {
@@ -195,7 +195,7 @@ export const metadata: Metadata = {
         '@type': 'WebSite',
         url: 'https://topchart.store',
         name: 'Topchart',
-        description: 'Digital services platform for cheap data bundles, airtime, verification numbers, result checkers, and bill payments in Ghana. Instant delivery.',
+        description: 'Digital services platform for cheap data bundles, airtime, Foreign Numbers, result checkers, and bill payments in Ghana. Instant delivery.',
         potentialAction: {
           '@type': 'SearchAction',
           target: 'https://topchart.store/search?q={search_term_string}',
@@ -301,7 +301,7 @@ export const metadata: Metadata = {
             name: 'How do I become a data reseller in Ghana?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'To become a data reseller in Ghana, join the Topchart reseller programme. You can earn daily commissions reselling cheap data bundles, airtime, and verification numbers under your own brand. Sign up on our dashboard and start earning today.',
+              text: 'To become a data reseller in Ghana, join the Topchart reseller programme. You can earn daily commissions reselling cheap data bundles, airtime, and Foreign Numbers under your own brand. Sign up on our dashboard and start earning today.',
             },
           },
           {
@@ -328,7 +328,7 @@ export const metadata: Metadata = {
           {
             '@type': 'ListItem',
             position: 2,
-            name: 'Verification Numbers Ghana',
+            name: 'Foreign Numbers Ghana',
             item: 'https://topchart.store/dashboard/verification',
           },
           {

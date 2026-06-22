@@ -34,11 +34,16 @@
 # - DATAMART_BASE_URL (for data bundles)
 # - DATAMART_WEBHOOK_SECRET (for data bundles)
 # - DATAMART_SIGNING_SECRET (for data bundles)
-# - PVADEALS_API_KEY (for verification numbers)
-# - PVADEALS_BASE_URL (for verification numbers)
-# - PVADEALS_MARKUP_PERCENT (for verification numbers)
-# - USD_TO_GHS_RATE (for verification numbers)
-# - NEXT_PUBLIC_USD_TO_GHS_RATE (for verification numbers)
+# - HUBNET_API_KEY (for data bundles - provider switching)
+# - HUBNET_BASE_URL (for data bundles - provider switching, optional)
+# - HUBNET_PURCHASE_PATH (for data bundles - provider switching, optional)
+# - HUBNET_PLANS_PATH (for data bundles - provider switching, optional)
+# - HUBNET_TIMEOUT_MS (for data bundles - provider switching, optional)
+# - PVADEALS_API_KEY (for Foreign Numbers)
+# - PVADEALS_BASE_URL (for Foreign Numbers)
+# - PVADEALS_MARKUP_PERCENT (for Foreign Numbers)
+# - USD_TO_GHS_RATE (for Foreign Numbers)
+# - NEXT_PUBLIC_USD_TO_GHS_RATE (for Foreign Numbers)
 # - RELOADLY_CLIENT_ID (for airtime/data)
 # - RELOADLY_CLIENT_SECRET (for airtime/data)
 # - RELOADLY_BASE_URL (for airtime/data)
@@ -119,4 +124,4 @@
 
 [[scheduled]]
   path = "/api/admin/sync-datamart-plans-scheduled"
-  schedule = "0 */6 * * *"
+  schedule = "0 * * * *"

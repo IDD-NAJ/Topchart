@@ -57,7 +57,7 @@ export default function CapeCoastDataLandingPage() {
                   href="/dashboard/verification"
                   className="inline-flex items-center justify-center rounded-lg border-2 border-neutral-200 px-8 py-3 font-semibold text-neutral-700 transition-colors hover:border-primary hover:text-primary"
                 >
-                  Verification Numbers
+                  Foreign Numbers
                 </Link>
               </div>
             </div>

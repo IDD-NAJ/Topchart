@@ -51,9 +51,9 @@ export const BLOG_CATEGORIES = {
     description: 'Everything about data bundles in Ghana - MTN, Telecel, AirtelTigo plans, prices, and tips.',
   },
   verificationNumbers: {
-    name: 'Verification Numbers',
+    name: 'Foreign Numbers',
     slug: 'verification-numbers',
-    description: 'SMS verification numbers, OTP numbers, virtual numbers for WhatsApp, Telegram, Facebook, and more.',
+    description: 'SMS Foreign Numbers, OTP numbers, virtual numbers for WhatsApp, Telegram, Facebook, and more.',
   },
   airtime: {
     name: 'Airtime',
@@ -99,9 +99,9 @@ export const BLOG_POST_TEMPLATES = {
     keywords: ['{topic} data bundles Ghana', 'buy {topic} data online', 'cheap {topic} bundles', '{topic} internet Ghana'],
   },
   verificationNumbers: {
-    title: '{platform} Verification Number Ghana: Complete Guide',
-    description: 'Learn how to get {platform} verification numbers in Ghana. Step-by-step guide, prices, tips, and everything you need to know.',
-    keywords: ['{platform} verification number', 'buy {platform} number Ghana', 'cheap {platform} OTP', 'virtual {platform} number'],
+    title: '{platform} Foreign Number Ghana: Complete Guide',
+    description: 'Learn how to get {platform} Foreign Numbers in Ghana. Step-by-step guide, prices, tips, and everything you need to know.',
+    keywords: ['{platform} Foreign Number', 'buy {platform} number Ghana', 'cheap {platform} OTP', 'virtual {platform} number'],
   },
   airtime: {
     title: '{network} Airtime Ghana: How to Buy Online',

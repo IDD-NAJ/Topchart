@@ -3,14 +3,14 @@ import Link from 'next/link'
 import { Phone, MessageCircle, Shield, Zap, Globe, CheckCircle } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Buy Verification Numbers Ghana | Cheap SMS & OTP Virtual Numbers',
-  description: 'Buy cheap SMS verification numbers and OTP virtual numbers in Ghana. Get WhatsApp, Telegram, Facebook, Google verification numbers instantly. Lowest prices guaranteed.',
+  title: 'Buy Foreign Numbers Ghana | Cheap SMS & OTP Virtual Numbers',
+  description: 'Buy cheap SMS Foreign Numbers and OTP virtual numbers in Ghana. Get WhatsApp, Telegram, Facebook, Google Foreign Numbers instantly. Lowest prices guaranteed.',
   keywords: [
-    'buy verification numbers Ghana',
-    'cheap SMS verification numbers',
+    'buy Foreign Numbers Ghana',
+    'cheap SMS Foreign Numbers',
     'virtual numbers for OTP',
-    'WhatsApp verification number',
-    'Telegram verification number',
+    'WhatsApp Foreign Number',
+    'Telegram Foreign Number',
     'temporary phone number',
     'online SMS verification',
     'cheap OTP numbers',
@@ -22,8 +22,8 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: 'https://topchart.store/buy-verification-numbers-ghana' },
   openGraph: {
-    title: 'Buy Verification Numbers Ghana | Cheap SMS & OTP Virtual Numbers',
-    description: 'Get cheap SMS verification numbers and OTP virtual numbers for WhatsApp, Telegram, Facebook, Google. Instant delivery, lowest prices.',
+    title: 'Buy Foreign Numbers Ghana | Cheap SMS & OTP Virtual Numbers',
+    description: 'Get cheap SMS Foreign Numbers and OTP virtual numbers for WhatsApp, Telegram, Facebook, Google. Instant delivery, lowest prices.',
     url: 'https://topchart.store/buy-verification-numbers-ghana',
     type: 'website',
   },
@@ -42,10 +42,10 @@ export default function VerificationNumbersLandingPage() {
                 Secure & Private
               </div>
               <h1 className="text-balance text-4xl font-bold text-neutral-900 sm:text-5xl lg:text-6xl">
-                Buy Verification Numbers Ghana
+                Buy Foreign Numbers Ghana
               </h1>
               <p className="mt-6 max-w-xl text-lg text-neutral-600 leading-relaxed">
-                Get cheap SMS verification numbers and OTP virtual numbers for WhatsApp, Telegram, Facebook, Google, and 100+ platforms. Instant delivery, lowest prices in Ghana.
+                Get cheap SMS Foreign Numbers and OTP virtual numbers for WhatsApp, Telegram, Facebook, Google, and 100+ platforms. Instant delivery, lowest prices in Ghana.
               </p>
               <div className="mt-8 flex flex-wrap gap-4">
                 <Link
@@ -76,14 +76,14 @@ export default function VerificationNumbersLandingPage() {
       <section className="border-b border-neutral-200/40 px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-[1200px]">
           <h2 className="text-center text-3xl font-bold text-neutral-900 sm:text-4xl">
-            Why Choose Our Verification Numbers?
+            Why Choose Our Foreign Numbers?
           </h2>
           <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {[
               {
                 icon: Zap,
                 title: 'Instant Delivery',
-                description: 'Get your verification number instantly after purchase. No waiting, no delays.',
+                description: 'Get your Foreign Number instantly after purchase. No waiting, no delays.',
               },
               {
                 icon: Globe,
@@ -98,7 +98,7 @@ export default function VerificationNumbersLandingPage() {
               {
                 icon: MessageCircle,
                 title: 'SMS Receive',
-                description: 'Receive SMS messages directly on your verification number.',
+                description: 'Receive SMS messages directly on your Foreign Number.',
               },
               {
                 icon: CheckCircle,
@@ -128,7 +128,7 @@ export default function VerificationNumbersLandingPage() {
             Supported Platforms
           </h2>
           <p className="mt-4 text-center text-lg text-neutral-600">
-            Verification numbers for all major platforms
+            Foreign Numbers for all major platforms
           </p>
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
@@ -223,7 +223,7 @@ export default function VerificationNumbersLandingPage() {
       <section className="px-4 py-20 sm:px-6 bg-primary">
         <div className="mx-auto max-w-[800px] text-center">
           <h2 className="text-3xl font-bold text-white sm:text-4xl">
-            Ready to Get Your Verification Number?
+            Ready to Get Your Foreign Number?
           </h2>
           <p className="mt-4 text-lg text-white/80">
             Join thousands of Ghanaians using Topchart for secure SMS verification

@@ -55,7 +55,7 @@ ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO homepage_services (title, description, href, label, icon, priority, is_active) VALUES
   ('Data Bundles',       'Affordable daily, weekly and monthly data packages for every network.',  '/dashboard/data',           'Browse bundles',     'Wifi',         1, true),
-  ('Verification Numbers','Temporary virtual numbers for OTP verification on any platform.',       '/dashboard/verification',   'Get a number',       'PhoneCall',    2, true),
+  ('Foreign Numbers','Temporary virtual numbers for OTP verification on any platform.',       '/dashboard/verification',   'Get a number',       'PhoneCall',    2, true),
   ('Result Checkers',    'WAEC, BECE and NOVDEC results with your index number.',                  '/dashboard/result-checkers','Check results',      'GraduationCap',3, true),
   ('eSIM',               'Get a US phone number or travel data eSIM for 50+ countries.',           '/dashboard/esim',           'Get eSIM',           'Smartphone',   4, true),
   ('Proxies',            'Residential, mobile and datacenter proxies via 9Proxy.',                 '/dashboard/proxies',        'Get proxies',        'Shield',       5, true),
@@ -75,7 +75,7 @@ INSERT INTO homepage_faqs (question, answer, priority, is_active) VALUES
   ('What payment methods are supported?',
    'MTN MoMo, Telecel Cash, AirtelTigo Money, Visa, Mastercard, and wallet balance via Paystack.',
    2, true),
-  ('How do verification numbers work?',
+  ('How do Foreign Numbers work?',
    'You rent a temporary number; OTP SMS appears in your dashboard in real time.',
    3, true),
   ('Is my wallet balance safe?',
@@ -101,7 +101,7 @@ INSERT INTO homepage_testimonials (brand, quote, name, role, priority, is_active
    'We sell data and airtime to students daily. Reliability and the reseller tools have been excellent.',
    'Ama O.', 'Product Lead', 2, true),
   ('VerifyPro Labs',
-   'Verification numbers for QA saved us from juggling personal SIMs. Support is responsive.',
+   'Foreign Numbers for QA saved us from juggling personal SIMs. Support is responsive.',
    'Kofi M.', 'Engineering Manager', 3, true),
   ('Retail Collective',
    'Airtime and data in one dashboard simplified payouts for our field teams across all regions.',
@@ -115,7 +115,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO navigation_links (label, href, description, icon, priority, is_active) VALUES
   ('Overview',              '/dashboard',                'Balances, referrals, and activity',           'LayoutDashboard', 1, true),
   ('Data bundles',          '/dashboard/data',           'Plans for every need',                        'Wifi',            2, true),
-  ('Verification numbers',  '/dashboard/verification',   'Temporary numbers for SMS codes',             'PhoneCall',       3, true),
+  ('Foreign Numbers',  '/dashboard/verification',   'Temporary numbers for SMS codes',             'PhoneCall',       3, true),
   ('Result checkers',       '/dashboard/result-checkers','Exam results and PINs',                       'GraduationCap',   4, true),
   ('eSIM',                  '/dashboard/esim',           'US phone numbers and travel data eSIMs',      'Smartphone',      5, true),
   ('Proxies',               '/dashboard/proxies',        'Residential, mobile and datacenter proxies',  'Shield',          6, true),

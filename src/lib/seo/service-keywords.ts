@@ -22,11 +22,11 @@ export const SERVICE_KEYWORDS = {
   },
   verification: {
     primary: [
-      'buy verification numbers',
-      'cheap SMS verification numbers',
+      'buy Foreign Numbers',
+      'cheap SMS Foreign Numbers',
       'virtual numbers for OTP',
-      'WhatsApp verification number',
-      'Telegram verification number',
+      'WhatsApp Foreign Number',
+      'Telegram Foreign Number',
     ],
     secondary: [
       'temporary phone number',
@@ -36,10 +36,10 @@ export const SERVICE_KEYWORDS = {
       'virtual phone number Ghana',
     ],
     platforms: {
-      whatsapp: ['WhatsApp verification number', 'WhatsApp virtual number', 'verify WhatsApp account'],
-      telegram: ['Telegram verification number', 'Telegram virtual number', 'verify Telegram account'],
-      facebook: ['Facebook verification number', 'Facebook OTP number', 'verify Facebook account'],
-      google: ['Google verification number', 'Google OTP number', 'verify Google account'],
+      whatsapp: ['WhatsApp Foreign Number', 'WhatsApp virtual number', 'verify WhatsApp account'],
+      telegram: ['Telegram Foreign Number', 'Telegram virtual number', 'verify Telegram account'],
+      facebook: ['Facebook Foreign Number', 'Facebook OTP number', 'verify Facebook account'],
+      google: ['Google Foreign Number', 'Google OTP number', 'verify Google account'],
     },
   },
   airtime: {

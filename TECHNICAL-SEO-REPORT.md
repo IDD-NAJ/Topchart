@@ -94,7 +94,7 @@ https://topchart.store/dashboard/[service]
 
 **Schemas Implemented:**
 - Product schema (data bundles, gift cards, proxies, eSIM)
-- Service schema (verification numbers, airtime, bill payments)
+- Service schema (Foreign Numbers, airtime, bill payments)
 - Organization schema
 - LocalBusiness schema
 - FAQ schema (for each service)

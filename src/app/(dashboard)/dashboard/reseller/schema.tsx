@@ -6,7 +6,7 @@ const resellerServiceSchema = {
   '@context': 'https://schema.org',
   '@type': 'Service',
   name: 'Reseller Programme',
-  description: 'Join Topchart\'s reseller programme to earn commissions selling data bundles, airtime, and verification numbers under your own brand.',
+  description: 'Join Topchart\'s reseller programme to earn commissions selling data bundles, airtime, and Foreign Numbers under your own brand.',
   provider: {
     '@type': 'Organization',
     name: 'Topchart',

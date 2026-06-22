@@ -33,8 +33,8 @@ export const DATA_BUNDLE_SCHEMA = generateProductSchema({
 })
 
 export const VERIFICATION_NUMBER_SCHEMA = generateServiceSchema({
-  name: 'SMS Verification Numbers',
-  description: 'Buy cheap SMS verification numbers and OTP virtual numbers for WhatsApp, Telegram, Facebook, Google, and 100+ platforms in Ghana.',
+  name: 'SMS Foreign Numbers',
+  description: 'Buy cheap SMS Foreign Numbers and OTP virtual numbers for WhatsApp, Telegram, Facebook, Google, and 100+ platforms in Ghana.',
   provider: 'Topchart Ghana',
   areaServed: ['Ghana', 'Accra', 'Kumasi', 'Tema', 'Takoradi'],
 })
@@ -185,24 +185,24 @@ export const DATA_BUNDLE_FAQ_SCHEMA = generateFAQSchema({
 export const VERIFICATION_NUMBER_FAQ_SCHEMA = generateFAQSchema({
   questions: [
     {
-      question: 'How do I buy verification numbers in Ghana?',
-      answer: 'Buy verification numbers in Ghana on Topchart.store. Select your preferred platform (WhatsApp, Telegram, Facebook, etc.), choose duration (1 hour to 30 days), and pay via MoMo. Your number is delivered instantly.',
+      question: 'How do I buy Foreign Numbers in Ghana?',
+      answer: 'Buy Foreign Numbers in Ghana on Topchart.store. Select your preferred platform (WhatsApp, Telegram, Facebook, etc.), choose duration (1 hour to 30 days), and pay via MoMo. Your number is delivered instantly.',
     },
     {
-      question: 'Are your verification numbers private and secure?',
-      answer: 'Yes, all verification numbers on Topchart.store are private and secure. Numbers are disposable and not shared with third parties. Your privacy is protected.',
+      question: 'Are your Foreign Numbers private and secure?',
+      answer: 'Yes, all Foreign Numbers on Topchart.store are private and secure. Numbers are disposable and not shared with third parties. Your privacy is protected.',
     },
     {
       question: 'What platforms can I verify in Ghana?',
       answer: 'You can verify 100+ platforms in Ghana including WhatsApp, Telegram, Facebook, Instagram, Google, Microsoft, PayPal, Stripe, Netflix, Spotify, and many more.',
     },
     {
-      question: 'How do I get a WhatsApp verification number in Ghana?',
-      answer: 'Get a WhatsApp verification number in Ghana on Topchart.store. Select WhatsApp from the platform list, choose your preferred duration, and pay. Your WhatsApp number is delivered instantly with SMS receive capability.',
+      question: 'How do I get a WhatsApp Foreign Number in Ghana?',
+      answer: 'Get a WhatsApp Foreign Number in Ghana on Topchart.store. Select WhatsApp from the platform list, choose your preferred duration, and pay. Your WhatsApp number is delivered instantly with SMS receive capability.',
     },
     {
-      question: 'What are the cheapest verification numbers in Ghana?',
-      answer: 'The cheapest verification numbers in Ghana start from GHS 2 for short-term rentals (1 hour). Medium-term rentals (3-7 days) start from GHS 5, and long-term rentals (14-30 days) start from GHS 15.',
+      question: 'What are the cheapest Foreign Numbers in Ghana?',
+      answer: 'The cheapest Foreign Numbers in Ghana start from GHS 2 for short-term rentals (1 hour). Medium-term rentals (3-7 days) start from GHS 5, and long-term rentals (14-30 days) start from GHS 15.',
     },
   ],
 })

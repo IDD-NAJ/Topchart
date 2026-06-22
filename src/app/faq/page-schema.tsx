@@ -6,7 +6,7 @@ const webPageSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
   name: 'Frequently Asked Questions | Topchart Ghana',
-  description: 'Find answers about data bundles, verification numbers, payments, airtime delivery & reseller services.',
+  description: 'Find answers about data bundles, Foreign Numbers, payments, airtime delivery & reseller services.',
   url: 'https://topchart.store/faq',
   lastReviewed: new Date().toISOString(),
 }

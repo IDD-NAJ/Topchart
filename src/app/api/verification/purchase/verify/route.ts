@@ -197,7 +197,7 @@ export async function GET(request: NextRequest) {
         serviceDbId = svcRows.length > 0 ? (svcRows[0] as any).id : null;
       } catch {}
 
-      // Insert verification number
+      // Insert Foreign Number
       await sql`
         INSERT INTO verification_numbers (
           id, user_id, service_id, number, type, status,

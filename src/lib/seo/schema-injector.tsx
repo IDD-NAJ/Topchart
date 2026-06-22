@@ -21,7 +21,7 @@ export function OrganizationSchema() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Topchart Ghana',
-    description: 'Topchart is Ghana leading digital services marketplace offering cheap data bundles, airtime, verification numbers, eSIM, gift cards, bill payments, and more.',
+    description: 'Topchart is Ghana leading digital services marketplace offering cheap data bundles, airtime, Foreign Numbers, eSIM, gift cards, bill payments, and more.',
     url: 'https://topchart.store',
     logo: 'https://topchart.store/logo.svg',
     contactPoint: {
@@ -50,7 +50,7 @@ export function LocalBusinessSchema() {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: 'Topchart Ghana',
-    description: 'Digital services marketplace in Ghana offering data bundles, airtime, verification numbers, eSIM, gift cards, and bill payments.',
+    description: 'Digital services marketplace in Ghana offering data bundles, airtime, Foreign Numbers, eSIM, gift cards, and bill payments.',
     url: 'https://topchart.store',
     telephone: '+233509122072',
     address: {

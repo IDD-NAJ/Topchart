@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { sql, withTransaction } from "@/lib/db";
 import { purchaseDataBundle, resolveNetworkCode, getOrderStatus, isDatamartReachable, getReachabilityInfo } from "@/lib/datamart";
 import { hubnetPurchase } from "@/lib/providers/hubnet";
+import { getPrimaryProvider, getFallbackProvider, type ProviderName } from "@/lib/providers/config";
 import { logServiceEvent, apiResponse } from "@/lib/api-utils";
 
 export const runtime = "nodejs";
@@ -188,92 +189,107 @@ export async function POST(request: NextRequest) {
       await tx(`UPDATE users SET wallet_balance = wallet_balance - $1 WHERE id = $2`, [price, userId]);
     });
 
-    const reachable = await isDatamartReachable();
-    if (!reachable) {
-      const info = getReachabilityInfo();
+    const primaryProvider = await getPrimaryProvider();
+    const fallbackProvider = await getFallbackProvider();
+
+    if (!primaryProvider) {
       await withTransaction(async (tx) => {
         await tx(
           `UPDATE transactions SET status = 'failed', metadata = metadata || $1::jsonb, updated_at = NOW() WHERE reference = $2`,
-          [JSON.stringify({ provider: "datamart", state: "refunded", provider_error: `DataMart API unreachable: ${info.reason}`, failed_at: new Date().toISOString() }), reference]
+          [JSON.stringify({ provider: "none", state: "refunded", provider_error: "No primary provider configured", failed_at: new Date().toISOString() }), reference]
         );
         await tx(`UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2`, [price, userId]);
       });
-      const capacityGb = planSize ? String(parseInt(String(planSize), 10) || 1) : "1";
-      const hubRes = await hubnetPurchase({ phoneNumber: normalizedPhone, network: resolveNetworkCode(networkId), capacity: capacityGb, idempotencyKey });
-      if (hubRes.success && hubRes.data) {
-        await sql`
-          UPDATE transactions
-          SET status = 'success',
-              metadata = metadata || ${JSON.stringify({ provider: "hubnet", provider_message: hubRes.data.message || "completed" })}::jsonb,
-              updated_at = NOW()
-          WHERE reference = ${reference}
-        `;
-        return apiResponse(true, { reference, amount: price, network: networkName || networkId, phone, status: 'success', providerOrderId: hubRes.data.reference, message: 'Data bundle delivered via Hubnet' }, { correlationId });
-      }
-      return apiResponse(false, `DataMart service is currently unavailable. Your wallet has been refunded.`, { status: 503, code: "SERVICE_UNAVAILABLE", correlationId, data: { reference, status: "failed" } });
+      return apiResponse(false, "No data provider is currently configured. Your wallet has been refunded.", { status: 503, code: "SERVICE_UNAVAILABLE", correlationId, data: { reference, status: "failed" } });
     }
+
+    const capacityGb = planSize ? String(parseInt(String(planSize), 10) || 1) : "1";
+    const datamartNetwork = resolveNetworkCode(networkId);
 
     let providerSuccess = false;
     let providerMessage = "";
     let providerOrderId: string | number | undefined;
     let providerOrderRef: string | undefined;
-    let providerName = "datamart";
+    let providerUsed: ProviderName = primaryProvider.providerName as ProviderName;
 
-    {
-      const datamartNetwork = resolveNetworkCode(networkId);
-      const capacityGb = planSize ? String(parseInt(String(planSize), 10) || 1) : "1";
-      const result = await purchaseDataBundle({
-        phoneNumber: normalizedPhone,
-        network: datamartNetwork,
-        capacity: capacityGb,
-        idempotencyKey,
-      });
-
-      if (result.success && result.data) {
-        const orderStatus = result.data.orderStatus?.toLowerCase();
-        providerSuccess = orderStatus === "completed";
-        providerMessage = result.data.orderStatus || "";
-        providerOrderId = result.data.purchaseId;
-        providerOrderRef = result.data.orderReference;
-        providerName = "datamart";
-
-        if (!providerSuccess && (orderStatus === "pending" || orderStatus === "waiting" || orderStatus === "processing")) {
-          providerMessage = "Order queued with provider";
+    const tryProvider = async (providerName: ProviderName): Promise<{ success: boolean; message: string; orderId?: string | number; orderRef?: string }> => {
+      if (providerName === "datamart") {
+        const reachable = await isDatamartReachable();
+        if (!reachable) {
+          const info = getReachabilityInfo();
+          return { success: false, message: `DataMart API unreachable: ${info.reason}` };
         }
-        
-        logServiceEvent("datamart", "purchase_data", providerSuccess ? "success" : "pending", { 
-          reference, orderStatus, providerOrderId, providerOrderRef 
+
+        const result = await purchaseDataBundle({
+          phoneNumber: normalizedPhone,
+          network: datamartNetwork,
+          capacity: capacityGb,
+          idempotencyKey,
         });
 
-        if (!providerSuccess && providerOrderRef) {
-          for (let pollAttempt = 0; pollAttempt < 3; pollAttempt++) {
-            try {
-              await new Promise(r => setTimeout(r, 5000));
-              const statusResult = await getOrderStatus(providerOrderRef);
-              if (statusResult.success && statusResult.data) {
-                const polledStatus = statusResult.data.orderStatus?.toLowerCase();
-                if (polledStatus === "completed") {
-                  providerSuccess = true;
-                  providerMessage = "completed";
-                  logServiceEvent("datamart", "purchase_poll", "success", { reference, providerOrderRef, pollAttempt: pollAttempt + 1 });
-                  break;
+        if (result.success && result.data) {
+          const orderStatus = result.data.orderStatus?.toLowerCase();
+          const success = orderStatus === "completed";
+          const message = result.data.orderStatus || "";
+          const orderId = result.data.purchaseId;
+          const orderRef = result.data.orderReference;
+
+          if (!success && (orderStatus === "pending" || orderStatus === "waiting" || orderStatus === "processing")) {
+            for (let pollAttempt = 0; pollAttempt < 3; pollAttempt++) {
+              try {
+                await new Promise(r => setTimeout(r, 5000));
+                const statusResult = await getOrderStatus(orderRef);
+                if (statusResult.success && statusResult.data) {
+                  const polledStatus = statusResult.data.orderStatus?.toLowerCase();
+                  if (polledStatus === "completed") {
+                    return { success: true, message: "completed", orderId, orderRef };
+                  }
+                  if (polledStatus === "failed" || polledStatus === "refunded") {
+                    return { success: false, message: statusResult.data.orderStatus };
+                  }
                 }
-                if (polledStatus === "failed" || polledStatus === "refunded") {
-                  providerMessage = statusResult.data.orderStatus;
-                  logServiceEvent("datamart", "purchase_poll", "failed", { reference, providerOrderRef, pollAttempt: pollAttempt + 1 });
-                  break;
-                }
-              }
-            } catch {}
+              } catch {}
+            }
+            return { success: false, message: "Order queued with provider" };
           }
+
+          return { success, message, orderId, orderRef };
+        } else {
+          return { success: false, message: result.error || "DataMart request failed" };
         }
+      } else if (providerName === "hubnet") {
+        const result = await hubnetPurchase({ phoneNumber: normalizedPhone, network: datamartNetwork, capacity: capacityGb, idempotencyKey });
+        if (result.success && result.data) {
+          return { success: true, message: result.data.message || "completed", orderId: result.data.reference };
+        } else {
+          return { success: false, message: result.error || "Hubnet request failed" };
+        }
+      }
+
+      return { success: false, message: "Unknown provider" };
+    };
+
+    const primaryResult = await tryProvider(primaryProvider.providerName as ProviderName);
+    providerSuccess = primaryResult.success;
+    providerMessage = primaryResult.message;
+    providerOrderId = primaryResult.orderId;
+    providerOrderRef = primaryResult.orderRef;
+
+    if (!providerSuccess && fallbackProvider) {
+      console.log("[Purchase] Primary provider failed, trying fallback", { primary: primaryProvider.providerName, fallback: fallbackProvider.providerName, reference });
+      const fallbackResult = await tryProvider(fallbackProvider.providerName as ProviderName);
+      if (fallbackResult.success) {
+        providerSuccess = true;
+        providerMessage = fallbackResult.message;
+        providerOrderId = fallbackResult.orderId;
+        providerOrderRef = fallbackResult.orderRef;
+        providerUsed = fallbackProvider.providerName as ProviderName;
+        logServiceEvent("purchase", "fallback", "success", { provider: providerUsed, reference });
       } else {
-        providerMessage = result.error || "DataMart request failed";
-        logServiceEvent("datamart", "purchase_data", "failed", { reference, error: providerMessage });
+        logServiceEvent("purchase", "fallback", "failed", { provider: fallbackProvider.providerName, error: fallbackResult.message, reference });
       }
     }
 
-    // Stage 5: Reconcile result and update DB atomically
     const isReconciliation = !providerSuccess && providerMessage.toLowerCase().includes("being processed");
 
     if (providerSuccess || providerMessage.toLowerCase().includes("queued") || isReconciliation) {
@@ -282,7 +298,7 @@ export async function POST(request: NextRequest) {
         UPDATE transactions
         SET status = ${finalStatus},
             metadata = metadata || ${JSON.stringify({
-              provider: providerName || "datamart",
+              provider: providerUsed,
               state: providerSuccess ? "success" : isReconciliation ? "reconciliation_needed" : "provider_submitted",
               provider_order_id: providerOrderId,
               provider_order_ref: providerOrderRef,
@@ -307,23 +323,6 @@ export async function POST(request: NextRequest) {
         message: "Data bundle delivered successfully"
       }, { correlationId });
     } else {
-      try {
-        const capacityGb = planSize ? String(parseInt(String(planSize), 10) || 1) : "1";
-        const hubRes = await hubnetPurchase({ phoneNumber: normalizedPhone, network: resolveNetworkCode(networkId), capacity: capacityGb, idempotencyKey });
-        if (hubRes.success && hubRes.data) {
-          await withTransaction(async (tx) => {
-            await tx(
-              `UPDATE transactions
-               SET status = 'success',
-                   metadata = metadata || $1::jsonb,
-                   updated_at = NOW()
-               WHERE reference = $2`,
-              [JSON.stringify({ provider: "hubnet", state: "success", provider_message: hubRes.data?.message || "completed" }), reference]
-            );
-          });
-          return apiResponse(true, { reference, amount: price, network: networkName || networkId, phone, status: 'success', message: 'Data bundle delivered via Hubnet' }, { correlationId });
-        }
-      } catch {}
       await withTransaction(async (tx) => {
         await tx(
           `UPDATE transactions
@@ -333,7 +332,7 @@ export async function POST(request: NextRequest) {
            WHERE reference = $2`,
           [
             JSON.stringify({
-              provider: providerName || "datamart",
+              provider: providerUsed,
               state: "refunded",
               provider_error: providerMessage,
               failed_at: new Date().toISOString(),

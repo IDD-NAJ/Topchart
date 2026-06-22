@@ -64,7 +64,7 @@ const DEFAULT_SERVICE_LINKS: { href: string; label: string; description: string;
   },
   {
     href: "/dashboard/verification",
-    label: "Verification numbers",
+    label: "Foreign Numbers",
     description: "Temporary numbers for SMS codes",
     icon: "PhoneCall",
   },

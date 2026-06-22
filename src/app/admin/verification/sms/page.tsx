@@ -95,7 +95,7 @@ export default function AdminSmsLogPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Received Messages</CardTitle>
-          <CardDescription>All SMS received across verification numbers</CardDescription>
+          <CardDescription>All SMS received across Foreign Numbers</CardDescription>
           <div className="relative w-full md:w-[360px] mt-2">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input

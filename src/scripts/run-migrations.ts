@@ -48,6 +48,8 @@ const migrations = [
   '031-create-service-status-table.sql',
   '032-add-maintenance-columns.sql',
   '033-create-transactions-table.sql',
+  '037_data_providers.sql',
+  '038_popup_banners.sql',
 ];
 
 const connectionString = process.env.DATABASE_URL || '';
@@ -87,7 +89,7 @@ async function runMigrations() {
         continue;
       }
 
-      const filePath = path.join(__dirname, migration);
+      const filePath = path.join(__dirname, '../../lib/db/migrations', migration);
       if (!fs.existsSync(filePath)) {
         console.warn(`  WARN ${migration} - file not found, skipping`);
         continue;

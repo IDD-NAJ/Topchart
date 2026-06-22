@@ -91,7 +91,7 @@ export default function AdminVerificationNumbersPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">Verification Numbers</h1>
+            <h1 className="text-3xl font-bold">Foreign Numbers</h1>
             <p className="text-muted-foreground mt-1">
               Manage all purchased and rented numbers
             </p>

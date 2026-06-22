@@ -42,7 +42,7 @@ const VALUES = [
 const SERVICES_OFFERED = [
   "Airtime top-up for MTN, Telecel, and AirtelTigo",
   "Daily, weekly, and monthly data bundles",
-  "Temporary verification numbers for OTP services",
+  "Temporary Foreign Numbers for OTP services",
   "WAEC, BECE, and NOVDEC result checkers",
   "Full reseller programme with commission earnings",
   "Wallet funding via Mobile Money and cards",

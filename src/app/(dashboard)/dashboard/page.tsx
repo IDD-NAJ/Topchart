@@ -57,6 +57,7 @@ import { useServiceStatus, SERVICE_KEYS } from "@/hooks/use-service-status"
 import { Suspense } from "react"
 import Loading from "./loading"
 import { cn } from "@/lib/utils"
+import { PopupBannerContainer } from "@/components/popup-banner"
 
 const TX_TYPE_LABELS: Record<string, string> = {
   deposit: "Wallet Deposit",
@@ -1068,6 +1069,9 @@ export default function DashboardPage() {
           onOpenChange={handleModalClose}
           pendingReference={pendingReference}
         />
+
+        {/* Popup Banner */}
+        <PopupBannerContainer />
       </motion.div>
     </Suspense>
   )

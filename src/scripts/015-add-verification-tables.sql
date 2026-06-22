@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS verification_numbers (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- SMS messages received on verification numbers
+-- SMS messages received on Foreign Numbers
 CREATE TABLE IF NOT EXISTS verification_sms (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     number_id UUID NOT NULL REFERENCES verification_numbers(id) ON DELETE CASCADE,
@@ -91,8 +91,8 @@ CREATE TRIGGER update_verification_numbers_updated_at
 -- Insert sample verification services (these would normally sync from Textverified API)
 INSERT INTO verification_services (textverified_service_id, name, category, description, base_cost, markup_percentage) VALUES
 ('whatsapp', 'WhatsApp', 'social_media', 'Verify WhatsApp accounts with temporary US numbers', 1.50, 30.00),
-('telegram', 'Telegram', 'social_media', 'Create Telegram accounts with verification numbers', 1.50, 30.00),
-('facebook', 'Facebook', 'social_media', 'Facebook account verification numbers', 2.00, 30.00),
+('telegram', 'Telegram', 'social_media', 'Create Telegram accounts with Foreign Numbers', 1.50, 30.00),
+('facebook', 'Facebook', 'social_media', 'Facebook account Foreign Numbers', 2.00, 30.00),
 ('instagram', 'Instagram', 'social_media', 'Instagram account verification', 2.00, 30.00),
 ('twitter', 'Twitter / X', 'social_media', 'Twitter/X account verification', 2.00, 30.00),
 ('tiktok', 'TikTok', 'social_media', 'TikTok account verification', 1.75, 30.00),

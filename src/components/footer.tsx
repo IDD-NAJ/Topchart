@@ -21,7 +21,7 @@ export function Footer() {
       title: "Services",
       links: [
         { href: "/dashboard/data", label: "Cheap Data Bundles" },
-        { href: "/dashboard/verification", label: "Verification Numbers" },
+        { href: "/dashboard/verification", label: "Foreign Numbers" },
         { href: "/dashboard/result-checkers", label: "WAEC Result Checker" },
         { href: "/dashboard/reseller", label: "Data Reseller Programme" },
       ],
@@ -75,7 +75,7 @@ export function Footer() {
                 </motion.span>
               </Link>
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-[#8a9ba8]">
-                Ghana&apos;s leading platform for cheap data bundles, airtime, verification numbers, exam results, and reseller tools — fast, secure, and always on.
+                Ghana&apos;s leading platform for cheap data bundles, airtime, Foreign Numbers, exam results, and reseller tools — fast, secure, and always on.
               </p>
               
               <div className="mt-8 flex items-center gap-4">

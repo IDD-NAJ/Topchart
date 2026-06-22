@@ -102,12 +102,12 @@ function generateServiceFAQs(service: string, location?: string): Array<{ questi
     ],
     verification: [
       {
-        question: `How do I buy verification numbers${locationText}?`,
-        answer: `Buy verification numbers${locationText} on Topchart.store. Select your preferred platform (WhatsApp, Telegram, Facebook, etc.), choose duration (1 hour to 30 days), and pay via MoMo. Your number is delivered instantly.`,
+        question: `How do I buy Foreign Numbers${locationText}?`,
+        answer: `Buy Foreign Numbers${locationText} on Topchart.store. Select your preferred platform (WhatsApp, Telegram, Facebook, etc.), choose duration (1 hour to 30 days), and pay via MoMo. Your number is delivered instantly.`,
       },
       {
-        question: `Are your verification numbers${locationText} private and secure?`,
-        answer: `Yes, all verification numbers${locationText} are private and secure. Numbers are disposable and not shared with third parties. Your privacy is protected.`,
+        question: `Are your Foreign Numbers${locationText} private and secure?`,
+        answer: `Yes, all Foreign Numbers${locationText} are private and secure. Numbers are disposable and not shared with third parties. Your privacy is protected.`,
       },
       {
         question: `What platforms can I verify${locationText}?`,

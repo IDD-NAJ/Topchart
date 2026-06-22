@@ -453,7 +453,7 @@ const DEFAULT_SERVICES: ServiceItem[] = [
   {
     id: "default-2",
     icon: "PhoneCall",
-    title: "Verification Numbers",
+    title: "Foreign Numbers",
     description: "Temporary virtual phone numbers for WhatsApp, Telegram, Google & SMS verification in Ghana.",
     href: "/dashboard/verification",
     label: "Get a number",
@@ -517,7 +517,7 @@ const DEFAULT_FAQS: FAQItem[] = [
   {
     id: "default-4",
     question: "How do I become a data reseller in Ghana?",
-    answer: "Join our data reseller programme to earn commissions reselling cheap data bundles, airtime, and verification numbers under your own brand. Daily payouts available.",
+    answer: "Join our data reseller programme to earn commissions reselling cheap data bundles, airtime, and Foreign Numbers under your own brand. Daily payouts available.",
     priority: 4,
     is_active: true,
   },
@@ -552,7 +552,7 @@ const DEFAULT_TESTIMONIALS: TestimonialItem[] = [
   {
     id: "default-3",
     brand: "VerifyPro Labs",
-    quote: "Verification numbers for QA saved us from juggling personal SIMs. Support is responsive.",
+    quote: "Foreign Numbers for QA saved us from juggling personal SIMs. Support is responsive.",
     name: "Kofi M.",
     role: "Engineering Manager",
     priority: 3,

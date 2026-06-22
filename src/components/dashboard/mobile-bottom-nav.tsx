@@ -39,7 +39,7 @@ const mainNavItems = [
 
 const moreNavItems = [
   { href: "/dashboard/bills", label: "Pay Bills", icon: Receipt },
-  { href: "/dashboard/verification", label: "Verification Numbers", icon: PhoneCall },
+  { href: "/dashboard/verification", label: "Foreign Numbers", icon: PhoneCall },
   { href: "/dashboard/result-checkers", label: "Result Checkers", icon: GraduationCap },
   { href: "/dashboard/reseller", label: "Reseller Programme", icon: Store },
   { href: "/dashboard/wallet", label: "My Wallet", icon: CreditCard },

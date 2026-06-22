@@ -42,7 +42,7 @@
 **Priority Pages (Request First):**
 1. Homepage - https://topchart.store
 2. Cheap MTN Data Ghana - https://topchart.store/cheap-mtn-data-ghana
-3. Buy Verification Numbers Ghana - https://topchart.store/buy-verification-numbers-ghana
+3. Buy Foreign Numbers Ghana - https://topchart.store/buy-verification-numbers-ghana
 4. DSTV Subscription Ghana - https://topchart.store/dstv-subscription-ghana
 5. Data Reseller Ghana - https://topchart.store/data-reseller-ghana
 6. Buy Airtime Online Ghana - https://topchart.store/buy-airtime-online-ghana

@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
           SET status = 'refunded',
               metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
                 refunded_at: new Date().toISOString(),
-                refund_reason: "User cancelled verification number",
+                refund_reason: "User cancelled Foreign Number",
                 refund_method: isPaystack ? "wallet_redirect" : "wallet",
                 refund_amount: purchasePrice,
                 original_payment_method: isPaystack ? "paystack" : "wallet",

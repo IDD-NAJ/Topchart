@@ -59,7 +59,7 @@ const QUICK_LINKS = [
   },
   {
     icon: PhoneCall,
-    label: "Verification Numbers",
+    label: "Foreign Numbers",
     description: "SMS verification and number issues",
     href: "/dashboard/tickets?new=1&category=Verification%20Numbers",
     color: "text-amber-600 bg-amber-50 dark:bg-amber-950/30",

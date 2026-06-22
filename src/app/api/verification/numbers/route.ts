@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Get verification numbers error:", error);
+    console.error("Get Foreign Numbers error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch numbers" },
       { status: 500 }

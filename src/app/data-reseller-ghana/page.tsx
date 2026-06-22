@@ -44,7 +44,7 @@ export default function ResellerLandingPage() {
                 Become a Data Reseller in Ghana
               </h1>
               <p className="mt-6 max-w-xl text-lg text-neutral-600 leading-relaxed">
-                Join Topchart reseller programme and earn daily commissions selling cheap data bundles, airtime, verification numbers, and digital services. White-label platform, automated delivery, wholesale prices.
+                Join Topchart reseller programme and earn daily commissions selling cheap data bundles, airtime, Foreign Numbers, and digital services. White-label platform, automated delivery, wholesale prices.
               </p>
               <div className="mt-8 flex flex-wrap gap-4">
                 <Link
@@ -107,7 +107,7 @@ export default function ResellerLandingPage() {
               {
                 icon: Store,
                 title: 'All Services',
-                description: 'Resell data, airtime, verification numbers, eSIM, gift cards, bills.',
+                description: 'Resell data, airtime, Foreign Numbers, eSIM, gift cards, bills.',
               },
             ].map((benefit, i) => (
               <div key={i} className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm transition-shadow hover:shadow-md">

@@ -18,15 +18,26 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    console.log("[DataMart Scheduled Sync] Starting scheduled sync");
     const result = await syncDatamartPlans();
+
+    console.log("[DataMart Scheduled Sync] Completed", {
+      syncedCount: result.syncedCount,
+      errorCount: result.errorCount,
+      priceChanges: result.priceChanges.length,
+      deactivatedCount: result.deactivatedCount,
+      source: result.source,
+      networkResults: result.networkResults,
+      rejectedPrices: result.rejectedPrices.length,
+    });
 
     return NextResponse.json({
       success: true,
-      message: `Scheduled sync completed. Synced ${result.syncedCount} plans, ${result.errorCount} errors, ${result.priceChanges.length} price changes.`,
+      message: `Scheduled sync completed. Synced ${result.syncedCount} plans, ${result.errorCount} errors, ${result.priceChanges.length} price changes, ${result.rejectedPrices.length} rejected prices.`,
       ...result,
     });
   } catch (error) {
-    console.error("Scheduled sync error:", error);
+    console.error("[DataMart Scheduled Sync] Error:", error);
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : "Sync failed" },
       { status: 500 }

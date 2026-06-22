@@ -1189,7 +1189,7 @@ export default function VerificationPage() {
                   <Clock className="h-4 w-4 text-amber-600" />
                   Active Numbers ({activeNumbers.length})
                 </CardTitle>
-                <CardDescription>Your currently active verification numbers</CardDescription>
+                <CardDescription>Your currently active Foreign Numbers</CardDescription>
               </div>
               <Button
                 type="button"

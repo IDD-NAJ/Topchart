@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Admin verification numbers error:", error);
+    console.error("Admin Foreign Numbers error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch numbers" },
       { status: 500 }

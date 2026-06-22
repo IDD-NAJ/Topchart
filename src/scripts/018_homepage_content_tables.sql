@@ -71,7 +71,7 @@ CREATE INDEX IF NOT EXISTS idx_navigation_links_active ON navigation_links(is_ac
 -- Seed homepage_services
 INSERT INTO homepage_services (title, description, href, label, icon, priority, is_active) VALUES
   ('Data Bundles', 'Affordable daily, weekly and monthly data packages for every network.', '/dashboard/data', 'Browse bundles', 'Wifi', 1, TRUE),
-  ('Verification Numbers', 'Temporary virtual numbers for OTP verification on any platform.', '/dashboard/verification', 'Get a number', 'PhoneCall', 2, TRUE),
+  ('Foreign Numbers', 'Temporary virtual numbers for OTP verification on any platform.', '/dashboard/verification', 'Get a number', 'PhoneCall', 2, TRUE),
   ('Result Checkers', 'WAEC, BECE, and NOVDEC results with your index number.', '/dashboard/result-checkers', 'Check results', 'GraduationCap', 3, TRUE),
   ('eSIM', 'Get a US phone number or travel data eSIM for 50+ countries.', '/dashboard/esim', 'Get eSIM', 'Smartphone', 4, TRUE),
   ('Proxies', 'Residential, mobile & datacenter proxies via 9Proxy.', '/dashboard/proxies', 'Get proxies', 'Shield', 5, TRUE),
@@ -84,14 +84,14 @@ ON CONFLICT DO NOTHING;
 INSERT INTO homepage_faqs (question, answer, priority, is_active) VALUES
   ('How fast is airtime and data delivery?', 'Most orders complete within seconds. Network congestion may occasionally add a short delay.', 1, TRUE),
   ('What payment methods are supported?', 'MTN MoMo, Telecel Cash, AirtelTigo Money, Visa, Mastercard, and wallet balance via Paystack.', 2, TRUE),
-  ('How do verification numbers work?', 'You rent a temporary number; OTP SMS appears in your dashboard in real time.', 3, TRUE)
+  ('How do Foreign Numbers work?', 'You rent a temporary number; OTP SMS appears in your dashboard in real time.', 3, TRUE)
 ON CONFLICT DO NOTHING;
 
 -- Seed homepage_testimonials
 INSERT INTO homepage_testimonials (brand, quote, name, role, priority, is_active) VALUES
   ('North Ridge Fintech', 'Topchart cut our recharge turnaround to seconds. Wallet funding and reporting are exactly what we needed for ops.', 'Kwame A.', 'Head of Operations', 1, TRUE),
   ('Campus Hub GH', 'We sell data and airtime to students daily. Reliability and the reseller tools have been excellent.', 'Ama O.', 'Product Lead', 2, TRUE),
-  ('VerifyPro Labs', 'Verification numbers for QA saved us from juggling personal SIMs. Support is responsive.', 'Kofi M.', 'Engineering Manager', 3, TRUE),
+  ('VerifyPro Labs', 'Foreign Numbers for QA saved us from juggling personal SIMs. Support is responsive.', 'Kofi M.', 'Engineering Manager', 3, TRUE),
   ('Retail Collective', 'Airtime and data in one dashboard simplified payouts for our field teams.', 'Esi T.', 'Finance Director', 4, TRUE)
 ON CONFLICT DO NOTHING;
 
@@ -99,7 +99,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO navigation_links (label, href, description, icon, priority, is_active) VALUES
   ('Overview', '/dashboard', 'Balances, referrals, and activity', 'LayoutDashboard', 1, TRUE),
   ('Data bundles', '/dashboard/data', 'Plans for every need', 'Wifi', 2, TRUE),
-  ('Verification numbers', '/dashboard/verification', 'Temporary numbers for SMS codes', 'PhoneCall', 3, TRUE),
+  ('Foreign Numbers', '/dashboard/verification', 'Temporary numbers for SMS codes', 'PhoneCall', 3, TRUE),
   ('Result checkers', '/dashboard/result-checkers', 'Exam results and PINs', 'GraduationCap', 4, TRUE),
   ('eSIM', '/dashboard/esim', 'US phone numbers & travel data eSIMs', 'Smartphone', 5, TRUE),
   ('Proxies', '/dashboard/proxies', 'Residential, mobile & datacenter proxies', 'Shield', 6, TRUE),

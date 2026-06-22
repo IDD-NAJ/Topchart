@@ -666,7 +666,7 @@ export default function VerificationHistoryPage() {
               </p>
               <p className="text-sm text-muted-foreground mt-1">
                 {filter === "all" && !searchQuery
-                  ? "Your verification number purchases will appear here."
+                  ? "Your Foreign Number purchases will appear here."
                   : "Try adjusting your filters or search query."}
               </p>
             </div>

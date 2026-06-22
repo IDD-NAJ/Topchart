@@ -37,7 +37,7 @@ export function generateAIOptimizedContent(topic: string, service: string): {
 } {
   const summaries: Record<string, string> = {
     dataBundles: `Buy cheap data bundles in Ghana on Topchart.store. MTN, Telecel, and AirtelTigo data bundles available at lowest prices. Instant delivery via MoMo. Daily, weekly, monthly, and non-expiry bundles.`,
-    verificationNumbers: `Get SMS verification numbers in Ghana for WhatsApp, Telegram, Facebook, Google, and 100+ platforms. Cheap OTP numbers, instant delivery, private and secure.`,
+    verificationNumbers: `Get SMS Foreign Numbers in Ghana for WhatsApp, Telegram, Facebook, Google, and 100+ platforms. Cheap OTP numbers, instant delivery, private and secure.`,
     airtime: `Buy airtime online in Ghana instantly. MTN, Telecel, AirtelTigo airtime topup via MoMo at cheapest rates. 24/7 service, instant delivery.`,
     resultCheckers: `Buy WAEC, BECE, and NOVDEC result checkers in Ghana. Instant PIN delivery via MoMo. Valid checkers, wholesale prices for resellers.`,
     esim: `Buy eSIM in Ghana for international travel. Digital SIM cards for 50+ countries including US, UK, UAE, Nigeria. US virtual numbers with voice and SMS.`,
@@ -64,12 +64,12 @@ export function generateAIOptimizedContent(topic: string, service: string): {
     ],
     verificationNumbers: [
       {
-        question: `How do I get a WhatsApp verification number in Ghana?`,
-        answer: `Get a WhatsApp verification number in Ghana on Topchart.store. Select WhatsApp from the platform list, choose your preferred duration (1 hour to 30 days), and pay via MoMo. Your WhatsApp number is delivered instantly with SMS receive capability.`,
+        question: `How do I get a WhatsApp Foreign Number in Ghana?`,
+        answer: `Get a WhatsApp Foreign Number in Ghana on Topchart.store. Select WhatsApp from the platform list, choose your preferred duration (1 hour to 30 days), and pay via MoMo. Your WhatsApp number is delivered instantly with SMS receive capability.`,
       },
       {
-        question: `Are verification numbers in Ghana private and secure?`,
-        answer: `Yes, all verification numbers on Topchart.store are private and secure. Numbers are disposable and not shared with third parties. Your privacy is protected, and numbers are automatically deleted after the rental period.`,
+        question: `Are Foreign Numbers in Ghana private and secure?`,
+        answer: `Yes, all Foreign Numbers on Topchart.store are private and secure. Numbers are disposable and not shared with third parties. Your privacy is protected, and numbers are automatically deleted after the rental period.`,
       },
       {
         question: `What platforms can I verify with Ghana numbers?`,
@@ -171,7 +171,7 @@ export function generateAIOptimizedContent(topic: string, service: string): {
       },
       {
         question: `What services can I resell in Ghana?`,
-        answer: `As a Topchart reseller in Ghana, you can resell data bundles, airtime, verification numbers, eSIM, gift cards, bill payments, and more. All services delivered automatically to your customers.`,
+        answer: `As a Topchart reseller in Ghana, you can resell data bundles, airtime, Foreign Numbers, eSIM, gift cards, bill payments, and more. All services delivered automatically to your customers.`,
       },
     ],
   }
@@ -185,7 +185,7 @@ export function generateAIOptimizedContent(topic: string, service: string): {
       '24/7 service, no extra fees',
     ],
     verificationNumbers: [
-      'SMS verification numbers for 100+ platforms',
+      'SMS Foreign Numbers for 100+ platforms',
       'WhatsApp, Telegram, Facebook, Google verification',
       'Cheap prices starting from GHS 2',
       'Instant delivery, private and secure',

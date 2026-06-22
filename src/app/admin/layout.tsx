@@ -105,6 +105,8 @@ const navItems: NavItem[] = [
       { title: "Data Bundles", href: "/admin/data-bundles", icon: Wifi },
       { title: "Bundle Pricing", href: "/admin/data-bundles-pricing", icon: DollarSign },
       { title: "Bundle Categories", href: "/admin/bundle-categories", icon: Layers },
+      { title: "Data Providers", href: "/admin/data-providers", icon: Server },
+      { title: "Popup Banners", href: "/admin/popup-banners", icon: Megaphone },
       { title: "Result Checkers", href: "/admin/result-checkers", icon: CreditCard },
     ]
   },
