@@ -50,7 +50,18 @@ if (typeof WebSocket !== "undefined") {
 }
 
 // Global variable to maintain connection pool across hot reloads in dev
-const globalForPool = global as unknown as { _pool: Pool; _poolCreatedAt: number };
+const globalForPool = global as unknown as { _pool: Pool; _poolCreatedAt: number; _poolConnStr: string };
+
+// Compute the correct connection string once at module load so we can detect
+// if the cached global pool was built with a stale/broken string.
+const _currentConnStr = getCleanConnectionString();
+
+// If the cached pool was built with a different (broken) connection string, discard it.
+if (globalForPool._pool && globalForPool._poolConnStr !== _currentConnStr) {
+  try { globalForPool._pool.end().catch(() => {}); } catch { /* ignore */ }
+  globalForPool._pool = undefined as unknown as Pool;
+}
+
 let _pool: Pool = globalForPool._pool;
 let _poolCreatedAt: number = globalForPool._poolCreatedAt || 0;
 
@@ -72,6 +83,7 @@ function getPool(): Pool {
     if (process.env.NODE_ENV !== "production") {
       globalForPool._pool = _pool;
       globalForPool._poolCreatedAt = _poolCreatedAt;
+      globalForPool._poolConnStr = connectionString;
     }
     console.log(`[DB] Pool created at ${new Date(_poolCreatedAt).toISOString()}`);
     return _pool;
