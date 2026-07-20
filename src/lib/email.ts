@@ -43,6 +43,107 @@ export async function sendEmail({
   }
 }
 
+export async function sendGuestOrderConfirmationEmail(order: {
+  tracking_number: string;
+  customer_name?: string | null;
+  customer_email: string;
+  product_type: string;
+  product_details: Record<string, unknown>;
+  amount_ghs: number;
+  fulfillment_status: string;
+}): Promise<boolean> {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://topchart.store";
+  const trackUrl = `${appUrl}/track/${order.tracking_number}`;
+  const receiptUrl = `${appUrl}/receipt/${order.tracking_number}`;
+
+  const productLabel: Record<string, string> = {
+    data_bundle: "Data Bundle",
+    airtime: "Airtime",
+    bill_payment: "Bill Payment",
+    esim: "eSIM",
+    foreign_number: "Foreign Number",
+  };
+
+  const productRows = Object.entries(order.product_details)
+    .filter(([, v]) => v !== null && v !== undefined && String(v).trim() !== "")
+    .map(
+      ([k, v]) =>
+        `<tr><td style="color:#6b7280;padding:4px 0;text-transform:capitalize">${k.replace(/_/g, " ")}</td><td style="color:#111827;font-weight:500;padding:4px 0">${v}</td></tr>`
+    )
+    .join("");
+
+  const statusLabel =
+    order.fulfillment_status === "completed"
+      ? '<span style="color:#16a34a;font-weight:600">Delivered</span>'
+      : '<span style="color:#d97706;font-weight:600">Processing</span>';
+
+  return sendEmail({
+    to: order.customer_email,
+    subject: `Order Confirmed – ${order.tracking_number} | Topchart`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px">
+        <div style="background:#F38F20;padding:24px;border-radius:8px 8px 0 0;text-align:center">
+          <h1 style="color:#fff;margin:0;font-size:24px">Topchart</h1>
+          <p style="color:#fff;margin:8px 0 0;opacity:0.9;font-size:14px">Order Confirmation</p>
+        </div>
+        <div style="background:#f9f9f9;padding:32px;border-radius:0 0 8px 8px;border:1px solid #e5e7eb">
+          <h2 style="color:#111827;margin-top:0">Hi ${order.customer_name || "there"}!</h2>
+          <p style="color:#374151;line-height:1.6">
+            Your payment was successful. Here are your order details:
+          </p>
+
+          <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:20px 0">
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #f3f4f6">
+              <span style="color:#6b7280;font-size:13px">Tracking Number</span>
+              <span style="color:#F38F20;font-weight:700;font-family:monospace;font-size:15px">${order.tracking_number}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #f3f4f6">
+              <span style="color:#6b7280;font-size:13px">Product</span>
+              <span style="color:#111827;font-weight:600">${productLabel[order.product_type] || order.product_type}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #f3f4f6">
+              <span style="color:#6b7280;font-size:13px">Amount</span>
+              <span style="color:#111827;font-weight:700">GH₵${Number(order.amount_ghs).toFixed(2)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="color:#6b7280;font-size:13px">Status</span>
+              <span>${statusLabel}</span>
+            </div>
+          </div>
+
+          ${
+            productRows
+              ? `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:20px">
+                  <p style="color:#374151;font-weight:600;margin:0 0 8px">Order Details</p>
+                  <table style="width:100%;border-collapse:collapse">${productRows}</table>
+                </div>`
+              : ""
+          }
+
+          <div style="display:flex;gap:12px;margin-top:8px">
+            <a href="${trackUrl}"
+               style="flex:1;display:inline-block;text-align:center;background:#F38F20;color:#fff;padding:12px 16px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px">
+              Track Order
+            </a>
+            <a href="${receiptUrl}"
+               style="flex:1;display:inline-block;text-align:center;background:#fff;border:1px solid #e5e7eb;color:#374151;padding:12px 16px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px">
+              View Receipt
+            </a>
+          </div>
+
+          <p style="color:#6b7280;font-size:13px;margin-top:24px;line-height:1.5">
+            Use your tracking number <strong>${order.tracking_number}</strong> to check your order status at any time.<br/>
+            For support, reach us on WhatsApp or via our website.
+          </p>
+          <p style="color:#9ca3af;font-size:12px;margin-top:24px">
+            Topchart · Your trusted mobile top-up platform
+          </p>
+        </div>
+      </div>
+    `,
+  });
+}
+
 export async function sendResellerApprovalEmail(
   to: string,
   businessName: string,
