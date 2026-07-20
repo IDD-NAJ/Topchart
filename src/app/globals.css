@@ -255,8 +255,8 @@ button, a, [role="button"], input, textarea, select {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
     overflow-x: hidden;
-    /* Zoom out all pages by 13% as per user request */
-    zoom: 0.87;
+    /* Zoom out all pages by 10% as per user request */
+    zoom: 0.90;
   }
   
   /* Typography - No Serif, all clean tech styling */
@@ -453,4 +453,48 @@ button, a, [role="button"], input, textarea, select {
     transition: all var(--duration-fast) ease-out;
   }
   .link-hover:hover::after { width: 100%; }
+}
+
+/* ========================================
+   MOBILE RESPONSIVENESS OPTIMIZATIONS
+   ======================================== */
+
+@media (max-width: 640px) {
+  body {
+    /* Maintain 10% zoom reduction but ensure mobile readability */
+    zoom: 0.90;
+  }
+  
+  h1 { font-size: clamp(1.5rem, 6vw, 2.5rem); }
+  h2 { font-size: clamp(1.25rem, 5vw, 1.75rem); }
+  h3 { font-size: clamp(1rem, 4vw, 1.35rem); }
+  
+  /* Ensure touch targets stay accessible */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Optimize container spacing on mobile */
+  .container-responsive {
+    @apply px-3 sm:px-4;
+  }
+  
+  /* Prevent horizontal scroll on mobile */
+  * {
+    overflow-x: hidden !important;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  /* Tablet optimizations */
+  h1 { font-size: clamp(1.75rem, 5vw, 3rem); }
+  h2 { font-size: clamp(1.35rem, 4vw, 2rem); }
+}
+
+@media (min-width: 1025px) {
+  /* Desktop - maintain zoom throughout */
+  body {
+    zoom: 0.90;
+  }
 }
