@@ -468,6 +468,408 @@ function ActiveNumberCard({
   )
 }
 
+// ── UK Numbers Types ──────────────────────────────────────────────────────────
+interface UkService {
+  id: string
+  pvadeals_service_id: string
+  name: string
+  picture_url: string | null
+  category: string
+  str_price: number
+  ltr3_price: number
+  ltr7_price: number
+  ltr14_price: number
+  ltr30_price: number
+}
+
+const UK_LTR_OPTIONS = [
+  { days: 3, label: "3d" },
+  { days: 7, label: "7d" },
+  { days: 14, label: "14d" },
+  { days: 30, label: "30d" },
+]
+
+function getUkLtrPrice(svc: UkService, days: number): number {
+  if (days === 3) return svc.ltr3_price
+  if (days === 7) return svc.ltr7_price
+  if (days === 14) return svc.ltr14_price
+  return svc.ltr30_price
+}
+
+// ── UK Numbers Section ────────────────────────────────────────────────────────
+function UkNumbersSection({ onPurchaseSuccess }: { onPurchaseSuccess: () => Promise<void> }) {
+  const { user, refreshUser } = useAuth()
+  const { toast } = useToast()
+  const [services, setServices] = useState<UkService[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [modal, setModal] = useState<{
+    service: UkService | null
+    type: "STR" | "LTR"
+    ltrDays: number
+    purchasing: boolean
+    error: string | null
+    result: { number: string; expires_at: string; price: number } | null
+  }>({ service: null, type: "STR", ltrDays: 3, purchasing: false, error: null, result: null })
+
+  const closeModal = () => setModal(m => ({ ...m, service: null, result: null, error: null }))
+
+  useEffect(() => {
+    const fetchUkServices = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch("/api/verification/uk-numbers")
+        const data = await res.json()
+        if (data.success) {
+          setServices(data.data.services || [])
+          setError(null)
+        } else {
+          setError(data.error || "Failed to load UK numbers")
+        }
+      } catch {
+        setError("Failed to load UK numbers")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchUkServices()
+  }, [])
+
+  const handlePurchase = async () => {
+    if (!modal.service) return
+    setModal(m => ({ ...m, purchasing: true, error: null }))
+
+    const price = modal.type === "STR"
+      ? modal.service.str_price
+      : getUkLtrPrice(modal.service, modal.ltrDays)
+
+    try {
+      const res = await fetch("/api/verification/purchase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pvadealsServiceId: modal.service.pvadeals_service_id,
+          type: modal.type,
+          ltrDays: modal.type === "LTR" ? modal.ltrDays : undefined,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        await refreshUser()
+        await onPurchaseSuccess()
+        setModal(m => ({
+          ...m,
+          purchasing: false,
+          result: {
+            number: data.data.number,
+            expires_at: data.data.expires_at,
+            price: data.data.price,
+          },
+        }))
+        toast({ title: "UK number purchased!", description: `${data.data.number} — expires ${new Date(data.data.expires_at).toLocaleString()}` })
+      } else {
+        setModal(m => ({ ...m, purchasing: false, error: data.error || "Purchase failed" }))
+      }
+    } catch {
+      setModal(m => ({ ...m, purchasing: false, error: "Network error — please try again" }))
+    }
+  }
+
+  const ukCategories = [
+    { id: "all", label: "All" },
+    { id: "social_media", label: "Social" },
+    { id: "ecommerce_financial", label: "Financial" },
+    { id: "professional_tools", label: "Professional" },
+    { id: "streaming_entertainment", label: "Streaming" },
+  ]
+
+  const filtered = services.filter(s => {
+    const matchSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchCat = selectedCategory === "all" || s.category === selectedCategory
+    return matchSearch && matchCat
+  })
+
+  const selectedPrice = modal.type === "STR"
+    ? (modal.service?.str_price ?? 0)
+    : getUkLtrPrice(modal.service!, modal.ltrDays)
+
+  return (
+    <div className="mt-8 mb-4">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 shrink-0">
+          <Globe className="h-4 w-4 text-blue-600" />
+        </div>
+        <div>
+          <h2 className="font-semibold text-sm sm:text-base flex items-center gap-2">
+            UK Numbers
+            <span className="text-base leading-none" aria-label="UK flag">🇬🇧</span>
+          </h2>
+          <p className="text-xs text-muted-foreground">United Kingdom numbers via PVADEALS</p>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center gap-2 py-8 justify-center text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="text-sm">Loading UK services...</span>
+        </div>
+      ) : error ? (
+        <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/10">
+          <CardContent className="p-4 flex items-start gap-3">
+            <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">UK numbers unavailable</p>
+              <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">{error}</p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : services.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="p-6 text-center">
+            <Globe className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">No UK services currently available from the provider.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-2 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search UK services..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="pl-8 h-8 text-sm"
+              />
+            </div>
+            <div className="flex gap-1 overflow-x-auto pb-0.5 sm:pb-0 no-scrollbar">
+              {ukCategories.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap border transition-colors shrink-0",
+                    selectedCategory === cat.id
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-border hover:border-primary/40 bg-background"
+                  )}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Service Grid */}
+          {filtered.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">No UK services match your search.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+              {filtered.map(svc => {
+                const cat = CATEGORIES.find(c => c.id === svc.category)
+                const FallbackIcon = cat?.icon ?? Globe
+                return (
+                  <motion.div key={svc.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                    <Card
+                      className="border bg-background hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer"
+                      onClick={() => setModal({ service: svc, type: "STR", ltrDays: 3, purchasing: false, error: null, result: null })}
+                    >
+                      <CardContent className="p-3 sm:p-4 space-y-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <ServiceIcon
+                            name={svc.name}
+                            pictureUrl={svc.picture_url}
+                            fallbackIcon={FallbackIcon}
+                            fallbackColor={cat?.color ?? "text-blue-600 bg-blue-50 dark:bg-blue-950/40"}
+                            size="sm"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-xs sm:text-sm truncate">{svc.name}</h3>
+                            <p className="text-[10px] text-muted-foreground">🇬🇧 UK</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex items-center justify-between py-0.5 border-b border-border/50">
+                            <span className="text-muted-foreground">STR 20min</span>
+                            <span className="font-semibold text-primary">{formatCurrency(svc.str_price)}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">LTR from</span>
+                            <span className="font-medium">{formatCurrency(svc.ltr3_price)}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* UK Purchase Modal */}
+      <AnimatePresence>
+        {modal.service && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            onClick={e => { if (e.target === e.currentTarget && !modal.purchasing) closeModal() }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="mx-auto flex max-h-[90dvh] w-full flex-col rounded-xl border bg-background shadow-xl sm:max-w-md"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b p-4 sm:p-5">
+                <div className="min-w-0 mr-2">
+                  <h2 className="font-semibold text-sm sm:text-base truncate">
+                    {modal.service.name} <span className="text-base" aria-label="UK flag">🇬🇧</span>
+                  </h2>
+                  <p className="text-xs text-muted-foreground">United Kingdom number</p>
+                </div>
+                <button onClick={closeModal} disabled={modal.purchasing} className="p-2 rounded hover:bg-muted transition-colors shrink-0 sm:p-1">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {modal.result ? (
+                <>
+                  <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+                    <div className="flex items-center gap-2 text-green-600">
+                      <Check className="h-5 w-5 shrink-0" />
+                      <span className="font-semibold text-sm">UK number purchased!</span>
+                    </div>
+                    <div className="bg-muted rounded-lg p-3 sm:p-4 space-y-2">
+                      <p className="font-mono text-lg sm:text-xl font-bold break-all">{modal.result.number}</p>
+                      <p className="text-xs text-muted-foreground">Expires: {new Date(modal.result.expires_at).toLocaleString()}</p>
+                      <p className="text-xs font-medium">Charged: {formatCurrency(modal.result.price)}</p>
+                    </div>
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 px-3 py-2.5 flex items-start gap-2">
+                      <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                        If no SMS received within 7 minutes, go to <strong>Verification History</strong> and cancel for a refund.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="border-t p-4 sm:p-5 flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1 gap-2" asChild>
+                      <Link href="/dashboard/verification/history">
+                        <History className="h-3.5 w-3.5" />
+                        View History
+                      </Link>
+                    </Button>
+                    <Button size="sm" className="flex-1" onClick={closeModal}>Done</Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+                    {/* Type selector */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {(["STR", "LTR"] as const).map(t => (
+                        <button
+                          key={t}
+                          onClick={() => setModal(m => ({ ...m, type: t, error: null }))}
+                          className={cn(
+                            "p-3 rounded-lg border text-left transition-all",
+                            modal.type === t ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                          )}
+                        >
+                          <p className="font-semibold text-sm">{t}</p>
+                          <p className="text-xs text-muted-foreground">{t === "STR" ? "20 minutes" : "Multi-day rental"}</p>
+                          <p className="text-sm font-bold text-primary mt-1">
+                            {t === "STR"
+                              ? formatCurrency(modal.service!.str_price)
+                              : `from ${formatCurrency(modal.service!.ltr3_price)}`}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* LTR duration */}
+                    {modal.type === "LTR" && (
+                      <div>
+                        <p className="text-xs font-medium mb-2 text-muted-foreground">Duration</p>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {UK_LTR_OPTIONS.map(opt => (
+                            <button
+                              key={opt.days}
+                              onClick={() => setModal(m => ({ ...m, ltrDays: opt.days }))}
+                              className={cn(
+                                "py-2 px-1 rounded border text-center transition-all",
+                                modal.ltrDays === opt.days ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                              )}
+                            >
+                              <p className="text-xs font-semibold">{opt.label}</p>
+                              <p className="text-[10px] sm:text-xs text-primary font-medium mt-0.5">
+                                {formatCurrency(getUkLtrPrice(modal.service!, opt.days))}
+                              </p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Summary */}
+                    <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Service</span>
+                        <span className="text-xs font-medium">{modal.service?.name} (UK)</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Type</span>
+                        <span className="text-xs">{modal.type === "STR" ? "STR — 20 min" : `LTR — ${modal.ltrDays} days`}</span>
+                      </div>
+                      <div className="flex items-center justify-between border-t pt-2">
+                        <span className="text-sm font-medium">Wallet balance</span>
+                        <span className={cn("text-sm font-medium", (user?.walletBalance ?? 0) < selectedPrice ? "text-red-500" : "")}>
+                          {formatCurrency(user?.walletBalance ?? 0)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {modal.error && (
+                      <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/20 text-red-600">
+                        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                        <p className="text-xs">{modal.error}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="shrink-0 border-t p-4 sm:p-5 flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1" onClick={closeModal} disabled={modal.purchasing}>
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm" className="flex-1"
+                      onClick={handlePurchase}
+                      disabled={modal.purchasing || (user?.walletBalance ?? 0) < selectedPrice}
+                    >
+                      {modal.purchasing ? (
+                        <><Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />Purchasing...</>
+                      ) : (
+                        <>Purchase {formatCurrency(selectedPrice)}</>
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 export default function VerificationPage() {
   const { user, refreshUser } = useAuth()
   const { toast } = useToast()
@@ -1630,6 +2032,9 @@ export default function VerificationPage() {
 
       </>
       )}
+
+      {/* ── UK Numbers Section ───────────────────────────────────────────────── */}
+      <UkNumbersSection onPurchaseSuccess={fetchActiveNumbers} />
 
       {/* SMSPVA Purchase Modal */}
       <AnimatePresence>

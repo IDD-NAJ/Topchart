@@ -151,10 +151,7 @@ export async function POST(request: NextRequest) {
         SELECT id, reference, payment_method, payment_channel, amount, status
         FROM transactions
         WHERE user_id = ${userId}
-          AND (
-            verification_number_id::text = ${numberId}
-            OR (metadata->>'number_id') = ${numberId}
-          )
+          AND verification_number_id = ${numberId}::uuid
           AND status IN ('success', 'pending')
         ORDER BY created_at DESC
         LIMIT 1
