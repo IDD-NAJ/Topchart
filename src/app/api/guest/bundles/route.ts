@@ -35,7 +35,34 @@ export async function GET(request: NextRequest) {
     };
 
     const networkKey = network.toUpperCase();
-    const bundles = samplePlans[networkKey] || samplePlans["MTN"] || [];
+    const rawPlans = samplePlans[networkKey] || samplePlans["MTN"] || [];
+
+    // Transform to match checkout page's Bundle interface
+    const bundles = rawPlans.map((plan: any) => {
+      const sizeLabel = plan.name; // e.g. "1 GB"
+      const validityLabel = plan.validityDays
+        ? `${plan.validityDays} Day${plan.validityDays !== 1 ? 's' : ''}`
+        : "30 Days";
+
+      const networkCodes: Record<string, string> = {
+        MTN: "MTN",
+        TELECEL: "TELECEL",
+        AIRTELTIGO: "AIRTELTIGO",
+      };
+
+      return {
+        id: plan.id,
+        capacity: plan.datamartPlanId, // Used for purchase API
+        network_name: networkKey,
+        network_code: networkCodes[networkKey] || networkKey,
+        size_label: sizeLabel,
+        size_mb: 1024, // Placeholder, would come from real API
+        validity_label: validityLabel,
+        validity_hours: (plan.validityDays || 30) * 24,
+        price: plan.price,
+        is_popular: plan.isFeatured || false,
+      };
+    });
 
     return NextResponse.json({
       success: true,
