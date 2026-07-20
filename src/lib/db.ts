@@ -19,10 +19,27 @@ function getCleanConnectionString(): string {
     connectionString = postgresMatch[0];
   }
   
-  // Remove problematic parameters that cause connection issues
-  connectionString = connectionString.replace(/[&?]channel_binding=[^&]*/g, "");
-  connectionString = connectionString.replace(/[&?]pooler_timeout=[^&]*/g, "");
-  connectionString = connectionString.replace(/&&/g, "&").replace(/\?&/g, "?").replace(/[?&]$/, "");
+  // Split into base URL and query parameters
+  const [baseUrl, queryPart] = connectionString.split("?");
+  let params: Record<string, string> = {};
+  
+  if (queryPart) {
+    // Parse all query parameters
+    const allParams = queryPart.split("&");
+    for (const param of allParams) {
+      if (param.trim()) {
+        const [key, value] = param.split("=");
+        // Skip problematic parameters
+        if (key !== "channel_binding" && key !== "pooler_timeout") {
+          params[key] = value || "";
+        }
+      }
+    }
+  }
+  
+  // Rebuild the connection string with cleaned parameters
+  const cleanParams = Object.entries(params).map(([k, v]) => `${k}=${v}`).join("&");
+  connectionString = cleanParams ? `${baseUrl}?${cleanParams}` : baseUrl;
   
   return connectionString.trim();
 }
