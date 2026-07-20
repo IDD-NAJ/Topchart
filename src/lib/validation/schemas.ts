@@ -18,7 +18,7 @@ export const passwordSchema = z
 export const phoneSchema = z
   .string()
   .min(1, "Phone number is required")
-  .regex(/^0[2-5][0-9]\d{7}$/, "Invalid  phone number (format: 024XXXXXXX)");
+  .regex(/^0[2-5][0-9]\d{7}$/, "Invalid phone number (format: 024XXXXXXX for Ghanaian numbers)");
 
 const networkIdSchema = z
   .string()

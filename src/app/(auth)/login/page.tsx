@@ -225,6 +225,7 @@ function LoginPageContent() {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                <p className="text-xs text-muted-foreground">Min. 8 characters, 1 uppercase, 1 number, 1 special character</p>
               </div>
 
               <Button
