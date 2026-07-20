@@ -191,9 +191,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const targetUserIdsJson = JSON.stringify(Array.isArray(target_user_ids) ? target_user_ids : []);
     const result = await sql`
       INSERT INTO popup_banners (title, content, image_url, link_url, link_text, target_type, target_user_ids, target_segment, is_active, start_date, end_date, priority, show_once_per_session, dismissible)
-      VALUES (${title}, ${content}, ${image_url}, ${link_url}, ${link_text}, ${target_type}, ${target_user_ids}::jsonb, ${target_segment}, ${is_active}, ${start_date || sql`NOW()`}, ${end_date}, ${priority}, ${show_once_per_session}, ${dismissible})
+      VALUES (${title}, ${content}, ${image_url || null}, ${link_url || null}, ${link_text || null}, ${target_type}, ${targetUserIdsJson}::jsonb, ${target_segment || null}, ${is_active}, ${start_date ? new Date(start_date).toISOString() : new Date().toISOString()}, ${end_date ? new Date(end_date).toISOString() : null}, ${priority}, ${show_once_per_session}, ${dismissible})
       RETURNING id, title, content, image_url, link_url, link_text, target_type, target_user_ids, target_segment, is_active, start_date, end_date, priority, show_once_per_session, dismissible, created_at, updated_at
     ` as Array<{
       id: string;
@@ -259,23 +260,26 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    const targetUserIdsJson = updates.target_user_ids !== undefined
+      ? JSON.stringify(Array.isArray(updates.target_user_ids) ? updates.target_user_ids : [])
+      : null;
     const result = await sql`
       UPDATE popup_banners
       SET
-        title = COALESCE(${updates.title}, title),
-        content = COALESCE(${updates.content}, content),
-        image_url = COALESCE(${updates.image_url}, image_url),
-        link_url = COALESCE(${updates.link_url}, link_url),
-        link_text = COALESCE(${updates.link_text}, link_text),
-        target_type = COALESCE(${updates.target_type}, target_type),
-        target_user_ids = COALESCE(${updates.target_user_ids !== undefined ? sql`${updates.target_user_ids}::jsonb` : null}, target_user_ids),
-        target_segment = COALESCE(${updates.target_segment}, target_segment),
-        is_active = COALESCE(${updates.is_active}, is_active),
-        start_date = COALESCE(${updates.start_date}, start_date),
-        end_date = COALESCE(${updates.end_date}, end_date),
-        priority = COALESCE(${updates.priority}, priority),
-        show_once_per_session = COALESCE(${updates.show_once_per_session}, show_once_per_session),
-        dismissible = COALESCE(${updates.dismissible}, dismissible),
+        title = COALESCE(${updates.title ?? null}, title),
+        content = COALESCE(${updates.content ?? null}, content),
+        image_url = COALESCE(${updates.image_url ?? null}, image_url),
+        link_url = COALESCE(${updates.link_url ?? null}, link_url),
+        link_text = COALESCE(${updates.link_text ?? null}, link_text),
+        target_type = COALESCE(${updates.target_type ?? null}, target_type),
+        target_user_ids = COALESCE(${targetUserIdsJson}::jsonb, target_user_ids),
+        target_segment = COALESCE(${updates.target_segment ?? null}, target_segment),
+        is_active = COALESCE(${updates.is_active ?? null}, is_active),
+        start_date = COALESCE(${updates.start_date ? new Date(updates.start_date).toISOString() : null}, start_date),
+        end_date = COALESCE(${updates.end_date ? new Date(updates.end_date).toISOString() : null}, end_date),
+        priority = COALESCE(${updates.priority ?? null}, priority),
+        show_once_per_session = COALESCE(${updates.show_once_per_session ?? null}, show_once_per_session),
+        dismissible = COALESCE(${updates.dismissible ?? null}, dismissible),
         updated_at = NOW()
       WHERE id = ${id}
       RETURNING id, title, content, image_url, link_url, link_text, target_type, target_user_ids, target_segment, is_active, start_date, end_date, priority, show_once_per_session, dismissible, created_at, updated_at

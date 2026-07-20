@@ -61,28 +61,29 @@ export async function POST(request: NextRequest) {
 
     if (numbers.length === 0) {
       return NextResponse.json(
-        { success: false, error: "Number not found" },
+        { success: false, error: "Number not found or you don't have permission to cancel it" },
         { status: 404 }
       );
     }
 
     const number = numbers[0];
 
+    if (number.status === "cancelled") {
+      return NextResponse.json(
+        { success: false, error: "This number has already been cancelled" },
+        { status: 400 }
+      );
+    }
+
     if (number.status !== "active") {
       return NextResponse.json(
-        { success: false, error: "Number is not active" },
+        { success: false, error: `Cannot cancel a number with status: ${number.status}` },
         { status: 400 }
       );
     }
 
-    if (!number.allow_flag) {
-      return NextResponse.json(
-        { success: false, error: "This number cannot be flagged/cancelled" },
-        { status: 400 }
-      );
-    }
-
-    // Guard: Do not allow cancellation if SMS has already been received
+    // allow_flag = false means provider doesn't support flagging, but we still cancel internally
+    // We only block if there's already been an SMS (delivery confirmed)
     const smsRecords = await sql`
       SELECT id FROM verification_sms WHERE number_id = ${numberId} LIMIT 1
     `;
@@ -93,14 +94,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if already expired
-    if (new Date(number.expires_at) < new Date()) {
+    // Check if already expired — mark it and return error
+    if (number.expires_at && new Date(number.expires_at) < new Date()) {
       await sql`
         UPDATE verification_numbers
         SET status = 'expired', updated_at = NOW()
         WHERE id = ${numberId}
       `;
-      
       return NextResponse.json(
         { success: false, error: "Number has already expired" },
         { status: 400 }

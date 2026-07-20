@@ -9,6 +9,7 @@ import { DashboardFooter } from "@/components/dashboard-footer"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { MobileBottomNav } from "@/components/dashboard/mobile-bottom-nav"
 import { OfflineBanner } from "@/components/dashboard/offline-banner"
+import { PopupBannerContainer } from "@/components/popup-banner"
 import { cn } from "@/lib/utils"
 
 export default function DashboardLayout({
@@ -76,6 +77,7 @@ export default function DashboardLayout({
   return (
     <div className="flex min-h-screen bg-[color:var(--marketing-cream)]">
       <OfflineBanner />
+      <PopupBannerContainer />
       <DashboardSidebar collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />
         <div className={cn("flex-1 flex flex-col transition-all duration-300 ease-out", sidebarCollapsed ? "lg:pl-20" : "lg:pl-64")}>
           <DashboardHeader sidebarCollapsed={sidebarCollapsed} />

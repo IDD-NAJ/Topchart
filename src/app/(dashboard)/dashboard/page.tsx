@@ -57,7 +57,7 @@ import { useServiceStatus, SERVICE_KEYS } from "@/hooks/use-service-status"
 import { Suspense } from "react"
 import Loading from "./loading"
 import { cn } from "@/lib/utils"
-import { PopupBannerContainer } from "@/components/popup-banner"
+// PopupBannerContainer is now in the dashboard layout
 
 const TX_TYPE_LABELS: Record<string, string> = {
   deposit: "Wallet Deposit",

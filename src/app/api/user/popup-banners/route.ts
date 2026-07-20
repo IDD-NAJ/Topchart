@@ -10,12 +10,31 @@ async function getUserId(): Promise<string | null> {
   const sessionToken = cookieStore.get("session_token")?.value;
   if (!sessionToken) return null;
 
-  const sessions = await sql`
-    SELECT user_id FROM auth_sessions
-    WHERE token = ${sessionToken} AND expires_at > NOW()
-    LIMIT 1
-  `;
-  return sessions.length > 0 ? String(sessions[0].user_id) : null;
+  try {
+    // Try public auth_sessions table first (custom auth system)
+    const sessions = await sql`
+      SELECT user_id FROM auth_sessions
+      WHERE token = ${sessionToken} AND expires_at > NOW()
+      LIMIT 1
+    `;
+    if (sessions.length > 0) return String(sessions[0].user_id);
+  } catch {
+    // Table may not have token column yet, try neon_auth
+  }
+
+  try {
+    // Fallback: neon_auth session table (Better Auth)
+    const sessions = await sql`
+      SELECT "userId" as user_id FROM neon_auth.session
+      WHERE token = ${sessionToken} AND "expiresAt" > NOW()
+      LIMIT 1
+    `;
+    if (sessions.length > 0) return String(sessions[0].user_id);
+  } catch {
+    // neon_auth not available
+  }
+
+  return null;
 }
 
 export async function GET(request: NextRequest) {

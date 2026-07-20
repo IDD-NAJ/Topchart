@@ -49,7 +49,8 @@ import {
   LayoutGrid,
   Globe2,
   Server,
-  Sparkles
+  Sparkles,
+  Bell
 } from "lucide-react"
 
 interface NavItem {
@@ -107,6 +108,7 @@ const navItems: NavItem[] = [
       { title: "Bundle Categories", href: "/admin/bundle-categories", icon: Layers },
       { title: "Data Providers", href: "/admin/data-providers", icon: Server },
       { title: "Popup Banners", href: "/admin/popup-banners", icon: Megaphone },
+      { title: "Notifications", href: "/admin/notifications", icon: Bell },
       { title: "Result Checkers", href: "/admin/result-checkers", icon: CreditCard },
     ]
   },
