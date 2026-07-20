@@ -101,6 +101,7 @@
     "globals": "^17.4.0",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
+    "pg": "^8.22.0",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",
     "ts-jest": "^29.4.9",
