@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 import {
   Wifi,
-  Phone,
   FileText,
-  Globe,
   SmartphoneIcon,
   ChevronLeft,
   ChevronRight,
@@ -24,7 +24,7 @@ import {
 
 // ─── Product types ─────────────────────────────────────────────────────────────
 
-type ProductType = "data_bundle" | "airtime" | "bill_payment" | "esim" | "foreign_number"
+type ProductType = "data_bundle" | "bill_payment" | "foreign_number"
 
 interface ProductCategory {
   id: ProductType
@@ -43,24 +43,10 @@ const PRODUCT_CATEGORIES: ProductCategory[] = [
     available: true,
   },
   {
-    id: "airtime",
-    label: "Airtime",
-    description: "Top up any Ghana number",
-    icon: <Phone className="w-6 h-6" />,
-    available: true,
-  },
-  {
     id: "bill_payment",
     label: "Bill Payment",
     description: "ECG, GWCL, DStv & more",
     icon: <FileText className="w-6 h-6" />,
-    available: true,
-  },
-  {
-    id: "esim",
-    label: "eSIM",
-    description: "International data eSIM cards",
-    icon: <Globe className="w-6 h-6" />,
     available: true,
   },
   {
@@ -231,23 +217,11 @@ function CheckoutContent() {
           validity: selectedBundle?.validity_label || "",
           phone_number: recipientPhone,
         }
-      case "airtime":
-        return {
-          phone_number: airtimePhone || recipientPhone,
-          network: airtimeNetwork,
-          amount: airtimeAmount,
-        }
       case "bill_payment":
         return {
           bill_type: billType,
           account_number: billAccount,
           amount: billAmount,
-        }
-      case "esim":
-        return {
-          country: esimCountry,
-          plan: esimPlan,
-          amount: esimAmount,
         }
       case "foreign_number":
         return {
@@ -264,12 +238,8 @@ function CheckoutContent() {
     switch (selectedProduct) {
       case "data_bundle":
         return selectedBundle?.price || 0
-      case "airtime":
-        return parseFloat(airtimeAmount) || 0
       case "bill_payment":
         return parseFloat(billAmount) || 0
-      case "esim":
-        return parseFloat(esimAmount) || 0
       case "foreign_number":
         return parseFloat(fnAmount) || 0
       default:
@@ -282,12 +252,8 @@ function CheckoutContent() {
     switch (selectedProduct) {
       case "data_bundle":
         return !!selectedBundle && !!recipientPhone && recipientPhone.replace(/\D/g, "").length >= 10
-      case "airtime":
-        return !!(airtimePhone || recipientPhone) && !!airtimeNetwork && parseFloat(airtimeAmount) > 0
       case "bill_payment":
         return !!billType && !!billAccount && parseFloat(billAmount) > 0
-      case "esim":
-        return !!esimCountry && !!esimPlan && parseFloat(esimAmount) > 0
       case "foreign_number":
         return !!fnCountry && !!fnService && parseFloat(fnAmount) > 0
       default:
@@ -351,21 +317,9 @@ function CheckoutContent() {
   )
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="font-bold text-xl text-foreground">Topchart</span>
-          </Link>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Lock className="w-3.5 h-3.5" />
-            <span>Secured by Paystack</span>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-2xl mx-auto px-4 py-8">
+    <div className="min-h-screen flex flex-col bg-background">
+      <Header />
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold text-foreground">Quick Checkout</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -511,60 +465,6 @@ function CheckoutContent() {
               </section>
             )}
 
-            {/* ── Airtime Details ── */}
-            {selectedProduct === "airtime" && (
-              <section className="space-y-4">
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  Airtime Details
-                </h2>
-                <div className="space-y-1.5">
-                  <Label htmlFor="airtime-phone">Phone Number</Label>
-                  <Input
-                    id="airtime-phone"
-                    type="tel"
-                    placeholder="e.g. 024 000 0000"
-                    value={airtimePhone}
-                    onChange={(e) => setAirtimePhone(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Network</Label>
-                  <div className="flex gap-2">
-                    {NETWORKS.map((net) => (
-                      <button
-                        key={net.id}
-                        onClick={() => setAirtimeNetwork(net.code)}
-                        className={`flex-1 py-2.5 rounded-lg border text-sm font-semibold transition-all ${
-                          airtimeNetwork === net.code
-                            ? "border-[color:var(--primary)] ring-1 ring-[color:var(--primary)]"
-                            : "border-border bg-card"
-                        }`}
-                        style={
-                          airtimeNetwork === net.code
-                            ? { background: net.color, color: net.textColor }
-                            : {}
-                        }
-                      >
-                        {net.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="airtime-amount">Amount (GH&#x20B5;)</Label>
-                  <Input
-                    id="airtime-amount"
-                    type="number"
-                    min="1"
-                    step="0.5"
-                    placeholder="e.g. 5.00"
-                    value={airtimeAmount}
-                    onChange={(e) => setAirtimeAmount(e.target.value)}
-                  />
-                </div>
-              </section>
-            )}
-
             {/* ── Bill Payment Details ── */}
             {selectedProduct === "bill_payment" && (
               <section className="space-y-4">
@@ -606,44 +506,6 @@ function CheckoutContent() {
                     placeholder="e.g. 50.00"
                     value={billAmount}
                     onChange={(e) => setBillAmount(e.target.value)}
-                  />
-                </div>
-              </section>
-            )}
-
-            {/* ── eSIM Details ── */}
-            {selectedProduct === "esim" && (
-              <section className="space-y-4">
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  eSIM Details
-                </h2>
-                <div className="space-y-1.5">
-                  <Label htmlFor="esim-country">Destination Country</Label>
-                  <Input
-                    id="esim-country"
-                    placeholder="e.g. United States"
-                    value={esimCountry}
-                    onChange={(e) => setEsimCountry(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="esim-plan">Plan / Package</Label>
-                  <Input
-                    id="esim-plan"
-                    placeholder="e.g. 5GB / 30 days"
-                    value={esimPlan}
-                    onChange={(e) => setEsimPlan(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="esim-amount">Amount (GH&#x20B5;)</Label>
-                  <Input
-                    id="esim-amount"
-                    type="number"
-                    min="1"
-                    placeholder="e.g. 150.00"
-                    value={esimAmount}
-                    onChange={(e) => setEsimAmount(e.target.value)}
                   />
                 </div>
               </section>
@@ -835,6 +697,7 @@ function CheckoutContent() {
           </p>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }

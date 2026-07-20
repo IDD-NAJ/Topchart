@@ -732,6 +732,26 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
                   Sign in to dashboard
                 </Link>
               </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <Link
+                  href="/checkout"
+                  className="inline-flex h-12 items-center justify-center rounded-full px-8 text-sm font-semibold text-white transition-all shadow-xl group"
+                  style={{ backgroundColor: "var(--marketing-accent)" }}
+                >
+                  Buy as Guest
+                  <motion.span
+                    initial={{ x: 0 }}
+                    whileHover={{ x: 4 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  >
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </motion.span>
+                </Link>
+              </motion.div>
             </motion.div>
 
             <motion.div

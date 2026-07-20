@@ -137,17 +137,31 @@ function LoginPageContent() {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="space-y-2"
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="p-4 rounded-2xl border-2"
+              style={{ borderColor: "var(--marketing-accent)", backgroundColor: "rgba(243, 143, 32, 0.05)" }}
             >
-              <Link href="/" className="mb-8 block">
-                <span className="font-marketing-script text-4xl text-[color:var(--marketing-gold)]">Topchart</span>
-                <span className="ml-2 inline-block rounded-full bg-[color:var(--marketing-accent)]/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-widest text-[color:var(--marketing-accent)]">
-                  GH
-                </span>
-              </Link>
-              <h1 className="font-heading text-3xl font-normal tracking-tight text-foreground">Welcome back</h1>
-              <p className="text-muted-foreground font-body">Sign in to access your account and continue topping up.</p>
+              <Button asChild className="h-12 w-full rounded-full text-base font-semibold text-white shadow-md transition-opacity hover:opacity-95" style={{ backgroundColor: "var(--marketing-accent)" }}>
+                <Link href="/checkout">
+                  <Smartphone className="w-5 h-5 mr-2" />
+                  Buy as Guest
+                </Link>
+              </Button>
+              <p className="text-center text-xs text-muted-foreground mt-2">No account needed — checkout in seconds</p>
+            </motion.div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border/50" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[color:var(--marketing-cream-alt)] px-2 text-muted-foreground">Or sign in</span>
+              </div>
+            </div>
+
+            <motion.div className="space-y-2">
+              <h1 className="text-3xl font-black">Welcome back</h1>
+              <p className="text-base text-muted-foreground">Sign in to your account to continue</p>
             </motion.div>
           </div>
 
@@ -258,22 +272,6 @@ function LoginPageContent() {
               <Link href="/register">
                 Create an account
                 <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border/50" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[color:var(--marketing-cream-alt)] px-2 text-muted-foreground">Skip account creation</span>
-              </div>
-            </div>
-
-            <Button asChild className="h-12 w-full rounded-full text-base font-semibold text-white shadow-md transition-opacity hover:opacity-95" style={{ backgroundColor: "var(--marketing-accent)" }}>
-              <Link href="/checkout">
-                <Smartphone className="w-5 h-5 mr-2" />
-                Buy as Guest
               </Link>
             </Button>
           </motion.div>
