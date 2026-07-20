@@ -475,6 +475,22 @@ export default function RegisterPage() {
                 Sign in to your account
               </Link>
             </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border/50" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[color:var(--marketing-cream-alt)] px-2 text-muted-foreground">Skip account creation</span>
+              </div>
+            </div>
+
+            <Button asChild className="h-12 w-full rounded-full text-base font-semibold text-white shadow-md transition-opacity hover:opacity-95" style={{ backgroundColor: "var(--marketing-accent)" }}>
+              <Link href="/checkout">
+                <Smartphone className="w-5 h-5 mr-2" />
+                Buy as Guest
+              </Link>
+            </Button>
           </div>
         </motion.div>
       </main>
