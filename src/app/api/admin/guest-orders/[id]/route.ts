@@ -40,17 +40,7 @@ export async function PATCH(
   const { id } = await params;
   const body = await request.json();
 
-  const allowed: Record<string, unknown> = {};
-  if (body.fulfillment_status !== undefined) allowed.fulfillment_status = body.fulfillment_status as FulfillmentStatus;
-  if (body.payment_status !== undefined) allowed.payment_status = body.payment_status as PaymentStatus;
-  if (body.notes !== undefined) allowed.notes = String(body.notes);
-  if (body.datamart_order_status !== undefined) allowed.datamart_order_status = String(body.datamart_order_status);
-
-  if (Object.keys(allowed).length === 0) {
-    return NextResponse.json({ success: false, error: "No valid fields to update" }, { status: 400 });
-  }
-
-  // Handle refund action
+  // Handle refund action (must run before the "no fields" guard)
   if (body.action === "refund") {
     const rows = await sql`SELECT * FROM guest_orders WHERE id = ${id} LIMIT 1`;
     if (rows.length === 0) {
@@ -72,6 +62,16 @@ export async function PATCH(
     }
     await adminUpdateGuestOrder(id, { payment_status: "failed", fulfillment_status: "failed", notes: `Refunded by admin (${auth.email})` });
     return NextResponse.json({ success: true, refund: refundResult.data });
+  }
+
+  const allowed: Record<string, unknown> = {};
+  if (body.fulfillment_status !== undefined) allowed.fulfillment_status = body.fulfillment_status as FulfillmentStatus;
+  if (body.payment_status !== undefined) allowed.payment_status = body.payment_status as PaymentStatus;
+  if (body.notes !== undefined) allowed.notes = String(body.notes);
+  if (body.datamart_order_status !== undefined) allowed.datamart_order_status = String(body.datamart_order_status);
+
+  if (Object.keys(allowed).length === 0) {
+    return NextResponse.json({ success: false, error: "No valid fields to update" }, { status: 400 });
   }
 
   const updated = await adminUpdateGuestOrder(id, allowed as Parameters<typeof adminUpdateGuestOrder>[1]);

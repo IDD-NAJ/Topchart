@@ -96,6 +96,7 @@ const navItems: NavItem[] = [
     icon: Wifi,
     children: [
       { title: "Data Purchases", href: "/admin/data-purchases", icon: Wifi },
+      { title: "Guest Orders", href: "/admin/guest-orders", icon: Receipt },
     ]
   },
   {

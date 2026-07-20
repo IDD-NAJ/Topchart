@@ -57,6 +57,7 @@ import {
   Video,
 } from "lucide-react"
 import { HealthCheck } from "@/components/admin/health-check"
+import { GuestOrdersPanel } from "@/components/admin/GuestOrdersPanel"
 
 interface AdminUser {
   id: string
@@ -668,6 +669,18 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </Link>
+            <Link href="/admin/guest-orders" className="col-span-2">
+              <Card className="cursor-pointer hover:shadow-md transition-shadow h-full border-[color:var(--marketing-accent)]/30">
+                <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
+                  <CreditCard className="h-4 w-4 text-[color:var(--marketing-accent)]" />
+                  <ArrowUpRight className="h-3 w-3 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="px-3 pb-3">
+                  <div className="text-sm font-bold">Guest Orders</div>
+                  <p className="text-[10px] text-muted-foreground">Public checkout (no account)</p>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         </div>
       )}
@@ -940,6 +953,9 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       )}
+
+      {/* Guest Orders */}
+      <GuestOrdersPanel />
 
       {/* Quick User Management */}
       <Card>

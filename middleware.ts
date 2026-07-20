@@ -89,6 +89,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Public guest routes — no auth needed
+  if (
+    pathname.startsWith("/checkout") ||
+    pathname.startsWith("/track") ||
+    pathname.startsWith("/receipt")
+  ) {
+    return applySecurityHeaders(NextResponse.next(), request);
+  }
+
   // Dashboard protection
   if (pathname.startsWith("/dashboard")) {
     // Allow access if auth is loading (to prevent redirect loops during auth flow)
