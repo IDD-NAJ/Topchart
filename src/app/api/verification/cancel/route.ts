@@ -16,22 +16,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify session
-    const sessions = await sql`
-      SELECT s.user_id
-      FROM auth_sessions s
-      WHERE s.token = ${sessionToken}
-        AND s.expires_at > NOW()
-    `;
+    // Verify session — check public auth_sessions first, then neon_auth.session
+    let userId: string | null = null;
 
-    if (sessions.length === 0) {
+    try {
+      const sessions = await sql`
+        SELECT user_id FROM auth_sessions
+        WHERE token = ${sessionToken} AND expires_at > NOW()
+        LIMIT 1
+      `;
+      if (sessions.length > 0) userId = String(sessions[0].user_id);
+    } catch {
+      // column may not exist
+    }
+
+    if (!userId) {
+      try {
+        const sessions = await sql`
+          SELECT "userId" AS user_id FROM neon_auth.session
+          WHERE token = ${sessionToken} AND "expiresAt" > NOW()
+          LIMIT 1
+        `;
+        if (sessions.length > 0) userId = String(sessions[0].user_id);
+      } catch {
+        // neon_auth not available
+      }
+    }
+
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: "Session expired" },
+        { success: false, error: "Session expired or invalid" },
         { status: 401 }
       );
     }
-
-    const userId = sessions[0].user_id;
 
     let body;
     try {

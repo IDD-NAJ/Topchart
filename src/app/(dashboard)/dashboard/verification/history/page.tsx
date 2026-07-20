@@ -381,11 +381,11 @@ function HistoryRow({ record, onRefresh }: { record: VerificationRecord; onRefre
               </button>
 
               {/* Active-only action buttons */}
-              {isActive && record.allow_flag && !confirmCancel && (
+              {isActive && !confirmCancel && (
                 <button
                   onClick={() => setConfirmCancel(true)}
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors shrink-0"
-                  title="Flag & cancel this number"
+                  title="Cancel this number"
                 >
                   <Flag className="h-3 w-3" />
                   Cancel
@@ -394,7 +394,7 @@ function HistoryRow({ record, onRefresh }: { record: VerificationRecord; onRefre
             </div>
 
             {/* Cancel confirmation - separate row on mobile */}
-            {isActive && record.allow_flag && confirmCancel && (
+            {isActive && confirmCancel && (
               <div className="flex items-center gap-2 mt-1 sm:mt-0">
                 <span className="text-xs text-red-600 font-medium shrink-0">Confirm cancel?</span>
                 <div className="flex items-center gap-1.5">

@@ -1070,8 +1070,6 @@ export default function DashboardPage() {
           pendingReference={pendingReference}
         />
 
-        {/* Popup Banner */}
-        <PopupBannerContainer />
       </motion.div>
     </Suspense>
   )

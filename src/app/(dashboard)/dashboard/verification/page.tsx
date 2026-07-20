@@ -435,7 +435,7 @@ function ActiveNumberCard({
               )}
             </div>
             <ActiveNumberSmsPanel numberId={num.id} initialCount={num.sms_count} isActive={isActiveForSms} />
-            {isActive && num.allow_flag && !confirmCancel && (
+            {isActive && !confirmCancel && (
               <button
                 type="button"
                 onClick={() => setConfirmCancel(true)}
@@ -445,7 +445,7 @@ function ActiveNumberCard({
                 Cancel number
               </button>
             )}
-            {isActive && num.allow_flag && confirmCancel && (
+            {isActive && confirmCancel && (
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className="text-red-600 font-medium">Confirm cancel?</span>
                 <button
@@ -532,21 +532,16 @@ export default function VerificationPage() {
   useEffect(() => {
     const fetchGlobalAreaCodes = async () => {
       try {
-        console.log("Fetching global area codes from API");
         const res = await fetch("/api/verification/area-codes")
         let data: any = null
         try { data = await res.json() } catch { /* non-JSON response */ }
-        console.log("Global area codes response:", data);
         if (data?.success && data?.data?.areaCodes?.length > 0) {
           setGlobalAreaCodes(data.data.areaCodes)
-          console.log(`Set ${data.data.areaCodes.length} global area codes`);
           setApiError(null)
         } else {
-          console.log("No global area codes found in response, message:", data?.message);
           setApiError(data?.message || "No area codes available")
         }
       } catch (error) {
-        console.error("Failed to fetch global area codes:", error);
         setApiError(error instanceof Error ? error.message : "Failed to fetch area codes")
       }
     }
