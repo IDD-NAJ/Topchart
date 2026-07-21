@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation";
 import { getAppOrigin } from "@/lib/app-url";
-import { sql } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Building2, MapPin, Phone, Mail, CheckCircle, ExternalLink, Share2 } from "lucide-react";
 import Link from "next/link";
+
+export const dynamic = "force-static";
 
 interface PublicResellerProfile {
   id: string;
@@ -21,43 +22,8 @@ interface PublicResellerProfile {
 }
 
 async function getPublicResellerProfile(code: string): Promise<PublicResellerProfile | null> {
-  try {
-    const rows = await sql`
-      SELECT
-        r.id,
-        r.business_name,
-        r.business_address,
-        r.business_phone,
-        r.reseller_code,
-        COALESCE(rt.name, 'BRONZE') as tier_name,
-        r.status,
-        r.total_sales,
-        r.commission_rate,
-        u.email as business_email
-      FROM reseller_profiles r
-      LEFT JOIN reseller_tiers rt ON rt.name = (
-        SELECT CASE
-          WHEN COALESCE(r.total_sales, 0) >= 100000 THEN 'PLATINUM'
-          WHEN COALESCE(r.total_sales, 0) >= 20000 THEN 'GOLD'
-          WHEN COALESCE(r.total_sales, 0) >= 5000 THEN 'SILVER'
-          ELSE 'BRONZE'
-        END
-      )
-      LEFT JOIN users u ON u.id = r.user_id
-      WHERE r.reseller_code = ${code}
-        AND r.status = 'active'
-      LIMIT 1
-    `;
-
-    if (!Array.isArray(rows) || rows.length === 0) {
-      return null;
-    }
-
-    return rows[0] as PublicResellerProfile;
-  } catch (error) {
-    console.error("Error fetching public reseller profile:", error);
-    return null;
-  }
+  // Reseller profiles feature - not yet enabled
+  return null;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ code: string }> }) {

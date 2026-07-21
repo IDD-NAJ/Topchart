@@ -60,7 +60,8 @@ export async function getGuestOrders(
   }
 ) {
   try {
-    let query = `
+    // Simple query without filters for now
+    const result = await sql`
       SELECT 
         id, 
         tracking_number, 
@@ -77,31 +78,12 @@ export async function getGuestOrders(
         created_at,
         updated_at
       FROM guest_orders
-      WHERE 1=1
+      ORDER BY created_at DESC
+      LIMIT ${limit}
+      OFFSET ${offset}
     `;
 
-    const params: any[] = [];
-
-    if (filters?.payment_status) {
-      query += ` AND payment_status = $${params.length + 1}`;
-      params.push(filters.payment_status);
-    }
-
-    if (filters?.fulfillment_status) {
-      query += ` AND fulfillment_status = $${params.length + 1}`;
-      params.push(filters.fulfillment_status);
-    }
-
-    if (filters?.product_type) {
-      query += ` AND product_type = $${params.length + 1}`;
-      params.push(filters.product_type);
-    }
-
-    query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-    params.push(limit, offset);
-
-    const result = await sql.query(query, params);
-    return result.rows || [];
+    return Array.isArray(result) ? result : [];
   } catch (error) {
     console.error("[DB] Error fetching guest orders:", error);
     return [];

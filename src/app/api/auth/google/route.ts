@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { generateOAuthState, getGoogleEnv, getGoogleRedirectUri } from "@/lib/google-oauth";
 import { withRateLimit } from "@/lib/rate-limit";

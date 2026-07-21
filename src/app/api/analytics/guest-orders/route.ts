@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { getGuestOrderStats } from "@/lib/guest-orders";
 import { sql } from "@/lib/db";

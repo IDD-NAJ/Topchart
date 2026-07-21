@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { billService } from "@/lib/bills/service";
 import { requireAuth } from "@/lib/auth";

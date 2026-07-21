@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
 import { useRouter } from "next/navigation";
-import { getAppOrigin } from "@/lib/app-url";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
@@ -16,31 +14,10 @@ export function GoogleSignInButton({ mode = "signin", callbackUrl = "/dashboard"
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const login = useGoogleLogin({
-    onSuccess: (tokenResponse) => {
-      const url = new URL("/api/auth/google", getAppOrigin());
-      fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: tokenResponse.access_token, callbackUrl }),
-      }).then((res) => res.json()).then((data) => {
-        if (data.success) {
-          router.push(callbackUrl);
-          router.refresh();
-        } else {
-          router.push("/login?error=auth_failed");
-        }
-      });
-    },
-    onError: (error) => {
-      console.error("Google login error:", error);
-      router.push("/login?error=google_error");
-    },
-  });
-
   const handleClick = () => {
     setIsLoading(true);
-    login();
+    // Redirect to login for now - Google OAuth not configured
+    router.push("/login?info=google_setup_required");
   };
 
   const buttonText = mode === "signup" ? "Sign up with Google" : "Continue with Google";

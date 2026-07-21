@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { syncAllPendingOrders } from "@/lib/datamart-v2";
 

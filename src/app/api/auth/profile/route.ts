@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { updateProfile, updatePassword } from "@/lib/actions/profile";
 

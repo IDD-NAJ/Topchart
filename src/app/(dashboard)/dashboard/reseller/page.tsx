@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { MetricCard } from "@/components/dashboard/reseller/MetricCard";
 import { QuickActionCard } from "@/components/dashboard/reseller/QuickActionCard";
 import { ResellerServiceSchema } from "./schema";
+import { getAppOrigin } from "@/lib/app-url";
 import {
   Store,
   DollarSign,

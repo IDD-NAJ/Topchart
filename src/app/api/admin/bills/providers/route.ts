@@ -3,6 +3,8 @@ import { sql } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { billService } from "@/lib/bills/service";
 
+export const dynamic = "force-dynamic";
+
 // Get provider configuration and status
 export async function GET(request: NextRequest) {
   try {

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { autoDetectOperator, mnpLookupGet } from "@/lib/reloadly";
 import { detectNetworkByPhone, getOperatorIdByPhone, _RELOADLY_OPERATORS } from "@/lib/reloadly-networks";
