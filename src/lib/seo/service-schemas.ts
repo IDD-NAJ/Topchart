@@ -39,13 +39,6 @@ export const VERIFICATION_NUMBER_SCHEMA = generateServiceSchema({
   areaServed: ['Ghana', 'Accra', 'Kumasi', 'Tema', 'Takoradi'],
 })
 
-export const AIRTIME_SCHEMA = generateServiceSchema({
-  name: 'Airtime Topup',
-  description: 'Buy airtime online in Ghana instantly. MTN, Telecel, AirtelTigo airtime topup via MoMo at cheapest rates.',
-  provider: 'Topchart Ghana',
-  areaServed: ['Ghana'],
-})
-
 export const RESULT_CHECKER_SCHEMA = generateProductSchema({
   name: 'WAEC Result Checker',
   description: 'Buy WAEC, BECE, and NOVDEC result checker vouchers online in Ghana. Instant PIN delivery via MoMo.',
@@ -67,32 +60,6 @@ export const RESULT_CHECKER_SCHEMA = generateProductSchema({
       name: 'NOVDEC Checker',
       description: 'NOVDEC private candidates checker',
       price: '20.00',
-      priceCurrency: 'GHS',
-    },
-  ],
-})
-
-export const ESIM_SCHEMA = generateProductSchema({
-  name: 'eSIM Ghana',
-  description: 'Buy eSIM in Ghana for international travel. Digital SIM cards for global connectivity with US virtual numbers and travel data eSIMs.',
-  brand: 'Topchart Ghana',
-  offers: [
-    {
-      name: 'US Virtual Number',
-      description: 'US phone number with voice, SMS, and data for 30 days',
-      price: '200.00',
-      priceCurrency: 'GHS',
-    },
-    {
-      name: 'Travel eSIM US',
-      description: 'Travel data eSIM for United States - 3GB for 7 days',
-      price: '30.00',
-      priceCurrency: 'GHS',
-    },
-    {
-      name: 'Travel eSIM UK',
-      description: 'Travel data eSIM for United Kingdom - 5GB for 30 days',
-      price: '65.00',
       priceCurrency: 'GHS',
     },
   ],

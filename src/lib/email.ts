@@ -58,9 +58,7 @@ export async function sendGuestOrderConfirmationEmail(order: {
 
   const productLabel: Record<string, string> = {
     data_bundle: "Data Bundle",
-    airtime: "Airtime",
     bill_payment: "Bill Payment",
-    esim: "eSIM",
     foreign_number: "Foreign Number",
   };
 
@@ -136,7 +134,7 @@ export async function sendGuestOrderConfirmationEmail(order: {
             For support, reach us on WhatsApp or via our website.
           </p>
           <p style="color:#9ca3af;font-size:12px;margin-top:24px">
-            Topchart · Your trusted mobile top-up platform
+            Topchart · Your trusted mobile data platform
           </p>
         </div>
       </div>

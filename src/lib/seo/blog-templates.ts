@@ -55,20 +55,10 @@ export const BLOG_CATEGORIES = {
     slug: 'verification-numbers',
     description: 'SMS Foreign Numbers, OTP numbers, virtual numbers for WhatsApp, Telegram, Facebook, and more.',
   },
-  airtime: {
-    name: 'Airtime',
-    slug: 'airtime',
-    description: 'How to buy airtime online in Ghana - MTN, Telecel, AirtelTigo airtime topup guides.',
-  },
   resultCheckers: {
     name: 'Result Checkers',
     slug: 'result-checkers',
     description: 'WAEC, BECE, NOVDEC result checker guides and tips for Ghana students.',
-  },
-  esim: {
-    name: 'eSIM',
-    slug: 'esim',
-    description: 'eSIM guides, travel eSIM, US virtual numbers, and digital SIM card information.',
   },
   billPayments: {
     name: 'Bill Payments',
@@ -103,20 +93,10 @@ export const BLOG_POST_TEMPLATES = {
     description: 'Learn how to get {platform} Foreign Numbers in Ghana. Step-by-step guide, prices, tips, and everything you need to know.',
     keywords: ['{platform} Foreign Number', 'buy {platform} number Ghana', 'cheap {platform} OTP', 'virtual {platform} number'],
   },
-  airtime: {
-    title: '{network} Airtime Ghana: How to Buy Online',
-    description: 'Complete guide to buying {network} airtime online in Ghana. Step-by-step process, prices, payment methods, and tips.',
-    keywords: ['{network} airtime Ghana', 'buy {network} airtime online', 'cheap {network} airtime', '{network} recharge Ghana'],
-  },
   resultCheckers: {
     title: '{exam} Result Checker Ghana: Complete {year} Guide',
     description: 'Everything about {exam} result checker in Ghana. How to buy, prices, how to check results, and step-by-step guide.',
     keywords: ['{exam} result checker Ghana', 'buy {exam} checker', '{exam} PIN Ghana', 'check {exam} results online'],
-  },
-  esim: {
-    title: '{type} eSIM Ghana: Complete Guide for {year}',
-    description: 'Complete guide to {type} eSIM in Ghana. How to buy, activate, and use. Prices, compatible devices, and tips.',
-    keywords: ['{type} eSIM Ghana', 'buy {type} eSIM', 'digital SIM card Ghana', '{type} virtual number'],
   },
   billPayments: {
     title: '{service} Payment Ghana: Complete Guide',

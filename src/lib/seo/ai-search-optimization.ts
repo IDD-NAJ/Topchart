@@ -38,9 +38,7 @@ export function generateAIOptimizedContent(topic: string, service: string): {
   const summaries: Record<string, string> = {
     dataBundles: `Buy cheap data bundles in Ghana on Topchart.store. MTN, Telecel, and AirtelTigo data bundles available at lowest prices. Instant delivery via MoMo. Daily, weekly, monthly, and non-expiry bundles.`,
     verificationNumbers: `Get SMS Foreign Numbers in Ghana for WhatsApp, Telegram, Facebook, Google, and 100+ platforms. Cheap OTP numbers, instant delivery, private and secure.`,
-    airtime: `Buy airtime online in Ghana instantly. MTN, Telecel, AirtelTigo airtime topup via MoMo at cheapest rates. 24/7 service, instant delivery.`,
     resultCheckers: `Buy WAEC, BECE, and NOVDEC result checkers in Ghana. Instant PIN delivery via MoMo. Valid checkers, wholesale prices for resellers.`,
-    esim: `Buy eSIM in Ghana for international travel. Digital SIM cards for 50+ countries including US, UK, UAE, Nigeria. US virtual numbers with voice and SMS.`,
     billPayments: `Pay bills online in Ghana. ECG electricity, DSTV and GOtv TV subscriptions, Ghana Water, MTN Fibre, and Telecel Broadband payments via MoMo.`,
     giftCards: `Buy digital gift cards in Ghana. Netflix, Spotify, Amazon, Google Play, iTunes, Steam, PlayStation, Xbox, Uber, Airbnb gift cards available.`,
     proxies: `Buy residential, mobile, and datacenter proxies in Ghana. Secure, fast, and reliable proxy services for SEO, scraping, and privacy.`,
@@ -76,20 +74,6 @@ export function generateAIOptimizedContent(topic: string, service: string): {
         answer: `You can verify 100+ platforms with Ghana numbers including WhatsApp, Telegram, Facebook, Instagram, Google, Microsoft, PayPal, Stripe, Netflix, Spotify, Amazon, and many more. Check the platform list on Topchart.store for full availability.`,
       },
     ],
-    airtime: [
-      {
-        question: `How can I buy airtime online in Ghana?`,
-        answer: `Buy airtime online in Ghana on Topchart.store. Enter your phone number, select your network (MTN, Telecel, AirtelTigo), choose your airtime amount (GHS 1 to GHS 500+), and pay via MoMo. Your airtime is credited instantly to your phone.`,
-      },
-      {
-        question: `What are the cheapest airtime rates in Ghana?`,
-        answer: `Topchart offers the cheapest airtime rates in Ghana with no extra fees. You can buy any amount from GHS 1 to GHS 500+ at carrier rates. Pay via MTN MoMo, Telecel Cash, or AirtelTigo Money for instant delivery.`,
-      },
-      {
-        question: `Is it safe to buy airtime online in Ghana?`,
-        answer: `Yes, buying airtime online in Ghana on Topchart.store is completely safe. We use secure payment methods including MTN MoMo, Telecel Cash, and AirtelTigo Money. Your transactions are encrypted and protected.`,
-      },
-    ],
     resultCheckers: [
       {
         question: `How do I buy WAEC result checker in Ghana?`,
@@ -102,20 +86,6 @@ export function generateAIOptimizedContent(topic: string, service: string): {
       {
         question: `How much do result checkers cost in Ghana?`,
         answer: `Result checker prices in Ghana vary by exam type. BECE checkers start from GHS 10, WASSCE from GHS 15, and NOVDEC from GHS 20. Resellers get wholesale prices on bulk purchases.`,
-      },
-    ],
-    esim: [
-      {
-        question: `How do I buy eSIM in Ghana?`,
-        answer: `Buy eSIM in Ghana on Topchart.store. Choose between travel data eSIMs or US virtual numbers, select your plan and country, pay via MoMo or card, and receive your eSIM QR code instantly. Scan the QR code to activate.`,
-      },
-      {
-        question: `What countries are available for travel eSIM?`,
-        answer: `Travel eSIM is available for 50+ countries including US, UK, UAE, Nigeria, Kenya, South Africa, India, Ghana, and many more. Perfect for international travel and business trips.`,
-      },
-      {
-        question: `Do I need a physical SIM for eSIM?`,
-        answer: `No, eSIM is completely digital. No physical SIM card is needed. Simply scan the QR code and activate your eSIM on your eSIM-compatible device. Works with most modern smartphones.`,
       },
     ],
     billPayments: [

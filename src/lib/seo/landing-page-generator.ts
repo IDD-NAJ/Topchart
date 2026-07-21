@@ -114,20 +114,6 @@ function generateServiceFAQs(service: string, location?: string): Array<{ questi
         answer: `You can verify 100+ platforms${locationText} including WhatsApp, Telegram, Facebook, Instagram, Google, Microsoft, PayPal, Stripe, Netflix, Spotify, and many more.`,
       },
     ],
-    airtime: [
-      {
-        question: `How can I buy airtime online${locationText}?`,
-        answer: `Buy airtime online${locationText} on Topchart.store. Enter your phone number, select your network (MTN, Telecel, AirtelTigo), choose amount, and pay via MoMo. Airtime is credited instantly.`,
-      },
-      {
-        question: `What are the airtime denominations available${locationText}?`,
-        answer: `Airtime denominations${locationText} range from GHS 1 to GHS 500+. You can buy any amount you need on Topchart.store.`,
-      },
-      {
-        question: `Is it safe to buy airtime online${locationText}?`,
-        answer: `Yes, buying airtime online${locationText} on Topchart.store is safe. We use secure payment methods including MTN MoMo, Telecel Cash, and AirtelTigo Money.`,
-      },
-    ],
     resultCheckers: [
       {
         question: `How can I buy WAEC result checker${locationText}?`,
@@ -140,20 +126,6 @@ function generateServiceFAQs(service: string, location?: string): Array<{ questi
       {
         question: `Do you offer wholesale prices for resellers${locationText}?`,
         answer: `Yes, resellers get wholesale prices on result checkers${locationText}. Join our reseller programme to earn commissions on every sale.`,
-      },
-    ],
-    esim: [
-      {
-        question: `How do I buy eSIM${locationText}?`,
-        answer: `Buy eSIM${locationText} on Topchart.store. Choose between travel data eSIMs or US virtual numbers, select your plan, and pay. Your eSIM QR code is delivered instantly for activation.`,
-      },
-      {
-        question: `What countries are available for travel eSIM${locationText}?`,
-        answer: `Travel eSIM${locationText} is available for 50+ countries including US, UK, UAE, Nigeria, Kenya, South Africa, India, and more. Perfect for international travel.`,
-      },
-      {
-        question: `Do I need a physical SIM for eSIM${locationText}?`,
-        answer: `No, eSIM${locationText} is completely digital. No physical SIM card is needed. Simply scan the QR code and activate your eSIM on your eSIM-compatible device.`,
       },
     ],
     bills: [

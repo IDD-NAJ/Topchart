@@ -42,22 +42,6 @@ export const SERVICE_KEYWORDS = {
       google: ['Google Foreign Number', 'Google OTP number', 'verify Google account'],
     },
   },
-  airtime: {
-    primary: [
-      'buy airtime online Ghana',
-      'instant airtime topup',
-      'MTN airtime Ghana',
-      'Telecel airtime online',
-      'AirtelTigo recharge Ghana',
-    ],
-    secondary: [
-      'cheap airtime Ghana',
-      'mobile recharge online Ghana',
-      'airtime with MoMo',
-      'instant topup Ghana',
-      'buy credit online',
-    ],
-  },
   resultCheckers: {
     primary: [
       'WAEC result checker Ghana',
@@ -70,22 +54,6 @@ export const SERVICE_KEYWORDS = {
       'WAEC PIN Ghana',
       'WASSCE checker online',
       'result checker prices',
-    ],
-  },
-  esim: {
-    primary: [
-      'eSIM Ghana',
-      'travel eSIM',
-      'digital SIM card Ghana',
-      'US virtual number',
-      'international data eSIM',
-    ],
-    secondary: [
-      'buy eSIM online Ghana',
-      'virtual phone number Ghana',
-      'travel data SIM',
-      'eSIM activation',
-      'global data eSIM',
     ],
   },
   proxies: {
