@@ -44,9 +44,12 @@ export async function POST(request: NextRequest) {
       try {
         console.log(`[DatamartSync] Fetching ${networkCode} packages from datamart`)
 
-        const packages = await getDataPackages(networkCode)
-        if (!packages || packages.length === 0) {
-          console.warn(`[DatamartSync] No packages found for ${networkCode}`)
+        const packageResponse = await getDataPackages(networkCode)
+        const packages = packageResponse.data
+        if (!packageResponse.success || !packages?.length) {
+          console.warn(
+            `[DatamartSync] No packages found for ${networkCode}: ${packageResponse.error || 'empty response'}`
+          )
           continue
         }
 

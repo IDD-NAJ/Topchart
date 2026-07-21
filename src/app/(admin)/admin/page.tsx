@@ -2,11 +2,8 @@
 
 import React from "react"
 import { useAuth } from "@/lib/auth-context"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
-  BarChart3,
   Settings,
   Users,
   ShoppingCart,
@@ -24,42 +21,36 @@ export default function AdminPage() {
       icon: TrendingUp,
       title: "Analytics & Reports",
       description: "View system analytics, user statistics, and transaction reports",
-      href: "/admin/analytics",
       color: "bg-blue-500/10 text-blue-600"
     },
     {
       icon: Users,
       title: "User Management",
       description: "Manage users, permissions, and account settings",
-      href: "/admin/users",
       color: "bg-green-500/10 text-green-600"
     },
     {
       icon: ShoppingCart,
       title: "Products & Pricing",
       description: "Manage data bundles, pricing tiers, and product offerings",
-      href: "/admin/products",
       color: "bg-purple-500/10 text-purple-600"
     },
     {
       icon: Database,
       title: "Data Management",
       description: "Manage providers, networks, and data configurations",
-      href: "/admin/data",
       color: "bg-orange-500/10 text-orange-600"
     },
     {
       icon: AlertCircle,
       title: "Transactions & Disputes",
       description: "Review transactions, disputes, and payment issues",
-      href: "/admin/transactions",
       color: "bg-red-500/10 text-red-600"
     },
     {
       icon: Settings,
       title: "System Settings",
       description: "Configure system-wide settings and preferences",
-      href: "/admin/settings",
       color: "bg-slate-500/10 text-slate-600"
     },
   ]
@@ -124,17 +115,20 @@ export default function AdminPage() {
             {adminSections.map((section) => {
               const Icon = section.icon
               return (
-                <Link key={section.href} href={section.href}>
-                  <Card className="cursor-pointer hover:shadow-lg transition-shadow h-full">
-                    <CardHeader>
-                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${section.color}`}>
-                        <Icon className="h-6 w-6" />
-                      </div>
+                <Card key={section.title} className="h-full" aria-disabled="true">
+                  <CardHeader>
+                    <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-lg ${section.color}`}>
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
                       <CardTitle className="text-lg">{section.title}</CardTitle>
-                      <CardDescription>{section.description}</CardDescription>
-                    </CardHeader>
-                  </Card>
-                </Link>
+                      <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                        Coming soon
+                      </span>
+                    </div>
+                    <CardDescription>{section.description}</CardDescription>
+                  </CardHeader>
+                </Card>
               )
             })}
           </div>

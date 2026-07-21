@@ -104,7 +104,7 @@ export default function AdminUserTable() {
         const usersArray = Array.isArray(result.users) ? result.users : []
         setUsers(usersArray)
       } else if (response.status === 401 || response.status === 403) {
-        router.replace("/admin/login")
+        router.replace("/login?next=/admin")
       }
     } catch (error) {
       console.error("Failed to load users:", error)
@@ -158,7 +158,7 @@ export default function AdminUserTable() {
         await loadUsers(searchTerm)
         setEditingUser(null)
       } else if (res.status === 401 || res.status === 403) {
-        router.replace("/admin/login")
+        router.replace("/login?next=/admin")
       } else {
         setEditError(data.error || "Failed to update user")
       }
@@ -183,7 +183,7 @@ export default function AdminUserTable() {
         await loadUsers(searchTerm)
         setDeleteTarget(null)
       } else if (res.status === 401 || res.status === 403) {
-        router.replace("/admin/login")
+        router.replace("/login?next=/admin")
       } else {
         setDeleteError(data.error || "Failed to delete user")
       }

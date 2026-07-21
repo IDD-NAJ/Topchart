@@ -2,23 +2,27 @@
 
 import React, { useState } from "react"
 import Link from "next/link"
-import { Shield, Users, LogOut, Menu, ArrowRight, LayoutDashboard, Database, Activity, Zap } from "lucide-react"
+import { Shield, Users, LogOut, Menu, ArrowRight, LayoutDashboard, Activity } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { usePathname } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
 
 const adminNavItems = [
   { href: "/admin", label: "Overview", icon: Activity },
-  { href: "/admin/users", label: "Manage Users", icon: Users },
-  { href: "/admin/transactions", label: "Transactions", icon: Database },
-  { href: "/admin/roles", label: "Roles & Permissions", icon: Shield },
-  { href: "/admin/promo-codes", label: "Promotions", icon: Zap },
 ]
 
 export default function AdminHeader() {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
+  const { logout } = useAuth()
+
+  const handleSignOut = async () => {
+    setOpen(false)
+    await logout()
+    window.location.assign("/login")
+  }
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex justify-center p-4 transition-all duration-300">
@@ -47,7 +51,7 @@ export default function AdminHeader() {
             <div className="h-4 w-px bg-white/10 mx-2" />
             <Button
               variant="ghost"
-              onClick={() => window.location.href = '/login'}
+              onClick={handleSignOut}
               className="rounded-xl px-4 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
             >
               <LogOut className="w-4 h-4 mr-2" />
@@ -141,10 +145,7 @@ export default function AdminHeader() {
                       variant="outline"
                       size="lg"
                       className="w-full h-14 rounded-2xl font-semibold border-white/10 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-all active:scale-95"
-                      onClick={() => {
-                        setOpen(false)
-                        window.location.href = '/login'
-                      }}
+                      onClick={handleSignOut}
                     >
                       <LogOut className="h-5 w-5 mr-3" />
                       Sign Out

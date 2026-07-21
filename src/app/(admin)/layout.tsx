@@ -1,7 +1,6 @@
 "use client"
 
-import React from "react"
-import { useEffect, useState } from "react"
+import React, { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { isAdmin } from "@/lib/roles"
@@ -13,29 +12,22 @@ export default function AdminLayout({
 }) {
   const { user, isLoading, initialized } = useAuth()
   const router = useRouter()
-  const [redirectScheduled, setRedirectScheduled] = useState(false)
 
   // Handle redirects after authentication is fully initialized
   useEffect(() => {
-    if (isLoading || !initialized || redirectScheduled) return
+    if (isLoading || !initialized) return
 
     if (!user) {
-      setRedirectScheduled(true)
-      const timer = setTimeout(() => {
-        router.replace("/login?next=/admin")
-      }, 0)
-      return () => clearTimeout(timer)
+      router.replace("/login?next=/admin")
+      return
     }
 
     // Check if user is admin
     if (!isAdmin(user.role)) {
-      setRedirectScheduled(true)
-      const timer = setTimeout(() => {
-        router.replace("/dashboard")
-      }, 0)
-      return () => clearTimeout(timer)
+      router.replace("/dashboard")
+      return
     }
-  }, [user, isLoading, initialized, redirectScheduled, router])
+  }, [user, isLoading, initialized, router])
 
   // Show loading state while checking authentication
   if (isLoading || !initialized || !user || !isAdmin(user.role)) {
