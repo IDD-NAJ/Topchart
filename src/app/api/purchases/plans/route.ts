@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         id,
         name,
         "sizeMb",
-        "validityDays",
+        "validityHours",
         price,
         network_id,
         "isPopular",
@@ -61,19 +61,23 @@ export async function GET(request: NextRequest) {
     query += ` ORDER BY network_id, price ASC`;
 
     const result = await pool.query(query, params);
-    const plans: Plan[] = result.rows.map((row: any) => ({
+    const plans: Plan[] = result.rows.map((row: any) => {
+      const validityDays =
+        row.validityHours != null ? Math.round(row.validityHours / 24) : null;
+      return {
       id: row.id,
       size_label: row.name,
-      validity_label: row.validityDays ? `${row.validityDays} days` : "N/A",
+      validity_label: validityDays ? `${validityDays} days` : "N/A",
       price: parseFloat(row.price),
       name: row.name,
       sizeMb: row.sizeMb,
-      validityDays: row.validityDays,
+      validityDays,
       network_id: row.network_id,
       isPopular: row.isPopular,
       isActive: row.isActive,
       isFeatured: row.isFeatured,
-    }));
+      };
+    });
 
     console.log(`[v0] Returned ${plans.length} plans`);
 
