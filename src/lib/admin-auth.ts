@@ -26,6 +26,11 @@ export async function requireAdmin(): Promise<AdminAuthResult> {
   const startTime = Date.now();
 
   try {
+    // Check if DATABASE_URL is configured before attempting auth
+    if (!process.env.DATABASE_URL) {
+      return { ok: false, status: 503, error: "Database not configured", classification: "db_timeout" };
+    }
+
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
 
