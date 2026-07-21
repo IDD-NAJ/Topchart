@@ -30,7 +30,7 @@ export default function DashboardLayout({
   }, [])
 
   useEffect(() => {
-    if (!stabilized || isLoading || initialized || user || retryCount >= maxRetries) return
+    if (!stabilized || isLoading || !initialized || user || retryCount >= maxRetries) return
     const delays = [500, 1000, 2000, 3000]
     const attemptRefresh = async () => {
       await new Promise(resolve => setTimeout(resolve, delays[retryCount] ?? 1000))

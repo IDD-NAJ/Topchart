@@ -208,6 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Only refresh user on mount, not on every render
     let mounted = true;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     console.log('[Auth] Initializing auth provider');
 
@@ -215,9 +216,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setShowPreload(true);
     authCompleteRef.current = false;
 
-    refreshUser().then(() => {
+    const completeAuth = () => {
       if (mounted) {
-        console.log('[Auth] Auth refresh completed, setting initialized=true');
+        console.log('[Auth] Auth initialization completed');
         setIsLoading(false);
         setInitialized(true);
         authCompleteRef.current = true;
@@ -227,30 +228,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Hide preload after minimum duration
         setTimeout(() => {
-          setShowPreload(false);
+          if (mounted) setShowPreload(false);
         }, MIN_PRELOAD_DURATION);
       }
+    };
+
+    // Set a timeout to complete auth after 10 seconds even if refresh hangs
+    timeoutId = setTimeout(() => {
+      console.warn('[Auth] Auth initialization timeout after 10s, completing with current state');
+      completeAuth();
+    }, 10000);
+
+    refreshUser().then(() => {
+      if (timeoutId) clearTimeout(timeoutId);
+      completeAuth();
     }).catch((error) => {
       console.error('[Auth] Auth refresh failed:', error);
-      if (mounted) {
-        setIsLoading(false);
-        setInitialized(true);
-        authCompleteRef.current = true;
-
-        // Clear auth_loading cookie even on error
-        document.cookie = 'auth_loading=; path=/; max-age=0; SameSite=Lax' + (process.env.NODE_ENV === 'production' ? '; domain=.topchart.store' : '');
-
-        // Hide preload after minimum duration even on error
-        setTimeout(() => {
-          setShowPreload(false);
-        }, MIN_PRELOAD_DURATION);
-      }
+      if (timeoutId) clearTimeout(timeoutId);
+      completeAuth();
     });
 
     return () => {
       mounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
     };
-  }, []);
+  }, [refreshUser]);
 
   useEffect(() => {
     const handleAuthChanged = () => {
