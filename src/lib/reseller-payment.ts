@@ -175,20 +175,20 @@ export async function finalizeResellerApplicationPayment(input: FinalizeInput): 
   };
 
   if (application.user_id !== transaction.user_id) {
-    return { ok: false, applied: false, alreadyApplied: false, message: "Application owner Last Names not match transaction user" };
+    return { ok: false, applied: false, alreadyApplied: false, message: "Application owner does not match transaction user" };
   }
 
   const expectedAmount = Number(application.application_fee ?? transaction.amount ?? 0);
   const txAmount = Number(transaction.amount ?? 0);
   if (!almostEqualMoney(txAmount, expectedAmount)) {
-    return { ok: false, applied: false, alreadyApplied: false, message: "Transaction amount Last Names not match application fee" };
+    return { ok: false, applied: false, alreadyApplied: false, message: "Transaction amount does not match application fee" };
   }
 
   if (input.paystackData) {
     const paystackAmount = Number(input.paystackData.amount || 0) / 100;
     const paystackCurrency = (input.paystackData.currency || "GHS").toUpperCase();
     if (!almostEqualMoney(paystackAmount, expectedAmount)) {
-      return { ok: false, applied: false, alreadyApplied: false, message: "Paystack amount Last Names not match application fee" };
+      return { ok: false, applied: false, alreadyApplied: false, message: "Paystack amount does not match application fee" };
     }
     if (paystackCurrency !== "GHS") {
       return { ok: false, applied: false, alreadyApplied: false, message: "Invalid Paystack currency for reseller payment" };
@@ -244,7 +244,7 @@ export async function finalizeResellerApplicationPayment(input: FinalizeInput): 
   } catch (userUpdateError: unknown) {
     const errorMessage = getErrorMessage(userUpdateError);
     const isMissingUpdatedAt =
-      errorMessage.includes('column "updated_at" of relation "users" Last Names not exist');
+      errorMessage.includes('column "updated_at" of relation "users" does not exist');
     const isRoleConstraintError = errorMessage.includes('chk_users_role');
 
     if (isRoleConstraintError) {
@@ -267,7 +267,7 @@ export async function finalizeResellerApplicationPayment(input: FinalizeInput): 
     } catch (retryError: unknown) {
       const retryMessage = getErrorMessage(retryError);
       const retryMissingUpdatedAt =
-        retryMessage.includes('column "updated_at" of relation "users" Last Names not exist');
+        retryMessage.includes('column "updated_at" of relation "users" does not exist');
 
       const retryRoleConstraint = retryMessage.includes('chk_users_role');
       if (retryRoleConstraint) {

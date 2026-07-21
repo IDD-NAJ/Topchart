@@ -31,7 +31,7 @@ async function makeBucketPublic() {
     const existingBucket = buckets?.find(b => b.name === bucketName);
 
     if (!existingBucket) {
-      console.log(`⚠️ Bucket "${bucketName}" Last Names not exist. Creating...`);
+      console.log(`⚠️ Bucket "${bucketName}" does not exist. Creating...`);
       
       const { data: newBucket, error: createError } = await client.storage.createBucket(bucketName, {
         public: true,

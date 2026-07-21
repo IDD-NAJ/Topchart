@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     const status = isActive ? "active" : "inactive";
 
-    // Deactivate others in the same slot if this is active and Last Namesn't allow multiple
+    // Deactivate others in the same slot if this is active and doesn't allow multiple
     if (!allowsMultipleForSlot(section, slotKey) && isActive) {
       await sql`
         UPDATE homepage_media

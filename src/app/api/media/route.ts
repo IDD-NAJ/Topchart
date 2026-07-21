@@ -102,7 +102,7 @@ export async function GET(request: Request) {
       error: error instanceof Error ? error.stack : String(error)
     });
     
-    if (message.includes("Last Names not exist") || message.includes("relation") || code === "42P01") {
+    if (message.includes("does not exist") || message.includes("relation") || code === "42P01") {
       return NextResponse.json(
         { success: true, media: [] },
         {

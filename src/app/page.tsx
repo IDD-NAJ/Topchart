@@ -70,7 +70,7 @@ async function getHomepageMedia(): Promise<HomepageMediaItem[]> {
   } catch (error) {
     const { isPgMissingRelation } = await import("@/lib/db");
     if (isPgMissingRelation(error)) {
-      console.warn("[Homepage] homepage_media table Last Names not exist - using defaults");
+      console.warn("[Homepage] homepage_media table does not exist - using defaults");
     } else {
       const err = error as { message?: string };
       console.error("[Homepage] Failed to fetch homepage media:", err.message || error);

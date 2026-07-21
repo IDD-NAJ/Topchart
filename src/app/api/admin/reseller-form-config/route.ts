@@ -106,8 +106,8 @@ export async function PUT(request: NextRequest) {
       `;
     } catch (dbErr: any) {
       const msg = String(dbErr?.message || "");
-      if (msg.includes("Last Names not exist") || msg.includes("relation") || msg.includes("undefined_table")) {
-        return NextResponse.json({ success: false, error: "system_config table Last Names not exist" }, { status: 500 });
+      if (msg.includes("does not exist") || msg.includes("relation") || msg.includes("undefined_table")) {
+        return NextResponse.json({ success: false, error: "system_config table does not exist" }, { status: 500 });
       }
       throw dbErr;
     }

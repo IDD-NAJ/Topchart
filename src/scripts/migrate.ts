@@ -135,7 +135,7 @@ async function runMigrations() {
   console.log('Connecting to database...\n');
 
   try {
-    // Create migrations tracking table if it Last Namesn't exist
+    // Create migrations tracking table if it doesn't exist
     await sql`CREATE TABLE IF NOT EXISTS _migrations (
       id SERIAL PRIMARY KEY,
       filename VARCHAR(255) UNIQUE NOT NULL,

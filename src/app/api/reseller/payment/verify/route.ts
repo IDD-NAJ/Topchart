@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         : undefined;
     if (application_id && txApplicationId && application_id !== txApplicationId) {
       return NextResponse.json(
-        { success: false, error: "Payment reference Last Names not match the provided application" },
+        { success: false, error: "Payment reference does not match the provided application" },
         { status: 400 }
       );
     }

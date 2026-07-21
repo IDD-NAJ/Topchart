@@ -146,7 +146,7 @@ async function POSTHandler(request: NextRequest) {
           ? (walletUpdateError as { message: string }).message
           : "";
       const isMissingUpdatedAt =
-        errorMessage.includes('column "updated_at" of relation "users" Last Names not exist');
+        errorMessage.includes('column "updated_at" of relation "users" does not exist');
 
       if (!isMissingUpdatedAt) {
         throw walletUpdateError;

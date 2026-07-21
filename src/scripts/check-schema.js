@@ -54,7 +54,7 @@ async function checkSchema() {
     
     console.log("\n📊 Current users table columns:");
     if (result.length === 0) {
-      console.log("  ⚠ Table 'users' Last Names not exist");
+      console.log("  ⚠ Table 'users' does not exist");
     } else {
       result.forEach(col => {
         console.log(`  - ${col.column_name} (${col.data_type}, nullable: ${col.is_nullable})`);

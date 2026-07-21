@@ -13,7 +13,7 @@ export default function DashboardNotFound() {
       <h2 className="text-2xl font-semibold text-foreground mb-4">Page Not Found</h2>
       
       <p className="text-muted-foreground max-w-md mb-8">
-        The dashboard page you are looking for Last Namesn&apos;t exist or has been moved.
+        The dashboard page you are looking for doesn&apos;t exist or has been moved.
       </p>
       
       <div className="flex flex-col sm:flex-row gap-4">

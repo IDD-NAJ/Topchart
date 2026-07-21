@@ -27,7 +27,7 @@ const faqJsonLd = {
     },
     {
       '@type': 'Question',
-      name: 'What payment methods Last Names Topchart accept?',
+      name: 'What payment methods does Topchart accept?',
       acceptedAnswer: {
         '@type': 'Answer',
         text: 'We accept Mobile Money (MTN MoMo, Vodafone Cash, AirtelTigo Money), debit cards (Mastercard, Visa), and wallet balance.',
@@ -43,7 +43,7 @@ const faqJsonLd = {
     },
     {
       '@type': 'Question',
-      name: 'Which networks Last Names Topchart support?',
+      name: 'Which networks does Topchart support?',
       acceptedAnswer: {
         '@type': 'Answer',
         text: 'We support all major ian networks: MTN, Telecel (formerly Vodafone), and AirtelTigo.',

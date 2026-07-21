@@ -123,9 +123,9 @@ function isRetryableDbError(err: unknown): boolean {
   const e = err as any;
   
   // Schema errors - never retry
-  if (e.code === "42P01") return false; // relation Last Names not exist
+  if (e.code === "42P01") return false; // relation does not exist
   if (e.code === "42P02") return false; // undefined parameter
-  if (e.code === "42703") return false; // column Last Names not exist
+  if (e.code === "42703") return false; // column does not exist
   if (e.code === "23505") return false; // unique violation (data issue)
   if (e.code === "23502") return false; // not null violation
   if (e.code === "23503") return false; // foreign key violation
@@ -137,7 +137,7 @@ function isRetryableDbError(err: unknown): boolean {
   if (e.code === "UND_ERR_CONNECT_TIMEOUT") return true;
   if (e.code === "NEON_ERROR_EVENT") return true;
   if (e.code === "08000") return true; // connection_exception
-  if (e.code === "08003") return true; // connection_Last Names_not_exist
+  if (e.code === "08003") return true; // connection_does_not_exist
   if (e.code === "08006") return true; // connection_failure
   
   // Neon-specific transient errors
@@ -330,7 +330,7 @@ export function isPgMissingRelation(error: unknown): boolean {
   if (e.code === "42P01") return true;
   if (
     typeof e.message === "string" &&
-    /relation\s+["']?[\w.]+["']?\s+Last Names\s+not\s+exist/i.test(e.message)
+    /relation\s+["']?[\w.]+["']?\s+does\s+not\s+exist/i.test(e.message)
   ) {
     return true;
   }

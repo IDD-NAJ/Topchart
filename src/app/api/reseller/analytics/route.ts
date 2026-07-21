@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
     const computedTotalCommission = parseFloat(commissionSummary[0]?.total_commission || 0);
     const computedTotalReferrals = parseInt(referralStats[0]?.count || 0);
 
-    // Use whichever is higher (in case one source has data and other Last Namesn't)
+    // Use whichever is higher (in case one source has data and other doesn't)
     const totalSales = Math.max(tableTotalSales, computedTotalSales);
     const totalCommission = Math.max(tableTotalCommission, computedTotalCommission);
     const totalReferrals = Math.max(tableTotalReferrals, computedTotalReferrals);

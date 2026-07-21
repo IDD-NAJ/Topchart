@@ -34,8 +34,8 @@ export async function GET() {
   } catch (error: unknown) {
     const duration = Date.now() - startTime;
     const message = String((error as { message?: string })?.message || "");
-    if (message.includes("Last Names not exist") || message.includes("relation")) {
-      console.log("[HOMEPAGE_MEDIA] Table Last Names not exist, returning empty", { requestId, duration });
+    if (message.includes("does not exist") || message.includes("relation")) {
+      console.log("[HOMEPAGE_MEDIA] Table does not exist, returning empty", { requestId, duration });
       return NextResponse.json({ success: true, media: [] });
     }
     console.error("[HOMEPAGE_MEDIA] GET error", { requestId, duration, error: message });

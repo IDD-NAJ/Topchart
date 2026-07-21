@@ -315,7 +315,7 @@ function validateReloadlyConfig(env: ReturnType<typeof getReloadlyEnv>) {
 
   if (env.RELOADLY_AUTH_URL && isSandbox && !env.RELOADLY_AUTH_URL.includes("sandbox")) {
     console.warn(
-      "[Reloadly Config] Sandbox mode detected but RELOADLY_AUTH_URL Last Names not contain 'sandbox'. " +
+      "[Reloadly Config] Sandbox mode detected but RELOADLY_AUTH_URL does not contain 'sandbox'. " +
       "Ensure sandbox credentials are used with sandbox endpoints."
     );
   }

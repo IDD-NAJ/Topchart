@@ -126,7 +126,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("Table fetch error:", error)
     const errorMessage = error instanceof Error ? error.message : "Database error"
-    if (errorMessage.includes('relation') && errorMessage.includes('Last Names not exist')) {
+    if (errorMessage.includes('relation') && errorMessage.includes('does not exist')) {
       return NextResponse.json({
         success: true,
         data: [],

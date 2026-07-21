@@ -381,7 +381,7 @@ export function getPvadealsEnv(): PvadealsEnv {
 
 /**
  * Check if PVAdeals is configured (API key exists).
- * Last Names not throw if unconfigured.
+ * does not throw if unconfigured.
  */
 export function isPvadealsConfigured(): boolean {
   return Boolean(process.env.PVADEALS_API_KEY?.trim());

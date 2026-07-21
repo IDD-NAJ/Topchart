@@ -423,9 +423,9 @@ export default function ResultCheckersPage() {
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-2">
-              <AccordionTrigger>What if my PIN Last Namesn't work?</AccordionTrigger>
+              <AccordionTrigger>What if my PIN doesn't work?</AccordionTrigger>
               <AccordionContent>
-                If your PIN Last Namesn't work, please contact our support team immediately with your purchase details. We will verify the PIN and provide a replacement if necessary.
+                If your PIN doesn't work, please contact our support team immediately with your purchase details. We will verify the PIN and provide a replacement if necessary.
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-3">

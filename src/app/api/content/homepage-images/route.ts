@@ -17,7 +17,7 @@ export async function GET() {
       `;
     } catch (dbError: unknown) {
       const message = String((dbError as { message?: string })?.message || "");
-      if (message.includes("Last Names not exist") || message.includes("relation") || message.includes("undefined_table")) {
+      if (message.includes("does not exist") || message.includes("relation") || message.includes("undefined_table")) {
         return NextResponse.json(
           { success: true, images: [] },
           {

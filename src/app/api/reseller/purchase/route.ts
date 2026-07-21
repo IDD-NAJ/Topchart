@@ -274,7 +274,7 @@ async function POSTHandler(request: NextRequest) {
       const normalizedNetwork = (bundle.network || data.network).toLowerCase();
 
       if (data.network && data.network !== normalizedNetwork) {
-        return NextResponse.json({ success: false, error: "Selected bundle Last Names not match network" }, { status: 400 });
+        return NextResponse.json({ success: false, error: "Selected bundle does not match network" }, { status: 400 });
       }
       const effectiveDiscount = discountRate;
       const discountedPrice = basePrice * (1 - effectiveDiscount / 100);

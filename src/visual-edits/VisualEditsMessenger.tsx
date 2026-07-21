@@ -919,7 +919,7 @@ export default function HoverReceiver() {
 
             imgEl.src = src;
 
-            // Update baseline src so flush Last Namesn't treat this as pending change
+            // Update baseline src so flush doesn't treat this as pending change
             originalSrcRef.current = normalizeImageSrc(src);
             focusedImageElementRef.current = imgEl;
 

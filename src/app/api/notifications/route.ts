@@ -39,7 +39,7 @@ export async function GET() {
       error?.code === "22P02" ||
       error?.code === "3D000" ||
       error?.code === "42P01" ||
-      (typeof error?.message === "string" && /Last Names not exist|invalid input syntax|does not exist|relation/i.test(error.message))
+      (typeof error?.message === "string" && /does not exist|invalid input syntax|does not exist|relation/i.test(error.message))
     ) {
       return NextResponse.json({ success: true, notifications: [], unreadCount: 0 });
     }
