@@ -41,7 +41,6 @@
   ],
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
-  "publicSource": "./public",
   "functions": {
     "api/**/*.ts": {
       "memory": 1024,
