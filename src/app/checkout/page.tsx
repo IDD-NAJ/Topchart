@@ -45,30 +45,67 @@ export default function CheckoutPage() {
     phone: '',
     full_name: '',
   })
+  const [selectedNetwork, setSelectedNetwork] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [bundles, setBundles] = useState<any[]>([])
   const [bundlesLoading, setBundlesLoading] = useState(false)
+  const [networks, setNetworks] = useState<any[]>([])
+  const [networksLoading, setNetworksLoading] = useState(false)
 
-  // Load bundles when product type is data_bundle
+  // Load networks on mount
+  useEffect(() => {
+    loadNetworks()
+  }, [])
+
+  // Load bundles when product type is data_bundle or network changes
   useEffect(() => {
     if (formData.product_type === 'data_bundle') {
       loadBundles()
     }
-  }, [formData.product_type])
+  }, [formData.product_type, selectedNetwork])
+
+  const loadNetworks = async () => {
+    try {
+      setNetworksLoading(true)
+      const response = await fetch('/api/purchases/networks')
+      if (!response.ok) {
+        console.error('[v0] Failed to fetch networks:', response.status)
+        return
+      }
+
+      const result = await response.json()
+      console.log('[v0] Networks API response:', result)
+
+      const networkList = Array.isArray(result.data) ? result.data : []
+
+      if (networkList.length > 0) {
+        setNetworks(networkList)
+        // Auto-select first network
+        setSelectedNetwork(networkList[0].id)
+      }
+    } catch (error) {
+      console.error('[v0] Failed to load networks:', error)
+    } finally {
+      setNetworksLoading(false)
+    }
+  }
 
   const loadBundles = async () => {
     try {
       setBundlesLoading(true)
-      const response = await fetch('/api/purchases/plans')
+      const url = selectedNetwork
+        ? `/api/purchases/plans?network=${selectedNetwork}`
+        : '/api/purchases/plans'
+      const response = await fetch(url)
       if (!response.ok) {
         console.error('[v0] Failed to fetch bundles:', response.status)
         setErrors(prev => ({ ...prev, bundle_id: 'Failed to load bundles. Please try again.' }))
         return
       }
-      
+
       const result = await response.json()
-      console.log('[v0] Bundles API response:', result)
+      console.log('[v0] Bundles API response for network', selectedNetwork, ':', result)
       
       // API returns { success: true, data: [...] } structure
       const bundleList = Array.isArray(result.data) ? result.data : (result.bundles || [])
@@ -213,6 +250,46 @@ export default function CheckoutPage() {
               </div>
               {errors.product_type && <p className="text-xs text-destructive mt-2">{errors.product_type}</p>}
             </div>
+
+            {/* Network Selection */}
+            {formData.product_type === 'data_bundle' && (
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-foreground block">
+                  Select a network
+                </label>
+                {networksLoading ? (
+                  <div className="flex items-center justify-center py-4 gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground">Loading networks...</p>
+                  </div>
+                ) : networks.length === 0 ? (
+                  <div className="flex items-center justify-center py-4 px-4 text-center">
+                    <p className="text-sm text-destructive">No networks available.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2">
+                    {networks.map(network => (
+                      <button
+                        key={network.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedNetwork(network.id)
+                          setFormData(prev => ({ ...prev, bundle_id: '' }))
+                        }}
+                        className={`p-3 rounded-lg border-2 transition-all text-center text-sm ${
+                          selectedNetwork === network.id
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <p className="font-semibold text-foreground">{network.name}</p>
+                        <p className="text-xs text-muted-foreground">{network.bundle_count} bundles</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Bundle Selection */}
             {formData.product_type === 'data_bundle' && (

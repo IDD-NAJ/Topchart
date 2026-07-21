@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     if (network) {
       query += ` AND network_id = $1`;
-      params.push(network.toUpperCase());
+      params.push(network);
     }
 
     query += ` ORDER BY network_id, price ASC`;
