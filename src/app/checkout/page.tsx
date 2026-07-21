@@ -1,83 +1,54 @@
-"use client"
+'use client'
 
-import React, { useState, useEffect, useCallback } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import Link from "next/link"
-import { Suspense } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import {
-  Wifi,
-  FileText,
-  SmartphoneIcon,
-  Loader2,
-  ShieldCheck,
-  Lock,
   AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Lock,
   Phone,
   Mail,
-  CreditCard,
-} from "lucide-react"
+  Package,
+  Wifi,
+  Globe,
+  FileText,
+} from 'lucide-react'
 
-type ProductType = "data_bundle" | "bill_payment" | "foreign_number"
+type ProductType = 'data_bundle' | 'bill_payment' | 'foreign_number' | ''
 
 interface FormData {
-  product_type: ProductType | ""
-  network?: string
-  bundle_id?: string
-  amount?: number
+  product_type: ProductType
+  bundle_id: string
   email: string
   phone: string
-  full_name?: string
-  reference_id?: string
-}
-
-interface ValidationErrors {
-  [key: string]: string
+  full_name: string
 }
 
 const PRODUCT_CATEGORIES = [
-  {
-    id: "data_bundle",
-    label: "Data Bundle",
-    description: "MTN, Telecel & AirtelTigo",
-    icon: Wifi,
-  },
-  {
-    id: "bill_payment",
-    label: "Bill Payment",
-    description: "ECG, GWCL, DStv & more",
-    icon: FileText,
-  },
-  {
-    id: "foreign_number",
-    label: "Foreign Number",
-    description: "Virtual verification numbers",
-    icon: SmartphoneIcon,
-  },
+  { id: 'data_bundle', label: 'Data Bundle', icon: Wifi },
+  { id: 'foreign_number', label: 'Foreign Number', icon: Globe },
+  { id: 'bill_payment', label: 'Bill Payment', icon: FileText },
 ]
 
-function CheckoutForm() {
+export default function CheckoutPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [formData, setFormData] = useState<FormData>({
-    product_type: "",
-    email: "",
-    phone: "",
+    product_type: '',
+    bundle_id: '',
+    email: '',
+    phone: '',
+    full_name: '',
   })
-  const [errors, setErrors] = useState<ValidationErrors>({})
-  const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [bundles, setBundles] = useState<any[]>([])
   const [bundlesLoading, setBundlesLoading] = useState(false)
-  const [selectedBundleDetails, setSelectedBundleDetails] = useState<any>(null)
 
-  // Load bundles when product type changes
+  // Load bundles when product type is data_bundle
   useEffect(() => {
-    if (formData.product_type === "data_bundle") {
+    if (formData.product_type === 'data_bundle') {
       loadBundles()
     }
   }, [formData.product_type])
@@ -85,342 +56,293 @@ function CheckoutForm() {
   const loadBundles = async () => {
     try {
       setBundlesLoading(true)
-      const response = await fetch("/api/purchases/plans")
+      const response = await fetch('/api/purchases/plans')
       if (response.ok) {
         const data = await response.json()
         const bundleList = data.bundles || data.data || []
-        setBundles(bundleList.slice(0, 12)) // Show top 12 bundles
+        setBundles(bundleList.slice(0, 15))
       }
     } catch (error) {
-      console.error("[v0] Failed to load bundles:", error)
+      console.error('[v0] Failed to load bundles:', error)
     } finally {
       setBundlesLoading(false)
     }
   }
 
   const validateForm = (): boolean => {
-    const newErrors: ValidationErrors = {}
+    const newErrors: Record<string, string> = {}
 
     if (!formData.product_type) {
-      newErrors.product_type = "Please select a product type"
+      newErrors.product_type = 'Select a product type'
     }
 
-    if (formData.product_type === "data_bundle" && !formData.bundle_id) {
-      newErrors.bundle_id = "Please select a data bundle"
+    if (formData.product_type === 'data_bundle' && !formData.bundle_id) {
+      newErrors.bundle_id = 'Select a data bundle'
     }
 
     if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Valid email address required"
+      newErrors.email = 'Valid email required'
     }
 
-    if (!formData.phone || formData.phone.length < 10) {
-      newErrors.phone = "Valid phone number required"
+    if (!formData.phone || formData.phone.replace(/\D/g, '').length < 10) {
+      newErrors.phone = 'Valid phone required'
     }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleInitializePayment = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!validateForm()) {
-      return
-    }
+    if (!validateForm()) return
 
-    setIsLoading(true)
+    setLoading(true)
 
     try {
-      const payload = {
-        product_type: formData.product_type,
-        email: formData.email,
-        phone: formData.phone,
-        ...(formData.full_name && { full_name: formData.full_name }),
-        ...(formData.bundle_id && { bundle_id: formData.bundle_id }),
-        ...(formData.amount && { amount: formData.amount }),
-      }
-
-      const response = await fetch("/api/guest/checkout/initialize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      const selectedBundle = bundles.find(b => b.id === formData.bundle_id)
+      
+      const response = await fetch('/api/guest/checkout/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product_type: formData.product_type,
+          email: formData.email,
+          phone: formData.phone,
+          full_name: formData.full_name || undefined,
+          ...(formData.bundle_id && { bundle_id: formData.bundle_id }),
+          ...(selectedBundle && { amount: selectedBundle.price }),
+        }),
       })
 
       if (!response.ok) {
         const error = await response.json()
-        setErrors({ submit: error.error || "Failed to initialize payment" })
-        setIsLoading(false)
-        return
+        throw new Error(error.error || 'Failed to initialize payment')
       }
 
       const data = await response.json()
-
-      // Redirect to Paystack
+      
       if (data.authorization_url) {
         window.location.href = data.authorization_url
       }
-    } catch (error) {
-      console.error("[v0] Payment initialization error:", error)
-      setErrors({ submit: "An error occurred. Please try again." })
-      setIsLoading(false)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An error occurred'
+      setErrors({ submit: message })
+      setLoading(false)
     }
   }
 
-  const handleBundleSelect = (bundle: any) => {
-    setFormData({
-      ...formData,
-      bundle_id: bundle.id,
-      amount: bundle.price,
-    })
-    setSelectedBundleDetails(bundle)
-  }
-
-  const getProductIcon = (type: ProductType | "") => {
-    const category = PRODUCT_CATEGORIES.find((c) => c.id === type)
-    return category ? <category.icon className="w-5 h-5" /> : null
-  }
+  const selectedBundle = bundles.find(b => b.id === formData.bundle_id)
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex items-center justify-center p-4 py-12">
+      <div className="w-full max-w-2xl">
+        {/* Logo / Branding */}
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-block mb-4">
+            <h1 className="text-2xl font-bold text-primary">Topchart</h1>
+          </Link>
+          <h2 className="text-3xl font-bold text-foreground mb-2">Secure Checkout</h2>
+          <p className="text-muted-foreground text-sm flex items-center justify-center gap-2">
+            <Lock className="h-4 w-4" />
+            Powered by Paystack • Instant Delivery
+          </p>
+        </div>
 
-      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto">
-          {/* Header */}
-          <div className="mb-8 text-center">
-            <h1 className="text-3xl font-bold mb-2">Complete Your Purchase</h1>
-            <p className="text-muted-foreground">
-              Fast, secure, and instant delivery
-            </p>
-          </div>
-
-          {/* Main Form Card */}
-          <div className="bg-card border border-border rounded-lg shadow-sm p-6 sm:p-8">
+        {/* Form Card */}
+        <div className="bg-card border border-border rounded-xl shadow-lg overflow-hidden">
+          <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
+            {/* Error Alert */}
             {errors.submit && (
-              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex gap-3">
-                <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="flex gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+                <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-destructive">{errors.submit}</p>
               </div>
             )}
 
-            <form onSubmit={handleInitializePayment} className="space-y-6">
-              {/* Product Type Selection */}
-              <div>
-                <Label className="text-base font-semibold mb-3 block">
-                  What would you like to buy?
-                </Label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {PRODUCT_CATEGORIES.map((category) => (
-                    <button
-                      key={category.id}
-                      type="button"
-                      onClick={() =>
-                        setFormData({ ...formData, product_type: category.id as ProductType })
-                      }
-                      className={`p-4 rounded-lg border-2 transition-all text-left ${
-                        formData.product_type === category.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <category.icon className="w-5 h-5" />
-                        <span className="font-semibold">{category.label}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {category.description}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-                {errors.product_type && (
-                  <p className="text-sm text-destructive mt-2">{errors.product_type}</p>
-                )}
+            {/* Product Type Selection */}
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-foreground block">
+                What would you like to purchase?
+              </label>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                {PRODUCT_CATEGORIES.map(category => (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, product_type: category.id as ProductType, bundle_id: '' })}
+                    className={`p-3 sm:p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
+                      formData.product_type === category.id
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border hover:border-primary/50 text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <category.icon className="h-5 w-5" />
+                    <span className="text-xs sm:text-sm font-medium text-center">{category.label}</span>
+                  </button>
+                ))}
               </div>
+              {errors.product_type && <p className="text-xs text-destructive mt-2">{errors.product_type}</p>}
+            </div>
 
-              {/* Bundle Selection for Data Bundles */}
-              {formData.product_type === "data_bundle" && (
-                <div>
-                  <Label className="text-base font-semibold mb-3 block">
-                    Select Data Bundle
-                  </Label>
-                  {bundlesLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
-                      {bundles.map((bundle) => (
-                        <button
-                          key={bundle.id}
-                          type="button"
-                          onClick={() => handleBundleSelect(bundle)}
-                          className={`p-3 rounded-lg border-2 transition-all text-center ${
-                            formData.bundle_id === bundle.id
-                              ? "border-primary bg-primary/5"
-                              : "border-border hover:border-primary/50"
-                          }`}
-                        >
-                          <div className="text-lg font-bold">{bundle.size_label}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {bundle.validity_label}
-                          </div>
-                          <div className="text-primary font-semibold mt-1">
-                            GHS {bundle.price.toFixed(2)}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {errors.bundle_id && (
-                    <p className="text-sm text-destructive mt-2">{errors.bundle_id}</p>
-                  )}
-                </div>
-              )}
-
-              {/* Selected Item Summary */}
-              {selectedBundleDetails && (
-                <div className="bg-muted/50 p-4 rounded-lg border border-border">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Selected Bundle</p>
-                      <p className="font-semibold">{selectedBundleDetails.size_label}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-primary">
-                        GHS {selectedBundleDetails.price.toFixed(2)}
-                      </p>
-                    </div>
+            {/* Bundle Selection */}
+            {formData.product_type === 'data_bundle' && (
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-foreground block">
+                  Select a data bundle
+                </label>
+                {bundlesLoading ? (
+                  <div className="flex justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+                    {bundles.map(bundle => (
+                      <button
+                        key={bundle.id}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, bundle_id: bundle.id })}
+                        className={`p-3 rounded-lg border-2 transition-all text-center text-sm ${
+                          formData.bundle_id === bundle.id
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <p className="font-bold text-foreground">{bundle.size_label}</p>
+                        <p className="text-xs text-muted-foreground">{bundle.validity_label}</p>
+                        <p className="text-primary font-semibold mt-1">GHS {bundle.price.toFixed(2)}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {errors.bundle_id && <p className="text-xs text-destructive mt-2">{errors.bundle_id}</p>}
+              </div>
+            )}
 
-              {/* Contact Information */}
-              <div className="space-y-4 pt-4 border-t border-border">
-                <div>
-                  <Label htmlFor="email" className="text-base font-semibold">
-                    Email Address
-                  </Label>
-                  <Input
+            {/* Order Summary */}
+            {selectedBundle && (
+              <div className="bg-muted/30 border border-border rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Order Summary</p>
+                    <p className="font-semibold text-foreground">{selectedBundle.size_label}</p>
+                  </div>
+                  <p className="text-lg font-bold text-primary">GHS {selectedBundle.price.toFixed(2)}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Contact Info */}
+            <div className="space-y-4 pt-4 border-t border-border">
+              <div>
+                <label htmlFor="email" className="text-sm font-semibold text-foreground block mb-2">
+                  Email <span className="text-destructive">*</span>
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
                     id="email"
                     type="email"
-                    placeholder="you@example.com"
                     value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    className="mt-2"
-                    disabled={isLoading}
+                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="your@email.com"
+                    disabled={loading}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-50"
                   />
-                  {errors.email && (
-                    <p className="text-sm text-destructive mt-1">{errors.email}</p>
-                  )}
                 </div>
+                {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
+              </div>
 
-                <div>
-                  <Label htmlFor="phone" className="text-base font-semibold">
-                    Phone Number
-                  </Label>
-                  <Input
+              <div>
+                <label htmlFor="phone" className="text-sm font-semibold text-foreground block mb-2">
+                  Phone <span className="text-destructive">*</span>
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
                     id="phone"
                     type="tel"
-                    placeholder="+233 XX XXX XXXX"
                     value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
-                    className="mt-2"
-                    disabled={isLoading}
-                  />
-                  {errors.phone && (
-                    <p className="text-sm text-destructive mt-1">{errors.phone}</p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="full_name" className="text-base font-semibold">
-                    Full Name <span className="text-muted-foreground text-sm">(Optional)</span>
-                  </Label>
-                  <Input
-                    id="full_name"
-                    type="text"
-                    placeholder="Your full name"
-                    value={formData.full_name || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, full_name: e.target.value })
-                    }
-                    className="mt-2"
-                    disabled={isLoading}
+                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="+233 55 123 4567"
+                    disabled={loading}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-50"
                   />
                 </div>
+                {errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone}</p>}
               </div>
 
-              {/* Security Information */}
-              <div className="bg-muted/50 p-4 rounded-lg flex gap-3 border border-border">
-                <Lock className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-muted-foreground">
-                  Your payment is secured by <strong>Paystack</strong>. We never store your card details.
-                </div>
+              <div>
+                <label htmlFor="full_name" className="text-sm font-semibold text-foreground block mb-2">
+                  Full Name <span className="text-muted-foreground text-xs">(Optional)</span>
+                </label>
+                <input
+                  id="full_name"
+                  type="text"
+                  value={formData.full_name}
+                  onChange={e => setFormData({ ...formData, full_name: e.target.value })}
+                  placeholder="John Doe"
+                  disabled={loading}
+                  className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-50"
+                />
               </div>
+            </div>
 
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full h-12 text-base font-semibold"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="w-5 h-5 mr-2" />
-                    Pay with Paystack
-                  </>
-                )}
-              </Button>
-
-              {/* Trust Badges */}
-              <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground pt-4">
-                <div className="flex items-center gap-1">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Secure Payment</span>
-                </div>
-                <div>•</div>
-                <div>Instant Delivery</div>
-              </div>
-            </form>
-          </div>
-
-          {/* Back to Home */}
-          <div className="text-center mt-8">
-            <Link
-              href="/"
-              className="text-primary hover:underline text-sm font-medium"
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading || !formData.product_type}
+              className="w-full bg-primary hover:bg-primary-dark disabled:bg-muted disabled:cursor-not-allowed text-primary-foreground font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2"
             >
-              ← Back to Home
+              {loading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Lock className="h-5 w-5" />
+                  Proceed to Payment
+                </>
+              )}
+            </button>
+
+            {/* Trust Indicators */}
+            <div className="flex items-center justify-center gap-4 pt-4 border-t border-border text-xs text-muted-foreground flex-wrap">
+              <div className="flex items-center gap-1">
+                <CheckCircle2 className="h-4 w-4 text-success" />
+                <span>Secure SSL</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <CheckCircle2 className="h-4 w-4 text-success" />
+                <span>Paystack Verified</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <CheckCircle2 className="h-4 w-4 text-success" />
+                <span>Instant Delivery</span>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        {/* Footer Links */}
+        <div className="text-center mt-8 text-sm text-muted-foreground space-y-3">
+          <div className="flex justify-center items-center gap-4 flex-wrap">
+            <Link href="/" className="hover:text-primary transition-colors">
+              Home
+            </Link>
+            <span>•</span>
+            <Link href="/about" className="hover:text-primary transition-colors">
+              About
+            </Link>
+            <span>•</span>
+            <Link href="/support" className="hover:text-primary transition-colors">
+              Support
             </Link>
           </div>
+          <p className="text-xs">© 2024 Topchart. All rights reserved.</p>
         </div>
-      </main>
-
-      <Footer />
+      </div>
     </div>
-  )
-}
-
-export default function CheckoutPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin" />
-        </div>
-      }
-    >
-      <CheckoutForm />
-    </Suspense>
   )
 }
