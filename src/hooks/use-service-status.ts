@@ -137,9 +137,7 @@ export function useServiceStatus() {
  * Service keys used throughout the application
  */
 export const SERVICE_KEYS = {
-  AIRTIME: "airtime",
   DATA: "data",
-  ESIM: "esim",
   VERIFICATION: "verification",
   PROXY: "proxy",
   GIFTCARDS: "giftcards",

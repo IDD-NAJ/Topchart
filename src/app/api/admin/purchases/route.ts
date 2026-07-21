@@ -18,7 +18,7 @@ async function fetchPendingPurchases() {
       to_jsonb(t)->>'userId'
     )
     WHERE LOWER(COALESCE(to_jsonb(t)->>'status', '')) = 'pending'
-      AND LOWER(COALESCE(to_jsonb(t)->>'type', '')) IN ('airtime', 'data')
+      AND LOWER(COALESCE(to_jsonb(t)->>'type', '')) IN ('data')
     ORDER BY COALESCE(
       (to_jsonb(t)->>'created_at')::timestamptz,
       (to_jsonb(t)->>'createdAt')::timestamptz

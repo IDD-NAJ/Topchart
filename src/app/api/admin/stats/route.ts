@@ -62,12 +62,10 @@ export async function GET(request: NextRequest) {
       sessionsExists,
       ticketsExists,
       referralsExists,
-      airtimePurchasesExists,
       dataBundlePurchasesExists,
       walletsExists,
       disputesExists,
       networksExists,
-      esimOrdersExists,
       proxyOrdersExists,
       giftcardOrdersExists,
       billPaymentsExists,
@@ -79,12 +77,10 @@ export async function GET(request: NextRequest) {
       tableExists("sessions"),
       tableExists("tickets"),
       tableExists("referrals"),
-      tableExists("airtime_purchases"),
       tableExists("data_bundle_purchases"),
       tableExists("wallets"),
       tableExists("disputes"),
       tableExists("networks"),
-      tableExists("esim_orders"),
       tableExists("proxy_orders"),
       tableExists("giftcard_orders"),
       tableExists("bill_payments"),
@@ -144,10 +140,6 @@ export async function GET(request: NextRequest) {
 
     const totalReferralsPromise = referralsExists
       ? safeNumberQuery("total_referrals", () => sql`SELECT COUNT(*)::int AS value FROM referrals`)
-      : Promise.resolve(0);
-
-    const totalAirtimePurchasesPromise = airtimePurchasesExists
-      ? safeNumberQuery("airtime_purchases", () => sql`SELECT COUNT(*)::int AS value FROM airtime_purchases`)
       : Promise.resolve(0);
 
     const totalDataPurchasesPromise = dataBundlePurchasesExists
@@ -213,10 +205,6 @@ export async function GET(request: NextRequest) {
       ? safeNumberQuery("network_count", () => sql`SELECT COUNT(*)::int AS value FROM networks`)
       : Promise.resolve(0);
 
-    const esimOrderCountPromise = esimOrdersExists
-      ? safeNumberQuery("esim_order_count", () => sql`SELECT COUNT(*)::int AS value FROM esim_orders`)
-      : Promise.resolve(0);
-
     const proxyOrderCountPromise = proxyOrdersExists
       ? safeNumberQuery("proxy_order_count", () => sql`SELECT COUNT(*)::int AS value FROM proxy_orders`)
       : Promise.resolve(0);
@@ -241,7 +229,6 @@ export async function GET(request: NextRequest) {
       activeSessionRows,
       openTickets,
       totalReferrals,
-      totalAirtimePurchases,
       totalDataPurchases,
       totalWalletBalance,
       openDisputes,
@@ -250,7 +237,6 @@ export async function GET(request: NextRequest) {
       transactionsByType,
       transactionsByDay,
       networkCount,
-      esimOrderCount,
       proxyOrderCount,
       giftcardOrderCount,
       billPaymentCount,
@@ -263,7 +249,6 @@ export async function GET(request: NextRequest) {
       activeSessionRowsPromise,
       openTicketsPromise,
       totalReferralsPromise,
-      totalAirtimePurchasesPromise,
       totalDataPurchasesPromise,
       totalWalletBalancePromise,
       openDisputesPromise,
@@ -272,7 +257,6 @@ export async function GET(request: NextRequest) {
       transactionsByTypePromise,
       transactionsByDayPromise,
       networkCountPromise,
-      esimOrderCountPromise,
       proxyOrderCountPromise,
       giftcardOrderCountPromise,
       billPaymentCountPromise,
@@ -333,7 +317,6 @@ export async function GET(request: NextRequest) {
       recentSignups,
       openTickets,
       totalReferrals,
-      totalAirtimePurchases,
       totalDataPurchases,
       totalWalletBalance: Number(totalWalletBalance) || 0,
       openDisputes,
@@ -342,7 +325,6 @@ export async function GET(request: NextRequest) {
       transactionsByType,
       transactionsByDay,
       networkCount,
-      esimOrderCount,
       proxyOrderCount,
       giftcardOrderCount,
       billPaymentCount,
@@ -366,7 +348,6 @@ export async function GET(request: NextRequest) {
           recentSignups: 0,
           openTickets: 0,
           totalReferrals: 0,
-          totalAirtimePurchases: 0,
           totalDataPurchases: 0,
           totalWalletBalance: 0,
           openDisputes: 0,
@@ -375,7 +356,6 @@ export async function GET(request: NextRequest) {
           transactionsByType: [],
           transactionsByDay: [],
           networkCount: 0,
-          esimOrderCount: 0,
           proxyOrderCount: 0,
           giftcardOrderCount: 0,
           billPaymentCount: 0,

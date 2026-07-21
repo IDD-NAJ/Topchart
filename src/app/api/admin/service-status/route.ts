@@ -37,7 +37,6 @@ interface ServiceStatusAudit {
 }
 
 const SERVICE_HEALTH_ENDPOINTS: Record<string, string> = {
-  airtime: "/api/purchases/providers?q=airtime",
   data: "/api/purchases/plans",
   verification: "/api/verification/numbers",
   giftcards: "/api/giftcards/providers",

@@ -44,10 +44,6 @@ const envSchema = z.object({
   NINEPROXY_API_KEY: z.string().optional(),
   NINEPROXY_BASE_URL: optionalUrl,
   NINEPROXY_SANDBOX: z.enum(["true", "false"]).optional(),
-  AIRALO_CLIENT_ID: z.string().optional(),
-  AIRALO_CLIENT_SECRET: z.string().optional(),
-  AIRALO_WEBHOOK_SECRET: z.string().optional(),
-  AIRALO_SANDBOX: z.enum(["true", "false"]).optional(),
   VTPASS_API_KEY: z.string().optional(),
   VTPASS_SECRET_KEY: z.string().optional(),
   VTPASS_BASE_URL: optionalUrl,
@@ -136,14 +132,6 @@ const nineproxyEnvSchema = z.object({
 });
 type NineProxyEnv = z.infer<typeof nineproxyEnvSchema>;
 
-const airaloEnvSchema = z.object({
-  AIRALO_CLIENT_ID: z.string().min(1, "AIRALO_CLIENT_ID is required"),
-  AIRALO_CLIENT_SECRET: z.string().min(1, "AIRALO_CLIENT_SECRET is required"),
-  AIRALO_WEBHOOK_SECRET: z.string().optional(),
-  AIRALO_SANDBOX: z.enum(["true", "false"]).optional(),
-});
-type AiraloEnv = z.infer<typeof airaloEnvSchema>;
-
 const vtpassEnvSchema = z.object({
   VTPASS_API_KEY: z.string().min(1, "VTPASS_API_KEY is required"),
   VTPASS_SECRET_KEY: z.string().min(1, "VTPASS_SECRET_KEY is required"),
@@ -173,9 +161,8 @@ let cachedSupabaseStorageEnv: SupabaseStorageEnv | null = null;
 let cachedDatamartEnv: DatamartEnv | null = null;
 let cachedHubnetEnv: HubnetEnv | null = null;
 let cachedReloadlyEnv: ReloadlyEnv | null = null;
-let cachedNineProxyEnv: NineProxyEnv | null = null;
-let cachedAiraloEnv: AiraloEnv | null = null;
-let cachedVtpassEnv: VtpassEnv | null = null;
+  let cachedNineProxyEnv: NineProxyEnv | null = null;
+  let cachedVtpassEnv: VtpassEnv | null = null;
 let cachedGoogleAuthEnv: GoogleAuthEnv | null = null;
 let cachedPvadealsEnv: PvadealsEnv | null = null;
 
@@ -328,26 +315,6 @@ export function getNineProxyEnv(): NineProxyEnv {
 
   cachedNineProxyEnv = parsed.data;
   return cachedNineProxyEnv;
-}
-
-export function getAiraloEnv(): AiraloEnv {
-  if (cachedAiraloEnv) {
-    return cachedAiraloEnv;
-  }
-
-  const parsed = airaloEnvSchema.safeParse(process.env);
-  if (!parsed.success) {
-    const missingFields = parsed.error.issues
-      .filter((issue) => issue.code === "invalid_type")
-      .map((issue) => issue.path.join("."));
-    const message = missingFields.length > 0
-      ? `Missing required environment variables: ${missingFields.join(", ")}`
-      : `Invalid Airalo environment: ${parsed.error.issues.map((issue) => issue.message).join(", ")}`;
-    throw new Error(message);
-  }
-
-  cachedAiraloEnv = parsed.data;
-  return cachedAiraloEnv;
 }
 
 export function getVtpassEnv(): VtpassEnv {

@@ -517,7 +517,7 @@ const DEFAULT_FAQS: FAQItem[] = [
   {
     id: "default-4",
     question: "How do I become a data reseller in Ghana?",
-    answer: "Join our data reseller programme to earn commissions reselling cheap data bundles, airtime, and Foreign Numbers under your own brand. Daily payouts available.",
+    answer: "Join our data reseller programme to earn commissions reselling cheap data bundles and Foreign Numbers under your own brand. Daily payouts available.",
     priority: 4,
     is_active: true,
   },
@@ -543,7 +543,7 @@ const DEFAULT_TESTIMONIALS: TestimonialItem[] = [
   {
     id: "default-2",
     brand: "Campus Hub GH",
-    quote: "We sell data and airtime to students daily. Reliability and the reseller tools have been excellent.",
+    quote: "We sell data bundles to students daily. Reliability and the reseller tools have been excellent.",
     name: "Ama O.",
     role: "Product Lead",
     priority: 2,
@@ -561,7 +561,7 @@ const DEFAULT_TESTIMONIALS: TestimonialItem[] = [
   {
     id: "default-4",
     brand: "Retail Collective",
-    quote: "Airtime and data in one dashboard simplified payouts for our field teams.",
+    quote: "Data bundles in one dashboard simplified payouts for our field teams.",
     name: "Esi T.",
     role: "Finance Director",
     priority: 4,
@@ -772,7 +772,7 @@ export default function HomeClient({ initialMedia }: { initialMedia: any[] }) {
                   <div className="relative h-8 w-8">
                     <Image
                       src={network.image}
-                      alt={`${network.name} network logo for data bundles and airtime in Ghana`}
+                          alt={`${network.name} network logo for data bundles in Ghana`}
                       fill
                       sizes="32px"
                       className="object-contain"

@@ -80,7 +80,6 @@ interface AdminStats {
   openTickets: number
   pendingKyc: number
   totalReferrals: number
-  totalAirtimePurchases: number
   totalDataPurchases: number
   totalWalletBalance: number
   openDisputes: number
@@ -89,7 +88,6 @@ interface AdminStats {
   transactionsByType: any[]
   transactionsByDay: any[]
   networkCount: number
-  esimOrderCount: number
   proxyOrderCount: number
   giftcardOrderCount: number
   billPaymentCount: number
@@ -484,7 +482,7 @@ export default function AdminDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center text-amber-600">
               <AlertTriangle className="w-5 h-5 mr-2" />
-              Pending Airtime & Data Purchases ({pendingPurchases.length})
+              Pending Data Purchases ({pendingPurchases.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -647,18 +645,7 @@ export default function AdminDashboard() {
           </Link>
 
           <div className="grid grid-cols-2 gap-2">
-            <Link href="/admin/airtime-purchases">
-              <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
-                <CardHeader className="pb-1 pt-3 px-3">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent className="px-3 pb-3">
-                  <div className="text-lg font-bold">{stats.totalAirtimePurchases}</div>
-                  <p className="text-[10px] text-muted-foreground">Airtime</p>
-                </CardContent>
-              </Card>
-            </Link>
-            <Link href="/admin/data-purchases">
+            <Link href="/admin/data-purchases" className="col-span-2">
               <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
                 <CardHeader className="pb-1 pt-3 px-3">
                   <Wifi className="h-4 w-4 text-muted-foreground" />
@@ -753,19 +740,6 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="text-2xl font-bold">API</div>
               <p className="text-xs text-muted-foreground">Settings</p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/admin/esim-orders">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">eSIM</CardTitle>
-              <Phone className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl sm:text-2xl font-bold">{stats?.esimOrderCount ?? 0}</div>
-              <p className="text-xs text-muted-foreground">Digital SIM</p>
             </CardContent>
           </Card>
         </Link>

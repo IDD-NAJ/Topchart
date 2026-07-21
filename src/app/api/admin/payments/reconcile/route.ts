@@ -59,14 +59,6 @@ export async function POST(request: NextRequest) {
           `;
           fixed += 1;
         }
-      } else if (type === 'esim_phone' || type === 'esim_data') {
-        await sql`
-          UPDATE esim_orders SET processing_status = 'processing', updated_at = NOW() WHERE transaction_reference = ${row.id}
-        `;
-        await sql`
-          UPDATE transactions SET updated_at = NOW() WHERE id = ${row.id}
-        `;
-        fixed += 1;
       }
     }
 
