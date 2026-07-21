@@ -72,7 +72,7 @@ export default function AdminPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-              <p className="text-muted-foreground mt-2">Welcome, {user?.name || "Administrator"}</p>
+              <p className="text-muted-foreground mt-2">Welcome, {user?.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : "Administrator"}</p>
             </div>
             <Shield className="h-10 w-10 text-primary" />
           </div>
