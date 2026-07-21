@@ -1,16 +1,15 @@
 import { Pool, neonConfig } from "@neondatabase/serverless";
-import { getDatabaseEnv } from "@/lib/env";
 
 // Query timeout in milliseconds - increased for admin operations
 const QUERY_TIMEOUT_MS = 60000; // Increased to 60s for stability
 const CONNECTION_TIMEOUT_MS = 30000; // 30s for Neon cold starts
 
 function getCleanConnectionString(): string {
-  const dbEnv = getDatabaseEnv();
+  // Defer environment variable access to runtime
   const rawConnection =
-    dbEnv.DATABASE_URL ||
-    dbEnv.NEON_DATABASE_URL ||
-    dbEnv.NETLIFY_DATABASE_URL ||
+    process.env.DATABASE_URL ||
+    process.env.NEON_DATABASE_URL ||
+    process.env.NETLIFY_DATABASE_URL ||
     "";
   let connectionString = rawConnection;
   
