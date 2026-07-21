@@ -3,7 +3,7 @@
 import { sql } from "@/lib/db";
 import { getCurrentUser } from "@/lib/actions/auth";
 
-export type DashboardTransactionType = "deposit" | "data" | "verification" | "result_checker" | "esim" | "proxy" | "giftcard" | "bill";
+export type DashboardTransactionType = "deposit" | "data" | "verification" | "result_checker" | "proxy" | "giftcard" | "bill";
 export type DashboardTransactionStatus = "pending" | "success" | "failed";
 
 export interface DashboardTransactionRow {

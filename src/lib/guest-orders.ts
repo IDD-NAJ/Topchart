@@ -4,9 +4,7 @@ import { sql, sqlUnsafe } from "@/lib/db";
 
 export type ProductType =
   | "data_bundle"
-  | "airtime"
   | "bill_payment"
-  | "esim"
   | "foreign_number";
 
 export type PaymentStatus = "pending" | "success" | "failed" | "abandoned";

@@ -1,5 +1,5 @@
 /**
- * Unified data fetching for airtime and data bundle purchases
+ * Unified data fetching for data bundle purchases
  * Handles caching, real-time pricing, and error handling
  */
 

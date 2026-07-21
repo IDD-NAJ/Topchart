@@ -6,7 +6,7 @@ import { getCurrentUser, updateWalletBalance } from "./auth";
 export interface Transaction {
   id: string;
   user_id: string;
-  type: "deposit" | "airtime" | "data";
+  type: "deposit" | "data";
   amount: number;
   status: "pending" | "success" | "failed";
   reference: string;
@@ -158,7 +158,7 @@ export async function purchaseData(
 }
 
 export async function getTransactions(
-  type?: "deposit" | "airtime" | "data",
+  type?: "deposit" | "data",
   limit = 50
 ): Promise<Transaction[]> {
   try {
@@ -226,8 +226,8 @@ export async function confirmPurchase(reference: string): Promise<{ success: boo
 
     const row = tx[0] as any;
     const type = (row.type || "").toUpperCase();
-    if (type !== "AIRTIME" && type !== "DATA") {
-      return { success: false, error: "Not an airtime or data transaction" };
+    if (type !== "DATA") {
+      return { success: false, error: "Not a data transaction" };
     }
 
     const status = (row.status || "").toUpperCase();

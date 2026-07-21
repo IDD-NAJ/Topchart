@@ -17,9 +17,7 @@ const bodySchema = z.object({
   customer_phone: z.string().min(10).max(20).optional(),
   product_type: z.enum([
     "data_bundle",
-    "airtime",
     "bill_payment",
-    "esim",
     "foreign_number",
   ]),
   product_details: z.record(z.unknown()),
