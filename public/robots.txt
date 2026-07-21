@@ -1,7 +1,53 @@
+# Topchart - robots.txt
+# SEO-optimized crawling rules
+
 User-agent: *
 Allow: /
-Disallow: /dashboard/
-Disallow: /admin/
-Disallow: /api/
+Allow: /checkout
+Allow: /checkout/callback
+Disallow: /admin
+Disallow: /api
+Disallow: /private
+Disallow: /*?*
+Disallow: /*&
+Disallow: /*tracking=
+Disallow: /*utm_
+Disallow: /checkout/callback$
+Disallow: /.git
+Disallow: /.env
+Crawl-delay: 0
 
+# Googlebot - highest priority, no delay
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+Request-rate: 100/1m
+
+# Bingbot - standard crawl
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+Request-rate: 30/1m
+
+# Yandexbot
+User-agent: Yandexbot
+Allow: /
+Crawl-delay: 1
+
+# Block aggressive bots
+User-agent: AhrefsBot
+User-agent: SemrushBot
+User-agent: DotBot
+User-agent: MJ12bot
+User-agent: AhrefsBot-Site
+User-agent: SemrushBot-BA
+User-agent: SemrushBot-CT
+Disallow: /
+
+# Sitemaps
 Sitemap: https://topchart.store/sitemap.xml
+Sitemap: https://topchart.store/sitemap-0.xml
+Sitemap: https://topchart.store/sitemap-1.xml
+
+# Host preference
+Host: https://topchart.store

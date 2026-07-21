@@ -98,6 +98,12 @@ export const metadata: Metadata = {
   },
   other: {
     'msvalidate.01': '7E495D7163563B23502D4333EA6974C4',
+    'format-detection': 'telephone=yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'default',
+    'apple-mobile-web-app-title': 'Topchart',
+    'mobile-web-app-capable': 'yes',
+    'theme-color': '#F38F20',
     'script:ld+json': JSON.stringify([
       {
         '@context': 'https://schema.org',
@@ -378,7 +384,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: '#146EF5',
+  themeColor: '#F38F20',
+  colorScheme: 'light dark',
   viewportFit: 'cover',
 }
 
@@ -389,6 +396,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
+      <head>
+        <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+        <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+      </head>
       <body className="font-sans antialiased overflow-x-hidden" suppressHydrationWarning>
         <AuthProvider>
           <AuthLoadingScreen />
