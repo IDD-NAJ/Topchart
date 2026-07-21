@@ -11,6 +11,7 @@ const envSchema = z.object({
   NETLIFY_DATABASE_URL: z.string().optional(),
   NEXT_PUBLIC_DATABASE_URL: z.string().optional(),
   PAYSTACK_SECRET_KEY: z.string().optional(),
+  NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY: z.string().optional(),
   NEXT_PUBLIC_APP_URL: optionalUrl,
   PVADEALS_API_KEY: z.string().optional(),
   PVADEALS_BASE_URL: optionalUrl,
@@ -81,6 +82,7 @@ type DatabaseEnv = z.infer<typeof databaseEnvSchema>;
 
 const paystackEnvSchema = z.object({
   PAYSTACK_SECRET_KEY: z.string().min(1, "PAYSTACK_SECRET_KEY is required"),
+  NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY: z.string().optional(),
 });
 type PaystackEnv = z.infer<typeof paystackEnvSchema>;
 
