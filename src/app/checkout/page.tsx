@@ -57,13 +57,38 @@ export default function CheckoutPage() {
     try {
       setBundlesLoading(true)
       const response = await fetch('/api/purchases/plans')
-      if (response.ok) {
-        const data = await response.json()
-        const bundleList = data.bundles || data.data || []
-        setBundles(bundleList.slice(0, 15))
+      if (!response.ok) {
+        console.error('[v0] Failed to fetch bundles:', response.status)
+        setErrors(prev => ({ ...prev, bundle_id: 'Failed to load bundles. Please try again.' }))
+        return
       }
+      
+      const result = await response.json()
+      console.log('[v0] Bundles API response:', result)
+      
+      // API returns { success: true, data: [...] } structure
+      const bundleList = Array.isArray(result.data) ? result.data : (result.bundles || [])
+      
+      if (bundleList.length === 0) {
+        console.warn('[v0] No bundles returned from API')
+        setErrors(prev => ({ ...prev, bundle_id: 'No bundles available. Please try again later.' }))
+        setBundles([])
+        return
+      }
+      
+      // Transform API response to expected format
+      const transformedBundles = bundleList.map((bundle: any) => ({
+        id: bundle.id || bundle.datamartPlanId,
+        size_label: bundle.name || `${bundle.sizeMb}MB`,
+        validity_label: bundle.validity || `${bundle.validityDays || 1} days`,
+        price: bundle.effectivePrice || bundle.price || 0,
+        ...bundle
+      }))
+      
+      setBundles(transformedBundles.slice(0, 15))
     } catch (error) {
       console.error('[v0] Failed to load bundles:', error)
+      setErrors(prev => ({ ...prev, bundle_id: 'Error loading bundles. Please refresh.' }))
     } finally {
       setBundlesLoading(false)
     }
@@ -192,8 +217,13 @@ export default function CheckoutPage() {
                   Select a data bundle
                 </label>
                 {bundlesLoading ? (
-                  <div className="flex justify-center py-6">
+                  <div className="flex flex-col items-center justify-center py-8 gap-2">
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground">Loading available bundles...</p>
+                  </div>
+                ) : bundles.length === 0 ? (
+                  <div className="flex items-center justify-center py-8 px-4 text-center">
+                    <p className="text-sm text-destructive">No bundles available. Please try again later.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto">
@@ -210,7 +240,7 @@ export default function CheckoutPage() {
                       >
                         <p className="font-bold text-foreground">{bundle.size_label}</p>
                         <p className="text-xs text-muted-foreground">{bundle.validity_label}</p>
-                        <p className="text-primary font-semibold mt-1">GHS {bundle.price.toFixed(2)}</p>
+                        <p className="text-primary font-semibold mt-1">GHS {(bundle.price || 0).toFixed(2)}</p>
                       </button>
                     ))}
                   </div>
