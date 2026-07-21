@@ -5,7 +5,7 @@ import { PreloadOverlay } from "@/components/preload-overlay"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 
-const EXCLUDED_PATHS = ["/login", "/register", "/admin/login"]
+const EXCLUDED_PATHS = ["/login", "/register"]
 
 export function PreloadWrapper({ children }: { children: React.ReactNode }) {
   const { showPreload } = useAuth()

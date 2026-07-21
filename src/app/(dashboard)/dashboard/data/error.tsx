@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { AlertCircle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -11,6 +12,8 @@ export default function DataPageError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const router = useRouter()
+
   useEffect(() => {
     // Log the error to console for debugging
     console.error('[DataPage Error]', error)
@@ -48,7 +51,7 @@ export default function DataPageError({
           </Button>
           <Button
             variant="outline"
-            onClick={() => window.location.href = '/dashboard'}
+            onClick={() => router.push('/dashboard')}
           >
             Back to Dashboard
           </Button>

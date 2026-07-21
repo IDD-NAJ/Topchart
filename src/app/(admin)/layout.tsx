@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { isAdmin } from "@/lib/roles"
@@ -13,8 +13,6 @@ export default function AdminLayout({
 }) {
   const { user, isLoading, initialized } = useAuth()
   const router = useRouter()
-  const [retryCount, setRetryCount] = useState(0)
-  const maxRetries = 3
 
   // Redirect to login if not authenticated after initialization
   useEffect(() => {

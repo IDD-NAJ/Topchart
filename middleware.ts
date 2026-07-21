@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const LOGIN = "/login";
-const ADMIN_LOGIN = "/admin/login";
+
+function loginUrl(request: NextRequest, nextPath: string) {
+  const url = new URL(LOGIN, request.url);
+  url.searchParams.set("next", nextPath);
+  return url;
+}
 
 function getSecurityHeaders(request: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://topchart.store";
@@ -104,7 +109,7 @@ export async function middleware(request: NextRequest) {
     if (!hasSession && !isAuthLoading) {
       console.log('[Middleware] No session and not loading, redirecting to login');
       return applySecurityHeaders(
-        NextResponse.redirect(new URL(LOGIN, request.url)),
+        NextResponse.redirect(loginUrl(request, pathname)),
         request
       );
     }
@@ -112,11 +117,11 @@ export async function middleware(request: NextRequest) {
   }
 
   // Admin protection
-  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
+  if (pathname.startsWith("/admin")) {
     if (!hasSession && !isAuthLoading) {
-      console.log('[Middleware] Admin: No session and not loading, redirecting to admin login');
+      console.log('[Middleware] Admin: No session and not loading, redirecting to login');
       return applySecurityHeaders(
-        NextResponse.redirect(new URL(ADMIN_LOGIN, request.url)),
+        NextResponse.redirect(loginUrl(request, pathname)),
         request
       );
     }

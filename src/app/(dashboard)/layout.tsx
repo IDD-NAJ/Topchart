@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { Suspense } from "react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
@@ -82,7 +82,18 @@ export default function DashboardLayout({
         <div className={cn("flex-1 flex flex-col transition-all duration-300 ease-out", sidebarCollapsed ? "lg:pl-20" : "lg:pl-64")}>
           <DashboardHeader sidebarCollapsed={sidebarCollapsed} />
           <main className="flex-1 pt-16 lg:pt-20 pb-40 lg:pb-0 overflow-x-hidden">
-            <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-6xl w-full">{children}</div>
+            <div className="container mx-auto w-full max-w-6xl px-3 py-6 sm:px-4 sm:py-8">
+              <Suspense
+                fallback={
+                  <div className="flex min-h-64 items-center justify-center" role="status">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-[color:var(--marketing-accent)]/30 border-t-transparent" />
+                    <span className="sr-only">Loading page</span>
+                  </div>
+                }
+              >
+                {children}
+              </Suspense>
+            </div>
           </main>
           <div className="hidden lg:block">
             <DashboardFooter />

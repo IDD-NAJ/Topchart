@@ -140,26 +140,28 @@ async function getOrderStatusFromDatamart(
   phoneNumber: string
 ): Promise<DatamartOrderStatus | null> {
   try {
-    const response = await providerRequest({
-      url: `${baseUrl}/api/v1/order/status`,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-KEY': apiKey,
-      },
-      body: {
-        orderReference,
-        phoneNumber,
-      },
-      timeout: 10000,
-    })
+    const response = await providerRequest<Record<string, any>>(
+      'datamart',
+      baseUrl,
+      '/api/v1/order/status',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': apiKey,
+        },
+        body: JSON.stringify({ orderReference, phoneNumber }),
+        timeoutMs: 10000,
+        skipRetry: true,
+      }
+    )
 
-    if (response.status !== 200) {
-      console.warn(`[DeliverySync] Datamart API returned status ${response.status}`)
+    if (!response.success) {
+      console.warn(`[DeliverySync] Datamart API returned status ${response.statusCode ?? 'unknown'}`)
       return null
     }
 
-    const data = response.data as any
+    const data = response.data
     if (!data || data.status === 'error') {
       console.warn(`[DeliverySync] Datamart API error: ${data?.message}`)
       return null
