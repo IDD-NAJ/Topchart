@@ -12,18 +12,18 @@ import {
   initializePaystackTransaction,
 } from "@/lib/paystack";
 import { sql } from "@/lib/db";
+import { calculateTotalWithServiceCharge } from "@/lib/service-charge";
 
 const bodySchema = z.object({
-  customer_email: z.string().email("Invalid email address"),
-  customer_name: z.string().min(1).max(100).optional(),
-  customer_phone: z.string().min(10).max(20).optional(),
-  product_type: z.enum([
-    "data_bundle",
-    "bill_payment",
-    "foreign_number",
-  ]),
-  product_details: z.record(z.unknown()),
-  amount_ghs: z.number().positive("Amount must be positive"),
+  // Accept the fields the checkout page actually sends.
+  email: z.string().email("Invalid email address"),
+  full_name: z.string().min(1).max(100).optional(),
+  phone: z.string().min(10).max(20).optional(),
+  product_type: z.enum(["data_bundle", "bill_payment", "foreign_number"]),
+  // Data bundle selection (primary key from /api/purchases/plans).
+  bundle_id: z.string().optional(),
+  // Fallback amount for non-bundle products (bill payment / foreign number).
+  amount: z.number().positive().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -38,67 +38,93 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { customer_email, customer_name, customer_phone, product_type, product_details, amount_ghs } =
+    const { email, full_name, phone, product_type, bundle_id, amount } =
       parsed.data;
 
-    // For data bundles: validate the bundle exists and fetch canonical price
-    let resolvedAmountGhs = amount_ghs;
-    if (product_type === "data_bundle") {
-      const network = product_details.network as string;
-      const capacity = product_details.capacity as string;
+    // Resolve the canonical base price server-side. Never trust the
+    // client-provided amount for data bundles.
+    let basePriceGhs: number | null = null;
+    const productDetails: Record<string, unknown> = {};
 
-      if (!network || !capacity) {
+    if (product_type === "data_bundle") {
+      if (!bundle_id) {
         return NextResponse.json(
-          { success: false, error: "network and capacity are required for data bundles" },
+          { success: false, error: "Please select a data bundle" },
           { status: 400 }
         );
       }
 
-      // Try to fetch from data_bundles table if it exists (for production)
-      // Otherwise use the provided amount (demo mode with sample data)
-      try {
-        const bundleRows = await sql`
-          SELECT price, price_override, markup_percent
-          FROM data_bundles
-          WHERE datamart_plan_id = ${capacity}
-            AND is_active = true
-          LIMIT 1
-        `;
+      const bundleRows = await sql`
+        SELECT id, name, "sizeMb", "validityHours", price,
+               "priceOverride", "markupPercent", network_id
+        FROM data_bundles
+        WHERE id = ${bundle_id}
+          AND "isActive" = true
+        LIMIT 1
+      `;
 
-        if (bundleRows.length > 0) {
-          const bundle = bundleRows[0] as {
-            price: number;
-            price_override: number | null;
-            markup_percent: number | null;
-          };
-          const providerPrice = Number(bundle.price);
-          const priceOverride = bundle.price_override ? Number(bundle.price_override) : null;
-          const markupPercent = bundle.markup_percent ? Number(bundle.markup_percent) : null;
-
-          if (priceOverride && priceOverride > 0) {
-            resolvedAmountGhs = priceOverride;
-          } else if (markupPercent && markupPercent > 0) {
-            resolvedAmountGhs = Number((providerPrice * (1 + markupPercent / 100)).toFixed(2));
-          } else {
-            resolvedAmountGhs = providerPrice;
-          }
-        }
-        // If not found, use provided amount (demo mode)
-      } catch (dbError) {
-        // data_bundles table may not exist in demo/test environment
-        // Use the provided amount from the client
-        console.warn("[GuestCheckout] data_bundles table lookup failed, using client-provided amount", dbError);
+      if (bundleRows.length === 0) {
+        return NextResponse.json(
+          { success: false, error: "Selected bundle is no longer available" },
+          { status: 404 }
+        );
       }
+
+      const bundle = bundleRows[0] as {
+        id: string;
+        name: string;
+        sizeMb: number | null;
+        validityHours: number | null;
+        price: string | number;
+        priceOverride: string | number | null;
+        markupPercent: string | number | null;
+        network_id: string | null;
+      };
+
+      const providerPrice = Number(bundle.price);
+      const priceOverride = bundle.priceOverride ? Number(bundle.priceOverride) : null;
+      const markupPercent = bundle.markupPercent ? Number(bundle.markupPercent) : null;
+
+      if (priceOverride && priceOverride > 0) {
+        basePriceGhs = priceOverride;
+      } else if (markupPercent && markupPercent > 0) {
+        basePriceGhs = Number((providerPrice * (1 + markupPercent / 100)).toFixed(2));
+      } else {
+        basePriceGhs = providerPrice;
+      }
+
+      productDetails.bundle_id = bundle.id;
+      productDetails.name = bundle.name;
+      productDetails.sizeMb = bundle.sizeMb;
+      productDetails.validityHours = bundle.validityHours;
+      productDetails.network_id = bundle.network_id;
+    } else {
+      // Non-bundle products: use the client-provided amount.
+      if (!amount || amount <= 0) {
+        return NextResponse.json(
+          { success: false, error: "A valid amount is required" },
+          { status: 400 }
+        );
+      }
+      basePriceGhs = amount;
     }
 
-    // Create the pending guest order in DB
+    // Add the service charge (customer pays on top).
+    const { base, serviceCharge, total } =
+      calculateTotalWithServiceCharge(basePriceGhs);
+
+    productDetails.base_price_ghs = base;
+    productDetails.service_charge_ghs = serviceCharge;
+    productDetails.total_ghs = total;
+
+    // Create the pending guest order in DB with the total the customer pays.
     const order = await createGuestOrder({
-      customer_email,
-      customer_name,
-      customer_phone,
+      customer_email: email,
+      customer_name: full_name,
+      customer_phone: phone,
       product_type: product_type as ProductType,
-      product_details,
-      amount_ghs: resolvedAmountGhs,
+      product_details: productDetails,
+      amount_ghs: total,
     });
 
     // Build Paystack callback URL
@@ -106,17 +132,19 @@ export async function POST(request: NextRequest) {
     const callbackUrl = `${appUrl}/checkout/callback`;
 
     const paystackRef = generatePaystackReference();
-    const amountPesewas = Math.round(resolvedAmountGhs * 100);
+    const amountPesewas = Math.round(total * 100);
 
     const paystackResult = await initializePaystackTransaction(
-      customer_email,
+      email,
       amountPesewas,
       paystackRef,
       {
         guest_order_id: order.id,
         tracking_number: order.tracking_number,
         product_type,
-        customer_name: customer_name ?? "",
+        customer_name: full_name ?? "",
+        base_price_ghs: base,
+        service_charge_ghs: serviceCharge,
       },
       callbackUrl
     );
@@ -136,7 +164,9 @@ export async function POST(request: NextRequest) {
       tracking_number: order.tracking_number,
       authorization_url: paystackResult.data.authorization_url,
       paystack_reference: paystackRef,
-      amount_ghs: resolvedAmountGhs,
+      base_price_ghs: base,
+      service_charge_ghs: serviceCharge,
+      amount_ghs: total,
     });
   } catch (error) {
     console.error("[GuestCheckout/initialize] Error:", error);

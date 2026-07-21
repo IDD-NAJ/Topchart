@@ -15,6 +15,10 @@ import {
   Globe,
   FileText,
 } from 'lucide-react'
+import {
+  calculateTotalWithServiceCharge,
+  serviceChargeLabel,
+} from '@/lib/service-charge'
 
 type ProductType = 'data_bundle' | 'bill_payment' | 'foreign_number' | ''
 
@@ -250,17 +254,30 @@ export default function CheckoutPage() {
             )}
 
             {/* Order Summary */}
-            {selectedBundle && (
-              <div className="bg-muted/30 border border-border rounded-lg p-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Order Summary</p>
-                    <p className="font-semibold text-foreground">{selectedBundle.size_label}</p>
+            {selectedBundle && (() => {
+              const { base, serviceCharge, total } = calculateTotalWithServiceCharge(
+                selectedBundle.price || 0
+              )
+              return (
+                <div className="bg-muted/30 border border-border rounded-lg p-4 space-y-3">
+                  <p className="text-xs text-muted-foreground">Order Summary</p>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-foreground">{selectedBundle.size_label}</span>
+                    <span className="text-foreground">GHS {base.toFixed(2)}</span>
                   </div>
-                  <p className="text-lg font-bold text-primary">GHS {selectedBundle.price.toFixed(2)}</p>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">
+                      Service charge ({serviceChargeLabel()})
+                    </span>
+                    <span className="text-muted-foreground">GHS {serviceCharge.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-3 border-t border-border">
+                    <span className="font-semibold text-foreground">Total</span>
+                    <span className="text-lg font-bold text-primary">GHS {total.toFixed(2)}</span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
 
             {/* Contact Info */}
             <div className="space-y-4 pt-4 border-t border-border">
