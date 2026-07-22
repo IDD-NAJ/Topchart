@@ -75,36 +75,33 @@ export async function POST(request: NextRequest) {
         if ((existing as any[]).length > 0) {
           await sqlUnsafe(
             `UPDATE data_bundles SET
-              price = $1,
-              "sizeMb" = $2,
-              network = $3,
-              synced_at = NOW(),
-              updated_at = NOW(),
-              "updatedAt" = NOW(),
-              is_active = ($4 = 'true'),
-              "isActive" = ($4 = 'true')
+              price       = $1,
+              size_mb     = $2,
+              network     = $3,
+              is_active   = $4,
+              synced_at   = NOW(),
+              updated_at  = NOW()
             WHERE datamart_plan_id = $5`,
-            [price, sizeMb, networkDisplay, String(pkg.inStock !== false), planId]
+            [price, sizeMb, networkDisplay, pkg.inStock !== false, planId]
           );
           totalUpdated++;
         } else {
           await sqlUnsafe(
             `INSERT INTO data_bundles (
-              network, name, "sizeMb", size_mb, price, original_price,
-              is_active, "isActive", is_popular, "isPopular",
+              network, name, size_mb, price, original_price,
+              is_active, is_popular,
               datamart_plan_id, datamart_plan_type,
-              synced_at, created_at, updated_at, "updatedAt"
+              synced_at, created_at, updated_at
             ) VALUES (
-              $1, $2, $3, $4, $5, $6,
-              true, true, false, false,
-              $7, 'data_package',
-              NOW(), NOW(), NOW(), NOW()
+              $1, $2, $3, $4, $5,
+              true, false,
+              $6, 'data_package',
+              NOW(), NOW(), NOW()
             )`,
             [
               networkDisplay,
               name,
               sizeMb,
-              sizeMb ? String(sizeMb) : null,
               price,
               price,
               planId,

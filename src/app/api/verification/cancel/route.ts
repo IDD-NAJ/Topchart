@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     const numbers = await sql`
       SELECT id, pvadeals_request_id, status, type, expires_at, allow_flag, purchase_price, metadata
       FROM verification_numbers
-      WHERE id = ${numberId} AND user_id = ${userId}
+      WHERE id::text = ${numberId}::text AND user_id::text = ${userId}::text
     `;
 
     if (numbers.length === 0) {
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     // allow_flag = false means provider doesn't support flagging, but we still cancel internally
     // We only block if there's already been an SMS (delivery confirmed)
     const smsRecords = await sql`
-      SELECT id FROM verification_sms WHERE number_id = ${numberId} LIMIT 1
+      SELECT id FROM verification_sms WHERE number_id::text = ${numberId}::text LIMIT 1
     `;
     if (smsRecords.length > 0) {
       return NextResponse.json(
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
       await sql`
         UPDATE verification_numbers
         SET status = 'expired', updated_at = NOW()
-        WHERE id = ${numberId}
+        WHERE id::text = ${numberId}::text
       `;
       return NextResponse.json(
         { success: false, error: "Number has already expired" },
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     await sql`
       UPDATE verification_numbers
       SET status = 'cancelled', updated_at = NOW()
-      WHERE id = ${numberId}
+      WHERE id::text = ${numberId}::text
     `;
 
     // ── Refund logic ──────────────────────────────────────────────────────────
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
         SELECT id, reference, payment_method, payment_channel, amount, status
         FROM transactions
         WHERE user_id = ${userId}
-          AND verification_number_id = ${numberId}::uuid
+          AND verification_number_id::text = ${numberId}::text
           AND status IN ('success', 'pending')
         ORDER BY created_at DESC
         LIMIT 1
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
 
       // Always refund to wallet balance (never Paystack/mobile money refund)
       await sql`
-        UPDATE users SET wallet_balance = wallet_balance + ${purchasePrice} WHERE id = ${userId}
+        UPDATE users SET wallet_balance = wallet_balance + ${purchasePrice} WHERE id::text = ${userId}::text
       `;
       refundMethod = "wallet";
       refundIssued = true;
