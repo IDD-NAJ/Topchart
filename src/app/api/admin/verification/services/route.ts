@@ -145,3 +145,46 @@ export async function PUT(request: NextRequest) {
     );
   }
 }
+
+// PATCH — update pricing fields for a service (used by admin verification-pricing page)
+export async function PATCH(request: NextRequest) {
+  try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.ok) {
+      return NextResponse.json(
+        { success: false, error: adminCheck.error },
+        { status: adminCheck.status }
+      );
+    }
+
+    const body = await request.json();
+    const { id, markup_percentage, str_price, ltr3_price, ltr7_price, ltr14_price, ltr30_price, is_active } = body;
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: "Service ID is required" }, { status: 400 });
+    }
+
+    const markupVal = markup_percentage !== undefined && markup_percentage !== "" && markup_percentage !== null
+      ? parseFloat(String(markup_percentage))
+      : null;
+
+    await sql`
+      UPDATE verification_services
+      SET
+        markup_percentage = ${markupVal},
+        str_price        = COALESCE(${str_price != null ? Number(str_price) : null}, str_price),
+        ltr3_price       = COALESCE(${ltr3_price != null ? Number(ltr3_price) : null}, ltr3_price),
+        ltr7_price       = COALESCE(${ltr7_price != null ? Number(ltr7_price) : null}, ltr7_price),
+        ltr14_price      = COALESCE(${ltr14_price != null ? Number(ltr14_price) : null}, ltr14_price),
+        ltr30_price      = COALESCE(${ltr30_price != null ? Number(ltr30_price) : null}, ltr30_price),
+        is_active        = COALESCE(${is_active != null ? Boolean(is_active) : null}, is_active),
+        updated_at       = NOW()
+      WHERE id = ${id}
+    `;
+
+    return NextResponse.json({ success: true, message: "Service pricing updated" });
+  } catch (error) {
+    console.error("Admin PATCH service error:", error);
+    return NextResponse.json({ success: false, error: "Failed to update service" }, { status: 500 });
+  }
+}
