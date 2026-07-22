@@ -34,8 +34,6 @@ async function checkAdminPage() {
     console.error('❌ DATABASE_URL environment variable is not set');
     process.exit(1);
   }
-
-  const sql = neon(DATABASE_URL);
   
   try {
     console.log('🔍 Checking admin page existence...');

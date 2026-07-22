@@ -45,6 +45,7 @@ if (!DATABASE_URL) {
 }
 
 // Simple SQL splitter that respects dollar-quoted strings
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function splitSQLStatements(sql) {
   const statements = [];
   let current = '';
