@@ -72,8 +72,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       table,
-      data: Array.isArray(result) ? result : result.rows || [],
-      total: parseInt((Array.isArray(countResult) ? countResult[0] : countResult.rows?.[0])?.count || 0),
+      data: result as unknown[],
+      total: parseInt((countResult[0] as any)?.count || 0),
       limit,
       offset,
     })
