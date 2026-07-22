@@ -38,6 +38,13 @@ import {
   Tag,
   Wifi,
   Network,
+  Smartphone,
+  Tickets,
+  DollarSign,
+  Zap,
+  BookOpen,
+  Eye,
+  Box,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Toaster } from "sonner"
@@ -69,15 +76,21 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    label: "Commerce",
+    label: "Commerce & Products",
     items: [
       { href: "/admin/data-bundles", label: "Data Bundles", icon: Database },
       { href: "/admin/networks", label: "Networks", icon: Network },
+      { href: "/admin/esim-products", label: "eSIM Products", icon: Smartphone },
+      { href: "/admin/esim-orders", label: "eSIM Orders", icon: Tickets },
+      { href: "/admin/proxy-services", label: "Proxy Services", icon: Zap },
+      { href: "/admin/gift-cards", label: "Gift Cards", icon: CreditCard },
+      { href: "/admin/promo-codes", label: "Promo Codes", icon: Tag },
       { href: "/admin/datamart-setup", label: "Datamart Setup", icon: Wifi },
-      { href: "/admin/verification-pricing", label: "Verification Pricing", icon: Tag },
+      { href: "/admin/bulk-orders", label: "Bulk Orders", icon: Box },
+      { href: "/admin/verification-pricing", label: "Verification Pricing", icon: DollarSign },
       { href: "/admin/resellers", label: "Resellers", icon: Store },
       { href: "/admin/referrals", label: "Referrals", icon: Gift },
-      { href: "/admin/billing", label: "Billing", icon: CreditCard },
+      { href: "/admin/billing", label: "Billing", icon: Receipt },
     ],
   },
   {
@@ -85,17 +98,29 @@ const navSections: NavSection[] = [
     items: [
       { href: "/admin/disputes", label: "Disputes", icon: AlertCircle },
       { href: "/admin/fraud", label: "Fraud Alerts", icon: AlertTriangle },
+      { href: "/admin/kyc-reviews", label: "KYC Reviews", icon: Eye },
+      { href: "/admin/payment-events", label: "Payment Events", icon: DollarSign },
       { href: "/admin/audit", label: "Audit Logs", icon: ClipboardList },
       { href: "/admin/verification", label: "Verification", icon: CheckSquare },
+      { href: "/admin/smspva-management", label: "SMSPVA Management", icon: Smartphone },
     ],
   },
   {
-    label: "Content",
+    label: "Content & Marketing",
     items: [
       { href: "/admin/cms", label: "CMS / Pages", icon: FileText },
       { href: "/admin/media", label: "Media Library", icon: Image },
+      { href: "/admin/marketing-assets", label: "Marketing Assets", icon: BookOpen },
       { href: "/admin/navigation-config", label: "Navigation", icon: Navigation },
       { href: "/admin/notifications", label: "Notifications", icon: Bell },
+    ],
+  },
+  {
+    label: "Users & Permissions",
+    items: [
+      { href: "/admin/permissions", label: "Permissions", icon: Shield },
+      { href: "/admin/roles", label: "Roles", icon: Users },
+      { href: "/admin/favorites", label: "User Favorites", icon: Gift },
     ],
   },
   {
