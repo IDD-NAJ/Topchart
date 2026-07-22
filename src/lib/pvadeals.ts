@@ -73,7 +73,7 @@ async function pvaRequest<T>(
   if (!isPvadealsConfigured()) {
     return { 
       success: false, 
-      error: "PVADeals API key not configured. Set PVADEALS_API_KEY in environment variables." 
+      error: "Verification service is not configured. Contact support for assistance." 
     };
   }
 

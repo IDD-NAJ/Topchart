@@ -94,9 +94,9 @@ export async function GET(request: NextRequest) {
       );
       const validityHours =
         row.validityHours != null ? Number(row.validityHours) : null;
-      const validityDays =
-        validityHours != null ? Math.round(validityHours / 24) : null;
-      const validity = validityDays ? `${validityDays} days` : null;
+      // Always show 90 days validity regardless of provider data
+      const validityDays = 90;
+      const validity = `${validityDays} days`;
       const networkName = row.networkName ? String(row.networkName) : "";
       const networkId = row.networkId ? String(row.networkId) : "";
       const name = String(row.name ?? "");

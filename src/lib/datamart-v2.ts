@@ -156,7 +156,7 @@ async function datamartRequest<T>(endpoint: string, options: RequestOptions = {}
   const retries = options.retries ?? MAX_RETRIES;
 
   if (!API) {
-    return { ok: false, status: 401, message: "API (Datamart API key) is not configured", code: "CONFIG" };
+    return { ok: false, status: 401, message: "Data service API is not configured", code: "CONFIG" };
   }
 
   const headers: Record<string, string> = {
