@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   RefreshCw,
   ArrowRight,
+  Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/networks";
@@ -66,6 +67,7 @@ export default function DashboardPage() {
 
   const quickActions = [
     { href: "/dashboard/data", label: "Buy Data", icon: Wifi, description: "MTN · Telecel · AT" },
+    { href: "/dashboard/buy-number", label: "Buy Number", icon: Phone, description: "Virtual numbers" },
     { href: "/dashboard/bills", label: "Pay Bills", icon: Receipt, description: "Electricity & more" },
     { href: "/dashboard/wallet", label: "My Wallet", icon: CreditCard, description: `GH₵ ${(data?.wallet?.balance ?? 0).toFixed(2)}` },
     { href: "/dashboard/history", label: "History", icon: History, description: "All transactions" },
@@ -194,7 +196,7 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
-        className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+        className="grid grid-cols-2 sm:grid-cols-5 gap-3"
       >
         {quickActions.map((action) => {
           const Icon = action.icon;
