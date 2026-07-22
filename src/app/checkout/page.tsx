@@ -10,17 +10,15 @@ import {
   Lock,
   Phone,
   Mail,
-  Package,
   Wifi,
-  Globe,
-  FileText,
 } from 'lucide-react'
 import {
   calculateTotalWithServiceCharge,
   serviceChargeLabel,
 } from '@/lib/service-charge'
 
-type ProductType = 'data_bundle' | 'bill_payment' | 'foreign_number' | ''
+// Only data bundles are available for guest purchase
+type ProductType = 'data_bundle' | ''
 
 interface FormData {
   product_type: ProductType
@@ -30,16 +28,10 @@ interface FormData {
   full_name: string
 }
 
-const PRODUCT_CATEGORIES = [
-  { id: 'data_bundle', label: 'Data Bundle', icon: Wifi },
-  { id: 'foreign_number', label: 'Foreign Number', icon: Globe },
-  { id: 'bill_payment', label: 'Bill Payment', icon: FileText },
-]
-
 export default function CheckoutPage() {
   const router = useRouter()
   const [formData, setFormData] = useState<FormData>({
-    product_type: '',
+    product_type: 'data_bundle',
     bundle_id: '',
     email: '',
     phone: '',
@@ -58,12 +50,12 @@ export default function CheckoutPage() {
     loadNetworks()
   }, [])
 
-  // Load bundles when product type is data_bundle or network changes
+  // Load bundles whenever the selected network changes
   useEffect(() => {
-    if (formData.product_type === 'data_bundle') {
+    if (selectedNetwork) {
       loadBundles()
     }
-  }, [formData.product_type, selectedNetwork])
+  }, [selectedNetwork])
 
   const loadNetworks = async () => {
     try {
@@ -226,74 +218,46 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* Product Type Selection */}
+            {/* Network Selection */}
             <div className="space-y-3">
               <label className="text-sm font-semibold text-foreground block">
-                What would you like to purchase?
+                Select a network
               </label>
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                {PRODUCT_CATEGORIES.map(category => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, product_type: category.id as ProductType, bundle_id: '' })}
-                    className={`p-3 sm:p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
-                      formData.product_type === category.id
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border hover:border-primary/50 text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    <category.icon className="h-5 w-5" />
-                    <span className="text-xs sm:text-sm font-medium text-center">{category.label}</span>
-                  </button>
-                ))}
-              </div>
-              {errors.product_type && <p className="text-xs text-destructive mt-2">{errors.product_type}</p>}
+              {networksLoading ? (
+                <div className="flex items-center justify-center py-4 gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground">Loading networks...</p>
+                </div>
+              ) : networks.length === 0 ? (
+                <div className="flex items-center justify-center py-4 px-4 text-center">
+                  <p className="text-sm text-destructive">No networks available.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {networks.map(network => (
+                    <button
+                      key={network.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedNetwork(network.id)
+                        setFormData(prev => ({ ...prev, bundle_id: '' }))
+                      }}
+                      className={`p-3 rounded-lg border-2 transition-all text-center text-sm ${
+                        selectedNetwork === network.id
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <p className="font-semibold text-foreground">{network.name}</p>
+                      <p className="text-xs text-muted-foreground">{network.bundle_count} bundles</p>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Network Selection */}
-            {formData.product_type === 'data_bundle' && (
-              <div className="space-y-3">
-                <label className="text-sm font-semibold text-foreground block">
-                  Select a network
-                </label>
-                {networksLoading ? (
-                  <div className="flex items-center justify-center py-4 gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground">Loading networks...</p>
-                  </div>
-                ) : networks.length === 0 ? (
-                  <div className="flex items-center justify-center py-4 px-4 text-center">
-                    <p className="text-sm text-destructive">No networks available.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-3 gap-2">
-                    {networks.map(network => (
-                      <button
-                        key={network.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedNetwork(network.id)
-                          setFormData(prev => ({ ...prev, bundle_id: '' }))
-                        }}
-                        className={`p-3 rounded-lg border-2 transition-all text-center text-sm ${
-                          selectedNetwork === network.id
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <p className="font-semibold text-foreground">{network.name}</p>
-                        <p className="text-xs text-muted-foreground">{network.bundle_count} bundles</p>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Bundle Selection */}
-            {formData.product_type === 'data_bundle' && (
-              <div className="space-y-3">
+            <div className="space-y-3">
                 <label className="text-sm font-semibold text-foreground block">
                   Select a data bundle
                 </label>
@@ -327,8 +291,7 @@ export default function CheckoutPage() {
                   </div>
                 )}
                 {errors.bundle_id && <p className="text-xs text-destructive mt-2">{errors.bundle_id}</p>}
-              </div>
-            )}
+            </div>
 
             {/* Order Summary */}
             {selectedBundle && (() => {
@@ -415,7 +378,7 @@ export default function CheckoutPage() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading || !formData.product_type}
+              disabled={loading}
               className="w-full bg-primary hover:bg-primary-dark disabled:bg-muted disabled:cursor-not-allowed text-primary-foreground font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2"
             >
               {loading ? (
