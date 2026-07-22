@@ -69,17 +69,23 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   try {
     // Query real database against correct schema
-    const [userRow, statsRow, monthlyData, weeklyData, networkData, transactionsData] = await Promise.all([
+    const [userRow, statsRow, monthlyData, weeklyData, networkData, transactionsData, topupData] = await Promise.all([
       // Get user wallet balance
       sql`SELECT wallet_balance FROM users WHERE id = ${user.id}`,
       
-      // Get transaction stats
+      // Get transaction stats (including month-over-month comparisons)
       sql`
         SELECT
           COUNT(*) FILTER (WHERE type = 'purchase' AND status = 'completed') as total_orders,
           COUNT(*) FILTER (WHERE type = 'purchase' AND status = 'completed' AND DATE(created_at) = CURRENT_DATE) as today_orders,
           COALESCE(SUM(amount) FILTER (WHERE status = 'completed' AND type = 'purchase'), 0) as total_sales,
-          COALESCE(SUM(amount) FILTER (WHERE status = 'completed' AND type = 'purchase' AND DATE(created_at) = CURRENT_DATE), 0) as today_sales
+          COALESCE(SUM(amount) FILTER (WHERE status = 'completed' AND type = 'purchase' AND DATE(created_at) = CURRENT_DATE), 0) as today_sales,
+          COUNT(*) FILTER (WHERE type = 'purchase' AND status = 'completed' AND created_at >= DATE_TRUNC('month', NOW())) as this_month_orders,
+          COUNT(*) FILTER (WHERE type = 'purchase' AND status = 'completed' AND created_at >= DATE_TRUNC('month', NOW()) - INTERVAL '1 month' AND created_at < DATE_TRUNC('month', NOW())) as last_month_orders,
+          COALESCE(SUM(amount) FILTER (WHERE status = 'completed' AND type = 'purchase' AND created_at >= DATE_TRUNC('month', NOW())), 0) as this_month_sales,
+          COALESCE(SUM(amount) FILTER (WHERE status = 'completed' AND type = 'purchase' AND created_at >= DATE_TRUNC('month', NOW()) - INTERVAL '1 month' AND created_at < DATE_TRUNC('month', NOW())), 0) as last_month_sales,
+          COALESCE(SUM(amount) FILTER (WHERE status = 'completed' AND type = 'deposit' AND created_at >= DATE_TRUNC('month', NOW())), 0) as this_month_topups,
+          COALESCE(SUM(amount) FILTER (WHERE status = 'completed' AND type = 'deposit' AND created_at >= DATE_TRUNC('month', NOW()) - INTERVAL '1 month' AND created_at < DATE_TRUNC('month', NOW())), 0) as last_month_topups
         FROM transactions
         WHERE user_id = ${user.id}
       `,
@@ -107,15 +113,17 @@ export async function getDashboardData(): Promise<DashboardData> {
         ORDER BY DATE(created_at) ASC
       `,
       
-      // Network sales today
+      // Network sales today (with yesterday comparison for percentage change)
       sql`
         SELECT 
           network,
-          COALESCE(SUM(amount), 0) as sales,
-          COUNT(*) as transaction_count
+          COALESCE(SUM(amount) FILTER (WHERE DATE(created_at) = CURRENT_DATE), 0) as sales,
+          COALESCE(SUM(amount) FILTER (WHERE DATE(created_at) = CURRENT_DATE - 1), 0) as yesterday_sales,
+          COUNT(*) FILTER (WHERE DATE(created_at) = CURRENT_DATE) as transaction_count
         FROM transactions
-        WHERE user_id = ${user.id} AND DATE(created_at) = CURRENT_DATE AND status = 'completed' AND type = 'purchase'
+        WHERE user_id = ${user.id} AND created_at >= CURRENT_DATE - 1 AND status = 'completed' AND type = 'purchase'
         GROUP BY network
+        HAVING COALESCE(SUM(amount) FILTER (WHERE DATE(created_at) = CURRENT_DATE), 0) > 0
         ORDER BY sales DESC
       `,
       
@@ -133,37 +141,99 @@ export async function getDashboardData(): Promise<DashboardData> {
         WHERE user_id = ${user.id}
         ORDER BY created_at DESC
         LIMIT 10
+      `,
+
+      // Most recent completed wallet top-up
+      sql`
+        SELECT amount, created_at
+        FROM transactions
+        WHERE user_id = ${user.id} AND type = 'deposit' AND status = 'completed'
+        ORDER BY created_at DESC
+        LIMIT 1
       `
     ]);
 
+    // Loyalty and commission are queried separately so a missing table never breaks the dashboard
+    let loyaltyTotal = 0;
+    try {
+      const loyaltyRows = await sql`
+        SELECT COALESCE(SUM(reward_amount), 0) as total
+        FROM referral_rewards
+        WHERE referrer_id = ${user.id} AND status = 'paid'
+      `;
+      loyaltyTotal = parseFloat((loyaltyRows[0] as any)?.total || '0');
+    } catch {
+      // referral_rewards table not available
+    }
+
+    let commissionTotal = 0;
+    try {
+      const commissionRows = await sql`
+        SELECT COALESCE(SUM(rc.commission_amount), 0) as total
+        FROM reseller_commissions rc
+        JOIN reseller_profiles rp ON rc.reseller_id = rp.id
+        WHERE rp.user_id = ${user.id} AND rc.status = 'paid'
+      `;
+      commissionTotal = parseFloat((commissionRows[0] as any)?.total || '0');
+    } catch {
+      // reseller tables not available
+    }
+
+    let lastLoginAt: string | null = null;
+    try {
+      const sessionRows = await sql`
+        SELECT created_at
+        FROM sessions
+        WHERE user_id = ${user.id}
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+      lastLoginAt = (sessionRows[0] as any)?.created_at ?? null;
+    } catch {
+      // sessions table not available
+    }
+
     const balance = parseFloat(userRow[0]?.wallet_balance || '0');
-    const stats = statsRow[0] || { total_orders: 0, today_orders: 0, total_sales: 0, today_sales: 0 };
+    const stats = statsRow[0] || {};
+
+    // Month-over-month percentage change helper
+    const pctChange = (current: number, previous: number): number => {
+      if (previous === 0) return 0;
+      return parseFloat((((current - previous) / previous) * 100).toFixed(2));
+    };
+
+    const thisMonthOrders = parseInt(stats.this_month_orders || 0);
+    const lastMonthOrders = parseInt(stats.last_month_orders || 0);
+    const thisMonthSales = parseFloat(stats.this_month_sales || 0);
+    const lastMonthSales = parseFloat(stats.last_month_sales || 0);
+    const thisMonthTopups = parseFloat(stats.this_month_topups || 0);
+    const lastMonthTopups = parseFloat(stats.last_month_topups || 0);
 
     const statCards: StatCard[] = [
       {
         label: 'Total Orders',
         value: parseInt(stats.total_orders || 0),
-        percentageChange: -6.32,
+        percentageChange: pctChange(thisMonthOrders, lastMonthOrders),
         todayValue: parseInt(stats.today_orders || 0),
       },
       {
         label: 'Total Sales',
         value: `GH₵ ${parseFloat(stats.total_sales || 0).toFixed(2)}`,
         unit: 'GH₵',
-        percentageChange: 30.47,
+        percentageChange: pctChange(thisMonthSales, lastMonthSales),
         todayValue: `GH₵ ${parseFloat(stats.today_sales || 0).toFixed(2)}`,
       },
       {
         label: 'Loyalty Incentive',
-        value: 'GH₵ 0.00',
+        value: `GH₵ ${loyaltyTotal.toFixed(2)}`,
         unit: 'GH₵',
-        percentageChange: -8.55,
+        percentageChange: 0,
       },
       {
         label: 'Commission Income',
-        value: 'GH₵ 0.00',
+        value: `GH₵ ${commissionTotal.toFixed(2)}`,
         unit: 'GH₵',
-        percentageChange: 12.5,
+        percentageChange: 0,
       },
     ];
 
@@ -180,7 +250,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     const networkSales = networkData.map(row => ({
       network: row.network || 'Unknown',
       sales: parseFloat(row.sales || 0),
-      percentageChange: Math.floor(Math.random() * 60 - 20), // Range: -20 to 40
+      percentageChange: pctChange(parseFloat(row.sales || 0), parseFloat(row.yesterday_sales || 0)),
     }));
 
     const recentTransactions: Transaction[] = transactionsData.map(row => ({
@@ -193,104 +263,49 @@ export async function getDashboardData(): Promise<DashboardData> {
       createdAt: row.created_at,
     }));
 
+    const recentTopup = parseFloat((topupData[0] as any)?.amount || '0');
+
     const activities: Activity[] = [
-      { type: 'login', label: 'Last Login', value: 'Web', icon: 'flag' },
-      { type: 'device', label: 'Device', value: 'Browser', icon: 'smartphone' },
-      { type: 'location', label: 'Location', value: 'Ghana', icon: 'map-pin' },
+      {
+        type: 'login',
+        label: 'Last Login',
+        value: lastLoginAt
+          ? new Date(lastLoginAt).toLocaleDateString('en-GH', { month: 'short', day: 'numeric' })
+          : '—',
+        icon: 'flag',
+      },
       { type: 'topup', label: 'Wallet Balance', value: `GH₵ ${balance.toFixed(2)}`, icon: 'dollar-sign' },
-      { type: 'commission', label: 'Recent Activity', value: `${recentTransactions.length} transactions`, icon: 'briefcase' },
+      {
+        type: 'commission',
+        label: 'Commission Income',
+        value: `GH₵ ${commissionTotal.toFixed(2)}`,
+        icon: 'briefcase',
+      },
+      {
+        type: 'orders',
+        label: 'Recent Activity',
+        value: `${recentTransactions.length} transactions`,
+        icon: 'smartphone',
+      },
     ];
 
     return {
       wallet: {
         balance,
-        percentageChange: 23.65,
-        recentTopup: balance,
+        percentageChange: pctChange(thisMonthTopups, lastMonthTopups),
+        recentTopup,
       },
       stats: statCards,
       monthlyChart,
       weeklyChart,
-      networkSales: networkSales.length > 0 ? networkSales : [
-        { network: 'AT', sales: 0, percentageChange: 28 },
-        { network: 'MTN', sales: 0, percentageChange: 34 },
-        { network: 'Telecel', sales: 0, percentageChange: 42 },
-      ],
+      networkSales,
       recentTransactions,
       activities,
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
-    return getMockDashboard();
+    return getEmptyDashboard();
   }
-}
-
-function getMockDashboard(): DashboardData {
-  return {
-    wallet: {
-      balance: 2.80,
-      percentageChange: 23.65,
-      recentTopup: 60.00,
-    },
-    stats: [
-      { label: 'Total Orders', value: 22, percentageChange: -6.32, todayValue: 8 },
-      { label: 'Total Sales', value: 'GH₵ 393.80', unit: 'GH₵', percentageChange: 30.47, todayValue: 'GH₵ 0.00' },
-      { label: 'Loyalty Incentive', value: 'GH₵ 0.594', unit: 'GH₵', percentageChange: -8.55 },
-      { label: 'Commission Income', value: 'GH₵ 45.20', unit: 'GH₵', percentageChange: 12.5 },
-    ],
-    monthlyChart: [
-      { month: 'May', value: 150 },
-      { month: 'Jun', value: 240 },
-    ],
-    weeklyChart: [
-      { day: 'Mon', value: 60 },
-      { day: 'Wed', value: 30 },
-      { day: 'Fri', value: 60 },
-    ],
-    networkSales: [
-      { network: 'AT', sales: 0, percentageChange: 28 },
-      { network: 'MTN', sales: 0, percentageChange: 34 },
-      { network: 'Telecel', sales: 0, percentageChange: 42 },
-      { network: 'AT Big Time', sales: 0, percentageChange: 28 },
-    ],
-    recentTransactions: [
-      {
-        id: '1',
-        orderId: '0269592451',
-        amount: 20,
-        package: 'AT BIG-TIME',
-        network: 'AT',
-        networkName: 'AT',
-        status: 'completed',
-        createdAt: '2026-06-29T10:07:30Z',
-      },
-      {
-        id: '2',
-        orderId: '591683489',
-        amount: 0,
-        package: 'E-WALLET',
-        network: 'E-WALLET',
-        status: 'completed',
-        createdAt: '2026-06-29T10:04:34Z',
-      },
-      {
-        id: '3',
-        orderId: '0551894941',
-        amount: 4,
-        package: 'MTNUP2U',
-        network: 'MTN',
-        networkName: 'MTN',
-        status: 'completed',
-        createdAt: '2026-06-24T11:29:44Z',
-      },
-    ],
-    activities: [
-      { type: 'login', label: 'Last Login', value: 'Web', icon: 'flag' },
-      { type: 'device', label: 'Device', value: 'Unknown', icon: 'smartphone' },
-      { type: 'location', label: 'Location', value: 'Unknown', icon: 'map-pin' },
-      { type: 'topup', label: 'Recent Topup', value: 'GH₵ 60.00', icon: 'dollar-sign' },
-      { type: 'commission', label: 'Recent Commission', value: 'GH₵ 45.20', icon: 'briefcase' },
-    ],
-  };
 }
 
 function getEmptyDashboard(): DashboardData {
@@ -312,11 +327,6 @@ function getEmptyDashboard(): DashboardData {
     recentTransactions: [],
     activities: [],
   };
-}
-
-function calculatePercentageChange(): number {
-  // Mock calculation - can be updated with actual logic
-  return Math.random() > 0.5 ? 28 : -15;
 }
 
 // Foreign Numbers section data
