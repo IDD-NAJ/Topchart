@@ -4,34 +4,21 @@ import React, { useState } from "react"
 import useSWR from "swr"
 import { toast } from "sonner"
 import { adminFetcher, exportToCsv, formatCurrency, formatDateTime } from "@/lib/admin-fetcher"
-import { Card, CardContent } from "@/components/ui/card"
+import { AdminPageShell, AdminTableShell, AdminTableHeader, EmptyState, StatCard } from "@/components/admin/AdminPageShell"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
-import { Search, Download, RefreshCw, Eye } from "lucide-react"
+import { Search, Download, RefreshCw, Eye, ArrowLeftRight, TrendingUp, CheckCircle2, Clock } from "lucide-react"
 
 interface AdminTransaction {
   id: string
@@ -53,285 +40,243 @@ interface TransactionsResponse {
   success: boolean
   transactions: AdminTransaction[]
   total: number
-  limit: number
-  offset: number
 }
 
 const PAGE_SIZE = 25
 
-function statusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
-  const s = status.toUpperCase()
-  if (s === "SUCCESS" || s === "COMPLETED") return "default"
-  if (s === "PENDING" || s === "PROCESSING") return "secondary"
-  if (s === "FAILED" || s === "CANCELLED") return "destructive"
+function statusVariant(s: string): "default" | "secondary" | "destructive" | "outline" {
+  const v = s?.toUpperCase()
+  if (v === "SUCCESS" || v === "COMPLETED") return "default"
+  if (v === "PENDING"  || v === "PROCESSING") return "secondary"
+  if (v === "FAILED"   || v === "CANCELLED")  return "destructive"
   return "outline"
 }
 
 export default function AdminTransactionsPage() {
   const [search, setSearch] = useState("")
-  const [query, setQuery] = useState("")
+  const [query, setQuery]   = useState("")
   const [status, setStatus] = useState("all")
-  const [type, setType] = useState("all")
-  const [page, setPage] = useState(1)
+  const [type, setType]     = useState("all")
+  const [page, setPage]     = useState(1)
   const [detail, setDetail] = useState<AdminTransaction | null>(null)
 
   const params = new URLSearchParams()
-  if (query) params.set("q", query)
+  if (query)          params.set("q", query)
   if (status !== "all") params.set("status", status)
-  if (type !== "all") params.set("type", type)
-  params.set("limit", String(PAGE_SIZE))
+  if (type   !== "all") params.set("type", type)
+  params.set("limit",  String(PAGE_SIZE))
   params.set("offset", String((page - 1) * PAGE_SIZE))
 
   const { data, error, isLoading, mutate } = useSWR<TransactionsResponse>(
-    `/api/admin/transactions?${params.toString()}`,
+    `/api/admin/transactions?${params}`,
     adminFetcher
   )
 
-  const transactions = data?.transactions || []
-  const total = data?.total || 0
+  const txns  = data?.transactions ?? []
+  const total = data?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    setPage(1)
-    setQuery(search.trim())
-  }
-
-  const handleExport = () => {
-    if (!transactions.length) {
-      toast.info("No transactions to export")
-      return
-    }
-    exportToCsv(
-      `transactions-${new Date().toISOString().slice(0, 10)}.csv`,
-      transactions.map((t) => ({
-        id: t.id,
-        reference: t.reference,
-        user: t.user_email || t.user_id,
-        type: t.type,
-        amount: t.amount,
-        currency: t.currency || "GHS",
-        status: t.status,
-        description: t.description || "",
-        created_at: t.created_at,
-      }))
-    )
-    toast.success(`Exported ${transactions.length} transactions`)
-  }
+  const successCount = txns.filter((t) => t.status?.toUpperCase() === "SUCCESS" || t.status?.toUpperCase() === "COMPLETED").length
+  const pendingCount = txns.filter((t) => t.status?.toUpperCase() === "PENDING").length
+  const revenue      = txns
+    .filter((t) => t.status?.toUpperCase() === "SUCCESS" || t.status?.toUpperCase() === "COMPLETED")
+    .reduce((s, t) => s + Number(t.amount ?? 0), 0)
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground sm:text-3xl">Transactions</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {data ? `${total.toLocaleString()} transactions` : "Loading transactions..."}
-          </p>
-        </div>
-        <div className="flex gap-2">
+    <AdminPageShell
+      title="Transactions"
+      description="All platform transactions across users"
+      icon={ArrowLeftRight}
+      actions={
+        <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => mutate()} disabled={isLoading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 mr-1.5 ${isLoading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
+          <Button
+            variant="outline" size="sm"
+            onClick={() => {
+              if (!txns.length) { toast.info("No transactions to export"); return }
+              exportToCsv(`transactions-${new Date().toISOString().slice(0, 10)}.csv`,
+                txns.map((t) => ({ id: t.id, reference: t.reference, user: t.user_email || t.user_id, type: t.type, amount: t.amount, status: t.status, created: t.created_at })))
+              toast.success(`Exported ${txns.length} transactions`)
+            }}
+          >
+            <Download className="h-4 w-4 mr-1.5" /> Export
           </Button>
         </div>
+      }
+    >
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatCard label="Total"     value={isLoading ? <Skeleton className="h-8 w-16" /> : total.toLocaleString()}          icon={ArrowLeftRight} />
+        <StatCard label="Successful" value={isLoading ? <Skeleton className="h-8 w-16" /> : successCount.toLocaleString()} icon={CheckCircle2}   accent />
+        <StatCard label="Pending"   value={isLoading ? <Skeleton className="h-8 w-16" /> : pendingCount.toLocaleString()}   icon={Clock} />
+        <StatCard label="Revenue"   value={isLoading ? <Skeleton className="h-8 w-24" /> : formatCurrency(revenue)}         icon={TrendingUp}     accent />
       </div>
 
-      {/* Filters */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <form onSubmit={handleSearch} className="flex flex-1 gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by reference, source or email..."
-              className="pl-9"
-              aria-label="Search transactions"
-            />
+      {/* Table */}
+      <AdminTableShell>
+        <AdminTableHeader>
+          <div className="flex flex-wrap items-center gap-2 flex-1">
+            <form onSubmit={(e) => { e.preventDefault(); setPage(1); setQuery(search.trim()) }} className="flex gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Reference, email..."
+                  className="pl-8 h-9 w-56"
+                />
+              </div>
+              <Button type="submit" variant="secondary" size="sm" className="h-9">Search</Button>
+            </form>
+            <Select value={status} onValueChange={(v) => { setStatus(v); setPage(1) }}>
+              <SelectTrigger className="h-9 w-36"><SelectValue placeholder="All statuses" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                {["success","pending","failed","cancelled","processing"].map((s) => (
+                  <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={type} onValueChange={(v) => { setType(v); setPage(1) }}>
+              <SelectTrigger className="h-9 w-32"><SelectValue placeholder="All types" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All types</SelectItem>
+                {["data","airtime","wallet","bill","verification","referral"].map((t) => (
+                  <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Button type="submit" variant="secondary">
-            Search
-          </Button>
-        </form>
-        <div className="flex gap-2">
-          <Select value={status} onValueChange={(v) => { setStatus(v); setPage(1) }}>
-            <SelectTrigger className="w-full sm:w-32" aria-label="Filter by status">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="success">Success</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="failed">Failed</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={type} onValueChange={(v) => { setType(v); setPage(1) }}>
-            <SelectTrigger className="w-full sm:w-32" aria-label="Filter by type">
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
-              <SelectItem value="deposit">Deposit</SelectItem>
-              <SelectItem value="purchase">Purchase</SelectItem>
-              <SelectItem value="withdrawal">Withdrawal</SelectItem>
-              <SelectItem value="refund">Refund</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+          <p className="text-xs text-muted-foreground shrink-0">
+            Page {page}/{totalPages} — {total.toLocaleString()} total
+          </p>
+        </AdminTableHeader>
 
-      {error && (
-        <Card className="mb-6 border-destructive/50">
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
-            <p className="text-sm text-destructive">Failed to load transactions: {error.message}</p>
-            <Button variant="outline" size="sm" onClick={() => mutate()}>
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {isLoading && (
-        <div className="flex flex-col gap-3">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full" />
-          ))}
-        </div>
-      )}
-
-      {!isLoading && !error && transactions.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-sm text-muted-foreground">No transactions found</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {!isLoading && transactions.length > 0 && (
-        <>
-          {/* Desktop table */}
-          <Card className="hidden overflow-hidden md:block">
-            <Table>
-              <TableHeader>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Reference</TableHead>
+                <TableHead>User</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Details</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 8 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: 8 }).map((__, j) => (
+                      <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : error ? (
                 <TableRow>
-                  <TableHead>Reference</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">View</TableHead>
+                  <TableCell colSpan={8} className="text-center text-destructive py-10">
+                    {(error as any).message || "Failed to load transactions"}
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactions.map((tx) => (
-                  <TableRow key={tx.id}>
-                    <TableCell className="max-w-40 truncate font-mono text-xs">{tx.reference || tx.id}</TableCell>
-                    <TableCell>
-                      <p className="max-w-48 truncate text-sm">{tx.user_email || "—"}</p>
+              ) : txns.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8}>
+                    <EmptyState icon={ArrowLeftRight} title="No transactions found" description="Try adjusting your filters" />
+                  </TableCell>
+                </TableRow>
+              ) : (
+                txns.map((t) => (
+                  <TableRow key={t.id} className="group">
+                    <TableCell className="font-mono text-xs max-w-[120px] truncate">{t.reference || "—"}</TableCell>
+                    <TableCell className="text-sm">
+                      {t.user_email ? (
+                        <div>
+                          <p className="font-medium text-foreground">{t.user_first_name} {t.user_last_name}</p>
+                          <p className="text-xs text-muted-foreground truncate max-w-[140px]">{t.user_email}</p>
+                        </div>
+                      ) : <span className="text-muted-foreground text-xs">{t.user_id?.slice(0, 8)}…</span>}
                     </TableCell>
-                    <TableCell className="text-sm capitalize">{tx.type}</TableCell>
-                    <TableCell className="text-right text-sm font-medium">
-                      {formatCurrency(Number(tx.amount), tx.currency || "GHS")}
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs capitalize">{t.type}</Badge>
+                    </TableCell>
+                    <TableCell className="font-semibold text-sm">{formatCurrency(Number(t.amount ?? 0))}</TableCell>
+                    <TableCell>
+                      <Badge variant={statusVariant(t.status)} className="text-xs capitalize">{t.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[160px] truncate">
+                      {t.description || "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                      {formatDateTime(t.created_at)}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={statusVariant(tx.status)}>{tx.status.toUpperCase()}</Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{formatDateTime(tx.created_at)}</TableCell>
-                    <TableCell>
-                      <div className="flex justify-end">
-                        <Button variant="ghost" size="icon" onClick={() => setDetail(tx)} aria-label="View transaction details">
-                          <Eye className="h-4 w-4" />
+                      <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDetail(t)}>
+                          <Eye className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
-          {/* Mobile cards */}
-          <div className="flex flex-col gap-3 md:hidden">
-            {transactions.map((tx) => (
-              <Card key={tx.id} className="cursor-pointer" onClick={() => setDetail(tx)}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">{tx.user_email || tx.reference || "—"}</p>
-                      <p className="truncate font-mono text-xs text-muted-foreground">{tx.reference}</p>
-                      <p className="text-xs capitalize text-muted-foreground">
-                        {tx.type} · {formatDateTime(tx.created_at)}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      <span className="text-sm font-semibold">{formatCurrency(Number(tx.amount), tx.currency || "GHS")}</span>
-                      <Badge variant={statusVariant(tx.status)} className="text-xs">
-                        {tx.status.toUpperCase()}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Pagination */}
-          <div className="mt-6 flex items-center justify-between gap-3">
-            <p className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
-            </p>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-border px-4 py-3">
+            <p className="text-xs text-muted-foreground">Page {page} of {totalPages}</p>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                Previous
-              </Button>
-              <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-                Next
-              </Button>
+              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
+              <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
             </div>
           </div>
-        </>
-      )}
+        )}
+      </AdminTableShell>
 
-      {/* Detail dialog */}
-      <Dialog open={!!detail} onOpenChange={(open) => !open && setDetail(null)}>
-        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
+      {/* Detail Dialog */}
+      <Dialog open={!!detail} onOpenChange={() => setDetail(null)}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Transaction Details</DialogTitle>
             <DialogDescription className="font-mono text-xs">{detail?.reference || detail?.id}</DialogDescription>
           </DialogHeader>
           {detail && (
-            <div className="flex flex-col gap-3 text-sm">
-              {[
-                ["User", detail.user_email || detail.user_id || "—"],
-                ["Name", `${detail.user_first_name || ""} ${detail.user_last_name || ""}`.trim() || "—"],
-                ["Type", detail.type],
-                ["Amount", formatCurrency(Number(detail.amount), detail.currency || "GHS")],
-                ["Status", detail.status.toUpperCase()],
-                ["Description", detail.description || "—"],
-                ["Date", formatDateTime(detail.created_at)],
-              ].map(([label, value]) => (
-                <div key={label} className="flex items-start justify-between gap-4 border-b border-border pb-2">
-                  <span className="text-muted-foreground">{label}</span>
-                  <span className="text-right font-medium capitalize text-foreground">{value}</span>
-                </div>
-              ))}
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                {[
+                  ["ID",          detail.id],
+                  ["Type",        detail.type],
+                  ["Amount",      formatCurrency(Number(detail.amount))],
+                  ["Status",      detail.status],
+                  ["Currency",    detail.currency ?? "GHS"],
+                  ["User",        detail.user_email ?? detail.user_id],
+                  ["Description", detail.description ?? "—"],
+                  ["Date",        formatDateTime(detail.created_at)],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">{label}</p>
+                    <p className="font-medium break-all">{value}</p>
+                  </div>
+                ))}
+              </div>
               {detail.metadata && (
                 <div>
-                  <p className="mb-1 text-muted-foreground">Metadata</p>
-                  <pre className="max-h-40 overflow-auto rounded-lg bg-muted p-3 text-xs">
-                    {JSON.stringify(detail.metadata, null, 2)}
-                  </pre>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Metadata</p>
+                  <pre className="text-xs bg-muted rounded p-3 overflow-auto max-h-40">{JSON.stringify(detail.metadata, null, 2)}</pre>
                 </div>
               )}
             </div>
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </AdminPageShell>
   )
 }

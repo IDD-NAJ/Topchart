@@ -362,6 +362,7 @@ function ActiveNumberCard({
     try {
       const res = await fetch("/api/verification/cancel", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ numberId: num.id }),
       })

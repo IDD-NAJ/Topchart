@@ -13,6 +13,7 @@ import {
   getWithdrawalStatus,
   listWithdrawals,
   createWithdrawal,
+  getDataPackages,
 } from "@/lib/datamart";
 
 export const runtime = "nodejs";
@@ -32,6 +33,15 @@ export async function GET(request: NextRequest) {
 
   try {
     switch (query) {
+      case "packages": {
+        const network = searchParams.get("network") || undefined;
+        const result = await getDataPackages(network);
+        return NextResponse.json(
+          result.success
+            ? { success: true, data: result.data }
+            : { success: false, error: result.error }
+        );
+      }
       case "balance": {
         const result = await getBalance();
         return NextResponse.json(
