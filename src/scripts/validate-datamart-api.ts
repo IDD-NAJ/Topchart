@@ -61,7 +61,7 @@ async function testEndpoint(
 async function main() {
   const env = getDatamartEnv();
   const baseUrl = normalizeDatamartBaseUrl(env.DATAMART_BASE_URL);
-  const apiKey = env.DATAMART_API_KEY;
+  const apiKey = env.API;
 
   console.log("=== DataMart API Validation ===");
   console.log(`Base URL: ${baseUrl}`);

@@ -41,14 +41,15 @@ interface ResultCheckersResponse {
   total?: number
 }
 
-const defaultForm = { title: "", description: "", exam_type: "", provider_url: "", price: "", sort_order: "0", status: "active" as const }
+type FormStatus = "active" | "inactive" | "coming_soon"
+const defaultForm: { title: string; description: string; exam_type: string; provider_url: string; price: string; sort_order: string; status: FormStatus } = { title: "", description: "", exam_type: "", provider_url: "", price: "", sort_order: "0", status: "active" }
 
 export default function AdminResultCheckersPage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [editCard, setEditCard] = useState<ResultCheckerCard | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
-  const [form, setForm] = useState<typeof defaultForm>(defaultForm)
+  const [form, setForm] = useState(defaultForm)
   const [saving, setSaving] = useState(false)
 
   const params = new URLSearchParams()
