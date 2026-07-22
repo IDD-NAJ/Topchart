@@ -13,29 +13,34 @@ export default function AdminLayout({
 }) {
   const { user, isLoading, initialized } = useAuth()
   const router = useRouter()
-  const [retryCount, setRetryCount] = useState(0)
-  const maxRetries = 3
+  const [redirectScheduled, setRedirectScheduled] = useState(false)
 
-  // Redirect to login if not authenticated after initialization
+  // Handle redirects after authentication is fully initialized
   useEffect(() => {
-    if (isLoading || !initialized) return
+    if (isLoading || !initialized || redirectScheduled) return
 
     if (!user) {
-      router.replace("/login?next=/admin")
-      return
+      setRedirectScheduled(true)
+      const timer = setTimeout(() => {
+        router.replace("/login?next=/admin")
+      }, 0)
+      return () => clearTimeout(timer)
     }
 
     // Check if user is admin
     if (!isAdmin(user.role)) {
-      router.replace("/dashboard")
-      return
+      setRedirectScheduled(true)
+      const timer = setTimeout(() => {
+        router.replace("/dashboard")
+      }, 0)
+      return () => clearTimeout(timer)
     }
-  }, [user, isLoading, initialized, router])
+  }, [user, isLoading, initialized, redirectScheduled, router])
 
   // Show loading state while checking authentication
   if (isLoading || !initialized || !user || !isAdmin(user.role)) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="text-muted-foreground mt-4">Loading admin panel...</p>

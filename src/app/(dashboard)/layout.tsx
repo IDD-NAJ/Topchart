@@ -42,8 +42,12 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (!stabilized || isLoading || !initialized || user || retryCount < maxRetries) return
-    console.log('[Dashboard Layout] Auth initialized but no user, redirecting to login')
-    const timer = setTimeout(() => router.replace("/login"), 200)
+    console.log('[Dashboard Layout] Auth initialized but no user, scheduling redirect to login')
+    // Use microtask to avoid rendering conflicts
+    const timer = setTimeout(() => {
+      console.log('[Dashboard Layout] Executing redirect to login')
+      router.replace("/login")
+    }, 0)
     return () => clearTimeout(timer)
   }, [stabilized, user, isLoading, initialized, retryCount, router])
 
