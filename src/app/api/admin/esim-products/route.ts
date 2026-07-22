@@ -38,8 +38,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: result.rows,
-      total: parseInt(countResult.rows[0].count),
+      data: result as unknown[],
+      total: parseInt((countResult[0] as any)?.count || 0),
       limit,
       offset,
     })
