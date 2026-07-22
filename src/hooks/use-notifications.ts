@@ -1,6 +1,7 @@
 "use client";
 
 import useSWR from "swr";
+import { useEffect, useRef } from "react";
 
 interface Notification {
   id: string;
@@ -25,18 +26,28 @@ const fetcher = async (url: string): Promise<NotificationsResponse> => {
 };
 
 export function useNotifications() {
+  const prevUnread = useRef<number>(0);
+
   const { data, error, isLoading, mutate } = useSWR<NotificationsResponse>(
     "/api/notifications",
     fetcher,
     {
-      revalidateOnFocus: false,
-      dedupingInterval: 10000,
-      refreshInterval: 60000,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 8_000,
+      // Poll every 30s — snappy enough for real-time feel without hammering the server
+      refreshInterval: 30_000,
     }
   );
 
   const notifications = data?.notifications || [];
   const unreadCount = data?.unreadCount || 0;
+
+  // Track new unread arrivals so callers can react (e.g. play a sound / show a toast)
+  const hasNewNotifications = unreadCount > prevUnread.current;
+  useEffect(() => {
+    prevUnread.current = unreadCount;
+  }, [unreadCount]);
 
   const markAsRead = async (notificationId: string) => {
     await fetch("/api/notifications", {
@@ -71,6 +82,7 @@ export function useNotifications() {
   return {
     notifications,
     unreadCount,
+    hasNewNotifications,
     isLoading,
     error,
     markAsRead,

@@ -20,6 +20,7 @@ import {
   Store,
   Receipt,
   LogOut,
+  Repeat2,
 } from "lucide-react"
 import {
   Sheet,
@@ -46,6 +47,7 @@ const moreNavItems = [
   { href: "/dashboard/tickets", label: "Support Tickets", icon: MessageSquare },
   { href: "/dashboard/faq", label: "Help & FAQ", icon: HelpCircle },
   { href: "/dashboard/disputes", label: "Disputes", icon: ShieldAlert },
+  { href: "/dashboard/scheduled", label: "Recurring Purchases", icon: Repeat2 },
 ]
 
 export function MobileBottomNav() {

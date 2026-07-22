@@ -1,45 +1,46 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { getAppOrigin } from "@/lib/app-url"
 import { useAuth } from "@/lib/auth-context"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { 
-  Loader2, 
-  User, 
-  Lock, 
-  Mail, 
-  Phone, 
-  ShieldCheck, 
-  CreditCard, 
-  Gift, 
-  Copy, 
-  Check, 
-  ArrowLeft,
-  Target,
-  Zap,
+import { PageHeader } from "@/components/dashboard/page-header"
+import {
+  Loader2,
+  Lock,
+  Mail,
+  Phone,
+  ShieldCheck,
+  Gift,
+  Copy,
+  Check,
   ShieldAlert,
-  Fingerprint,
-  Activity,
   History,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Eye,
+  EyeOff,
+  User,
+  TrendingUp,
 } from "lucide-react"
 import { formatCurrency } from "@/lib/networks"
 import { copyToClipboard } from "@/lib/clipboard"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { Separator } from "@/components/ui/separator"
 
 export default function ProfilePage() {
   const { user, refreshUser } = useAuth()
   const { toast } = useToast()
-  
+
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showCurrentPw, setShowCurrentPw] = useState(false)
+  const [showNewPw, setShowNewPw] = useState(false)
   const [referralStats, setReferralStats] = useState<{
     referralCode: string
     totalReferred: number
@@ -47,66 +48,60 @@ export default function ProfilePage() {
     totalEarnings: number
   } | null>(null)
 
-  const [profileData, setProfileData] = useState({
-    firstName: "",
-    lastName: "",
-    phone: "",
-  })
+  const [profileData, setProfileData] = useState({ firstName: "", lastName: "", phone: "" })
+  const [passwordData, setPasswordData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" })
+  const [isDirty, setIsDirty] = useState(false)
 
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  })
+  // Track original values for dirty detection
+  const originalProfile = useRef({ firstName: "", lastName: "", phone: "" })
 
   useEffect(() => {
     if (user) {
-      setProfileData({
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        phone: user.phone || "",
-      })
+      const initial = { firstName: user.firstName || "", lastName: user.lastName || "", phone: user.phone || "" }
+      setProfileData(initial)
+      originalProfile.current = initial
     }
   }, [user])
 
+  // Debounced auto-save
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleProfileChange = useCallback((field: string, value: string) => {
+    setProfileData((prev) => {
+      const next = { ...prev, [field]: value }
+      const dirty = Object.entries(next).some(([k, v]) => v !== originalProfile.current[k as keyof typeof originalProfile.current])
+      setIsDirty(dirty)
+      return next
+    })
+  }, [])
+
   useEffect(() => {
     fetch("/api/referral/stats", { credentials: "include", cache: "no-store" })
-      .then(res => res.json())
-      .then(json => {
-        if (json?.success && json?.data) setReferralStats(json.data)
-      })
+      .then((r) => r.json())
+      .then((json) => { if (json?.success && json?.data) setReferralStats(json.data) })
       .catch(() => {})
   }, [])
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
     setIsUpdatingProfile(true)
     try {
-      const response = await fetch("/api/auth/profile", {
+      const res = await fetch("/api/auth/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(profileData),
       })
-      const result = await response.json()
+      const result = await res.json()
       if (result.success) {
-        toast({
-          title: "Profile Updated",
-          description: "Your changes have been saved.",
-        })
+        toast({ title: "Profile Updated", description: "Your changes have been saved." })
         await refreshUser()
+        originalProfile.current = { ...profileData }
+        setIsDirty(false)
       } else {
-        toast({
-          title: "Update Failed",
-          description: result.error || "Failed to save your changes. Please try again.",
-          variant: "destructive",
-        })
+        toast({ title: "Update Failed", description: result.error || "Failed to save changes.", variant: "destructive" })
       }
-    } catch (error) {
-      toast({
-        title: "System Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      })
+    } catch {
+      toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" })
     } finally {
       setIsUpdatingProfile(false)
     }
@@ -115,49 +110,25 @@ export default function ProfilePage() {
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast({
-        title: "Validation Error",
-        description: "New passwords do not match.",
-        variant: "destructive",
-      })
+      toast({ title: "Passwords don't match", description: "New password and confirm password must be identical.", variant: "destructive" })
       return
     }
-
     setIsUpdatingPassword(true)
     try {
-      const response = await fetch("/api/auth/profile", {
+      const res = await fetch("/api/auth/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "updatePassword",
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword,
-        }),
+        body: JSON.stringify({ action: "updatePassword", currentPassword: passwordData.currentPassword, newPassword: passwordData.newPassword }),
       })
-      const result = await response.json()
+      const result = await res.json()
       if (result.success) {
-        toast({
-          title: "Password Updated",
-          description: "Your password has been changed successfully.",
-        })
-        setPasswordData({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        })
+        toast({ title: "Password Updated", description: "Your password has been changed successfully." })
+        setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" })
       } else {
-        toast({
-          title: "Update Failed",
-          description: result.error || "Password change failed. Please try again.",
-          variant: "destructive",
-        })
+        toast({ title: "Update Failed", description: result.error || "Password change failed.", variant: "destructive" })
       }
-    } catch (error) {
-      toast({
-        title: "System Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      })
+    } catch {
+      toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" })
     } finally {
       setIsUpdatingPassword(false)
     }
@@ -170,311 +141,313 @@ export default function ProfilePage() {
     const success = await copyToClipboard(referralLink)
     if (success) {
       setCopied(true)
-      setTimeout(() => setCopied(false), 1200)
+      setTimeout(() => setCopied(false), 1500)
+      toast({ title: "Copied!", description: "Referral link copied to clipboard." })
     }
   }
 
   if (!user) return null
 
+  const initials = `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase()
+
+  const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
+  const fadeUp = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } } }
+
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-16 animate-in fade-in duration-700">
-      
-      {/* Professional Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <Link href="/dashboard" className="inline-flex items-center text-xs font-bold text-muted-foreground hover:text-[#0052CC] transition-colors uppercase tracking-widest mb-2 group">
-            <ArrowLeft className="w-3 h-3 mr-1.5 group-hover:-translate-x-1 transition-transform" />
-            Back to Dashboard
-          </Link>
-          <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
-          <p className="text-muted-foreground">Manage your personal details and account settings.</p>
-        </div>
-        <div className="flex items-center gap-3">
-           <div className="px-4 py-2 rounded-lg bg-emerald-500/5 border border-emerald-500/10 flex items-center gap-2">
-             <ShieldCheck className="w-4 h-4 text-emerald-500" />
-             <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">Encrypted Session</span>
-           </div>
-        </div>
-      </div>
+    <div className="space-y-6 pb-10">
+      <PageHeader
+        title="My Profile"
+        description="Manage your personal details and account settings"
+        backHref="/dashboard"
+        actions={
+          <div className="flex items-center gap-2 rounded-lg bg-success/10 border border-success/20 px-3 py-1.5">
+            <ShieldCheck className="h-3.5 w-3.5 text-success" />
+            <span className="text-xs font-semibold text-success">Verified Session</span>
+          </div>
+        }
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Left Column: Profile Summary */}
-        <div className="lg:col-span-4 space-y-6">
-          <Card className="overflow-hidden border-[#0052CC]/20">
-            <div className="h-28 bg-[#0052CC]/10 relative">
-               <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
-                  <div className="h-24 w-24 rounded-2xl bg-background border-4 border-background shadow-2xl flex items-center justify-center text-[#0052CC] font-bold text-3xl uppercase ring-1 ring-[#0052CC]/10">
-                    {user.firstName?.[0]}{user.lastName?.[0]}
-                  </div>
-               </div>
+      <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        {/* Left column */}
+        <motion.div variants={fadeUp} className="lg:col-span-4 space-y-5">
+
+          {/* Identity card */}
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
+            <div className="h-20 bg-muted relative">
+              <div className="h-0.5 w-full bg-primary absolute bottom-0" />
             </div>
-            <CardContent className="pt-16 pb-8 text-center space-y-4">
-              <div className="space-y-1">
-                <h2 className="text-xl font-bold tracking-tight">{user.firstName} {user.lastName}</h2>
-                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground font-medium">
-                  <Mail className="w-3 h-3" />
-                  {user.email}
+            <div className="px-6 pb-6 -mt-8">
+              <div className="flex flex-col items-center text-center">
+                <div className="h-16 w-16 rounded-2xl bg-primary/10 border-4 border-card flex items-center justify-center text-primary font-bold text-lg mb-3 ring-1 ring-border">
+                  {initials || <User className="h-6 w-6" />}
                 </div>
-              </div>
-
-              <div className="flex items-center justify-center gap-2">
-                <Badge variant={user.isVerified ? "outline" : "secondary"} className={cn(
-                  "px-3 py-1 uppercase text-[10px] font-bold tracking-tighter",
-                  user.isVerified ? "bg-green-50 text-green-600 border-green-200" : "bg-amber-50 text-amber-600 border-amber-200"
+                <h2 className="text-base font-bold text-foreground">{user.firstName} {user.lastName}</h2>
+                <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                  <Mail className="h-3 w-3" />{user.email}
+                </p>
+                <span className={cn(
+                  "mt-3 inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide",
+                  user.isVerified ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
                 )}>
-                  {user.isVerified ? "Verified" : "Not Verified"}
-                </Badge>
+                  {user.isVerified ? "Verified" : "Unverified"}
+                </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-dashed">
-                <div className="p-3 rounded-xl bg-muted/30 border border-border/50 text-left">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Wallet Balance</p>
-                  <p className="text-sm font-black text-[#0052CC]">{formatCurrency(user.walletBalance || 0)}</p>
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className="rounded-lg bg-muted/50 border border-border p-3 text-center">
+                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Balance</p>
+                  <p className="text-sm font-bold text-primary">{formatCurrency(user.walletBalance || 0)}</p>
                 </div>
-                <div className="p-3 rounded-xl bg-muted/30 border border-border/50 text-left">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Account Score</p>
-                  <p className="text-sm font-black text-foreground">A+</p>
+                <div className="rounded-lg bg-muted/50 border border-border p-3 text-center">
+                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Member Since</p>
+                  <p className="text-sm font-bold text-foreground">
+                    {user.createdAt ? new Date(user.createdAt).getFullYear() : "—"}
+                  </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[#0052CC]/5 border-[#0052CC]/20 overflow-hidden relative">
-             <div className="absolute top-0 right-0 p-8 opacity-5 -mr-4 -mt-4 rotate-12">
-                <Gift className="w-32 h-32 text-[#0052CC]" />
-             </div>
-             <CardHeader className="pb-2">
-               <CardTitle className="text-base flex items-center gap-2">
-                 <Gift className="w-4 h-4 text-[#0052CC]" />
-                 Refer & Earn
-               </CardTitle>
-               <CardDescription>Share your referral link and earn rewards for every friend you invite.</CardDescription>
-             </CardHeader>
-             <CardContent className="space-y-4 pt-4">
-               <div className="flex items-center justify-between p-3 rounded-lg bg-background border border-[#0052CC]/20">
-                 <div className="flex items-center gap-2 min-w-0">
-                    <LinkIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-[10px] font-mono truncate">{referralLink}</span>
-                 </div>
-                 <Button 
-                   size="sm" 
-                   variant="ghost"
-                   className="h-7 w-7 p-0 ml-2 shrink-0"
-                   onClick={handleCopyReferral}
-                 >
-                   {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-                 </Button>
-               </div>
-               {referralStats && (
-                 <div className="grid grid-cols-2 gap-2">
-                   <div className="p-2.5 rounded-lg bg-background border border-border text-center">
-                     <p className="text-[9px] uppercase text-muted-foreground font-bold">Referred</p>
-                     <p className="text-base font-bold text-foreground">{referralStats.totalReferred}</p>
-                   </div>
-                   <div className="p-2.5 rounded-lg bg-background border border-border text-center">
-                     <p className="text-[9px] uppercase text-muted-foreground font-bold">Qualified</p>
-                     <p className="text-base font-bold text-[#0052CC]">{referralStats.qualifiedReferrals}</p>
-                   </div>
-                 </div>
-               )}
-               <div className="flex gap-2">
-                 <Button asChild size="sm" className="flex-1 h-8 text-[9px] uppercase font-bold tracking-widest">
-                    <Link href="/dashboard/history?type=referral">View Earnings</Link>
-                 </Button>
-               </div>
-             </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column: Configuration Forms */}
-        <div className="lg:col-span-8 space-y-8">
-          
-          {/* Identity Sync */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-2 px-1">
-               <Fingerprint className="w-4 h-4 text-[#0052CC]" />
-               <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Personal Information</h2>
             </div>
-            <Card>
-              <CardHeader className="pb-4 border-b bg-muted/10">
-                <CardTitle className="text-base">Your Details</CardTitle>
-                <CardDescription>Update your name, phone number, and email address.</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-8">
-                <form onSubmit={handleUpdateProfile} className="space-y-8">
-                  <div className="grid sm:grid-cols-2 gap-8">
-                    <div className="space-y-2.5">
-                      <Label htmlFor="firstName" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">First Name</Label>
-                      <Input
-                        id="firstName"
-                        value={profileData.firstName}
-                        onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
-                        required
-                        className="h-11 font-medium"
-                      />
-                    </div>
-                    <div className="space-y-2.5">
-                      <Label htmlFor="lastName" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        value={profileData.lastName}
-                        onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
-                        required
-                        className="h-11 font-medium"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid sm:grid-cols-2 gap-8">
-                    <div className="space-y-2.5">
-                      <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Email Endpoint</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
-                        <Input id="email" value={user.email} disabled className="pl-10 h-11 bg-muted/30 border-dashed font-medium opacity-70" />
-                      </div>
-                      <p className="text-[10px] text-muted-foreground italic">Endpoint is locked to primary account ID.</p>
-                    </div>
-                    <div className="space-y-2.5">
-                      <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Mobile Endpoint</Label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
-                        <Input
-                          id="phone"
-                          value={profileData.phone}
-                          onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                          className="pl-10 h-11 font-medium"
-                          placeholder="024 000 0000"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex justify-end pt-4">
-                    <Button type="submit" disabled={isUpdatingProfile} className="h-11 px-8 font-bold uppercase tracking-widest text-xs group">
-                      {isUpdatingProfile ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          Save Changes
-                          <Zap className="w-3 h-3 ml-2 group-hover:scale-125 transition-transform" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </section>
+          </div>
 
-          {/* Change Password */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-2 px-1">
-               <ShieldAlert className="w-4 h-4 text-[#FF5630]" />
-               <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Password & Security</h2>
+          {/* Referral card */}
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
+            <div className="p-5 border-b border-border">
+              <div className="flex items-center gap-2 mb-1">
+                <Gift className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Refer & Earn</h3>
+              </div>
+              <p className="text-xs text-muted-foreground">Share your link and earn rewards for every friend you invite.</p>
             </div>
-            <Card>
-              <CardHeader className="pb-4 border-b bg-muted/10">
-                <CardTitle className="text-base">Change Password</CardTitle>
-                <CardDescription>Keep your account safe by updating your password regularly.</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-8">
-                <form onSubmit={handleUpdatePassword} className="space-y-8">
-                  <div className="space-y-2.5 max-w-sm">
-                    <Label htmlFor="currentPassword" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Current Password</Label>
+            <div className="p-5 space-y-4">
+              <div className="flex items-center gap-2 rounded-lg bg-muted/50 border border-border px-3 py-2.5">
+                <LinkIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-[10px] font-mono text-muted-foreground truncate flex-1">{referralLink}</span>
+                <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0" onClick={handleCopyReferral} aria-label="Copy referral link">
+                  {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+                </Button>
+              </div>
+
+              {referralStats && (
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: "Referred", value: referralStats.totalReferred },
+                    { label: "Qualified", value: referralStats.qualifiedReferrals },
+                    { label: "Earnings", value: formatCurrency(referralStats.totalEarnings) },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="rounded-lg bg-muted/40 border border-border p-2.5 text-center">
+                      <p className="text-[9px] uppercase text-muted-foreground font-medium">{label}</p>
+                      <p className="text-sm font-bold text-foreground mt-0.5">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Button asChild size="sm" className="w-full gap-2 h-9" variant="outline">
+                <Link href="/dashboard/history?type=referral">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  View Earnings
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          {/* Quick links */}
+          <div className="bg-card rounded-xl border border-border divide-y divide-border overflow-hidden">
+            {[
+              { href: "/dashboard/history", icon: History, label: "Transaction History", sub: "View all past transactions" },
+            ].map(({ href, icon: Icon, label, sub }) => (
+              <Link key={href} href={href} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors group">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground group-hover:text-foreground transition-colors">
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">{label}</p>
+                  <p className="text-xs text-muted-foreground">{sub}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Right column */}
+        <div className="lg:col-span-8 space-y-5">
+
+          {/* Personal information */}
+          <motion.div variants={fadeUp} className="bg-card rounded-xl border border-border overflow-hidden">
+            <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Personal Information</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Update your name and contact details</p>
+              </div>
+              {isDirty && (
+                <span className="text-[10px] text-warning font-medium px-2 py-0.5 rounded-full bg-warning/10">Unsaved changes</span>
+              )}
+            </div>
+            <form onSubmit={handleUpdateProfile} className="p-5 space-y-5">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="firstName" className="text-xs font-medium text-muted-foreground">First Name</Label>
+                  <Input
+                    id="firstName"
+                    value={profileData.firstName}
+                    onChange={(e) => handleProfileChange("firstName", e.target.value)}
+                    required
+                    className="h-10 bg-background"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="lastName" className="text-xs font-medium text-muted-foreground">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    value={profileData.lastName}
+                    onChange={(e) => handleProfileChange("lastName", e.target.value)}
+                    required
+                    className="h-10 bg-background"
+                  />
+                </div>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-xs font-medium text-muted-foreground">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input id="email" value={user.email} disabled className="pl-9 h-10 bg-muted/30 opacity-70" />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Email address cannot be changed</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone" className="text-xs font-medium text-muted-foreground">Phone Number</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                     <Input
-                      id="currentPassword"
-                      type="password"
-                      value={passwordData.currentPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                      required
-                      className="h-11"
+                      id="phone"
+                      value={profileData.phone}
+                      onChange={(e) => handleProfileChange("phone", e.target.value)}
+                      placeholder="024 000 0000"
+                      className="pl-9 h-10 bg-background"
                     />
                   </div>
-                  <div className="grid sm:grid-cols-2 gap-8">
-                    <div className="space-y-2.5">
-                      <Label htmlFor="newPassword" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">New Password</Label>
-                      <Input
-                        id="newPassword"
-                        type="password"
-                        value={passwordData.newPassword}
-                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                        required
-                        minLength={8}
-                        className="h-11"
-                      />
-                    </div>
-                    <div className="space-y-2.5">
-                      <Label htmlFor="confirmPassword" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Confirm New Password</Label>
-                      <Input
-                        id="confirmPassword"
-                        type="password"
-                        value={passwordData.confirmPassword}
-                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                        required
-                        minLength={8}
-                        className="h-11"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center pt-4">
-                     <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/10 flex items-center gap-2">
-                        <Lock className="w-3 h-3 text-amber-600" />
-                        <span className="text-[10px] font-bold uppercase text-amber-700">8+ Characters Required</span>
-                     </div>
-                    <Button type="submit" disabled={isUpdatingPassword} variant="secondary" className="h-11 px-8 font-bold uppercase tracking-widest text-xs">
-                      {isUpdatingPassword ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Updating...
-                        </>
-                      ) : (
-                        "Update Password"
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </section>
+                </div>
+              </div>
+              <div className="flex justify-end pt-1">
+                <Button type="submit" disabled={isUpdatingProfile || !isDirty} size="sm" className="h-9 px-6 gap-2">
+                  {isUpdatingProfile ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Saving...</> : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </motion.div>
 
-          {/* Transaction History */}
-          <section className="space-y-4">
-            <Card className="bg-muted/30 border-dashed">
-               <CardContent className="p-6 flex items-center justify-between gap-4">
-                 <div className="flex items-start gap-3">
-                   <div className="w-10 h-10 rounded-xl bg-background border flex items-center justify-center shrink-0">
-                      <History className="w-5 h-5 text-muted-foreground" />
-                   </div>
-                   <div className="space-y-1">
-                      <h4 className="text-sm font-bold uppercase tracking-wider">Transaction History</h4>
-                      <p className="text-xs text-muted-foreground leading-relaxed max-w-md">
-                        See all your top-ups, purchases, and account activity in one place.
-                      </p>
-                   </div>
-                 </div>
-                 <Button asChild variant="outline" size="sm" className="h-9 px-6 font-bold uppercase tracking-tighter text-[10px]">
-                    <Link href="/dashboard/history">View History</Link>
-                 </Button>
-               </CardContent>
-            </Card>
-          </section>
+          {/* Password & Security */}
+          <motion.div variants={fadeUp} className="bg-card rounded-xl border border-border overflow-hidden">
+            <div className="px-5 py-4 border-b border-border">
+              <h3 className="text-sm font-semibold text-foreground">Password & Security</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Keep your account safe with a strong password</p>
+            </div>
+            <form onSubmit={handleUpdatePassword} className="p-5 space-y-5">
+              <div className="space-y-1.5 max-w-sm">
+                <Label htmlFor="currentPassword" className="text-xs font-medium text-muted-foreground">Current Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    id="currentPassword"
+                    type={showCurrentPw ? "text" : "password"}
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                    required
+                    className="pl-9 pr-10 h-10 bg-background"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPw(!showCurrentPw)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={showCurrentPw ? "Hide password" : "Show password"}
+                  >
+                    {showCurrentPw ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="newPassword" className="text-xs font-medium text-muted-foreground">New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="newPassword"
+                      type={showNewPw ? "text" : "password"}
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      required
+                      minLength={8}
+                      className="pr-10 h-10 bg-background"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPw(!showNewPw)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label={showNewPw ? "Hide password" : "Show password"}
+                    >
+                      {showNewPw ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="confirmPassword" className="text-xs font-medium text-muted-foreground">Confirm New Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                    required
+                    minLength={8}
+                    className="h-10 bg-background"
+                  />
+                </div>
+              </div>
+
+              {passwordData.newPassword && passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword && (
+                <p className="text-xs text-destructive flex items-center gap-1.5">
+                  <ShieldAlert className="h-3 w-3" />
+                  Passwords do not match
+                </p>
+              )}
+
+              <div className="flex items-center justify-between pt-1">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Lock className="h-3 w-3" />
+                  Minimum 8 characters required
+                </div>
+                <Button
+                  type="submit"
+                  disabled={
+                    isUpdatingPassword ||
+                    !passwordData.currentPassword ||
+                    !passwordData.newPassword ||
+                    passwordData.newPassword !== passwordData.confirmPassword
+                  }
+                  variant="secondary"
+                  size="sm"
+                  className="h-9 px-6 gap-2"
+                >
+                  {isUpdatingPassword ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Updating...</> : "Update Password"}
+                </Button>
+              </div>
+            </form>
+          </motion.div>
+
+          {/* Account info strip */}
+          <motion.div variants={fadeUp} className="rounded-xl border border-border bg-muted/30 p-4 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/10 text-success shrink-0">
+              <ShieldCheck className="h-4 w-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Account Protected</p>
+              <p className="text-xs text-muted-foreground">Your session is encrypted and secured end-to-end.</p>
+            </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </div>
-  )
-}
-
-function Badge({ children, variant = "outline", className }: { children: React.ReactNode, variant?: "outline" | "secondary", className?: string }) {
-  return (
-    <span className={cn(
-      "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-      variant === "outline" ? "text-foreground" : "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-      className
-    )}>
-      {children}
-    </span>
   )
 }

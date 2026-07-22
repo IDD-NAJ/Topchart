@@ -36,6 +36,7 @@ import {
   PanelLeftOpen,
   Receipt,
   Wrench,
+  Repeat2,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -47,6 +48,7 @@ const navItems = [
   { href: "/dashboard/verification/history", label: "Verification History", icon: ClipboardList, indent: true, serviceKey: SERVICE_KEYS.VERIFICATION },
   { href: "/dashboard/result-checkers", label: "Result Checkers", icon: GraduationCap, serviceKey: SERVICE_KEYS.RESULT_CHECKER },
   { href: "/dashboard/history", label: "Transaction History", icon: History, serviceKey: null },
+  { href: "/dashboard/scheduled", label: "Recurring Purchases", icon: Repeat2, serviceKey: null },
 ]
 
 const resellerItems = [

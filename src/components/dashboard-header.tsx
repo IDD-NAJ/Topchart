@@ -33,6 +33,8 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { NotificationsPanel } from "@/components/notifications-panel"
+import { useLiveBalance } from "@/hooks/use-live-balance"
+import { formatCurrency } from "@/lib/networks"
 
 const mainNavItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -108,6 +110,7 @@ export function DashboardHeader({ sidebarCollapsed = false }: DashboardHeaderPro
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const pageTitle = resolvePageTitle(pathname)
   const isReseller = user?.role === "RESELLER"
+  const { balance, isValidating: balanceRefreshing } = useLiveBalance()
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
@@ -148,9 +151,25 @@ export function DashboardHeader({ sidebarCollapsed = false }: DashboardHeaderPro
           </div>
         </div>
 
-        {/* Right: notifications + user + mobile menu */}
-        <div className="flex shrink-0 items-center gap-2">
-          <NotificationsPanel />
+          {/* Right: live balance + notifications + user + mobile menu */}
+          <div className="flex shrink-0 items-center gap-2">
+            {/* Live wallet balance chip */}
+            {balance !== null && (
+              <Link
+                href="/dashboard/wallet"
+                className={cn(
+                  "hidden md:flex items-center gap-1.5 rounded-lg border border-border bg-muted/50 px-3 py-1.5 transition-colors hover:bg-muted",
+                  balanceRefreshing && "opacity-70"
+                )}
+              >
+                <span className="text-[10px] font-medium text-muted-foreground">Balance</span>
+                <span className="text-xs font-bold text-foreground">{formatCurrency(balance)}</span>
+                {balanceRefreshing && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-live-ping shrink-0" />
+                )}
+              </Link>
+            )}
+            <NotificationsPanel />
 
           {/* User info (desktop) */}
           <div className="hidden md:flex items-center gap-2.5">
