@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
-import { useForeignNumbers } from "@/hooks/use-foreign-numbers";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { VerificationCard } from "@/components/dashboard/verification-card";
 import { NetworkGauge } from "@/components/dashboard/network-gauge";
@@ -60,7 +59,6 @@ function StatsSkeleton() {
 export default function DashboardPage() {
   const { user } = useAuth();
   const { data, isLoading, isValidating, mutate } = useDashboardData();
-  const { data: foreignData, isLoading: foreignLoading } = useForeignNumbers();
   const [showFundModal, setShowFundModal] = useState(false);
 
   const isLowBalance = data && data.wallet.balance < LOW_BALANCE_THRESHOLD;
@@ -266,10 +264,10 @@ export default function DashboardPage() {
 
       {/* Foreign Numbers Section */}
       <ForeignNumbersSection
-        numbers={foreignData?.numbers ?? []}
-        isLoading={foreignLoading}
-        activeCount={foreignData?.activeCount ?? 0}
-        totalCount={foreignData?.totalCount ?? 0}
+        numbers={data?.verificationNumbers ?? []}
+        isLoading={isLoading && !data}
+        activeCount={data?.verificationSummary?.activeCount ?? 0}
+        totalCount={data?.verificationSummary?.totalCount ?? 0}
       />
 
       {/* Recent Transactions */}

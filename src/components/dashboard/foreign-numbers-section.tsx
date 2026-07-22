@@ -9,14 +9,13 @@ import { cn } from "@/lib/utils";
 export interface ForeignNumber {
   id: string;
   number: string;
-  service_name: string;
+  service_name?: string;
   service_category?: string;
   service_icon?: string;
   status: string;
-  expires_at?: string;
-  completed_at?: string;
-  created_at: string;
-  sms_count: number;
+  expiresAt?: string | null;
+  createdAt: string;
+  sms_count?: number;
   type?: string;
 }
 
@@ -116,8 +115,8 @@ export function ForeignNumbersSection({
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
-                      {number.service_name || "Unknown Service"}
-                      {number.sms_count > 0 && ` • ${number.sms_count} SMS`}
+                      {number.service_name || "Verification Service"}
+                      {number.sms_count && number.sms_count > 0 && ` • ${number.sms_count} SMS`}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">

@@ -51,6 +51,16 @@ export interface Activity {
   icon: string;
 }
 
+export interface VerificationNumber {
+  id: string;
+  number: string;
+  type: string;
+  status: string;
+  serviceId: string;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
 export interface DashboardData {
   wallet: WalletCard;
   stats: StatCard[];
@@ -59,6 +69,11 @@ export interface DashboardData {
   networkSales: NetworkSales[];
   recentTransactions: Transaction[];
   activities: Activity[];
+  verificationNumbers: VerificationNumber[];
+  verificationSummary: {
+    activeCount: number;
+    totalCount: number;
+  };
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
@@ -69,7 +84,7 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   try {
     // Query real database against correct schema
-    const [userRow, statsRow, monthlyData, weeklyData, networkData, transactionsData, topupData] = await Promise.all([
+    const [userRow, statsRow, monthlyData, weeklyData, networkData, transactionsData, topupData, verificationData] = await Promise.all([
       // Get user wallet balance
       sql`SELECT wallet_balance FROM users WHERE id = ${user.id}`,
       
@@ -155,6 +170,22 @@ export async function getDashboardData(): Promise<DashboardData> {
         WHERE user_id = ${user.id} AND LOWER(type) = 'deposit' AND LOWER(status) IN ('success', 'completed')
         ORDER BY created_at DESC
         LIMIT 1
+      `,
+
+      // Foreign Verification Numbers for the user (up to 10 for preview)
+      sql`
+        SELECT 
+          id,
+          number,
+          type,
+          status,
+          "serviceId",
+          "expiresAt",
+          "createdAt"
+        FROM "VerificationNumber"
+        WHERE "userId" = ${user.id}
+        ORDER BY "createdAt" DESC
+        LIMIT 10
       `
     ]);
 
@@ -279,6 +310,22 @@ export async function getDashboardData(): Promise<DashboardData> {
 
     const recentTopup = parseFloat((topupData[0] as any)?.amount || '0');
 
+    // Process verification numbers
+    const verificationNumbers: VerificationNumber[] = verificationData.map((row: any) => ({
+      id: row.id,
+      number: row.number,
+      type: row.type,
+      status: row.status?.toLowerCase() || 'unknown',
+      serviceId: row.serviceId,
+      expiresAt: row.expiresAt,
+      createdAt: row.createdAt,
+    }));
+
+    const verificationSummary = {
+      activeCount: verificationNumbers.filter(v => v.status === 'active').length,
+      totalCount: verificationNumbers.length,
+    };
+
     const activities: Activity[] = [
       {
         type: 'login',
@@ -315,6 +362,8 @@ export async function getDashboardData(): Promise<DashboardData> {
       networkSales,
       recentTransactions,
       activities,
+      verificationNumbers,
+      verificationSummary,
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
@@ -324,11 +373,7 @@ export async function getDashboardData(): Promise<DashboardData> {
 
 function getEmptyDashboard(): DashboardData {
   return {
-    wallet: {
-      balance: 0,
-      percentageChange: 0,
-      recentTopup: 0,
-    },
+    wallet: { balance: 0, percentageChange: 0, recentTopup: 0 },
     stats: [
       { label: 'Total Orders', value: 0, percentageChange: 0, todayValue: 0 },
       { label: 'Total Sales', value: 'GH₵ 0.00', unit: 'GH₵', percentageChange: 0, todayValue: 'GH₵ 0.00' },
@@ -340,6 +385,8 @@ function getEmptyDashboard(): DashboardData {
     networkSales: [],
     recentTransactions: [],
     activities: [],
+    verificationNumbers: [],
+    verificationSummary: { activeCount: 0, totalCount: 0 },
   };
 }
 
