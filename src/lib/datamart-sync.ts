@@ -304,7 +304,7 @@ async function fetchPlansFromWebsite(): Promise<{ success: boolean; plans: Map<s
     const unescaped = html
       .replace(/\\u0026/g, "&")
       .replace(/\\n/g, "\n")
-      .replace(/\\\"/g, '"');
+      .replace(/\\"/g, '"');
 
     const regex = /"network":"(YELLO|TELECEL|AT_PREMIUM|at)".*?"capacity":(\d+).*?"mb":(\d+).*?"basePrice":([\d.]+).*?"sellingPrice":([\d.]+).*?"inStock":(true|false)/g;
     let m;

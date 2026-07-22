@@ -1,3 +1,4 @@
+import { createHmac } from "crypto";
 import { getDatamartEnv } from "@/lib/env";
 import { providerRequest, type ProviderHttpError } from "@/lib/providers/http-client";
 
@@ -439,9 +440,8 @@ function createHmacSignature(
   rawBody: string,
   signingSecret: string
 ): string {
-  const crypto = require("crypto") as typeof import("crypto");
   const payload = `${timestamp}.${method}.${path}.${rawBody}`;
-  return crypto.createHmac("sha256", signingSecret).update(payload).digest("hex");
+  return createHmac("sha256", signingSecret).update(payload).digest("hex");
 }
 
 export async function getWithdrawalLimits(): Promise<ApiResponse<DatamartWithdrawalLimits>> {

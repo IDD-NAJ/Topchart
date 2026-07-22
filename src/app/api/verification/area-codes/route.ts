@@ -352,7 +352,7 @@ export async function GET() {
           areaCodes = popularResult.data.areaCodes;
           message = "Area codes loaded from PVA API (popular services)";
         } else {
-          throw new Error("Popular services returned no data");
+          throw new Error("Popular services returned no data", { cause: globalError });
         }
       } catch (popularError) {
         console.log("Popular services endpoint failed, using hardcoded fallback:", popularError);

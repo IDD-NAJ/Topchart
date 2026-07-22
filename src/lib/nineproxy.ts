@@ -196,7 +196,7 @@ async function nineProxyFetch<T>(
       clearTimeout(timeoutId);
 
       if (err instanceof Error && err.name === "AbortError") {
-        throw new Error("9Proxy API request timed out");
+        throw new Error("9Proxy API request timed out", { cause: err });
       }
 
       const isRetryable =

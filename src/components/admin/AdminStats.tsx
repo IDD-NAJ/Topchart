@@ -1,11 +1,6 @@
 "use client"
 
-import React from "react"
-import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { 
   TrendingUp,
   DollarSign,
@@ -14,7 +9,7 @@ import {
   Activity
 } from "lucide-react"
 
-interface AdminStats {
+interface AdminStatsData {
   totalUsers: number
   activeUsers: number
   totalTransactions: number
@@ -22,7 +17,7 @@ interface AdminStats {
   recentSignups: number
 }
 
-export default function AdminStats({ stats }: { stats: AdminStats }) {
+export default function AdminStats({ stats }: { stats: AdminStatsData }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <Card>
