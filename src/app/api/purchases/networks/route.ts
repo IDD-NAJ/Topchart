@@ -1,66 +1,52 @@
 export const dynamic = "force-dynamic";
-
-import { NextRequest, NextResponse } from "next/server";
-import { Pool } from "pg";
-
-function getDbPool(): Pool {
-  return new Pool({
-    connectionString: process.env.DATABASE_URL,
-  });
-}
-
-export const revalidate = 3600; // Cache for 1 hour
 export const runtime = "nodejs";
 
-type Network = {
-  id: string;
-  name: string;
-  bundle_count: number;
-};
+import { NextRequest, NextResponse } from "next/server";
+import { sqlUnsafe } from "@/lib/db";
 
-export async function GET(request: NextRequest) {
-  const pool = getDbPool();
-
+export async function GET(_request: NextRequest) {
   try {
-    // Get distinct networks from data_bundles table with their names
-    const result = await pool.query(`
-      SELECT 
-        network_id as id,
-        COUNT(*) as bundle_count
-      FROM data_bundles
-      WHERE "isActive" = true
-      GROUP BY network_id
-      ORDER BY bundle_count DESC
-    `);
-
-    // Map network IDs to friendly names
-    const networkNames: Record<string, string> = {
-      "a1b2c3d4-0001-0000-0000-000000000001": "MTN",
-      "a1b2c3d4-0002-0000-0000-000000000002": "AirtelTigo",
-      "a1b2c3d4-0003-0000-0000-000000000003": "Telecel",
-    };
-
-    const networks: Network[] = result.rows.map((row: any) => ({
-      id: row.id,
-      name: networkNames[row.id] || row.id,
-      bundle_count: parseInt(row.bundle_count, 10),
-    }));
-
-    console.log(`[v0] Returned ${networks.length} networks`);
+    // Join data_bundle_categories (display names) with networks,
+    // then count active bundles per network via the UUID foreign key.
+    const rows = (await sqlUnsafe(
+      `SELECT
+         n.id,
+         n.name,
+         n.code,
+         dbc.name  AS category_name,
+         COUNT(b.id)::int AS bundle_count
+       FROM data_bundle_categories dbc
+       JOIN networks n ON dbc."networkId" = n.id
+       LEFT JOIN data_bundles b
+              ON b."networkId" = n.id
+             AND b."isActive" = true
+       WHERE dbc.is_active = true
+       GROUP BY n.id, n.name, n.code, dbc.name
+       ORDER BY n.name ASC`
+    )) as Array<{
+      id: string;
+      name: string;
+      code: string;
+      category_name: string;
+      bundle_count: number;
+    }>;
 
     return NextResponse.json({
       success: true,
-      data: networks,
+      data: rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        code: r.code,
+        category_name: r.category_name,
+        bundle_count: r.bundle_count,
+      })),
     });
   } catch (error) {
-    console.error("[v0] Networks API error:", error);
-    const err = error as any;
-
+    console.error("[purchases/networks] error:", error);
+    const err = error as { message?: string };
     return NextResponse.json(
       { success: false, error: err?.message || "Failed to fetch networks" },
       { status: 500 }
     );
-  } finally {
-    pool.end();
   }
 }
