@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { useForeignNumbers } from "@/hooks/use-foreign-numbers";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { NetworkGauge } from "@/components/dashboard/network-gauge";
 import { TransactionsTable } from "@/components/dashboard/transactions-table";
+import { ForeignNumbersSection } from "@/components/dashboard/foreign-numbers-section";
 import { MonthlyChart, WeeklyChart } from "@/components/dashboard/charts";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -56,6 +58,7 @@ function StatsSkeleton() {
 export default function DashboardPage() {
   const { user } = useAuth();
   const { data, isLoading, isValidating, mutate } = useDashboardData();
+  const { data: foreignData, isLoading: foreignLoading } = useForeignNumbers();
   const [showFundModal, setShowFundModal] = useState(false);
 
   const isLowBalance = data && data.wallet.balance < LOW_BALANCE_THRESHOLD;
@@ -253,6 +256,14 @@ export default function DashboardPage() {
           </div>
         </motion.div>
       )}
+
+      {/* Foreign Numbers Section */}
+      <ForeignNumbersSection
+        numbers={foreignData?.numbers ?? []}
+        isLoading={foreignLoading}
+        activeCount={foreignData?.activeCount ?? 0}
+        totalCount={foreignData?.totalCount ?? 0}
+      />
 
       {/* Recent Transactions */}
       <motion.div

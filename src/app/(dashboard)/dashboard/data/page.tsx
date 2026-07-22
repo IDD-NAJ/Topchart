@@ -1216,14 +1216,14 @@ export default function DataPage() {
                       </div>
                     )}
                     
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
                       {filteredPlans.map((plan) => (
                         <div
                           key={plan.id}
                           className={cn(
-                            "rounded-md transition-all cursor-pointer",
+                            "transition-all cursor-pointer",
                             selectedPlan?.id === plan.id 
-                              ? "ring-2 ring-primary ring-offset-1 ring-offset-background" 
+                              ? "ring-2 ring-primary ring-offset-1 ring-offset-background rounded-lg" 
                               : ""
                           )}
                           onClick={() => setSelectedPlan(plan)}
@@ -1247,7 +1247,7 @@ export default function DataPage() {
                         </div>
                       ))}
                       {filteredPlans.length === 0 && (
-                        <div className="sm:col-span-2 p-12 text-center flex flex-col items-center gap-2">
+                        <div className="col-span-full p-12 text-center flex flex-col items-center gap-2">
                           <AlertCircle className="w-8 h-8 text-muted-foreground/30" />
                           <p className="font-medium text-muted-foreground">No plans match this category.</p>
                         </div>
