@@ -37,6 +37,7 @@ import {
   ServerCog,
   Tag,
   Wifi,
+  Network,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Toaster } from "sonner"
@@ -71,6 +72,7 @@ const navSections: NavSection[] = [
     label: "Commerce",
     items: [
       { href: "/admin/data-bundles", label: "Data Bundles", icon: Database },
+      { href: "/admin/networks", label: "Networks", icon: Network },
       { href: "/admin/datamart-setup", label: "Datamart Setup", icon: Wifi },
       { href: "/admin/verification-pricing", label: "Verification Pricing", icon: Tag },
       { href: "/admin/resellers", label: "Resellers", icon: Store },

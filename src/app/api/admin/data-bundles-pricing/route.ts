@@ -1,5 +1,5 @@
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
+export const runtime  = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import { sql, sqlUnsafe } from "@/lib/db";
@@ -220,5 +220,56 @@ export async function PATCH(request: NextRequest) {
       { success: false, error: "Failed to update data bundle" },
       { status: 500 }
     );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.ok) {
+      return NextResponse.json({ success: false, error: adminCheck.error }, { status: adminCheck.status });
+    }
+
+    const body = await request.json();
+    const { network, name, size_mb, validity_hours, price, price_override, markup_percent, is_active, is_popular, is_featured, stock } = body;
+
+    if (!network || !name || price == null) {
+      return NextResponse.json({ success: false, error: "network, name and price are required" }, { status: 400 });
+    }
+
+    const id = `bundle_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+    await sqlUnsafe(
+      `INSERT INTO data_bundles
+         (id, network, name, size_mb, validity_hours, price, price_override, markup_percent, is_active, is_popular, is_featured, stock, created_at, updated_at)
+       VALUES
+         ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE($9, true), COALESCE($10, false), COALESCE($11, false), $12, NOW(), NOW())`,
+      [id, network, name, size_mb ?? null, validity_hours ?? null, Number(price),
+       price_override ?? null, markup_percent ?? null,
+       is_active ?? true, is_popular ?? false, is_featured ?? false, stock ?? null]
+    );
+
+    return NextResponse.json({ success: true, message: "Bundle created", id });
+  } catch (error) {
+    console.error("Admin pricing POST error:", error);
+    return NextResponse.json({ success: false, error: "Failed to create data bundle" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.ok) {
+      return NextResponse.json({ success: false, error: adminCheck.error }, { status: adminCheck.status });
+    }
+
+    const { id } = await request.json();
+    if (!id) return NextResponse.json({ success: false, error: "id required" }, { status: 400 });
+
+    await sqlUnsafe(`DELETE FROM data_bundles WHERE id = $1`, [id]);
+    return NextResponse.json({ success: true, message: "Bundle deleted" });
+  } catch (error) {
+    console.error("Admin pricing DELETE error:", error);
+    return NextResponse.json({ success: false, error: "Failed to delete data bundle" }, { status: 500 });
   }
 }
