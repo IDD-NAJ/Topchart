@@ -608,7 +608,7 @@ function UkNumbersSection({ onPurchaseSuccess }: { onPurchaseSuccess: () => Prom
             UK Numbers
             <span className="text-base leading-none" aria-label="UK flag">🇬🇧</span>
           </h2>
-          <p className="text-xs text-muted-foreground">United Kingdom numbers via PVADEALS</p>
+          <p className="text-xs text-muted-foreground">United Kingdom verification numbers</p>
         </div>
       </div>
 

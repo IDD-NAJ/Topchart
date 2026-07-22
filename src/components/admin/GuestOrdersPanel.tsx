@@ -173,7 +173,7 @@ export function GuestOrdersPanel() {
       "Payment Status",
       "Fulfillment Status",
       "Paystack Ref",
-      "Datamart Ref",
+      "Provider Ref",
       "Created At",
     ]
     const rows = orders.map((o) => [
@@ -527,7 +527,7 @@ export function GuestOrdersPanel() {
                   <span className="font-mono text-xs break-all">
                     {selectedOrder.paystack_reference || "—"}
                   </span>
-                  <span className="text-muted-foreground">Datamart Ref</span>
+                  <span className="text-muted-foreground">Provider Ref</span>
                   <span className="font-mono text-xs break-all">
                     {selectedOrder.datamart_order_reference || "—"}
                   </span>

@@ -85,7 +85,7 @@ const navSections: NavSection[] = [
       { href: "/admin/proxy-services", label: "Proxy Services", icon: Zap },
       { href: "/admin/gift-cards", label: "Gift Cards", icon: CreditCard },
       { href: "/admin/promo-codes", label: "Promo Codes", icon: Tag },
-      { href: "/admin/datamart-setup", label: "Datamart Setup", icon: Wifi },
+      { href: "/admin/datamart-setup", label: "Data Provider Setup", icon: Wifi },
       { href: "/admin/bulk-orders", label: "Bulk Orders", icon: Box },
       { href: "/admin/verification-pricing", label: "Verification Pricing", icon: DollarSign },
       { href: "/admin/resellers", label: "Resellers", icon: Store },
@@ -102,7 +102,7 @@ const navSections: NavSection[] = [
       { href: "/admin/payment-events", label: "Payment Events", icon: DollarSign },
       { href: "/admin/audit", label: "Audit Logs", icon: ClipboardList },
       { href: "/admin/verification", label: "Verification", icon: CheckSquare },
-      { href: "/admin/smspva-management", label: "SMSPVA Management", icon: Smartphone },
+      { href: "/admin/smspva-management", label: "Intl Numbers Management", icon: Smartphone },
     ],
   },
   {

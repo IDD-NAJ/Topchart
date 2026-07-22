@@ -90,7 +90,7 @@ export function HealthCheck() {
             </div>
           </div>
           <div className="flex items-center justify-between text-[10px]">
-            <span className="text-muted-foreground">Datamart</span>
+            <span className="text-muted-foreground">Data Provider</span>
             <div className="flex items-center gap-1">
               {getStatusIcon(health?.apis.datamart || "")}
             </div>

@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       bundles,
       network,
       fetchedAt: new Date().toISOString(),
-      note: "Sample data (DataMart API unavailable)",
+      note: "Sample data (live pricing temporarily unavailable)",
     });
   } catch (error) {
     console.error("[guest/bundles] Error:", error);

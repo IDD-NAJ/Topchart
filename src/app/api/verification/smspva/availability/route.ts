@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
   try {
     if (!isSmspvaConfigured()) {
       return NextResponse.json(
-        { success: false, error: "SMSPVA provider not configured" },
+        { success: false, error: "Verification service is temporarily unavailable" },
         { status: 503 }
       );
     }

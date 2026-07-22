@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
         const reachable = await isDatamartReachable();
         if (!reachable) {
           const info = getReachabilityInfo();
-          return { success: false, message: `DataMart API unreachable: ${info.reason}` };
+          return { success: false, message: "Data service is temporarily unavailable. Please try again shortly." };
         }
 
         const result = await purchaseDataBundle({
