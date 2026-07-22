@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useForeignNumbers } from "@/hooks/use-foreign-numbers";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { VerificationCard } from "@/components/dashboard/verification-card";
 import { NetworkGauge } from "@/components/dashboard/network-gauge";
 import { TransactionsTable } from "@/components/dashboard/transactions-table";
 import { ForeignNumbersSection } from "@/components/dashboard/foreign-numbers-section";
@@ -215,7 +216,7 @@ export default function DashboardPage() {
         })}
       </motion.div>
 
-      {/* Stats grid */}
+      {/* Stats grid with verification number */}
       {isLoading && !data ? (
         <StatsSkeleton />
       ) : (
@@ -223,6 +224,10 @@ export default function DashboardPage() {
           {data?.stats.map((stat, idx) => (
             <StatCard key={idx} stat={stat} index={idx} />
           ))}
+          <VerificationCard 
+            verificationNumber={user?.id ?? "—"} 
+            index={data?.stats?.length ?? 4}
+          />
         </div>
       )}
 
