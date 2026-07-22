@@ -171,8 +171,8 @@ export async function GET(request: NextRequest) {
             RETURNING user_id, amount
         )
         UPDATE users
-        SET wallet_balance = wallet_balance + (SELECT amount FROM updated_tx),
-            total_deposits = total_deposits + (SELECT amount FROM updated_tx)
+        SET wallet_balance = COALESCE(wallet_balance, 0) + (SELECT amount FROM updated_tx),
+            total_deposits = COALESCE(total_deposits, 0) + (SELECT amount FROM updated_tx)
         WHERE id::text = (SELECT user_id FROM updated_tx)
           AND EXISTS (SELECT 1 FROM updated_tx)
       `;

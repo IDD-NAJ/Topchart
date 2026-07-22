@@ -118,16 +118,19 @@ export async function getDashboardData(): Promise<DashboardData> {
         ORDER BY DATE_TRUNC('month', created_at) ASC
       `,
       
-      // Weekly breakdown (last 7 days)
+      // Weekly breakdown (last 7 days, always returns all 7 days)
       sql`
         SELECT 
-          TO_CHAR(created_at, 'Dy') as day,
-          DATE(created_at) as date_key,
-          COALESCE(SUM(amount), 0) as value
-        FROM transactions
-        WHERE user_id = ${user.id} AND LOWER(status) IN ('success', 'completed') AND LOWER(type) <> 'deposit' AND created_at >= NOW() - INTERVAL '7 days'
-        GROUP BY DATE(created_at)
-        ORDER BY DATE(created_at) ASC
+          TO_CHAR(d.day, 'Dy') as day,
+          COALESCE(SUM(t.amount), 0) as value
+        FROM generate_series(CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE, '1 day') AS d(day)
+        LEFT JOIN transactions t
+          ON DATE(t.created_at) = d.day
+          AND t.user_id = ${user.id}
+          AND LOWER(t.status) IN ('success', 'completed')
+          AND LOWER(t.type) <> 'deposit'
+        GROUP BY d.day
+        ORDER BY d.day ASC
       `,
       
       // Network sales today (with yesterday comparison for percentage change).

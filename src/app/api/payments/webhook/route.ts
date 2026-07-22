@@ -71,13 +71,20 @@ export async function POST(req: NextRequest) {
       }
 
       const expectedAmount = Number(transaction.amount);
-      if (expectedAmount > 0 && Math.abs(paidAmount - expectedAmount) / expectedAmount > AMOUNT_TOLERANCE_PCT) {
-        console.error(`[Paystack Webhook] Amount mismatch for ${reference}: expected ${expectedAmount}, got ${paidAmount}`);
+      // Paystack is charged amount + surcharge (fees). Compare the paid amount
+      // against the actual charge amount, not the base wallet-credit amount.
+      const metaChargeAmount = Number(
+        (transaction.metadata as Record<string, unknown> | undefined)?.charge_amount ?? 0
+      );
+      const expectedCharge =
+        metaChargeAmount > 0 ? metaChargeAmount : expectedAmount;
+      if (expectedCharge > 0 && Math.abs(paidAmount - expectedCharge) / expectedCharge > AMOUNT_TOLERANCE_PCT) {
+        console.error(`[Paystack Webhook] Amount mismatch for ${reference}: expected charge ${expectedCharge}, got ${paidAmount}`);
         await sql`
           UPDATE transactions
           SET metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
             amount_mismatch: true,
-            expected_amount: expectedAmount,
+            expected_amount: expectedCharge,
             paid_amount: paidAmount,
             flagged_at: new Date().toISOString(),
           })}::jsonb
@@ -400,8 +407,8 @@ export async function POST(req: NextRequest) {
             RETURNING user_id, amount
           )
           UPDATE users
-          SET wallet_balance = wallet_balance + (SELECT amount FROM updated_tx),
-              total_deposits = total_deposits + (SELECT amount FROM updated_tx)
+          SET wallet_balance = COALESCE(wallet_balance, 0) + (SELECT amount FROM updated_tx),
+              total_deposits = COALESCE(total_deposits, 0) + (SELECT amount FROM updated_tx)
           WHERE id::text = (SELECT user_id FROM updated_tx)
             AND EXISTS (SELECT 1 FROM updated_tx)
         `;

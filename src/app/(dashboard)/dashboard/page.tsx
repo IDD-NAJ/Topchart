@@ -12,7 +12,8 @@ import { MonthlyChart, WeeklyChart } from "@/components/dashboard/charts";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { FundWalletModal } from "@/components/fund-wallet-modal";
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Wifi,
   Receipt,
@@ -28,6 +29,29 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/networks";
 
 const LOW_BALANCE_THRESHOLD = 5;
+
+/**
+ * Watches for the Paystack redirect (/dashboard?payment=callback&reference=...)
+ * and hands the reference to the fund-wallet modal so the payment gets
+ * verified and the wallet credited.
+ */
+function PaymentCallbackWatcher({ onReference }: { onReference: (ref: string) => void }) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    const payment = searchParams.get("payment");
+    const reference = searchParams.get("reference") || searchParams.get("trxref");
+    if (payment === "callback" && reference) {
+      onReference(reference);
+      // Clean the URL so refreshing doesn't re-trigger verification
+      router.replace("/dashboard", { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  return null;
+}
 
 function BalanceSkeleton() {
   return (
@@ -60,6 +84,12 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const { data, isLoading, isValidating, mutate } = useDashboardData();
   const [showFundModal, setShowFundModal] = useState(false);
+  const [pendingReference, setPendingReference] = useState<string | null>(null);
+
+  const handlePaymentCallback = (ref: string) => {
+    setPendingReference(ref);
+    setShowFundModal(true);
+  };
 
   const isLowBalance = data && data.wallet.balance < LOW_BALANCE_THRESHOLD;
 
@@ -80,6 +110,10 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <Suspense fallback={null}>
+        <PaymentCallbackWatcher onReference={handlePaymentCallback} />
+      </Suspense>
+
       {/* Greeting */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
@@ -296,9 +330,13 @@ export default function DashboardPage() {
 
       <FundWalletModal
         open={showFundModal}
+        pendingReference={pendingReference}
         onOpenChange={(open) => {
           setShowFundModal(open);
-          if (!open) mutate();
+          if (!open) {
+            setPendingReference(null);
+            mutate();
+          }
         }}
       />
     </div>
