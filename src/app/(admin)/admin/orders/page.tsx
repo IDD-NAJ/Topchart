@@ -98,7 +98,7 @@ export default function AdminOrdersPage() {
       icon={ShoppingCart}
       actions={
         <>
-          <Button variant="outline" size="sm" onClick={() => exportToCsv(filtered, "orders")}>
+          <Button variant="outline" size="sm" onClick={() => exportToCsv("orders.csv", filtered.map((o) => ({ ...o })))}>
             <Download className="w-4 h-4 mr-1.5" />Export
           </Button>
           <Button variant="outline" size="sm" onClick={() => mutate()}>
