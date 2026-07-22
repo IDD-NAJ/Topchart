@@ -214,7 +214,7 @@ export interface TopUpsStatusResponse200 {
   transaction: TopUpsResponse200;
 }
 
-export interface TransactionResponse extends TopUpsResponse200 {}
+export type TransactionResponse = TopUpsResponse200;
 
 export interface NumberLookupRequest {
   number: string;

@@ -113,15 +113,15 @@ async function createAdminAccount() {
       id, email, phone, password_hash, first_name, last_name, 
       wallet_balance, is_verified, created_at
     ) VALUES (
-        $1, 
-        $2, 
-        $3, 
-        $4, 
-        $5, 
-        $6, 
-        $7, 
-        $8, 
-        $9
+        ${userId}, 
+        ${'najeebiddrisu79@gmail.com'}, 
+        ${'+23355555555'}, 
+        ${passwordHash}, 
+        ${'Admin'}, 
+        ${'User'}, 
+        ${0}, 
+        ${true}, 
+        ${now}
       )
       RETURNING id, email, first_name, last_name, is_verified
     `;

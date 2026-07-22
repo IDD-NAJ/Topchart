@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface PopupBanner {
+interface PopupBannerData {
   id: string;
   title: string;
   content: string;
@@ -17,7 +17,7 @@ interface PopupBanner {
 }
 
 interface PopupBannerProps {
-  banner: PopupBanner;
+  banner: PopupBannerData;
   onDismiss: () => void;
 }
 
@@ -126,7 +126,7 @@ export function PopupBanner({ banner, onDismiss }: PopupBannerProps) {
 }
 
 export function PopupBannerContainer() {
-  const [banner, setBanner] = useState<PopupBanner | null>(null);
+  const [banner, setBanner] = useState<PopupBannerData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

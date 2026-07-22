@@ -97,8 +97,7 @@ function ResellerApplyContent() {
     loadWalletBalance();
     
     // Initialize CSRF token
-    const { getCSRFToken } = require("@/lib/csrf");
-    getCSRFToken();
+    import("@/lib/csrf").then(({ getCSRFToken }) => getCSRFToken());
     
     // Check for cached form data
     if (hasCachedData()) {

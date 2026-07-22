@@ -1,5 +1,7 @@
 export const dynamic = "force-dynamic";
 
+import fs from "fs";
+import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { sqlUnsafe } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -16,8 +18,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const fs = require('fs');
-    const path = require('path');
     const sqlContent = fs.readFileSync(
       path.join(process.cwd(), 'src/scripts/022-create-data-bundles-tables.sql'),
       'utf8'

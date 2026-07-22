@@ -340,7 +340,6 @@ export function MediaUploadZone({
               {/* Preview */}
               <div className="w-12 h-12 rounded bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
                 {uploadFile.preview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <img 
                     src={uploadFile.preview} 
                     alt="Preview" 
