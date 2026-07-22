@@ -145,16 +145,22 @@ export async function getDashboardData(): Promise<DashboardData> {
         ORDER BY sales DESC
       `,
       
-      // Recent transactions (last 10). Plan/network details may live in metadata JSONB.
+      // Recent transactions (last 10). Plan/network/description details may live in metadata JSONB.
       sql`
         SELECT 
           id,
           reference,
           amount,
           type,
-          COALESCE(description, metadata->>'description') as description,
-          data_plan as package,
-          COALESCE(network, metadata->>'network') as network,
+          COALESCE(
+            description,
+            data_plan,
+            metadata->>'description'
+          ) as description,
+          COALESCE(
+            network,
+            metadata->>'network'
+          ) as network,
           status,
           created_at
         FROM transactions
@@ -302,7 +308,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       id: row.id,
       orderId: row.reference || row.id,
       amount: parseFloat(row.amount || 0),
-      package: row.package || row.description || typeLabel(row.type),
+      package: row.description || typeLabel(row.type),
       network: row.network || typeLabel(row.type),
       status: (row.status || '').toLowerCase(),
       createdAt: row.created_at,
