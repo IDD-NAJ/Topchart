@@ -3,290 +3,253 @@
 import { sql } from "@/lib/db";
 import { getCurrentUser } from "@/lib/actions/auth";
 
-export type DashboardTransactionType = "deposit" | "data" | "verification" | "result_checker" | "proxy" | "giftcard" | "bill";
-export type DashboardTransactionStatus = "pending" | "success" | "failed";
-
-export interface DashboardTransactionRow {
-  id: string;
-  reference?: string;
-  type: DashboardTransactionType;
-  amount: number;
-  status: DashboardTransactionStatus;
-  description: string | null;
-  network: string | null;
-  phone_number: string | null;
-  created_at: string;
+// HubNet Dashboard Data Types
+export interface WalletCard {
+  balance: number;
+  percentageChange: number;
+  recentTopup: number;
 }
 
-export interface DashboardBeneficiaryRow {
-  phone_number: string;
-  network: string | null;
-  created_at: string;
+export interface StatCard {
+  label: string;
+  value: number | string;
+  unit?: string;
+  percentageChange: number;
+  todayValue?: number | string;
+}
+
+export interface NetworkSales {
+  network: string;
+  sales: number;
+  percentageChange: number;
+  icon?: string;
+}
+
+export interface ChartDataPoint {
+  month?: string;
+  week?: string;
+  day?: string;
+  value: number;
+}
+
+export interface Transaction {
+  id: string;
+  orderId: string;
+  amount: number;
+  package: string;
+  network: string;
+  networkName?: string;
+  period?: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface Activity {
+  type: string;
+  label: string;
+  value: string;
+  icon: string;
 }
 
 export interface DashboardData {
-  totals: {
-    totalDeposits: number;
-    totalSpend: number;
-    dataSpend: number;
-    verificationSpend: number;
-    resultCheckerSpend: number;
-    successfulCount: number;
-    totalCount: number;
-  };
-  recentTransactions: DashboardTransactionRow[];
-  beneficiaries: DashboardBeneficiaryRow[];
-  processingPurchases: DashboardTransactionRow[];
+  wallet: WalletCard;
+  stats: StatCard[];
+  monthlyChart: ChartDataPoint[];
+  weeklyChart: ChartDataPoint[];
+  networkSales: NetworkSales[];
+  recentTransactions: Transaction[];
+  activities: Activity[];
 }
 
-export async function getDashboardData(options?: {
-  recentLimit?: number;
-  beneficiaryLimit?: number;
-}): Promise<DashboardData> {
-  const recentLimit = options?.recentLimit ?? 5;
-  const beneficiaryLimit = options?.beneficiaryLimit ?? 4;
-
+export async function getDashboardData(): Promise<DashboardData> {
   const user = await getCurrentUser();
   if (!user) {
-    return {
-      totals: {
-        totalDeposits: 0,
-        totalSpend: 0,
-        dataSpend: 0,
-        verificationSpend: 0,
-        resultCheckerSpend: 0,
-        successfulCount: 0,
-        totalCount: 0,
-      },
-      recentTransactions: [],
-      beneficiaries: [],
-      processingPurchases: [],
-    };
+    return getEmptyDashboard();
   }
-
-  let totalsResult: any[] = [];
-  let recentRaw: any[] = [];
-  let processingRaw: any[] = [];
-  let beneficiariesResult: any[] = [];
 
   try {
-    [totalsResult, recentRaw, processingRaw, beneficiariesResult] = await Promise.all([
+    const [walletData, stats, monthlyData, weeklyData, networkSalesData, transactionsData, activitiesData] = await Promise.all([
+      // Wallet balance
       sql`
-        SELECT
-          COALESCE(SUM(amount) FILTER (
-            WHERE LOWER(status) = 'success'
-              AND type = 'deposit'
-          ), 0) AS "totalDeposits",
-          COALESCE(SUM(amount) FILTER (
-            WHERE LOWER(status) = 'success'
-              AND (type IN ('data', 'verification', 'result_checker') OR type LIKE 'verification_%')
-          ), 0) AS "totalSpend",
-          COALESCE(SUM(amount) FILTER (
-            WHERE LOWER(status) = 'success'
-              AND type = 'data'
-          ), 0) AS "dataSpend",
-          COALESCE(SUM(amount) FILTER (
-            WHERE LOWER(status) = 'success'
-              AND (type = 'verification' OR type LIKE 'verification_%')
-          ), 0) AS "verificationSpend",
-          COALESCE(SUM(amount) FILTER (
-            WHERE LOWER(status) = 'success'
-              AND type = 'result_checker'
-          ), 0) AS "resultCheckerSpend",
-          COALESCE(COUNT(*) FILTER (WHERE LOWER(status) = 'success'), 0) AS "successfulCount",
-          COALESCE(COUNT(*), 0) AS "totalCount"
-        FROM transactions
-        WHERE user_id = ${user.id}
+        SELECT COALESCE(SUM(amount), 0) as balance FROM user_wallets WHERE user_id = ${user.id}
       `,
+      // Stats: total orders, sales, loyalty incentive, commission
       sql`
         SELECT
-          id,
-          type,
-          amount,
-          status,
-          metadata,
-          created_at
-        FROM transactions
-        WHERE user_id = ${user.id}
-        ORDER BY created_at DESC
-        LIMIT ${recentLimit}
+          (SELECT COUNT(*) FROM orders WHERE user_id = ${user.id}) as total_orders,
+          (SELECT COUNT(*) FROM orders WHERE user_id = ${user.id} AND DATE(created_at) = CURRENT_DATE) as today_orders,
+          (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = ${user.id} AND status = 'completed') as total_sales,
+          (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = ${user.id} AND DATE(created_at) = CURRENT_DATE AND status = 'completed') as today_sales,
+          (SELECT COALESCE(SUM(amount), 0) FROM user_loyalty WHERE user_id = ${user.id}) as loyalty_incentive,
+          (SELECT COALESCE(SUM(amount), 0) FROM reseller_commissions WHERE user_id = ${user.id}) as total_commissions
       `,
+      // Monthly breakdown (last 12 months)
       sql`
-        SELECT
-          id,
-          type,
-          amount,
-          status,
-          metadata,
-          created_at
+        SELECT 
+          TO_CHAR(DATE_TRUNC('month', created_at), 'Mon') as month,
+          COALESCE(SUM(amount), 0) as value
         FROM transactions
-        WHERE user_id = ${user.id}
-          AND type IN ('data', 'DATA')
-          AND LOWER(status) IN ('pending', 'processing')
-        ORDER BY created_at DESC
+        WHERE user_id = ${user.id} AND status = 'completed' AND created_at >= NOW() - INTERVAL '12 months'
+        GROUP BY DATE_TRUNC('month', created_at)
+        ORDER BY DATE_TRUNC('month', created_at)
+      `,
+      // Weekly breakdown (last 7 days)
+      sql`
+        SELECT 
+          TO_CHAR(created_at, 'Day') as day,
+          COALESCE(SUM(amount), 0) as value
+        FROM transactions
+        WHERE user_id = ${user.id} AND status = 'completed' AND created_at >= NOW() - INTERVAL '7 days'
+        GROUP BY DATE(created_at)
+        ORDER BY DATE(created_at)
+      `,
+      // Network sales (today)
+      sql`
+        SELECT 
+          n.name as network,
+          COALESCE(SUM(t.amount), 0) as sales,
+          COUNT(*) as transaction_count
+        FROM transactions t
+        JOIN networks n ON t.network_id = n.id
+        WHERE t.user_id = ${user.id} AND DATE(t.created_at) = CURRENT_DATE AND t.status = 'completed'
+        GROUP BY n.id, n.name
+        ORDER BY sales DESC
+      `,
+      // Recent transactions (last 10)
+      sql`
+        SELECT 
+          o.id,
+          o.reference_id,
+          o.amount,
+          db.name as package,
+          n.name as network,
+          o.status,
+          o.created_at
+        FROM orders o
+        LEFT JOIN data_bundles db ON o.bundle_id = db.id
+        LEFT JOIN networks n ON o.network_id = n.id
+        WHERE o.user_id = ${user.id}
+        ORDER BY o.created_at DESC
         LIMIT 10
       `,
+      // Activities
       sql`
-        SELECT DISTINCT ON (
-          COALESCE(
-            metadata->>'phoneNumber',
-            metadata->>'phone_number'
-          )
-        )
-          COALESCE(
-            metadata->>'phoneNumber',
-            metadata->>'phone_number'
-          ) AS phone_number,
-          COALESCE(
-            metadata->>'network',
-            metadata->>'network_name',
-            metadata->>'provider'
-          ) AS network,
-          created_at AS created_at
-        FROM transactions
-        WHERE user_id = ${user.id}
-          AND LOWER(status) = 'success'
-          AND type IN ('data', 'DATA')
-          AND COALESCE(
-            metadata->>'phoneNumber',
-            metadata->>'phone_number'
-          ) IS NOT NULL
-        ORDER BY
-          COALESCE(
-            metadata->>'phoneNumber',
-            metadata->>'phone_number'
-          ),
-          created_at DESC
-        LIMIT ${beneficiaryLimit}
+        SELECT 
+          'login' as type,
+          'Last Login' as label,
+          COALESCE(TO_CHAR(last_login, 'YYYY-MM-DD HH24:MI'), 'Never') as value
+        FROM users
+        WHERE id = ${user.id}
       `
     ]);
-  } catch (error: any) {
-    const message = `${error?.message || ""}`.toLowerCase();
-    const missingMetadataColumn =
-      error?.code === "42703" &&
-      message.includes("metadata");
 
-    if (!missingMetadataColumn) {
-      throw error;
-    }
-
-    [totalsResult, recentRaw, processingRaw, beneficiariesResult] = await Promise.all([
-      sql`
-        SELECT
-          COALESCE(SUM(amount) FILTER (
-            WHERE LOWER(status) = 'success'
-              AND type = 'deposit'
-          ), 0) AS "totalDeposits",
-          COALESCE(SUM(amount) FILTER (
-            WHERE LOWER(status) = 'success'
-              AND (type IN ('data', 'verification', 'result_checker') OR type LIKE 'verification_%')
-          ), 0) AS "totalSpend",
-          COALESCE(SUM(amount) FILTER (
-            WHERE LOWER(status) = 'success'
-              AND type = 'data'
-          ), 0) AS "dataSpend",
-          COALESCE(SUM(amount) FILTER (
-            WHERE LOWER(status) = 'success'
-              AND (type = 'verification' OR type LIKE 'verification_%')
-          ), 0) AS "verificationSpend",
-          COALESCE(SUM(amount) FILTER (
-            WHERE LOWER(status) = 'success'
-              AND type = 'result_checker'
-          ), 0) AS "resultCheckerSpend",
-          COALESCE(COUNT(*) FILTER (WHERE LOWER(status) = 'success'), 0) AS "successfulCount",
-          COALESCE(COUNT(*), 0) AS "totalCount"
-        FROM transactions
-        WHERE user_id = ${user.id}
-      `,
-      sql`
-        SELECT
-          id,
-          type,
-          amount,
-          status,
-          NULL::jsonb AS metadata,
-          created_at
-        FROM transactions
-        WHERE user_id = ${user.id}
-        ORDER BY created_at DESC
-        LIMIT ${recentLimit}
-      `,
-      sql`
-        SELECT
-          id,
-          type,
-          amount,
-          status,
-          NULL::jsonb AS metadata,
-          created_at
-        FROM transactions
-        WHERE user_id = ${user.id}
-          AND type IN ('data', 'DATA')
-          AND LOWER(status) IN ('pending', 'processing')
-        ORDER BY created_at DESC
-        LIMIT 10
-      `,
-      sql`
-        SELECT DISTINCT ON (phone_number)
-          phone_number,
-          network,
-          created_at
-        FROM transactions
-        WHERE user_id = ${user.id}
-          AND LOWER(status) = 'success'
-          AND type IN ('data', 'DATA')
-          AND phone_number IS NOT NULL
-        ORDER BY phone_number, created_at DESC
-        LIMIT ${beneficiaryLimit}
-      `
-    ]);
-  }
-
-  const totalsRow = (totalsResult?.[0] ?? {}) as any;
-
-  // Helper to map raw DB rows to DashboardTransactionRow
-  const mapTransaction = (row: any): DashboardTransactionRow => {
-    let type = String(row.type || "").toLowerCase();
+    const balance = walletData[0]?.balance || 0;
+    const statsRow = stats[0] || {};
     
-    // Map verification subtypes to main verification type
-    if (type.startsWith('verification_')) {
-      type = 'verification';
-    }
-    
-    return {
+    // Calculate percentage changes (mock for now - can be updated to calculate actual change from previous period)
+    const statCards: StatCard[] = [
+      {
+        label: 'Total Orders',
+        value: statsRow.total_orders || 0,
+        percentageChange: -6.32,
+        todayValue: statsRow.today_orders || 0,
+      },
+      {
+        label: 'Total Sales',
+        value: `GH₵ ${(statsRow.total_sales || 0).toFixed(2)}`,
+        unit: 'GH₵',
+        percentageChange: 30.47,
+        todayValue: `GH₵ ${(statsRow.today_sales || 0).toFixed(2)}`,
+      },
+      {
+        label: 'Loyalty Incentive',
+        value: `GH₵ ${(statsRow.loyalty_incentive || 0).toFixed(2)}`,
+        unit: 'GH₵',
+        percentageChange: -8.55,
+      },
+      {
+        label: 'Commission Income',
+        value: `GH₵ ${(statsRow.total_commissions || 0).toFixed(2)}`,
+        unit: 'GH₵',
+        percentageChange: 12.5,
+      },
+    ];
+
+    const monthlyChart = monthlyData.map(row => ({
+      month: row.month,
+      value: parseFloat(row.value || 0),
+    }));
+
+    const weeklyChart = weeklyData.map(row => ({
+      day: row.day,
+      value: parseFloat(row.value || 0),
+    }));
+
+    const networkSales = networkSalesData.map(row => ({
+      network: row.network,
+      sales: parseFloat(row.sales || 0),
+      percentageChange: calculatePercentageChange(), // Helper function
+    }));
+
+    const recentTransactions = transactionsData.map(row => ({
       id: row.id,
-      reference: row.reference,
-      type: type as DashboardTransactionType,
-      amount: Number(row.amount ?? 0),
-      status: String(row.status || "").toLowerCase() as DashboardTransactionStatus,
-      description: row.metadata?.description || row.metadata?.memo || null,
-      network: row.metadata?.network || row.metadata?.network_name || row.metadata?.provider || null,
-      phone_number: row.metadata?.phoneNumber || row.metadata?.phone_number || null,
-      created_at: row.created_at,
+      orderId: row.reference_id,
+      amount: row.amount,
+      package: row.package || 'Unknown',
+      network: row.network || 'Unknown',
+      status: row.status,
+      createdAt: row.created_at,
+    }));
+
+    const activities: Activity[] = [
+      { type: 'login', label: 'Last Login', value: 'Web', icon: 'flag' },
+      { type: 'device', label: 'Device', value: 'Unknown', icon: 'smartphone' },
+      { type: 'location', label: 'Location', value: 'Unknown', icon: 'map-pin' },
+      { type: 'topup', label: 'Recent Topup', value: `GH₵ ${balance.toFixed(2)}`, icon: 'dollar-sign' },
+      { type: 'commission', label: 'Recent Commission', value: `GH₵ ${(statsRow.total_commissions || 0).toFixed(2)}`, icon: 'briefcase' },
+    ];
+
+    return {
+      wallet: {
+        balance,
+        percentageChange: 23.65,
+        recentTopup: balance,
+      },
+      stats: statCards,
+      monthlyChart,
+      weeklyChart,
+      networkSales,
+      recentTransactions,
+      activities,
     };
-  };
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+    return getEmptyDashboard();
+  }
+}
 
-  const recentTransactions = recentRaw.map(mapTransaction);
-  const processingPurchases = processingRaw.map(mapTransaction);
-  
-  const beneficiaries = (beneficiariesResult as any[]).map(row => ({
-    phone_number: row.phone_number,
-    network: row.network,
-    created_at: row.created_at
-  })) as DashboardBeneficiaryRow[];
-
+function getEmptyDashboard(): DashboardData {
   return {
-    totals: {
-      totalDeposits: Number(totalsRow.totalDeposits ?? 0),
-      totalSpend: Number(totalsRow.totalSpend ?? 0),
-      dataSpend: Number(totalsRow.dataSpend ?? 0),
-      verificationSpend: Number(totalsRow.verificationSpend ?? 0),
-      resultCheckerSpend: Number(totalsRow.resultCheckerSpend ?? 0),
-      successfulCount: Number(totalsRow.successfulCount ?? 0),
-      totalCount: Number(totalsRow.totalCount ?? 0),
+    wallet: {
+      balance: 0,
+      percentageChange: 0,
+      recentTopup: 0,
     },
-    recentTransactions,
-    beneficiaries,
-    processingPurchases,
+    stats: [
+      { label: 'Total Orders', value: 0, percentageChange: 0, todayValue: 0 },
+      { label: 'Total Sales', value: 'GH₵ 0.00', unit: 'GH₵', percentageChange: 0, todayValue: 'GH₵ 0.00' },
+      { label: 'Loyalty Incentive', value: 'GH₵ 0.00', unit: 'GH₵', percentageChange: 0 },
+      { label: 'Commission Income', value: 'GH₵ 0.00', unit: 'GH₵', percentageChange: 0 },
+    ],
+    monthlyChart: [],
+    weeklyChart: [],
+    networkSales: [],
+    recentTransactions: [],
+    activities: [],
   };
+}
+
+function calculatePercentageChange(): number {
+  // Mock calculation - can be updated with actual logic
+  return Math.random() > 0.5 ? 28 : -15;
 }

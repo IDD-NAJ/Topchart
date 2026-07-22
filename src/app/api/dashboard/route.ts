@@ -16,7 +16,7 @@ export async function GET() {
       );
     }
 
-    const data = await getDashboardData({ recentLimit: 5, beneficiaryLimit: 4 });
+    const data = await getDashboardData();
     return NextResponse.json(
       { success: true, data },
       {
