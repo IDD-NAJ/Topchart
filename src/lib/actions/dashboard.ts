@@ -157,13 +157,13 @@ export async function getDashboardData(): Promise<DashboardData> {
     let loyaltyTotal = 0;
     try {
       const loyaltyRows = await sql`
-        SELECT COALESCE(SUM(reward_amount), 0) as total
-        FROM referral_rewards
-        WHERE referrer_id = ${user.id} AND status = 'paid'
+        SELECT COALESCE(referral_earnings, 0) as total
+        FROM users
+        WHERE id = ${user.id}
       `;
       loyaltyTotal = parseFloat((loyaltyRows[0] as any)?.total || '0');
     } catch {
-      // referral_rewards table not available
+      // referral_earnings column not available
     }
 
     let commissionTotal = 0;
