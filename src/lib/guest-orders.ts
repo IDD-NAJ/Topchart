@@ -7,7 +7,7 @@ export type ProductType =
   | "bill_payment"
   | "foreign_number";
 
-export type PaymentStatus = "pending" | "success" | "failed" | "abandoned";
+export type PaymentStatus = "pending" | "success" | "failed" | "abandoned" | "cancelled";
 export type FulfillmentStatus = "pending" | "processing" | "completed" | "failed";
 
 export interface GuestOrder {
@@ -94,6 +94,15 @@ export async function getGuestOrderByTracking(
 ): Promise<GuestOrder | null> {
   const rows = await sql`
     SELECT * FROM guest_orders WHERE tracking_number = ${trackingNumber} LIMIT 1
+  `;
+  return (rows[0] as GuestOrder) ?? null;
+}
+
+export async function getGuestOrderById(
+  id: string
+): Promise<GuestOrder | null> {
+  const rows = await sql`
+    SELECT * FROM guest_orders WHERE id = ${id} LIMIT 1
   `;
   return (rows[0] as GuestOrder) ?? null;
 }

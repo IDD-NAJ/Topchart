@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   AlertCircle,
@@ -20,6 +20,25 @@ import {
 // Only data bundles are available for guest purchase
 type ProductType = 'data_bundle' | ''
 
+/**
+ * Watches for the Paystack redirect (/checkout?payment=callback&reference=...)
+ * and triggers payment verification and wallet crediting
+ */
+function PaymentCallbackWatcher({ onReference }: { onReference: (ref: string) => void }) {
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const payment = searchParams.get('payment')
+    const reference = searchParams.get('reference') || searchParams.get('trxref')
+    if (payment === 'callback' && reference) {
+      onReference(reference)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  return null
+}
+
 interface FormData {
   product_type: ProductType
   bundle_id: string
@@ -28,7 +47,7 @@ interface FormData {
   full_name: string
 }
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter()
   const [formData, setFormData] = useState<FormData>({
     product_type: 'data_bundle',
@@ -40,10 +59,59 @@ export default function CheckoutPage() {
   const [selectedNetwork, setSelectedNetwork] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [verifying, setVerifying] = useState(false)
+  const [pendingReference, setPendingReference] = useState<string | null>(null)
   const [bundles, setBundles] = useState<any[]>([])
   const [bundlesLoading, setBundlesLoading] = useState(false)
   const [networks, setNetworks] = useState<any[]>([])
   const [networksLoading, setNetworksLoading] = useState(false)
+
+  // Handle payment callback verification
+  useEffect(() => {
+    if (pendingReference && !verifying) {
+      setVerifying(true)
+      verifyPayment(pendingReference)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingReference])
+
+  const verifyPayment = async (reference: string) => {
+    try {
+      const response = await fetch('/api/guest/checkout/auto-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Show success message and redirect
+        const trackingNumber = result.tracking_number
+        setTimeout(() => {
+          router.push(
+            `/checkout/callback?tracking=${trackingNumber}&status=success&payment_status=${result.payment_status}&fulfillment_status=${result.fulfillment_status}`
+          )
+        }, 2000)
+      } else {
+        console.error('[v0] Verification failed:', result.error)
+        setErrors({
+          submit: result.error || 'Payment verification failed',
+        })
+      }
+    } catch (err) {
+      console.error('[v0] Verification error:', err)
+      setErrors({
+        submit: err instanceof Error ? err.message : 'An error occurred during verification',
+      })
+    } finally {
+      setVerifying(false)
+    }
+  }
+
+  const handlePaymentCallback = (ref: string) => {
+    setPendingReference(ref)
+  }
 
   // Load networks on mount
   useEffect(() => {
@@ -192,8 +260,33 @@ export default function CheckoutPage() {
 
   const selectedBundle = bundles.find(b => b.id === formData.bundle_id)
 
+  // Show verification status during callback
+  if (verifying && pendingReference) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex items-center justify-center p-4 py-12">
+        <div className="w-full max-w-2xl">
+          <div className="bg-card border border-border rounded-xl shadow-lg p-8 text-center space-y-4">
+            <div className="flex justify-center">
+              <div className="animate-spin">
+                <svg className="w-12 h-12 text-primary" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-foreground">Verifying Payment</h2>
+            <p className="text-muted-foreground">Please wait while we confirm your payment...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex items-center justify-center p-4 py-12">
+      <Suspense fallback={null}>
+        <PaymentCallbackWatcher onReference={handlePaymentCallback} />
+      </Suspense>
       <div className="w-full max-w-2xl">
         {/* Logo / Branding */}
         <div className="text-center mb-8">
@@ -431,5 +524,13 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <CheckoutContent />
+    </Suspense>
   )
 }
