@@ -9,10 +9,10 @@ interface NetworkGaugeProps {
 
 export function NetworkGauge({ network, percentage }: NetworkGaugeProps) {
   const isPositive = network.percentageChange >= 0;
-  const gaugeColor = network.network.includes('AT') ? 'from-blue-400 to-blue-600' 
-    : network.network.includes('MTN') ? 'from-yellow-400 to-yellow-600'
-    : network.network.includes('Telecel') ? 'from-red-400 to-red-600'
-    : 'from-blue-400 to-indigo-600';
+  const gaugeColor = network.network.includes('AT') ? '#4f46e5' 
+    : network.network.includes('MTN') ? '#f59e0b'
+    : network.network.includes('Telecel') ? '#ef4444'
+    : '#4f46e5';
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
@@ -27,7 +27,7 @@ export function NetworkGauge({ network, percentage }: NetworkGaugeProps) {
       </div>
 
       {/* Circular Gauge */}
-      <div className="flex flex-col items-center justify-center py-8">
+      <div className="flex flex-col items-center justify-center py-8 relative">
         <svg width="120" height="120" className="transform -rotate-90">
           {/* Background circle */}
           <circle cx="60" cy="60" r="50" fill="none" stroke="#e5e7eb" strokeWidth="8" />
@@ -38,22 +38,14 @@ export function NetworkGauge({ network, percentage }: NetworkGaugeProps) {
             cy="60"
             r="50"
             fill="none"
-            stroke={gaugeColor === 'from-blue-400 to-blue-600' ? '#2563eb' 
-              : gaugeColor === 'from-yellow-400 to-yellow-600' ? '#eab308'
-              : gaugeColor === 'from-red-400 to-red-600' ? '#dc2626'
-              : '#3b82f6'}
+            stroke={gaugeColor}
             strokeWidth="8"
             strokeDasharray={`${(percentage / 100) * 314} 314`}
             strokeLinecap="round"
           />
           
           {/* Center dot */}
-          <circle cx="60" cy="60" r="8" fill={
-            gaugeColor === 'from-blue-400 to-blue-600' ? '#2563eb' 
-              : gaugeColor === 'from-yellow-400 to-yellow-600' ? '#eab308'
-              : gaugeColor === 'from-red-400 to-red-600' ? '#dc2626'
-              : '#3b82f6'
-          } />
+          <circle cx="60" cy="60" r="8" fill={gaugeColor} />
         </svg>
         
         {/* Percentage text */}

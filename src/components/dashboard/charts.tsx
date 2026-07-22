@@ -33,7 +33,7 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
       <div className="flex items-end justify-between h-64 gap-2">
         {chartData.map((point, idx) => (
           <div key={idx} className="flex flex-col items-center gap-2 flex-1">
-            <div className="w-full bg-indigo-200 rounded" style={{ height: `${(point.value / maxValue) * 200}px` }} />
+            <div className="w-full bg-gradient-to-t from-indigo-600 to-indigo-500 rounded" style={{ height: `${(point.value / maxValue) * 200}px` }} />
             <span className="text-xs text-gray-600">{point.month}</span>
           </div>
         ))}
@@ -71,7 +71,7 @@ export function WeeklyChart({ data }: WeeklyChartProps) {
           const point = data.find(d => d.day?.includes(day)) || { day, value: 0 };
           return (
             <div key={idx} className="flex flex-col items-center gap-2 flex-1">
-              <div className="w-full border-4 border-indigo-500 rounded" style={{ height: `${(point.value / maxValue) * 200}px` }} />
+              <div className="w-full border-4 border-indigo-600 rounded" style={{ height: `${(point.value / maxValue) * 200}px` }} />
               <span className="text-xs text-gray-600">{day}</span>
             </div>
           );

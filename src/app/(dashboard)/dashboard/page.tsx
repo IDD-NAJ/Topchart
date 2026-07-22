@@ -55,12 +55,12 @@ export default function DashboardPage() {
         </div>
 
         {/* Wallet Card */}
-        <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 rounded-2xl shadow-lg p-8 text-white">
+        <div className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-800 rounded-2xl shadow-lg p-8 text-white">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-blue-200 text-sm mb-2">Available Balance</p>
+              <p className="text-indigo-200 text-sm mb-2">Available Balance</p>
               <h2 className="text-5xl font-bold mb-2">GH₵ {data.wallet.balance.toFixed(2)}</h2>
-              <p className="text-blue-200 text-sm">Recent topup: GH₵ {data.wallet.recentTopup.toFixed(2)}</p>
+              <p className="text-indigo-200 text-sm">Recent topup: GH₵ {data.wallet.recentTopup.toFixed(2)}</p>
             </div>
             <div className="bg-white/20 px-4 py-2 rounded-lg">
               <span className="text-green-300 font-semibold">+ {data.wallet.percentageChange.toFixed(2)}%</span>
