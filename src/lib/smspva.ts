@@ -176,6 +176,157 @@ async function smspvaGet(params: Record<string, string>): Promise<any> {
   }
 }
 
+/**
+ * SMSPVA v2 API: Fetch operators/services for a country
+ * https://docs.smspva.com/#tag/activation_v2_all_methods/paths/~1activation~1operators~1%7Bcountry%7D/get
+ */
+export interface SmspvaV2Operator {
+  id: number;
+  name: string;
+  count: number;
+}
+
+export interface SmspvaV2OperatorsResponse {
+  status: "success" | "error";
+  operators?: SmspvaV2Operator[];
+  error?: string;
+}
+
+async function smspvaV2Get(endpoint: string, params: Record<string, string> = {}): Promise<any> {
+  const apiKey = getSmspvaApiKey();
+  if (!apiKey) throw new Error("SMSPVA API key not configured");
+
+  const baseUrl = "https://api.smspva.com/v2";
+  const query = new URLSearchParams({ ...params, apikey: apiKey }).toString();
+  const url = query ? `${baseUrl}${endpoint}?${query}` : `${baseUrl}${endpoint}`;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) throw new Error(`SMSPVA v2 HTTP ${res.status}`);
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    clearTimeout(timeout);
+    throw err;
+  }
+}
+
+export async function getSmspvaV2Operators(
+  country: string
+): Promise<{ ok: true; data: SmspvaV2Operator[] } | { ok: false; error: string }> {
+  try {
+    const response = await smspvaV2Get(`/activation/operators/${country}`);
+    if (response.status === "success" && Array.isArray(response.operators)) {
+      return {
+        ok: true,
+        data: response.operators,
+      };
+    }
+    return {
+      ok: false,
+      error: response.error || `Failed to fetch operators for ${country}`,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Network error",
+    };
+  }
+}
+
+export async function getSmspvaV2ServicePrice(
+  country: string,
+  service: string | number
+): Promise<{ ok: true; data: { service: string | number; price: number; count?: number } } | { ok: false; error: string }> {
+  try {
+    const response = await smspvaV2Get(`/activation/serviceprice/${country}/${service}`);
+    if (response.status === "success" && response.price !== undefined) {
+      return {
+        ok: true,
+        data: {
+          service,
+          price: parseFloat(String(response.price)),
+          count: response.count ? parseInt(String(response.count), 10) : undefined,
+        },
+      };
+    }
+    return {
+      ok: false,
+      error: response.error || `Failed to fetch price for ${service} in ${country}`,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Network error",
+    };
+  }
+}
+
+export async function getSmspvaV2Number(
+  country: string,
+  service: string | number
+): Promise<
+  { ok: true; data: { number_id: string; number: string; operator: string } } | 
+  { ok: false; error: string; code?: string }
+> {
+  try {
+    const response = await smspvaV2Get(`/activation/number/${country}/${service}`);
+    if (response.status === "success" && response.number_id) {
+      return {
+        ok: true,
+        data: {
+          number_id: String(response.number_id),
+          number: String(response.number),
+          operator: String(response.operator || ""),
+        },
+      };
+    }
+    const errorCode = response.status === "error" ? "provider_error" : undefined;
+    return {
+      ok: false,
+      error: response.error || `Failed to get number for ${service} in ${country}`,
+      code: errorCode,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Network error",
+    };
+  }
+}
+
+export async function getSmspvaV2SMS(
+  orderid: string
+): Promise<
+  { ok: true; sms: string; text: string } | 
+  { ok: true; pending: true } | 
+  { ok: false; error: string }
+> {
+  try {
+    const response = await smspvaV2Get(`/activation/sms/${orderid}`);
+    if (response.status === "success") {
+      if (response.sms) {
+        return { ok: true, sms: String(response.sms), text: String(response.text || response.sms) };
+      }
+      if (String(response.status) === "pending" || !response.sms) {
+        return { ok: true, pending: true };
+      }
+    }
+    return {
+      ok: false,
+      error: response.error || `Failed to get SMS for order ${orderid}`,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Network error",
+    };
+  }
+}
+
 export async function getSmspvaNumber(
   service: string,
   country: string
