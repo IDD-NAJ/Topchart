@@ -73,19 +73,21 @@ export async function getDashboardData(): Promise<DashboardData> {
       // Get user wallet balance
       sql`SELECT wallet_balance FROM users WHERE id = ${user.id}`,
       
-      // Get transaction stats (including month-over-month comparisons)
+      // Get transaction stats (including month-over-month comparisons).
+      // Real data uses mixed-case values: type IN ('data','DATA','deposit','DEPOSIT',...)
+      // and status IN ('success','SUCCESS','completed'). Purchases = any successful non-deposit.
       sql`
         SELECT
-          COUNT(*) FILTER (WHERE type = 'purchase' AND status = 'completed') as total_orders,
-          COUNT(*) FILTER (WHERE type = 'purchase' AND status = 'completed' AND DATE(created_at) = CURRENT_DATE) as today_orders,
-          COALESCE(SUM(amount) FILTER (WHERE status = 'completed' AND type = 'purchase'), 0) as total_sales,
-          COALESCE(SUM(amount) FILTER (WHERE status = 'completed' AND type = 'purchase' AND DATE(created_at) = CURRENT_DATE), 0) as today_sales,
-          COUNT(*) FILTER (WHERE type = 'purchase' AND status = 'completed' AND created_at >= DATE_TRUNC('month', NOW())) as this_month_orders,
-          COUNT(*) FILTER (WHERE type = 'purchase' AND status = 'completed' AND created_at >= DATE_TRUNC('month', NOW()) - INTERVAL '1 month' AND created_at < DATE_TRUNC('month', NOW())) as last_month_orders,
-          COALESCE(SUM(amount) FILTER (WHERE status = 'completed' AND type = 'purchase' AND created_at >= DATE_TRUNC('month', NOW())), 0) as this_month_sales,
-          COALESCE(SUM(amount) FILTER (WHERE status = 'completed' AND type = 'purchase' AND created_at >= DATE_TRUNC('month', NOW()) - INTERVAL '1 month' AND created_at < DATE_TRUNC('month', NOW())), 0) as last_month_sales,
-          COALESCE(SUM(amount) FILTER (WHERE status = 'completed' AND type = 'deposit' AND created_at >= DATE_TRUNC('month', NOW())), 0) as this_month_topups,
-          COALESCE(SUM(amount) FILTER (WHERE status = 'completed' AND type = 'deposit' AND created_at >= DATE_TRUNC('month', NOW()) - INTERVAL '1 month' AND created_at < DATE_TRUNC('month', NOW())), 0) as last_month_topups
+          COUNT(*) FILTER (WHERE LOWER(type) <> 'deposit' AND LOWER(status) IN ('success', 'completed')) as total_orders,
+          COUNT(*) FILTER (WHERE LOWER(type) <> 'deposit' AND LOWER(status) IN ('success', 'completed') AND DATE(created_at) = CURRENT_DATE) as today_orders,
+          COALESCE(SUM(amount) FILTER (WHERE LOWER(status) IN ('success', 'completed') AND LOWER(type) <> 'deposit'), 0) as total_sales,
+          COALESCE(SUM(amount) FILTER (WHERE LOWER(status) IN ('success', 'completed') AND LOWER(type) <> 'deposit' AND DATE(created_at) = CURRENT_DATE), 0) as today_sales,
+          COUNT(*) FILTER (WHERE LOWER(type) <> 'deposit' AND LOWER(status) IN ('success', 'completed') AND created_at >= DATE_TRUNC('month', NOW())) as this_month_orders,
+          COUNT(*) FILTER (WHERE LOWER(type) <> 'deposit' AND LOWER(status) IN ('success', 'completed') AND created_at >= DATE_TRUNC('month', NOW()) - INTERVAL '1 month' AND created_at < DATE_TRUNC('month', NOW())) as last_month_orders,
+          COALESCE(SUM(amount) FILTER (WHERE LOWER(status) IN ('success', 'completed') AND LOWER(type) <> 'deposit' AND created_at >= DATE_TRUNC('month', NOW())), 0) as this_month_sales,
+          COALESCE(SUM(amount) FILTER (WHERE LOWER(status) IN ('success', 'completed') AND LOWER(type) <> 'deposit' AND created_at >= DATE_TRUNC('month', NOW()) - INTERVAL '1 month' AND created_at < DATE_TRUNC('month', NOW())), 0) as last_month_sales,
+          COALESCE(SUM(amount) FILTER (WHERE LOWER(status) IN ('success', 'completed') AND LOWER(type) = 'deposit' AND created_at >= DATE_TRUNC('month', NOW())), 0) as this_month_topups,
+          COALESCE(SUM(amount) FILTER (WHERE LOWER(status) IN ('success', 'completed') AND LOWER(type) = 'deposit' AND created_at >= DATE_TRUNC('month', NOW()) - INTERVAL '1 month' AND created_at < DATE_TRUNC('month', NOW())), 0) as last_month_topups
         FROM transactions
         WHERE user_id = ${user.id}
       `,
@@ -96,7 +98,7 @@ export async function getDashboardData(): Promise<DashboardData> {
           TO_CHAR(DATE_TRUNC('month', created_at), 'Mon') as month,
           COALESCE(SUM(amount), 0) as value
         FROM transactions
-        WHERE user_id = ${user.id} AND status = 'completed' AND type = 'purchase' AND created_at >= NOW() - INTERVAL '12 months'
+        WHERE user_id = ${user.id} AND LOWER(status) IN ('success', 'completed') AND LOWER(type) <> 'deposit' AND created_at >= NOW() - INTERVAL '12 months'
         GROUP BY DATE_TRUNC('month', created_at)
         ORDER BY DATE_TRUNC('month', created_at) ASC
       `,
@@ -108,33 +110,36 @@ export async function getDashboardData(): Promise<DashboardData> {
           DATE(created_at) as date_key,
           COALESCE(SUM(amount), 0) as value
         FROM transactions
-        WHERE user_id = ${user.id} AND status = 'completed' AND type = 'purchase' AND created_at >= NOW() - INTERVAL '7 days'
+        WHERE user_id = ${user.id} AND LOWER(status) IN ('success', 'completed') AND LOWER(type) <> 'deposit' AND created_at >= NOW() - INTERVAL '7 days'
         GROUP BY DATE(created_at)
         ORDER BY DATE(created_at) ASC
       `,
       
-      // Network sales today (with yesterday comparison for percentage change)
+      // Network sales today (with yesterday comparison for percentage change).
+      // Network may be stored in the column or inside metadata JSONB.
       sql`
         SELECT 
-          network,
+          COALESCE(network, metadata->>'network') as network,
           COALESCE(SUM(amount) FILTER (WHERE DATE(created_at) = CURRENT_DATE), 0) as sales,
           COALESCE(SUM(amount) FILTER (WHERE DATE(created_at) = CURRENT_DATE - 1), 0) as yesterday_sales,
           COUNT(*) FILTER (WHERE DATE(created_at) = CURRENT_DATE) as transaction_count
         FROM transactions
-        WHERE user_id = ${user.id} AND created_at >= CURRENT_DATE - 1 AND status = 'completed' AND type = 'purchase'
-        GROUP BY network
+        WHERE user_id = ${user.id} AND created_at >= CURRENT_DATE - 1 AND LOWER(status) IN ('success', 'completed') AND LOWER(type) <> 'deposit' AND COALESCE(network, metadata->>'network') IS NOT NULL
+        GROUP BY COALESCE(network, metadata->>'network')
         HAVING COALESCE(SUM(amount) FILTER (WHERE DATE(created_at) = CURRENT_DATE), 0) > 0
         ORDER BY sales DESC
       `,
       
-      // Recent transactions (last 10)
+      // Recent transactions (last 10). Plan/network details may live in metadata JSONB.
       sql`
         SELECT 
           id,
           reference,
           amount,
+          type,
+          COALESCE(description, metadata->>'description') as description,
           data_plan as package,
-          network,
+          COALESCE(network, metadata->>'network') as network,
           status,
           created_at
         FROM transactions
@@ -143,11 +148,11 @@ export async function getDashboardData(): Promise<DashboardData> {
         LIMIT 10
       `,
 
-      // Most recent completed wallet top-up
+      // Most recent successful wallet top-up
       sql`
         SELECT amount, created_at
         FROM transactions
-        WHERE user_id = ${user.id} AND type = 'deposit' AND status = 'completed'
+        WHERE user_id = ${user.id} AND LOWER(type) = 'deposit' AND LOWER(status) IN ('success', 'completed')
         ORDER BY created_at DESC
         LIMIT 1
       `
@@ -253,13 +258,22 @@ export async function getDashboardData(): Promise<DashboardData> {
       percentageChange: pctChange(parseFloat(row.sales || 0), parseFloat(row.yesterday_sales || 0)),
     }));
 
+    const typeLabel = (type: string): string => {
+      const t = (type || '').toLowerCase();
+      if (t === 'deposit') return 'E-WALLET TOP-UP';
+      if (t.startsWith('verification')) return 'VERIFICATION';
+      if (t === 'esim_phone') return 'eSIM';
+      if (t === 'proxy') return 'PROXY';
+      return t.toUpperCase() || 'TRANSACTION';
+    };
+
     const recentTransactions: Transaction[] = transactionsData.map(row => ({
       id: row.id,
       orderId: row.reference || row.id,
       amount: parseFloat(row.amount || 0),
-      package: row.package || 'Unknown',
-      network: row.network || 'Unknown',
-      status: row.status,
+      package: row.package || row.description || typeLabel(row.type),
+      network: row.network || typeLabel(row.type),
+      status: (row.status || '').toLowerCase(),
       createdAt: row.created_at,
     }));
 
