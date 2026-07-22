@@ -24,10 +24,11 @@ export function PurchaseCard({
   availabilityLoading,
 }: PurchaseCardProps) {
   const network = _NETWORKS.find((n) => n.id === bundle.networkId);
-  const originalPrice = bundle.originalPrice ?? bundle.price;
-  const hasDiscount = originalPrice > bundle.price;
+  const price = Number(bundle.price) || 0;
+  const originalPrice = Number(bundle.originalPrice ?? bundle.price) || 0;
+  const hasDiscount = originalPrice > price;
   const discountPercent = hasDiscount
-    ? Math.round(((originalPrice - bundle.price) / originalPrice) * 100)
+    ? Math.round(((originalPrice - price) / originalPrice) * 100)
     : 0;
 
   return (
@@ -119,7 +120,7 @@ export function PurchaseCard({
       <div className="mt-auto pt-1.5 border-t">
         <div className="flex items-baseline gap-1 mb-1.5">
           <span className="text-base font-bold text-foreground">
-            GH₵{bundle.price.toFixed(2)}
+            GH₵{price.toFixed(2)}
           </span>
           {hasDiscount && (
             <span className="text-xs text-muted-foreground line-through">

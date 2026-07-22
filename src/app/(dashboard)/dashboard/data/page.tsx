@@ -389,7 +389,25 @@ export default function DataPage() {
       })
       const json = await res.json()
       if (json.success && Array.isArray(json.data)) {
-        setPlans(json.data)
+        // Normalize so shape drift in the API can never crash rendering
+        const normalized: DatamartPlan[] = (json.data as Array<Record<string, unknown>>).map((raw) => ({
+          id: String(raw.id ?? ""),
+          networkId: String(raw.networkId ?? raw.network_id ?? ""),
+          network: String(raw.network ?? raw.networkId ?? raw.network_id ?? ""),
+          name: String(raw.name ?? raw.size_label ?? ""),
+          validity: raw.validity != null ? String(raw.validity) : (raw.validity_label != null ? String(raw.validity_label) : null),
+          validityHours: raw.validityHours != null ? Number(raw.validityHours) : null,
+          validityDays: raw.validityDays != null ? Number(raw.validityDays) : null,
+          effectivePrice: Number(raw.effectivePrice ?? raw.price ?? 0) || 0,
+          priceOverride: raw.priceOverride != null ? Number(raw.priceOverride) : null,
+          markupPercent: raw.markupPercent != null ? Number(raw.markupPercent) : null,
+          isPopular: Boolean(raw.isPopular),
+          isActive: Boolean(raw.isActive),
+          isFeatured: Boolean(raw.isFeatured),
+          datamartPlanId: raw.datamartPlanId != null ? String(raw.datamartPlanId) : null,
+          datamartPlanType: raw.datamartPlanType != null ? String(raw.datamartPlanType) : null,
+        }))
+        setPlans(normalized)
         setPlansStale(Boolean(json.stale))
         setPlansFetchedAt(String(json.fetchedAt || ""))
         setPlansProviderError(json.providerError || "")
