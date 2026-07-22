@@ -373,15 +373,21 @@ function ActiveNumberCard({
         /* non-JSON */
       }
       if (data?.success) {
-        const { refunded, refund_amount } = data?.data ?? {}
-        let description = `${num.number} has been cancelled.`
-        if (refunded && refund_amount > 0) {
-          description = `GH₵${Number(refund_amount).toFixed(2)} credited to your wallet balance`
+        const { refunded, refund_amount, refund_error } = data?.data ?? {}
+        if (refund_error) {
+          toast({ title: "Number cancelled", description: refund_error, variant: "destructive" })
+        } else {
+          let description = `${num.number} has been cancelled.`
+          if (refunded && Number(refund_amount) > 0) {
+            description = `GH₵${Number(refund_amount).toFixed(2)} credited to your wallet balance`
+          }
+          toast({ title: "Number cancelled", description })
         }
-        toast({ title: "Number cancelled", description })
         await onRefreshList()
       } else {
         toast({ title: "Cancel failed", description: data?.error || "Could not cancel number", variant: "destructive" })
+        // The number may have changed state (expired/completed/cancelled) — refresh so the UI isn't stale
+        await onRefreshList()
       }
     } catch {
       toast({ title: "Network error", description: "Failed to cancel number", variant: "destructive" })
@@ -440,7 +446,7 @@ function ActiveNumberCard({
               <button
                 type="button"
                 onClick={() => setConfirmCancel(true)}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors dark:bg-red-950/30 dark:border-red-900"
+                className="inline-flex min-h-8 items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors dark:bg-red-950/30 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/50"
               >
                 <Flag className="h-3 w-3" />
                 Cancel number
@@ -448,16 +454,30 @@ function ActiveNumberCard({
             )}
             {isActive && confirmCancel && (
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-red-600 font-medium">Confirm cancel?</span>
+                <span className="text-red-600 font-medium dark:text-red-400 w-full sm:w-auto">Confirm cancel?</span>
                 <button
                   type="button"
                   onClick={() => void handleCancel()}
                   disabled={cancelling}
-                  className="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+                  aria-label={`Confirm cancelling number ${num.number}`}
+                  className="inline-flex min-h-8 items-center justify-center gap-1.5 px-3 py-1.5 rounded-md font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                 >
-                  {cancelling ? <Loader2 className="h-3 w-3 animate-spin inline" /> : "Yes, cancel"}
+                  {cancelling ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Cancelling…
+                    </>
+                  ) : (
+                    "Yes, cancel"
+                  )}
                 </button>
-                <button type="button" onClick={() => setConfirmCancel(false)} className="px-2 py-1 rounded border hover:bg-muted">
+                <button
+                  type="button"
+                  onClick={() => setConfirmCancel(false)}
+                  disabled={cancelling}
+                  aria-label="Keep this number"
+                  className="inline-flex min-h-8 items-center justify-center px-3 py-1.5 rounded-md font-medium border hover:bg-muted disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                >
                   Keep
                 </button>
               </div>
