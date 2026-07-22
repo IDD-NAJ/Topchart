@@ -63,8 +63,8 @@ export default function DashboardLayout({
 
   if (isLoading || !initialized || !stabilized || (!user && retryCount < maxRetries)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[color:var(--marketing-cream)]">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[color:var(--marketing-accent)]/30 border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/30 border-t-primary" />
       </div>
     )
   }
@@ -72,14 +72,14 @@ export default function DashboardLayout({
   if (!user) {
     console.log('[Dashboard Layout] No user after auth initialization, redirecting to login')
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[color:var(--marketing-cream)]">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[color:var(--marketing-accent)]/30 border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/30 border-t-primary" />
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen bg-[color:var(--marketing-cream)]">
+    <div className="flex min-h-screen bg-background">
       <OfflineBanner />
       <PopupBannerContainer />
       <DashboardSidebar collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />

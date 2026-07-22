@@ -1,76 +1,123 @@
-import { Transaction } from '@/lib/actions/dashboard';
+"use client";
+
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { Transaction } from "@/lib/actions/dashboard";
 
 interface TransactionsTableProps {
   transactions: Transaction[];
 }
 
-function getNetworkColor(network: string): string {
-  if (network.includes('AT')) return 'bg-blue-100 text-blue-800';
-  if (network.includes('MTN')) return 'bg-yellow-100 text-yellow-800';
-  if (network.includes('Telecel')) return 'bg-red-100 text-red-800';
-  return 'bg-gray-100 text-gray-800';
+function NetworkBadge({ network }: { network: string }) {
+  const upper = network.toUpperCase();
+  const cls = upper.includes("MTN")
+    ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+    : upper.includes("TELECEL")
+      ? "bg-red-500/10 text-red-700 dark:text-red-400"
+      : upper.includes("AT")
+        ? "bg-sky-500/10 text-sky-700 dark:text-sky-400"
+        : "bg-muted text-muted-foreground";
+
+  let label = network.substring(0, 6).toUpperCase();
+  if (upper.includes("MTN")) label = "MTN";
+  else if (upper.includes("TELECEL")) label = "TC";
+  else if (upper.includes("AT BIG")) label = "AT-B";
+  else if (upper.includes("AT")) label = "AT";
+
+  return (
+    <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold", cls)}>
+      {label}
+    </span>
+  );
 }
 
-function getNetworkInitials(network: string): string {
-  if (network.includes('AT')) return 'AT';
-  if (network.includes('MTN')) return 'MTN';
-  if (network.includes('Telecel')) return 'TC';
-  return network.substring(0, 2).toUpperCase();
+function StatusBadge({ status }: { status: string }) {
+  const lower = status.toLowerCase();
+  const cls =
+    lower === "completed" || lower === "success"
+      ? "bg-success/10 text-success"
+      : lower === "pending"
+        ? "bg-warning/10 text-warning"
+        : "bg-destructive/10 text-destructive";
+
+  const label = lower === "completed" ? "Completed" : lower === "success" ? "Success" : lower.charAt(0).toUpperCase() + lower.slice(1);
+
+  return (
+    <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold", cls)}>
+      {label}
+    </span>
+  );
 }
 
 export function TransactionsTable({ transactions }: TransactionsTableProps) {
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en-GH", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
+  if (transactions.length === 0) {
+    return (
+      <div className="bg-card rounded-xl border border-border p-8 text-center">
+        <p className="text-sm text-muted-foreground">No transactions yet</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-card rounded-xl border border-border overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">ORDER</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">PACKAGE</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">NETWORK</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">PERIOD</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">STATUS</th>
-              <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">AMOUNT</th>
+            <tr className="border-b border-border bg-muted/30">
+              <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Order
+              </th>
+              <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Package
+              </th>
+              <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground hidden sm:table-cell">
+                Network
+              </th>
+              <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground hidden md:table-cell">
+                Date
+              </th>
+              <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Status
+              </th>
+              <th className="px-5 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Amount
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
-            {transactions.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                  No transactions yet
+          <tbody className="divide-y divide-border">
+            {transactions.map((tx, i) => (
+              <motion.tr
+                key={tx.id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: i * 0.04 }}
+                className="hover:bg-muted/30 transition-colors"
+              >
+                <td className="px-5 py-3.5 font-mono text-xs text-muted-foreground">{tx.orderId}</td>
+                <td className="px-5 py-3.5 font-medium text-foreground">{tx.package}</td>
+                <td className="px-5 py-3.5 hidden sm:table-cell">
+                  <NetworkBadge network={tx.network} />
                 </td>
-              </tr>
-            ) : (
-              transactions.map((tx) => (
-                <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{tx.orderId}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{tx.package}</td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getNetworkColor(tx.network)}`}>
-                      {getNetworkInitials(tx.network)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{formatDate(tx.createdAt)}</td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      tx.status === 'completed' ? 'bg-green-100 text-green-800'
-                      : tx.status === 'pending' ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-red-100 text-red-800'
-                    }`}>
-                      {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right text-sm font-semibold text-gray-900">
-                    GH₵ {parseFloat(String(tx.amount || 0)).toFixed(2)}
-                  </td>
-                </tr>
-              ))
-            )}
+                <td className="px-5 py-3.5 text-muted-foreground text-xs hidden md:table-cell">
+                  {formatDate(tx.createdAt)}
+                </td>
+                <td className="px-5 py-3.5">
+                  <StatusBadge status={tx.status} />
+                </td>
+                <td className="px-5 py-3.5 text-right font-semibold text-foreground">
+                  GH₵ {parseFloat(String(tx.amount ?? 0)).toFixed(2)}
+                </td>
+              </motion.tr>
+            ))}
           </tbody>
         </table>
       </div>

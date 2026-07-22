@@ -7,10 +7,8 @@ import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
-  Phone,
   Wifi,
   History,
-  LogOut,
   User,
   CreditCard,
   MessageSquare,
@@ -21,6 +19,7 @@ import {
   GraduationCap,
   Store,
   Receipt,
+  LogOut,
 } from "lucide-react"
 import {
   Sheet,
@@ -73,9 +72,8 @@ export function MobileBottomNav() {
 
   return (
     <>
-      {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[color:var(--marketing-accent)]/10 bg-[color:var(--marketing-cream)]/95 pb-safe backdrop-blur-md lg:hidden">
-        <div className="flex items-center justify-around px-1 py-2 safe-area-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 pb-safe backdrop-blur-md lg:hidden">
+        <div className="flex items-center justify-around px-1 py-2">
           {mainNavItems.map((item) => {
             const Icon = item.icon
             const active = pathname === item.href
@@ -84,8 +82,10 @@ export function MobileBottomNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg transition-colors min-w-[56px] min-h-[44px]",
-                  active ? "text-[color:var(--marketing-accent)]" : "text-muted-foreground hover:text-foreground"
+                  "flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg transition-colors min-w-[56px] min-h-[44px]",
+                  active
+                    ? "text-primary"
+                    : "text-muted-foreground"
                 )}
               >
                 <Icon className="h-5 w-5 shrink-0" />
@@ -94,26 +94,25 @@ export function MobileBottomNav() {
             )
           })}
 
-          {/* More Sheet Trigger */}
           <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
             <SheetTrigger asChild>
               <button
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg transition-colors min-w-[56px] min-h-[44px]",
-                  moreNavItems.some(item => pathname === item.href)
-                    ? "text-[color:var(--marketing-accent)]"
-                    : "text-muted-foreground hover:text-foreground"
+                  "flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg transition-colors min-w-[56px] min-h-[44px]",
+                  moreNavItems.some((item) => pathname === item.href)
+                    ? "text-primary"
+                    : "text-muted-foreground"
                 )}
               >
                 <MoreHorizontal className="h-5 w-5 shrink-0" />
                 <span className="text-[10px] font-medium leading-none">More</span>
               </button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="h-auto max-h-[70vh]">
+            <SheetContent side="bottom" className="h-auto max-h-[72vh] bg-card border-border rounded-t-2xl">
               <SheetHeader className="pb-4">
-                <SheetTitle>More Options</SheetTitle>
+                <SheetTitle className="text-sm font-semibold">More Options</SheetTitle>
               </SheetHeader>
-              <nav className="space-y-2 pb-6">
+              <div className="grid grid-cols-2 gap-2 pb-2">
                 {moreNavItems.map((item) => {
                   const Icon = item.icon
                   const active = pathname === item.href
@@ -125,39 +124,37 @@ export function MobileBottomNav() {
                       className={cn(
                         "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
                         active
-                          ? "bg-[color:var(--marketing-accent)]/10 text-[color:var(--marketing-accent)]"
-                          : "text-muted-foreground hover:bg-[color:var(--marketing-cream-alt)] hover:text-[color:var(--marketing-accent)]"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-muted/40 text-foreground hover:bg-muted"
                       )}
                     >
-                      <Icon className="h-5 w-5" />
+                      <Icon className="h-4 w-4 shrink-0" />
                       {item.label}
                     </Link>
                   )
                 })}
-                <div className="pt-4 border-t mt-4">
-                  <Button
-                    variant="ghost"
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
-                    className="w-full justify-start gap-3 h-11 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl"
-                  >
-                    {isLoggingOut ? (
-                      <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <LogOut className="h-5 w-5" />
-                    )}
-                    <span className="text-sm font-semibold">{isLoggingOut ? "Signing out..." : "Sign Out"}</span>
-                  </Button>
-                </div>
-              </nav>
+              </div>
+              <div className="pt-3 border-t border-border mt-2 pb-safe">
+                <Button
+                  variant="ghost"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="w-full justify-start gap-3 h-11 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl"
+                >
+                  {isLoggingOut ? (
+                    <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <LogOut className="h-4 w-4" />
+                  )}
+                  <span className="text-sm font-medium">{isLoggingOut ? "Signing out..." : "Sign Out"}</span>
+                </Button>
+              </div>
             </SheetContent>
           </Sheet>
         </div>
-        {/* Safe area padding for mobile devices */}
-        <div className="h-safe-area-inset-bottom bg-background" />
       </nav>
 
-      {/* Mobile bottom nav spacer */}
+      {/* Spacer for mobile */}
       <div className="lg:hidden h-20" />
     </>
   )

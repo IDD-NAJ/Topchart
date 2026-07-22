@@ -1,61 +1,57 @@
-'use client';
+"use client";
 
-import { NetworkSales } from '@/lib/actions/dashboard';
+import { motion } from "framer-motion";
+import { TrendingUp, TrendingDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { NetworkSales } from "@/lib/actions/dashboard";
 
-interface NetworkGaugeProps {
+interface NetworkCardProps {
   network: NetworkSales;
-  percentage: number;
+  index?: number;
 }
 
-export function NetworkGauge({ network, percentage }: NetworkGaugeProps) {
+function getNetworkStyle(network: string): { bg: string; dot: string } {
+  if (network.toUpperCase().includes("MTN")) return { bg: "bg-amber-500/10", dot: "bg-amber-500" };
+  if (network.toUpperCase().includes("TELECEL")) return { bg: "bg-red-500/10", dot: "bg-red-500" };
+  if (network.toUpperCase().includes("AT")) return { bg: "bg-sky-500/10", dot: "bg-sky-500" };
+  return { bg: "bg-primary/10", dot: "bg-primary" };
+}
+
+export function NetworkGauge({ network, index = 0 }: NetworkCardProps) {
   const isPositive = network.percentageChange >= 0;
-  const gaugeColor = network.network.includes('AT') ? '#4f46e5' 
-    : network.network.includes('MTN') ? '#f59e0b'
-    : network.network.includes('Telecel') ? '#ef4444'
-    : '#4f46e5';
+  const style = getNetworkStyle(network.network);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <p className="text-gray-600 text-sm mb-1">Today {network.network} Sales</p>
-          <p className="text-gray-500 text-xs">GH₵ 0 sales made</p>
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: index * 0.07, ease: [0.16, 1, 0.3, 1] }}
+      className="bg-card rounded-xl border border-border p-5"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className={cn("h-2 w-2 rounded-full", style.dot)} />
+          <span className="text-sm font-semibold text-foreground">{network.network}</span>
         </div>
-        <span className={`px-3 py-1 rounded text-sm font-medium ${isPositive ? 'bg-orange-50 text-orange-600' : 'bg-orange-50 text-orange-600'}`}>
-          {isPositive ? '+' : ''}{network.percentageChange}% more
-        </span>
-      </div>
-
-      {/* Circular Gauge */}
-      <div className="flex flex-col items-center justify-center py-8 relative">
-        <svg width="120" height="120" className="transform -rotate-90">
-          {/* Background circle */}
-          <circle cx="60" cy="60" r="50" fill="none" stroke="#e5e7eb" strokeWidth="8" />
-          
-          {/* Progress circle */}
-          <circle
-            cx="60"
-            cy="60"
-            r="50"
-            fill="none"
-            stroke={gaugeColor}
-            strokeWidth="8"
-            strokeDasharray={`${(percentage / 100) * 314} 314`}
-            strokeLinecap="round"
-          />
-          
-          {/* Center dot */}
-          <circle cx="60" cy="60" r="8" fill={gaugeColor} />
-        </svg>
-        
-        {/* Percentage text */}
-        <div className="absolute flex flex-col items-center">
-          <span className="text-3xl font-bold text-gray-900">0%</span>
-          <span className="text-xs text-gray-500">of target</span>
+        <div
+          className={cn(
+            "flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5",
+            isPositive ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+          )}
+        >
+          {isPositive ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+          {isPositive ? "+" : ""}{network.percentageChange.toFixed(0)}%
         </div>
       </div>
 
-      <p className="text-center text-sm text-gray-600 text-balance">from last week</p>
-    </div>
+      <div className={cn("rounded-lg p-4", style.bg)}>
+        <p className="text-xs text-muted-foreground mb-1">Today&apos;s Sales</p>
+        <p className="text-xl font-bold text-foreground tracking-tight">
+          GH₵ {network.sales.toFixed(2)}
+        </p>
+      </div>
+
+      <p className="text-[10px] text-muted-foreground mt-3">vs last week</p>
+    </motion.div>
   );
 }

@@ -67,14 +67,15 @@ const preferencesNavItems = [
 ]
 
 const extraTitleRoutes: { href: string; label: string }[] = [
-  { href: "/dashboard/reseller/apply", label: "Reseller application" },
-  { href: "/dashboard/reseller/status", label: "Application status" },
-  { href: "/dashboard/reseller/payment", label: "Reseller payment" },
-  { href: "/dashboard/reseller/payment/callback", label: "Payment status" },
+  { href: "/dashboard/reseller/apply", label: "Reseller Application" },
+  { href: "/dashboard/reseller/status", label: "Application Status" },
+  { href: "/dashboard/reseller/payment", label: "Reseller Payment" },
+  { href: "/dashboard/reseller/payment/callback", label: "Payment Status" },
   { href: "/dashboard/verification/callback", label: "Verification" },
+  { href: "/dashboard/scheduled", label: "Scheduled Purchases" },
 ]
 
-const titleCandidates: { href: string; label: string }[] = [
+const titleCandidates = [
   ...mainNavItems,
   ...resellerNavExpanded,
   ...resellerNavSimple,
@@ -124,46 +125,47 @@ export function DashboardHeader({ sidebarCollapsed = false }: DashboardHeaderPro
   }
 
   return (
-    <header className={cn(
-      "fixed right-0 top-0 z-40 border-b border-[color:var(--marketing-accent)]/10 bg-[color:var(--marketing-cream)]/90 shadow-sm backdrop-blur-xl transition-all duration-300 ease-out",
-      "left-0 lg:left-64",
-      sidebarCollapsed && "lg:left-20"
-    )}>
+    <header
+      className={cn(
+        "fixed right-0 top-0 z-40 border-b border-border bg-background/95 backdrop-blur-xl transition-all duration-300 ease-out",
+        "left-0 lg:left-64",
+        sidebarCollapsed && "lg:left-[4.5rem]"
+      )}
+    >
       <div className="flex h-16 min-w-0 items-center justify-between gap-4 px-4 md:px-6">
-        <div className="flex min-w-0 flex-1 items-center gap-3 lg:gap-4">
+        {/* Left: logo (mobile) + page title */}
+        <div className="flex min-w-0 flex-1 items-center gap-4">
           <div className="flex min-w-0 items-center gap-3 lg:hidden">
-            <Link href="/" className="flex shrink-0 items-center gap-2">
-              <LogoVideo
-                width={100}
-                height={28}
-                className="h-7 w-auto"
-              />
+            <Link href="/" className="flex shrink-0 items-center">
+              <LogoVideo width={90} height={26} className="h-7 w-auto" />
             </Link>
-            <div className="h-6 w-px shrink-0 bg-border" />
-            <h1 className="truncate text-sm font-semibold">{pageTitle}</h1>
+            <div className="h-5 w-px bg-border shrink-0" />
+            <h1 className="truncate text-sm font-semibold text-foreground">{pageTitle}</h1>
           </div>
 
-          <div className="hidden min-w-0 flex-1 lg:block">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
-              Current page
-            </p>
-            <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{pageTitle}</h1>
+          <div className="hidden min-w-0 flex-1 lg:flex lg:flex-col">
+            <h1 className="text-base font-semibold tracking-tight text-foreground truncate">{pageTitle}</h1>
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-3">
+        {/* Right: notifications + user + mobile menu */}
+        <div className="flex shrink-0 items-center gap-2">
           <NotificationsPanel />
-          <div className="hidden max-w-[200px] md:flex md:flex-col md:items-end lg:max-w-[240px]">
-            <span className="truncate text-sm font-semibold">
-              {user?.firstName} {user?.lastName}
-            </span>
-            <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
-          </div>
-          <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[color:var(--marketing-accent)]/25 bg-[color:var(--marketing-accent)]/10 text-sm font-bold text-[color:var(--marketing-accent)] md:flex">
-            {user?.firstName?.[0]}
-            {user?.lastName?.[0]}
+
+          {/* User info (desktop) */}
+          <div className="hidden md:flex items-center gap-2.5">
+            <div className="text-right">
+              <p className="text-sm font-semibold text-foreground leading-tight truncate max-w-[160px]">
+                {user?.firstName} {user?.lastName}
+              </p>
+              <p className="text-[10px] text-muted-foreground truncate max-w-[160px]">{user?.email}</p>
+            </div>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-sm font-bold text-primary">
+              {user?.firstName?.[0]}{user?.lastName?.[0]}
+            </div>
           </div>
 
+          {/* Mobile hamburger */}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild className="lg:hidden">
               <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg">
@@ -171,23 +173,17 @@ export function DashboardHeader({ sidebarCollapsed = false }: DashboardHeaderPro
                 <span className="sr-only">Open menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex w-[280px] flex-col p-0">
-              <SheetTitle className="sr-only">Dashboard Menu</SheetTitle>
-              <div className="flex items-center gap-3 border-b p-6">
+            <SheetContent side="left" className="flex w-[280px] flex-col p-0 bg-card border-border">
+              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+              <div className="flex items-center gap-3 border-b border-border px-5 h-16">
                 <Link href="/" onClick={() => setOpen(false)} className="flex shrink-0 items-center">
-                  <LogoVideo
-                    width={120}
-                    height={32}
-                    className="h-8 w-auto"
-                  />
+                  <LogoVideo width={110} height={32} className="h-8 w-auto" />
                 </Link>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-4 py-6">
-                <nav className="space-y-1">
-                  <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Main
-                  </div>
+              <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+                <nav className="space-y-0.5">
+                  <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">Main</p>
                   {mainNavItems.map((item) => {
                     const active = pathname === item.href
                     const Icon = item.icon
@@ -197,71 +193,46 @@ export function DashboardHeader({ sidebarCollapsed = false }: DashboardHeaderPro
                         href={item.href}
                         onClick={() => setOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all",
-                          (item as { indent?: boolean }).indent ? "ml-2 py-2 text-xs" : "",
+                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                          (item as { indent?: boolean }).indent ? "ml-4 py-2 text-xs" : "",
                           active
-                            ? "bg-[color:var(--marketing-accent)]/10 text-[color:var(--marketing-accent)]"
-                            : "text-muted-foreground hover:bg-[color:var(--marketing-cream-alt)] hover:text-[color:var(--marketing-accent)]"
+                            ? "bg-primary/10 text-primary"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
                         )}
                       >
-                        <Icon className="h-5 w-5 shrink-0" />
+                        <Icon className="h-4 w-4 shrink-0" />
                         {item.label}
                       </Link>
                     )
                   })}
                 </nav>
 
-                <nav className="mt-4 space-y-1">
-                  <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Business
-                  </div>
-                  {isReseller
-                    ? resellerNavExpanded.map((item) => {
-                        const active = pathname === item.href
-                        const Icon = item.icon
-                        return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setOpen(false)}
-                            className={cn(
-                              "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all",
-                              active
-                                ? "bg-[#FF5630]/10 text-[#FF5630]"
-                                : "text-muted-foreground hover:bg-[#FFE5E8] hover:text-[#FF5630]"
-                            )}
-                          >
-                            <Icon className="h-5 w-5 shrink-0" />
-                            {item.label}
-                          </Link>
-                        )
-                      })
-                    : resellerNavSimple.map((item) => {
-                        const active = pathname === item.href
-                        const Icon = item.icon
-                        return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setOpen(false)}
-                            className={cn(
-                              "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all",
-                              active
-                                ? "bg-[#FF5630]/10 text-[#FF5630]"
-                                : "text-muted-foreground hover:bg-[#FFE5E8] hover:text-[#FF5630]"
-                            )}
-                          >
-                            <Icon className="h-5 w-5 shrink-0" />
-                            {item.label}
-                          </Link>
-                        )
-                      })}
+                <nav className="space-y-0.5">
+                  <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">Business</p>
+                  {(isReseller ? resellerNavExpanded : resellerNavSimple).map((item) => {
+                    const active = pathname === item.href
+                    const Icon = item.icon
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                          active
+                            ? "bg-primary/10 text-primary"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        )}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        {item.label}
+                      </Link>
+                    )
+                  })}
                 </nav>
 
-                <nav className="mt-4 space-y-1">
-                  <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Preferences
-                  </div>
+                <nav className="space-y-0.5">
+                  <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">Preferences</p>
                   {preferencesNavItems.map((item) => {
                     const active = pathname === item.href
                     const Icon = item.icon
@@ -271,13 +242,13 @@ export function DashboardHeader({ sidebarCollapsed = false }: DashboardHeaderPro
                         href={item.href}
                         onClick={() => setOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all",
+                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
                           active
-                            ? "bg-[color:var(--marketing-accent)]/10 text-[color:var(--marketing-accent)]"
-                            : "text-muted-foreground hover:bg-[color:var(--marketing-cream-alt)] hover:text-[color:var(--marketing-accent)]"
+                            ? "bg-primary/10 text-primary"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
                         )}
                       >
-                        <Icon className="h-5 w-5 shrink-0" />
+                        <Icon className="h-4 w-4 shrink-0" />
                         {item.label}
                       </Link>
                     )
@@ -285,19 +256,28 @@ export function DashboardHeader({ sidebarCollapsed = false }: DashboardHeaderPro
                 </nav>
               </div>
 
-              <div className="mt-auto border-t border-[color:var(--marketing-accent)]/10 bg-[color:var(--marketing-cream-alt)]/40 p-6">
+              <div className="border-t border-border p-4">
+                <div className="flex items-center gap-3 mb-4 px-1">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold border border-primary/20">
+                    {user?.firstName?.[0]}{user?.lastName?.[0]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{user?.firstName} {user?.lastName}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
+                  </div>
+                </div>
                 <Button
                   variant="ghost"
                   onClick={handleLogout}
                   disabled={isLoggingOut}
-                  className="h-11 w-full justify-start gap-3 rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  className="h-10 w-full justify-start gap-3 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 >
                   {isLoggingOut ? (
-                    <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <LogOut className="h-5 w-5" />
+                    <LogOut className="h-4 w-4" />
                   )}
-                  <span className="text-sm font-semibold">{isLoggingOut ? "Signing out..." : "Sign Out"}</span>
+                  <span className="text-sm font-medium">{isLoggingOut ? "Signing out..." : "Sign Out"}</span>
                 </Button>
               </div>
             </SheetContent>

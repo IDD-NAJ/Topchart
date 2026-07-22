@@ -16,13 +16,11 @@ import {
   History,
   User,
   CreditCard,
-  Settings,
   HelpCircle,
   LogOut,
   MessageSquare,
   ShieldAlert,
   Store,
-  TrendingUp,
   PhoneCall,
   ClipboardList,
   GraduationCap,
@@ -87,7 +85,7 @@ export function DashboardSidebar({ collapsed: controlledCollapsed, onCollapsedCh
   const [resellerMenuOpen, setResellerMenuOpen] = useState(true)
   const [internalCollapsed, setInternalCollapsed] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-  
+
   const collapsed = controlledCollapsed ?? internalCollapsed
   const setCollapsed = (value: boolean) => {
     if (onCollapsedChange) {
@@ -97,8 +95,8 @@ export function DashboardSidebar({ collapsed: controlledCollapsed, onCollapsedCh
     }
   }
 
-  const isReseller = user?.role === 'RESELLER'
-  const isResellerPage = pathname?.startsWith('/dashboard/reseller')
+  const isReseller = user?.role === "RESELLER"
+  const isResellerPage = pathname?.startsWith("/dashboard/reseller")
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
@@ -113,162 +111,188 @@ export function DashboardSidebar({ collapsed: controlledCollapsed, onCollapsedCh
     }
   }
 
-  return (
-    <>
-      <motion.aside
-        initial={{ x: -20, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+  const NavLink = ({
+    href,
+    label,
+    icon: Icon,
+    indent = false,
+    maintenance = false,
+    maintenanceMsg = null,
+    accent = false,
+  }: {
+    href: string
+    label: string
+    icon: React.ComponentType<{ className?: string }>
+    indent?: boolean
+    maintenance?: boolean
+    maintenanceMsg?: string | null
+    accent?: boolean
+  }) => {
+    const active = pathname === href
+    return (
+      <Link
+        href={href}
         className={cn(
-          "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-[color:var(--marketing-accent)]/15 bg-[color:var(--marketing-cream)]/95 backdrop-blur-xl lg:flex transition-all duration-300 ease-out",
-          collapsed ? "w-20" : "w-64"
+          "group relative flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-150",
+          collapsed ? "justify-center px-2 py-2.5" : indent ? "px-4 py-2 ml-4 text-xs" : "px-3 py-2.5",
+          active
+            ? accent
+              ? "bg-destructive/10 text-destructive"
+              : "bg-primary/10 text-primary"
+            : accent
+              ? "text-muted-foreground hover:bg-destructive/5 hover:text-destructive"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          maintenance && "opacity-60"
         )}
+        title={collapsed ? (maintenance ? maintenanceMsg || "Under maintenance" : label) : maintenance ? maintenanceMsg || "Under maintenance" : undefined}
       >
-      <div className={cn("flex items-center justify-between", collapsed ? "p-4 justify-center" : "p-6")}>
-        <Link href="/dashboard" className={cn("flex items-center gap-2.5 group", collapsed && "hidden")}>
-          <LogoVideo
-            width={140}
-            height={40}
-            className="h-10 w-auto transition-transform duration-300 group-hover:scale-105"
+        {active && !collapsed && (
+          <span
+            className={cn(
+              "absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r-full",
+              accent ? "bg-destructive" : "bg-primary"
+            )}
           />
-        </Link>
+        )}
+        <div className="relative shrink-0">
+          <Icon
+            className={cn(
+              collapsed ? "h-5 w-5" : indent ? "h-3.5 w-3.5" : "h-4 w-4",
+              active
+                ? accent ? "text-destructive" : "text-primary"
+                : "text-current"
+            )}
+          />
+          {maintenance && !collapsed && (
+            <Wrench className="absolute -top-1 -right-1 h-2.5 w-2.5 text-warning" />
+          )}
+        </div>
+        {!collapsed && (
+          <span className="flex items-center gap-2 truncate">
+            {label}
+            {maintenance && (
+              <Badge variant="secondary" className="text-[8px] h-3.5 px-1 bg-warning/10 text-warning border-warning/20">
+                MAINT
+              </Badge>
+            )}
+          </span>
+        )}
+      </Link>
+    )
+  }
+
+  return (
+    <motion.aside
+      initial={{ x: -20, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className={cn(
+        "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-border bg-card lg:flex transition-all duration-300 ease-out",
+        collapsed ? "w-[4.5rem]" : "w-64"
+      )}
+    >
+      {/* Logo */}
+      <div className={cn("flex items-center border-b border-border", collapsed ? "h-16 justify-center px-4" : "h-16 justify-between px-5")}>
+        {!collapsed && (
+          <Link href="/dashboard" className="flex items-center gap-2 group shrink-0">
+            <LogoVideo
+              width={120}
+              height={34}
+              className="h-8 w-auto transition-opacity group-hover:opacity-80"
+            />
+          </Link>
+        )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-2 rounded-lg text-muted-foreground hover:bg-[color:var(--marketing-accent)]/10 hover:text-[color:var(--marketing-accent)] transition-colors"
+          className={cn(
+            "flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors",
+            collapsed && "mx-auto"
+          )}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+          {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
         </button>
       </div>
 
-      <div className="flex-1 px-4 py-4 space-y-8 overflow-y-auto">
+      {/* Nav */}
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+        {/* Main */}
         <div>
-          <h3 className={cn(
-            "px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-4 font-body transition-opacity",
-            collapsed && "opacity-0 hidden"
-          )}>
-            Main Menu
-          </h3>
-          <nav className="space-y-1">
+          {!collapsed && (
+            <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+              Main Menu
+            </p>
+          )}
+          <nav className="space-y-0.5">
             {navItems.map((item) => {
               if (item.serviceKey && !isEnabled(item.serviceKey)) return null
-              const active = pathname === item.href
-              const Icon = item.icon
               const maintenance = item.serviceKey ? isMaintenance(item.serviceKey) : false
               const maintenanceMsg = item.serviceKey ? getMaintenanceMessage(item.serviceKey) : null
               return (
-                <Link
+                <NavLink
                   key={item.href}
                   href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg text-sm font-medium transition-all group",
-                    collapsed ? "justify-center px-2 py-2.5" : (item as any).indent ? "px-4 py-2 ml-4 text-xs" : "px-4 py-2.5",
-                    active
-                      ? "bg-[color:var(--marketing-accent)]/10 text-[color:var(--marketing-accent)]"
-                      : "text-muted-foreground hover:bg-[color:var(--marketing-cream-alt)] hover:text-[color:var(--marketing-accent)]",
-                    maintenance && "opacity-60"
-                  )}
-                  title={collapsed ? (maintenance ? maintenanceMsg || "Under maintenance" : item.label) : maintenance ? maintenanceMsg || "Under maintenance" : undefined}
-                >
-                  <div className="relative">
-                    <Icon className={cn(
-                      collapsed ? "h-5 w-5" : (item as any).indent ? "h-3.5 w-3.5" : "h-4 w-4",
-                      active ? "text-[color:var(--marketing-accent)]" : "group-hover:text-[color:var(--marketing-accent)]"
-                    )} />
-                    {maintenance && !collapsed && (
-                      <Wrench className="absolute -top-1 -right-1 h-2.5 w-2.5 text-amber-500" />
-                    )}
-                  </div>
-                  {!collapsed && (
-                    <span className="flex items-center gap-2">
-                      {item.label}
-                      {maintenance && <Badge variant="secondary" className="text-[8px] h-3.5 px-1 bg-amber-100 text-amber-700 border-amber-200">MAINT</Badge>}
-                    </span>
-                  )}
-                </Link>
+                  label={item.label}
+                  icon={item.icon}
+                  indent={(item as any).indent}
+                  maintenance={maintenance}
+                  maintenanceMsg={maintenanceMsg}
+                />
               )
             })}
           </nav>
         </div>
 
+        {/* Business */}
         <div>
-          <h3 className={cn(
-            "px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-4 font-body transition-opacity",
-            collapsed && "opacity-0 hidden"
-          )}>
-            Business
-          </h3>
-          <nav className="space-y-1">
+          {!collapsed && (
+            <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+              Business
+            </p>
+          )}
+          <nav className="space-y-0.5">
             {!isReseller ? (
-              // Simple menu for non-resellers
-              resellerItems.map((item) => {
-                const active = pathname === item.href
-                const Icon = item.icon
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg text-sm font-medium transition-all group",
-                      collapsed ? "justify-center px-2 py-2.5" : "px-4 py-2.5",
-                      active
-                        ? "bg-[#FF5630]/10 text-[#FF5630]"
-                        : "text-muted-foreground hover:text-[#FF5630] hover:bg-[#FFE5E8]"
-                    )}
-                    title={collapsed ? item.label : undefined}
-                  >
-                    <Icon className={cn(collapsed ? "h-5 w-5" : "h-4 w-4", active ? "text-[#FF5630]" : "group-hover:text-[#FF5630]")} />
-                    {!collapsed && item.label}
-                  </Link>
-                )
-              })
+              resellerItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  href={item.href}
+                  label={item.label}
+                  icon={item.icon}
+                />
+              ))
             ) : (
-              // Expanded menu for resellers
               <>
                 <button
                   onClick={() => !collapsed && setResellerMenuOpen(!resellerMenuOpen)}
                   className={cn(
-                    "w-full flex items-center rounded-lg text-sm font-medium transition-all group",
-                    collapsed ? "justify-center px-2 py-2.5" : "justify-between px-4 py-2.5",
+                    "w-full flex items-center rounded-lg text-sm font-medium transition-all duration-150",
+                    collapsed ? "justify-center px-2 py-2.5" : "justify-between px-3 py-2.5",
                     isResellerPage
-                      ? "bg-[#FF5630]/10 text-[#FF5630]"
-                      : "text-muted-foreground hover:text-[#FF5630] hover:bg-[#FFE5E8]"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )}
                   title={collapsed ? "Reseller Hub" : undefined}
                 >
                   <div className={cn("flex items-center gap-3", collapsed && "gap-0")}>
-                    <Store className={cn(collapsed ? "h-5 w-5" : "h-4 w-4", isResellerPage ? "text-[#FF5630]" : "group-hover:text-[#FF5630]")} />
+                    <Store className={cn(collapsed ? "h-5 w-5" : "h-4 w-4")} />
                     {!collapsed && <span>Reseller Hub</span>}
                   </div>
-                  {!collapsed && (resellerMenuOpen ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  ))}
+                  {!collapsed && (
+                    resellerMenuOpen
+                      ? <ChevronDown className="h-3.5 w-3.5" />
+                      : <ChevronRight className="h-3.5 w-3.5" />
+                  )}
                 </button>
-                {resellerMenuOpen && (
-                  <div className="ml-4 mt-1 space-y-1">
-                    {resellerExpandedItems.map((item) => {
-                      const active = pathname === item.href
-                      const Icon = item.icon
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          className={cn(
-                            "flex items-center gap-3 rounded-lg text-sm font-medium transition-all group",
-                            collapsed ? "justify-center px-2 py-2" : "px-4 py-2",
-                            active
-                              ? "bg-[#FF5630]/10 text-[#FF5630]"
-                              : "text-muted-foreground hover:text-[#FF5630] hover:bg-[#FFE5E8]"
-                          )}
-                          title={collapsed ? item.label : undefined}
-                        >
-                          <Icon className={cn(collapsed ? "h-5 w-5" : "h-4 w-4", active ? "text-[#FF5630]" : "group-hover:text-[#FF5630]")} />
-                          {!collapsed && item.label}
-                        </Link>
-                      )
-                    })}
+                {resellerMenuOpen && !collapsed && (
+                  <div className="ml-3 mt-0.5 space-y-0.5 border-l border-border pl-3">
+                    {resellerExpandedItems.map((item) => (
+                      <NavLink
+                        key={item.href}
+                        href={item.href}
+                        label={item.label}
+                        icon={item.icon}
+                      />
+                    ))}
                   </div>
                 )}
               </>
@@ -276,139 +300,70 @@ export function DashboardSidebar({ collapsed: controlledCollapsed, onCollapsedCh
           </nav>
         </div>
 
+        {/* Preferences */}
         <div>
-          <h3 className={cn(
-            "px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-4 font-body transition-opacity",
-            collapsed && "opacity-0 hidden"
-          )}>
-            Preferences
-          </h3>
-          <nav className="space-y-1">
-            {secondaryItems.map((item) => {
-              const active = pathname === item.href
-              const Icon = item.icon
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg text-sm font-medium transition-all group",
-                    collapsed ? "justify-center px-2 py-2.5" : "px-4 py-2.5",
-                    active
-                      ? "bg-[color:var(--marketing-accent)]/10 text-[color:var(--marketing-accent)]"
-                      : "text-muted-foreground hover:bg-[color:var(--marketing-cream-alt)] hover:text-[color:var(--marketing-accent)]"
-                  )}
-                  title={collapsed ? item.label : undefined}
-                >
-                  <Icon className={cn(collapsed ? "h-5 w-5" : "h-4 w-4", active ? "text-[color:var(--marketing-accent)]" : "group-hover:text-[color:var(--marketing-accent)]")} />
-                  {!collapsed && item.label}
-                </Link>
-              )
-            })}
+          {!collapsed && (
+            <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+              Preferences
+            </p>
+          )}
+          <nav className="space-y-0.5">
+            {secondaryItems.map((item) => (
+              <NavLink
+                key={item.href}
+                href={item.href}
+                label={item.label}
+                icon={item.icon}
+              />
+            ))}
           </nav>
         </div>
       </div>
 
-      <div className="border-t border-[color:var(--marketing-accent)]/10 bg-[color:var(--marketing-cream-alt)]/40 p-4">
-        <div className={cn("flex items-center gap-3 mb-4", collapsed ? "justify-center px-0" : "px-2")}>
-          <div className={cn(
-            "flex items-center justify-center rounded-full border border-[color:var(--marketing-accent)]/20 bg-[color:var(--marketing-accent)]/10 text-[color:var(--marketing-accent)] text-xs font-bold uppercase",
-            collapsed ? "h-10 w-10 text-sm" : "h-9 w-9"
-          )}>
-            {user?.firstName?.[0]}{user?.lastName?.[0]}
-          </div>
-          {!collapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">{user?.firstName} {user?.lastName}</p>
-              <p className="text-[10px] text-muted-foreground truncate font-medium">{user?.email}</p>
+      {/* User footer */}
+      <div className={cn("border-t border-border p-3", collapsed && "px-2")}>
+        {!collapsed && (
+          <div className="flex items-center gap-3 px-1 mb-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold uppercase border border-primary/20">
+              {user?.firstName?.[0]}{user?.lastName?.[0]}
             </div>
-          )}
-        </div>
-        <Button 
-          variant="ghost" 
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate leading-tight">
+                {user?.firstName} {user?.lastName}
+              </p>
+              <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
+            </div>
+          </div>
+        )}
+        {collapsed && (
+          <div className="flex items-center justify-center mb-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold uppercase border border-primary/20">
+              {user?.firstName?.[0]}{user?.lastName?.[0]}
+            </div>
+          </div>
+        )}
+        <Button
+          variant="ghost"
           onClick={handleLogout}
           disabled={isLoggingOut}
           className={cn(
-            "gap-3 h-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all duration-300",
-            collapsed ? "w-full justify-center px-2" : "w-full justify-start"
+            "h-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors w-full",
+            collapsed ? "justify-center px-2" : "justify-start gap-3"
           )}
-          style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
           title={collapsed ? "Sign Out" : undefined}
         >
           {isLoggingOut ? (
-            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
           ) : (
             <LogOut className={cn(collapsed ? "h-5 w-5" : "h-4 w-4")} />
           )}
-          {!collapsed && <span className="text-sm font-medium">{isLoggingOut ? "Signing out..." : "Sign Out"}</span>}
+          {!collapsed && (
+            <span className="text-sm font-medium">
+              {isLoggingOut ? "Signing out..." : "Sign Out"}
+            </span>
+          )}
         </Button>
       </div>
     </motion.aside>
-
-      {/* Mobile Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-[color:var(--marketing-cream)]/95 backdrop-blur-xl border-t border-[color:var(--marketing-accent)]/15 safe-area-bottom">
-        <nav className="flex items-center justify-around h-16 px-2">
-          <Link
-            href="/dashboard"
-            className={cn(
-              "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all",
-              pathname === "/dashboard"
-                ? "text-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/10"
-                : "text-muted-foreground hover:text-[color:var(--marketing-accent)]"
-            )}
-          >
-            <LayoutDashboard className="h-5 w-5" />
-            <span className="text-[10px] font-medium">Overview</span>
-          </Link>
-          
-          <Link
-            href="/dashboard/data"
-            className={cn(
-              "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all",
-              pathname?.startsWith("/dashboard/data")
-                ? "text-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/10"
-                : "text-muted-foreground hover:text-[color:var(--marketing-accent)]"
-            )}
-          >
-            <Wifi className="h-5 w-5" />
-            <span className="text-[10px] font-medium">Data</span>
-          </Link>
-          
-          <Link
-            href="/dashboard/history"
-            className={cn(
-              "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all",
-              pathname === "/dashboard/history"
-                ? "text-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/10"
-                : "text-muted-foreground hover:text-[color:var(--marketing-accent)]"
-            )}
-          >
-            <History className="h-5 w-5" />
-            <span className="text-[10px] font-medium">History</span>
-          </Link>
-          
-          <Link
-            href="/dashboard/profile"
-            className={cn(
-              "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all",
-              pathname === "/dashboard/profile"
-                ? "text-[color:var(--marketing-accent)] bg-[color:var(--marketing-accent)]/10"
-                : "text-muted-foreground hover:text-[color:var(--marketing-accent)]"
-            )}
-          >
-            <User className="h-5 w-5" />
-            <span className="text-[10px] font-medium">Profile</span>
-          </Link>
-          
-          <button
-            onClick={() => logout()}
-            className="flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg text-muted-foreground hover:text-destructive transition-all"
-          >
-            <LogOut className="h-5 w-5" />
-            <span className="text-[10px] font-medium">Logout</span>
-          </button>
-        </nav>
-      </div>
-    </>
   )
 }
