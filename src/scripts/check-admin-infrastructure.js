@@ -1,4 +1,3 @@
-const { neon } = require('@neondatabase/serverless');
 const fs = require('fs');
 const path = require('path');
 
