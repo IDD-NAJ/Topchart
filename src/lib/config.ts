@@ -94,7 +94,7 @@ function buildDatamartConfig(): DatamartConfig | null {
   try {
     const env = getDatamartEnv();
     return {
-      apiKey: env.DATAMART_API_KEY,
+      apiKey: env.API,
       baseUrl: env.DATAMART_BASE_URL || "https://api.datamartgh.shop",
     };
   } catch {

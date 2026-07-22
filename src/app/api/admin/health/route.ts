@@ -239,7 +239,7 @@ export async function GET(request: NextRequest) {
   health.media = mediaStats;
 
   // Datamart (config check only - actual test would require more complex validation)
-  health.apis.datamart = process.env.DATAMART_API_KEY ? "configured" : "missing";
+  health.apis.datamart = process.env.API ? "configured" : "missing";
 
   // Reloadly
   health.apis.reloadly = 

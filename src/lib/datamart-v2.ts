@@ -149,18 +149,18 @@ async function sleep(ms: number): Promise<void> {
 }
 
 async function datamartRequest<T>(endpoint: string, options: RequestOptions = {}): Promise<DatamartApiResult<T>> {
-  const { DATAMART_API_KEY, DATAMART_BASE_URL } = getDatamartEnv();
+  const { API, DATAMART_BASE_URL } = getDatamartEnv();
   const baseUrl = normalizeDatamartBaseUrl(DATAMART_BASE_URL);
   const method = options.method ?? "GET";
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const retries = options.retries ?? MAX_RETRIES;
 
-  if (!DATAMART_API_KEY) {
-    return { ok: false, status: 401, message: "DATAMART_API_KEY is not configured", code: "CONFIG" };
+  if (!API) {
+    return { ok: false, status: 401, message: "API (Datamart API key) is not configured", code: "CONFIG" };
   }
 
   const headers: Record<string, string> = {
-    "X-API-Key": DATAMART_API_KEY,
+    "X-API-Key": API,
     "Content-Type": "application/json",
   };
 

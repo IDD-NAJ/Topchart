@@ -23,7 +23,7 @@ export function getDatamartConfig() {
   const env = getDatamartEnv();
   return {
     baseUrl: normalizeDatamartBaseUrl(env.DATAMART_BASE_URL),
-    apiKey: env.DATAMART_API_KEY,
+    apiKey: env.API,
   };
 }
 

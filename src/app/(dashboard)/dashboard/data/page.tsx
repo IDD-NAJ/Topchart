@@ -848,42 +848,44 @@ export default function DataPage() {
     <DataServiceSchema />
     <div className="max-w-5xl mx-auto space-y-8 pt-4 pb-24 px-4 sm:px-6">
       
-      <div className="flex flex-col gap-2 mb-8">
-        <Link href="/dashboard" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors group w-fit">
-          <ArrowLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
+      {/* Page header */}
+      <div className="flex flex-col gap-3">
+        <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors group w-fit">
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           Back to Dashboard
         </Link>
-        <div className="flex items-center justify-between mt-2">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Data Bundles</h1>
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
-            <Database className="w-4 h-4 fill-current" />
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "var(--marketing-accent,#F38F20)" }}>
+                <Database className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="text-3xl font-black tracking-tight text-foreground">Data Bundles</h1>
+            </div>
+            <p className="text-muted-foreground pl-[52px]">Purchase direct data bundles across all major networks.</p>
+          </div>
+          <div className="hidden sm:flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-full border border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-bold uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
             Live Pricing
           </div>
         </div>
-        <p className="text-muted-foreground">Purchase direct data bundles across all major networks.</p>
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 mt-2 text-xs sm:text-sm font-semibold text-muted-foreground">
-          <span className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-primary/10 text-primary">
-            <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Delivery: 2–15 minutes</span>
-            <span className="sm:hidden">2–15 min</span>
+        <div className="flex flex-wrap items-center gap-2 pl-[52px]">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+            <Clock className="w-3.5 h-3.5" />2–15 min delivery
           </span>
-          <span className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-destructive/10 text-destructive">
-            <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">No refunds for wrong numbers</span>
-            <span className="sm:hidden">No refunds</span>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-semibold">
+            <AlertCircle className="w-3.5 h-3.5" />No refunds for wrong numbers
           </span>
-          <span className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-destructive/10 text-destructive">
-            <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Services Available 24/7</span>
-            <span className="sm:hidden">24/7</span>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-muted-foreground text-xs font-semibold">
+            <ShieldCheck className="w-3.5 h-3.5" />Available 24/7
           </span>
         </div>
       </div>
 
       {step === "confirm" ? (
         <div className="max-w-2xl mx-auto animate-in slide-in-from-bottom-4 duration-500">
-          <Card className="border-primary/20 shadow-xl overflow-hidden">
-            <div className="bg-primary p-6 sm:p-8 text-primary-foreground">
+          <Card className="border-0 shadow-2xl overflow-hidden">
+            <div className="p-6 sm:p-8 text-white" style={{ background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)" }}>
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
@@ -1134,7 +1136,7 @@ export default function DataPage() {
             </Card>
 
             {/* Plans Selection */}
-            <Card className="border-border shadow-sm overflow-hidden">
+            <Card className="border-border shadow-sm overflow-hidden bg-card">
               <CardHeader className="bg-muted/30 pb-4 border-b">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
@@ -1279,10 +1281,13 @@ export default function DataPage() {
 
           {/* Right Sidebar - Summary */}
           <div className="lg:col-span-4">
-            <Card className="sticky top-24 shadow-lg border-primary/10 bg-gradient-to-b from-card to-muted/20">
+            <Card className="sticky top-24 shadow-xl border-0 overflow-hidden" style={{ background: "linear-gradient(145deg, hsl(var(--card)) 0%, hsl(var(--muted)/0.3) 100%)" }}>
+              <div className="h-1.5 w-full" style={{ backgroundColor: "var(--marketing-accent,#F38F20)" }} />
               <CardHeader className="pb-4 border-b">
-                <CardTitle className="flex items-center gap-2">
-                  <Receipt className="w-5 h-5 text-primary" />
+                <CardTitle className="flex items-center gap-2 text-lg font-bold">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: "var(--marketing-accent,#F38F20)" }}>
+                    <Receipt className="w-4 h-4 text-white" />
+                  </div>
                   Order Summary
                 </CardTitle>
               </CardHeader>

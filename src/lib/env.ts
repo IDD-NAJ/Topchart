@@ -18,6 +18,7 @@ const envSchema = z.object({
   PVADEALS_MARKUP_PERCENT: z.string().optional(),
   SMSPVA_API_KEY: z.string().optional(),
   DATAMART_API_KEY: z.string().optional(),
+  API: z.string().optional(),
   DATAMART_BASE_URL: optionalUrl,
   DATAMART_WEBHOOK_SECRET: z.string().optional(),
   DATAMART_SIGNING_SECRET: z.string().optional(),
@@ -101,7 +102,7 @@ const supabaseStorageEnvSchema = z.object({
 type SupabaseStorageEnv = z.infer<typeof supabaseStorageEnvSchema>;
 
 const datamartEnvSchema = z.object({
-  DATAMART_API_KEY: z.string().min(1, "DATAMART_API_KEY is required"),
+  API: z.string().min(1, "API (Datamart API key) is required"),
   DATAMART_BASE_URL: optionalUrl,
   DATAMART_WEBHOOK_SECRET: z.string().optional(),
   DATAMART_SIGNING_SECRET: z.string().optional(),
@@ -256,7 +257,7 @@ export function getDatamartEnv(): DatamartEnv {
       .map((issue) => issue.path.join("."));
     const message = missingFields.length > 0
       ? `Missing required environment variables: ${missingFields.join(", ")}`
-      : `Invalid DataMart environment: ${parsed.error.issues.map((issue) => issue.message).join(", ")}`;
+      : `Invalid DataMart environment: ${parsed.error.issues.map((issue) => issue.message).join(", ")}. Ensure the API environment variable is set.`;
     throw new Error(message);
   }
 
