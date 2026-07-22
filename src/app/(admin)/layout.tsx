@@ -4,6 +4,7 @@ import React, { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { isAdmin } from "@/lib/roles"
+import AdminShell from "@/components/admin/AdminShell"
 
 export default function AdminLayout({
   children,
@@ -41,5 +42,5 @@ export default function AdminLayout({
     )
   }
 
-  return <>{children}</>
+  return <AdminShell>{children}</AdminShell>
 }
