@@ -66,6 +66,28 @@ export async function PATCH(
     return NextResponse.json({ success: true, refund: refundResult.data });
   }
 
+  // Map high-level UI actions to concrete field updates.
+  if (body.action === "mark_fulfilled") {
+    const updated = await adminUpdateGuestOrder(id, { fulfillment_status: "completed" });
+    if (!updated) return NextResponse.json({ success: false, error: "Order not found" }, { status: 404 });
+    return NextResponse.json({ success: true, order: updated });
+  }
+  if (body.action === "mark_failed") {
+    const updated = await adminUpdateGuestOrder(id, { fulfillment_status: "failed" });
+    if (!updated) return NextResponse.json({ success: false, error: "Order not found" }, { status: 404 });
+    return NextResponse.json({ success: true, order: updated });
+  }
+  if (body.action === "cancel") {
+    // Mark-only cancel (no Paystack refund).
+    const updated = await adminUpdateGuestOrder(id, {
+      payment_status: "cancelled",
+      fulfillment_status: "failed",
+      notes: `Cancelled by admin (${auth.email})`,
+    });
+    if (!updated) return NextResponse.json({ success: false, error: "Order not found" }, { status: 404 });
+    return NextResponse.json({ success: true, order: updated });
+  }
+
   const allowed: Record<string, unknown> = {};
   if (body.fulfillment_status !== undefined) allowed.fulfillment_status = body.fulfillment_status as FulfillmentStatus;
   if (body.payment_status !== undefined) allowed.payment_status = body.payment_status as PaymentStatus;

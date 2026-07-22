@@ -1,32 +1,29 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/admin-auth";
 import { verifyPaystackTransaction } from "@/lib/paystack";
-import {
-  getGuestOrderById,
-  updateGuestOrderPayment,
-  updateGuestOrderFulfillment,
-} from "@/lib/guest-orders";
-import {
-  createDatamartOrder,
-  submitDatamartPurchase,
-  resolveNetworkCode,
-  isValidGhanaPhone,
-} from "@/lib/datamart-v2";
-import { sendGuestOrderConfirmationEmail } from "@/lib/email";
+import { getGuestOrderById } from "@/lib/guest-orders";
+import { processGuestOrderPayment } from "@/lib/guest-fulfillment";
 
 /**
  * POST /api/admin/guest-orders/[id]/verify
- * Admin action to manually verify a guest order payment
+ * Admin action to manually verify a guest order payment against Paystack and
+ * (for data bundles) auto-fulfill. Uses the shared processGuestOrderPayment
+ * helper so behavior matches the customer callback and webhook.
  */
 export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const orderId = params.id;
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
+  }
 
-    // Get the order
+  try {
+    const { id: orderId } = await params;
+
     const order = await getGuestOrderById(orderId);
     if (!order) {
       return NextResponse.json(
@@ -35,7 +32,6 @@ export async function POST(
       );
     }
 
-    // If no Paystack reference, can't verify
     if (!order.paystack_reference) {
       return NextResponse.json(
         { success: false, error: "No Paystack reference for this order" },
@@ -43,118 +39,34 @@ export async function POST(
       );
     }
 
-    // Verify with Paystack
+    if (order.payment_status === "success") {
+      return NextResponse.json({ success: true, message: "Order already verified" });
+    }
+
+    // Verify with Paystack (source of truth).
     const psResult = await verifyPaystackTransaction(order.paystack_reference);
     if (!psResult.success || !psResult.data) {
       return NextResponse.json(
-        {
-          success: false,
-          error: psResult.error || "Failed to verify with Paystack",
-        },
+        { success: false, error: psResult.error || "Failed to verify with Paystack" },
         { status: 400 }
       );
     }
 
-    const psData = psResult.data;
-
-    if (psData.status !== "success") {
+    if (psResult.data.status !== "success") {
       return NextResponse.json(
-        { success: false, error: `Payment status is ${psData.status}` },
+        { success: false, error: `Payment status is ${psResult.data.status}` },
         { status: 400 }
       );
     }
 
-    // Already processed
-    if (order.payment_status === "success") {
-      return NextResponse.json({
-        success: true,
-        message: "Order already verified",
-      });
-    }
-
-    // Mark payment as succeeded
-    await updateGuestOrderPayment(order.id, "success", {
-      status: psData.status,
-      gateway_response: psData.gateway_response,
-      paid_at: psData.paid_at,
-      channel: psData.channel,
-      amount: psData.amount,
-      verified_by_admin: true,
-      verified_at: new Date().toISOString(),
-    });
-
-    // Auto-fulfill data bundles
-    if (order.product_type === "data_bundle") {
-      const { product_details } = order;
-      const phoneNumber = String(
-        product_details.phone_number || product_details.phoneNumber || ""
-      );
-      const networkInput = String(product_details.network || "");
-      const capacity = String(product_details.capacity || "");
-
-      if (phoneNumber && networkInput && capacity && isValidGhanaPhone(phoneNumber)) {
-        try {
-          let network;
-          try {
-            network = resolveNetworkCode(networkInput);
-          } catch {
-            await updateGuestOrderFulfillment(order.id, "failed", {
-              notes: `Invalid network code: ${networkInput}`,
-            });
-            return NextResponse.json({
-              success: true,
-              message: "Payment verified but fulfillment failed - invalid network",
-            });
-          }
-
-          await updateGuestOrderFulfillment(order.id, "processing");
-
-          const dmOrder = await createDatamartOrder({
-            phoneNumber,
-            network,
-            capacity,
-            price: Number(order.amount_ghs),
-          });
-
-          const purchase = await submitDatamartPurchase({
-            phoneNumber,
-            network,
-            capacity,
-            idempotencyKey: dmOrder.idempotencyKey,
-          });
-
-          const fulfilled = ["completed", "delivered"].includes(
-            purchase.orderStatus.toLowerCase()
-          );
-
-          await updateGuestOrderFulfillment(
-            order.id,
-            fulfilled ? "completed" : "processing",
-            {
-              datamartOrderReference: purchase.orderReference,
-              datamartPurchaseId: purchase.purchaseId,
-              datamartOrderStatus: purchase.orderStatus,
-            }
-          );
-        } catch (err) {
-          console.error("[Admin/verify] DataMart error:", err);
-          await updateGuestOrderFulfillment(order.id, "failed", {
-            notes: `DataMart error: ${
-              err instanceof Error ? err.message : "Unknown error"
-            }`,
-          });
-        }
-      }
-    }
-
-    // Mark as pending fulfillment if not data bundle
-    if (order.product_type !== "data_bundle") {
-      await updateGuestOrderFulfillment(order.id, "pending");
-    }
+    const result = await processGuestOrderPayment(order.paystack_reference, psResult.data);
 
     return NextResponse.json({
       success: true,
       message: "Order verified successfully",
+      tracking_number: result.tracking_number,
+      payment_status: result.payment_status,
+      fulfillment_status: result.fulfillment_status,
     });
   } catch (error) {
     console.error("[Admin/verify] Error:", error);

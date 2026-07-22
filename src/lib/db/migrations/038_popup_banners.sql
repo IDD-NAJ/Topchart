@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS popup_banners (
 -- Create user_banner_dismissals table to track banner dismissals
 CREATE TABLE IF NOT EXISTS user_banner_dismissals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL,
+  user_id TEXT NOT NULL,
   banner_id UUID NOT NULL REFERENCES popup_banners(id) ON DELETE CASCADE,
   dismissed_at TIMESTAMP NOT NULL DEFAULT NOW(),
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),

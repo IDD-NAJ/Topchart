@@ -131,26 +131,36 @@ export function GuestOrdersPanel() {
 
   const handleAction = async (
     orderId: string,
-    action: "mark_fulfilled" | "mark_failed" | "cancel"
+    action: "mark_fulfilled" | "mark_failed" | "cancel" | "verify"
   ) => {
     setActionLoading(true)
     try {
-      const res = await fetch(`/api/admin/guest-orders/${orderId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ action }),
-      })
+      // "verify" hits the dedicated Paystack verification endpoint; the others
+      // are simple status updates handled by the PATCH route.
+      const res =
+        action === "verify"
+          ? await fetch(`/api/admin/guest-orders/${orderId}/verify`, {
+              method: "POST",
+              credentials: "include",
+            })
+          : await fetch(`/api/admin/guest-orders/${orderId}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ action }),
+            })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Action failed")
+      if (!res.ok || data.success === false) throw new Error(data.error || "Action failed")
       toast.success(
         action === "mark_fulfilled"
           ? "Order marked as fulfilled"
           : action === "mark_failed"
           ? "Order marked as failed"
+          : action === "verify"
+          ? "Payment verified with Paystack"
           : "Order cancelled"
       )
-      if (selectedOrder?.id === orderId) {
+      if (selectedOrder?.id === orderId && data.order) {
         setSelectedOrder(data.order)
       }
       await fetchOrders()
@@ -386,7 +396,20 @@ export function GuestOrdersPanel() {
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
-                            {order.payment_status === "paid" &&
+                            {order.payment_status === "pending" &&
+                              order.paystack_reference && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-primary hover:text-primary"
+                                  onClick={() => handleAction(order.id, "verify")}
+                                  disabled={actionLoading}
+                                  title="Verify payment with Paystack"
+                                >
+                                  <RefreshCw className="w-4 h-4" />
+                                </Button>
+                              )}
+                            {order.payment_status === "success" &&
                               order.fulfillment_status !== "completed" &&
                               order.fulfillment_status !== "cancelled" && (
                                 <Button
@@ -564,7 +587,18 @@ export function GuestOrdersPanel() {
                     Track Page
                   </a>
                 </Button>
-                {selectedOrder.payment_status === "paid" &&
+                {selectedOrder.payment_status === "pending" &&
+                  selectedOrder.paystack_reference && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleAction(selectedOrder.id, "verify")}
+                      disabled={actionLoading}
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${actionLoading ? "animate-spin" : ""}`} />
+                      Verify Payment
+                    </Button>
+                  )}
+                {selectedOrder.payment_status === "success" &&
                   selectedOrder.fulfillment_status !== "completed" &&
                   selectedOrder.fulfillment_status !== "cancelled" && (
                     <Button

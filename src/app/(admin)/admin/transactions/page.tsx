@@ -18,7 +18,7 @@ import {
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
-import { Search, Download, RefreshCw, Eye, ArrowLeftRight, TrendingUp, CheckCircle2, Clock } from "lucide-react"
+import { Search, Download, RefreshCw, Eye, ArrowLeftRight, TrendingUp, CheckCircle2, Clock, XCircle } from "lucide-react"
 
 interface AdminTransaction {
   id: string
@@ -59,6 +59,7 @@ export default function AdminTransactionsPage() {
   const [type, setType]     = useState("all")
   const [page, setPage]     = useState(1)
   const [detail, setDetail] = useState<AdminTransaction | null>(null)
+  const [actionLoading, setActionLoading] = useState<null | "verify" | "cancel">(null)
 
   const params = new URLSearchParams()
   if (query)          params.set("q", query)
@@ -75,6 +76,30 @@ export default function AdminTransactionsPage() {
   const txns  = data?.transactions ?? []
   const total = data?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+  async function runAction(action: "verify" | "cancel") {
+    if (!detail) return
+    setActionLoading(action)
+    try {
+      const res = await fetch(`/api/admin/transactions/${detail.id}/action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      })
+      const result = await res.json()
+      if (result.success) {
+        toast.success(result.message || (action === "verify" ? "Transaction verified" : "Transaction cancelled"))
+        setDetail(null)
+        mutate()
+      } else {
+        toast.error(result.error || "Action failed")
+      }
+    } catch {
+      toast.error("Network error — please try again")
+    } finally {
+      setActionLoading(null)
+    }
+  }
 
   const successCount = txns.filter((t) => t.status?.toUpperCase() === "SUCCESS" || t.status?.toUpperCase() === "COMPLETED").length
   const pendingCount = txns.filter((t) => t.status?.toUpperCase() === "PENDING").length
@@ -273,6 +298,44 @@ export default function AdminTransactionsPage() {
                   <pre className="text-xs bg-muted rounded p-3 overflow-auto max-h-40">{JSON.stringify(detail.metadata, null, 2)}</pre>
                 </div>
               )}
+
+              {(() => {
+                const s = detail.status?.toUpperCase()
+                const isSettled = s === "SUCCESS" || s === "COMPLETED"
+                const canCancel = s === "PENDING" || s === "PROCESSING"
+                if (isSettled) return null
+                return (
+                  <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+                    <Button
+                      size="sm"
+                      onClick={() => runAction("verify")}
+                      disabled={actionLoading !== null}
+                    >
+                      {actionLoading === "verify" ? (
+                        <RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                      )}
+                      Verify with Paystack
+                    </Button>
+                    {canCancel && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => runAction("cancel")}
+                        disabled={actionLoading !== null}
+                      >
+                        {actionLoading === "cancel" ? (
+                          <RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />
+                        ) : (
+                          <XCircle className="h-4 w-4 mr-1.5" />
+                        )}
+                        Cancel Transaction
+                      </Button>
+                    )}
+                  </div>
+                )
+              })()}
             </div>
           )}
         </DialogContent>

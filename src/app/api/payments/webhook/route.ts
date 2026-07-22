@@ -5,6 +5,7 @@ import { sql } from "@/lib/db";
 import { finalizeResellerApplicationPayment } from "@/lib/reseller-payment";
 import { validatePaystackWebhook } from "@/lib/paystack-utils";
 import { checkAndCreditReferrer } from "@/lib/referral-utils";
+import { processGuestOrderPayment } from "@/lib/guest-fulfillment";
 import {
   createProxyConnection,
   createSubUser,
@@ -52,6 +53,25 @@ export async function POST(req: NextRequest) {
       `;
 
       if (existingTx.length === 0) {
+        // Not a logged-in user transaction — it may be a guest checkout order.
+        // Guest orders are stored separately in `guest_orders` keyed by
+        // paystack_reference, so verify/fulfill them here too.
+        try {
+          const guestResult = await processGuestOrderPayment(reference, data);
+          if (guestResult.found) {
+            console.log(
+              `[Paystack Webhook] Guest order ${guestResult.tracking_number} processed: payment=${guestResult.payment_status}, fulfillment=${guestResult.fulfillment_status}`
+            );
+            return NextResponse.json(
+              { received: true, guest_order: true, ...guestResult },
+              { status: 200 }
+            );
+          }
+        } catch (guestErr) {
+          console.error(`[Paystack Webhook] Guest order processing error for ${reference}:`, guestErr);
+          // Fall through — reconciliation can retry later.
+        }
+
         console.warn(`[Paystack Webhook] Transaction ${reference} not found in DB`);
         return NextResponse.json({ received: true, warning: "Transaction not found" }, { status: 200 });
       }
