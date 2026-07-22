@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { RefreshCw, Wrench, Settings2 } from "lucide-react"
+import { RefreshCw, Wrench, Settings2, Database, AlertCircle } from "lucide-react"
 
 interface ServiceStatus {
   id: string
@@ -53,6 +53,8 @@ export default function AdminSettingsPage() {
   const [maintenanceTarget, setMaintenanceTarget] = useState<ServiceStatus | null>(null)
   const [maintenanceMessage, setMaintenanceMessage] = useState("")
   const [saving, setSaving] = useState(false)
+  const [repairing, setRepairing] = useState(false)
+  const [repairResults, setRepairResults] = useState<any>(null)
 
   const {
     data: servicesData,
@@ -140,6 +142,10 @@ export default function AdminSettingsPage() {
           <TabsTrigger value="audit" className="flex-1 sm:flex-none">
             <Wrench className="mr-2 h-4 w-4" />
             Audit Logs
+          </TabsTrigger>
+          <TabsTrigger value="database" className="flex-1 sm:flex-none">
+            <Database className="mr-2 h-4 w-4" />
+            Database
           </TabsTrigger>
         </TabsList>
 
@@ -298,6 +304,93 @@ export default function AdminSettingsPage() {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        {/* Database repair tab */}
+        <TabsContent value="database">
+          <Card>
+            <CardHeader>
+              <CardTitle>Database Repair</CardTitle>
+              <CardDescription>Create missing database tables and initialize defaults</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/20">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500" />
+                <div className="text-sm">
+                  <p className="font-medium text-amber-900 dark:text-amber-200">Production database errors?</p>
+                  <p className="mt-1 text-amber-800 dark:text-amber-300">
+                    If admin pages show errors like "table not provisioned" or "Failed to fetch", run this repair to create all required tables.
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                size="lg"
+                onClick={async () => {
+                  setRepairing(true)
+                  try {
+                    const result = await adminMutate<any>("/api/admin/repair-database", "POST")
+                    setRepairResults(result)
+                    toast.success("Database repair completed")
+                  } catch (err: any) {
+                    toast.error(err.message || "Database repair failed")
+                  } finally {
+                    setRepairing(false)
+                  }
+                }}
+                disabled={repairing}
+              >
+                {repairing ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Repairing...
+                  </>
+                ) : (
+                  <>
+                    <Database className="mr-2 h-4 w-4" />
+                    Run Database Repair
+                  </>
+                )}
+              </Button>
+
+              {repairResults && (
+                <Card className="mt-6 border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/20">
+                  <CardHeader>
+                    <CardTitle className="text-base text-green-900 dark:text-green-200">Repair Results</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    <div>
+                      <p className="font-medium text-green-900 dark:text-green-200">{repairResults.message}</p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-xs text-green-700 dark:text-green-400">Created</p>
+                        <p className="text-lg font-bold text-green-600 dark:text-green-300">{repairResults.summary?.created || 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-green-700 dark:text-green-400">Already Existed</p>
+                        <p className="text-lg font-bold text-green-600 dark:text-green-300">{repairResults.summary?.existed || 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-green-700 dark:text-green-400">Failed</p>
+                        <p className="text-lg font-bold text-red-600 dark:text-red-300">{repairResults.summary?.failed || 0}</p>
+                      </div>
+                    </div>
+                    {repairResults.results && repairResults.results.length > 0 && (
+                      <div className="mt-4 space-y-2 border-t border-green-200 pt-3 dark:border-green-900">
+                        {repairResults.results.map((r: any, i: number) => (
+                          <div key={i} className="text-xs">
+                            <p className="font-medium text-green-900 dark:text-green-100">{r.table_name}</p>
+                            <p className="text-green-700 dark:text-green-400">{r.message}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

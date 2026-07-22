@@ -12,6 +12,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
+    // Check if table exists
+    const tableExists = await sql`SELECT to_regclass('public.audit_logs')`;
+    if (!tableExists[0].to_regclass) {
+      return NextResponse.json({
+        success: true,
+        logs: [],
+        pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
+        warning: "audit_logs table not provisioned. Run admin database repair.",
+      });
+    }
+
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50")));
@@ -75,8 +86,8 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("[Audit Logs API] GET error:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch audit logs" },
-      { status: 500 }
+      { success: true, logs: [], pagination: { page: 1, limit: 50, total: 0, totalPages: 0 }, warning: "Failed to fetch audit logs" },
+      { status: 200 }
     );
   }
 }
@@ -88,6 +99,15 @@ export async function POST(request: NextRequest) {
 
     if (!action) {
       return NextResponse.json({ success: false, error: "action is required" }, { status: 400 });
+    }
+
+    // Check if table exists
+    const tableExists = await sql`SELECT to_regclass('public.audit_logs')`;
+    if (!tableExists[0].to_regclass) {
+      return NextResponse.json(
+        { success: false, error: "audit_logs table not provisioned" },
+        { status: 503 }
+      );
     }
 
     const result = await sql`

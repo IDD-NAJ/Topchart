@@ -8,6 +8,16 @@ export class AdminApiError extends Error {
 
 export async function adminFetcher<T = any>(url: string): Promise<T> {
   const res = await fetch(url, { credentials: "include" })
+  
+  // Check content-type before attempting JSON parse to avoid cryptic parse errors
+  const contentType = res.headers.get("content-type") || ""
+  if (!contentType.includes("application/json")) {
+    throw new AdminApiError(
+      `Request failed (${res.status}): endpoint not found or returned non-JSON`,
+      res.status
+    )
+  }
+  
   const json = await res.json().catch(() => null)
   if (!res.ok || (json && json.success === false)) {
     throw new AdminApiError(json?.error || `Request failed (${res.status})`, res.status)
@@ -26,6 +36,16 @@ export async function adminMutate<T = any>(
     headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
+  
+  // Check content-type before attempting JSON parse
+  const contentType = res.headers.get("content-type") || ""
+  if (!contentType.includes("application/json")) {
+    throw new AdminApiError(
+      `Request failed (${res.status}): endpoint not found or returned non-JSON`,
+      res.status
+    )
+  }
+  
   const json = await res.json().catch(() => null)
   if (!res.ok || (json && json.success === false)) {
     throw new AdminApiError(json?.error || `Request failed (${res.status})`, res.status)

@@ -4,6 +4,7 @@ import { AdminPageShell } from '@/components/admin/AdminPageShell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Plus, Edit2, Trash2, Loader2, Download } from 'lucide-react'
+import { adminFetcher } from '@/lib/admin-fetcher'
 
 export default function Page() {
   const [data, setData] = useState<any[]>([])
@@ -11,10 +12,12 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/admin/esim-orders').then(r => r.json()).then(d => {
-      setData(d.data || [])
-      setLoading(false)
-    }).catch(e => { setError(e.message); setLoading(false) })
+    adminFetcher<{ success: boolean; data: any[] }>('/api/admin/esim-orders')
+      .then(d => {
+        setData(d.data || [])
+        setLoading(false)
+      })
+      .catch(e => { setError(e.message); setLoading(false) })
   }, [])
 
   return (

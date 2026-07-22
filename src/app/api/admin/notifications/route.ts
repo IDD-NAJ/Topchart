@@ -12,6 +12,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Check if table exists
+    const tableExists = await sql`SELECT to_regclass('public.notifications')`;
+    if (!tableExists[0].to_regclass) {
+      return NextResponse.json({
+        success: true,
+        data: [],
+        total: 0,
+        warning: "notifications table not provisioned. Run admin database repair.",
+      });
+    }
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "50", 10);
@@ -33,7 +44,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("[Admin Notifications GET]", error);
-    return NextResponse.json({ success: false, error: "Failed to fetch notifications" }, { status: 500 });
+    return NextResponse.json({ success: true, data: [], total: 0, warning: "Failed to fetch notifications" }, { status: 200 });
   }
 }
 
