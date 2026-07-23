@@ -13,6 +13,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: admin.error }, { status: admin.status });
     }
 
+    // Check if disputes table exists
+    const tableExists = await sql`SELECT to_regclass('public.disputes')`;
+    if (!tableExists[0]?.to_regclass) {
+      return NextResponse.json({
+        success: true,
+        disputes: [],
+        warning: "disputes table not provisioned. Run admin database repair.",
+      });
+    }
+
     const url = new URL(request.url);
     const statusFilter = (url.searchParams.get("status") || "").trim().toUpperCase();
 
@@ -43,7 +53,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, disputes: Array.isArray(rows) ? rows : [] }, { status: 200 });
   } catch (error: any) {
     console.error("Admin disputes error:", error);
-    return NextResponse.json({ success: false, error: error?.message || "Internal server error" }, { status: 500 });
+    return NextResponse.json({ success: true, disputes: [], warning: error?.message || "Failed to fetch disputes" }, { status: 200 });
   }
 }
 
@@ -52,6 +62,15 @@ export async function PATCH(request: NextRequest) {
     const admin = await requireAdmin();
     if (!admin.ok) {
       return NextResponse.json({ success: false, error: admin.error }, { status: admin.status });
+    }
+
+    // Check if disputes table exists
+    const tableExists = await sql`SELECT to_regclass('public.disputes')`;
+    if (!tableExists[0]?.to_regclass) {
+      return NextResponse.json(
+        { success: false, error: "disputes table not provisioned" },
+        { status: 503 }
+      );
     }
 
     const body = await request.json().catch(() => ({}));

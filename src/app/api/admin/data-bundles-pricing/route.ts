@@ -15,6 +15,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Check if table exists
+    const tableExists = await sql`SELECT to_regclass('public.data_bundles')`;
+    if (!tableExists[0]?.to_regclass) {
+      return NextResponse.json({ success: true, data: [] });
+    }
+
     const { searchParams } = new URL(request.url);
     const network = searchParams.get("network");
 
@@ -98,8 +104,8 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Admin pricing GET error:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch data bundles" },
-      { status: 500 }
+      { success: true, data: [], warning: "Failed to fetch data bundles" },
+      { status: 200 }
     );
   }
 }
@@ -112,6 +118,12 @@ export async function PATCH(request: NextRequest) {
         { success: false, error: adminCheck.error },
         { status: adminCheck.status }
       );
+    }
+
+    // Check if table exists
+    const tableExists = await sql`SELECT to_regclass('public.data_bundles')`;
+    if (!tableExists[0]?.to_regclass) {
+      return NextResponse.json({ success: false, error: "data_bundles table not provisioned" }, { status: 503 });
     }
 
     const body = await request.json();
@@ -230,6 +242,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: adminCheck.error }, { status: adminCheck.status });
     }
 
+    // Check if table exists
+    const tableExists = await sql`SELECT to_regclass('public.data_bundles')`;
+    if (!tableExists[0]?.to_regclass) {
+      return NextResponse.json({ success: false, error: "data_bundles table not provisioned" }, { status: 503 });
+    }
+
     const body = await request.json();
     const { network, name, size_mb, validity_hours, price, price_override, markup_percent, is_active, is_popular, is_featured, stock } = body;
 
@@ -261,6 +279,12 @@ export async function DELETE(request: NextRequest) {
     const adminCheck = await requireAdmin();
     if (!adminCheck.ok) {
       return NextResponse.json({ success: false, error: adminCheck.error }, { status: adminCheck.status });
+    }
+
+    // Check if table exists
+    const tableExists = await sql`SELECT to_regclass('public.data_bundles')`;
+    if (!tableExists[0]?.to_regclass) {
+      return NextResponse.json({ success: false, error: "data_bundles table not provisioned" }, { status: 503 });
     }
 
     const { id } = await request.json();

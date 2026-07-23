@@ -46,72 +46,83 @@ export async function POST(request: NextRequest) {
   const errors: string[] = [];
 
   for (const networkCode of networks) {
-    const result = await getDataPackages(networkCode);
-    if (!result.success || !result.data) {
-      errors.push(`Failed to fetch packages for ${networkCode}: ${result.error}`);
-      continue;
-    }
-
-    const packages = Array.isArray(result.data)
-      ? result.data
-      : Object.values(result.data as Record<string, unknown[]>).flat();
-
-    for (const pkg of packages as any[]) {
-      const capacity = String(pkg.capacity || pkg.mb || "");
-      const priceStr = String(pkg.price || "0");
-      const price = parsePrice(priceStr);
-      const sizeMb = parseMb(capacity);
-      const networkDisplay = displayName(networkCode);
-      const planId = `${networkCode}_${capacity}`.replace(/\s+/g, "_").toLowerCase();
-      const name = `${networkDisplay} ${capacity}`;
-
-      try {
-        // Try update first
-        const existing = await sqlUnsafe(
-          `SELECT id FROM data_bundles WHERE datamart_plan_id = $1 LIMIT 1`,
-          [planId]
-        );
-
-        if ((existing as any[]).length > 0) {
-          await sqlUnsafe(
-            `UPDATE data_bundles SET
-              price       = $1,
-              size_mb     = $2,
-              network     = $3,
-              is_active   = $4,
-              synced_at   = NOW(),
-              updated_at  = NOW()
-            WHERE datamart_plan_id = $5`,
-            [price, sizeMb, networkDisplay, pkg.inStock !== false, planId]
-          );
-          totalUpdated++;
-        } else {
-          await sqlUnsafe(
-            `INSERT INTO data_bundles (
-              network, name, size_mb, price, original_price,
-              is_active, is_popular,
-              datamart_plan_id, datamart_plan_type,
-              synced_at, created_at, updated_at
-            ) VALUES (
-              $1, $2, $3, $4, $5,
-              true, false,
-              $6, 'data_package',
-              NOW(), NOW(), NOW()
-            )`,
-            [
-              networkDisplay,
-              name,
-              sizeMb,
-              price,
-              price,
-              planId,
-            ]
-          );
-          totalInserted++;
-        }
-      } catch (err: any) {
-        errors.push(`Error syncing ${planId}: ${err?.message}`);
+    try {
+      const result = await getDataPackages(networkCode);
+      if (!result.success || !result.data) {
+        errors.push(`Failed to fetch packages for ${networkCode}: ${result.error}`);
+        continue;
       }
+
+      const packages = Array.isArray(result.data)
+        ? result.data
+        : Object.values(result.data as Record<string, unknown[]>).flat();
+
+      for (const pkg of packages as any[]) {
+        const capacity = String(pkg.capacity || pkg.mb || "");
+        const priceStr = String(pkg.price || "0");
+        const price = parsePrice(priceStr);
+        const sizeMb = parseMb(capacity);
+        const networkDisplay = displayName(networkCode);
+        const planId = `${networkCode}_${capacity}`.replace(/\s+/g, "_").toLowerCase();
+        const name = `${networkDisplay} ${capacity}`;
+
+        try {
+          // Try update first
+          const existing = await sqlUnsafe(
+            `SELECT id FROM data_bundles WHERE datamart_plan_id = $1 LIMIT 1`,
+            [planId]
+          );
+
+          if ((existing as any[]).length > 0) {
+            await sqlUnsafe(
+              `UPDATE data_bundles SET
+                price       = $1,
+                size_mb     = $2,
+                network     = $3,
+                is_active   = $4,
+                synced_at   = NOW(),
+                updated_at  = NOW()
+              WHERE datamart_plan_id = $5`,
+              [price, sizeMb, networkDisplay, pkg.inStock !== false, planId]
+            );
+            totalUpdated++;
+          } else {
+            await sqlUnsafe(
+              `INSERT INTO data_bundles (
+                network, name, size_mb, price, original_price,
+                is_active, is_popular,
+                datamart_plan_id, datamart_plan_type,
+                synced_at, created_at, updated_at
+              ) VALUES (
+                $1, $2, $3, $4, $5,
+                true, false,
+                $6, 'data_package',
+                NOW(), NOW(), NOW()
+              )`,
+              [
+                networkDisplay,
+                name,
+                sizeMb,
+                price,
+                price,
+                planId,
+              ]
+            );
+            totalInserted++;
+          }
+        } catch (err: any) {
+          errors.push(`Error syncing ${planId}: ${err?.message}`);
+        }
+      }
+    } catch (networkErr: any) {
+      // Catch missing env var errors or any other issues from getDataPackages
+      if (networkErr?.message?.includes("Missing required environment variables")) {
+        return NextResponse.json({
+          success: false,
+          warning: "Datamart API not configured. Set required environment variables.",
+        }, { status: 200 });
+      }
+      errors.push(`Network error for ${networkCode}: ${networkErr?.message}`);
     }
   }
 
